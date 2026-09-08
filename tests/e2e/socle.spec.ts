@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Jalon F1 : on ne vérifie que ce qui existe — le socle se rend, la page inconnue renvoie 404.
- * Les parcours métier (P1 à P9) arrivent avec les écrans correspondants.
+ * Socle applicatif. Depuis le jalon F2, la racine est protégée : un visiteur non authentifié est
+ * renvoyé vers la connexion. Les parcours d'authentification sont couverts par
+ * `authentification.spec.ts` ; les parcours métier (P1 à P9) arriveront avec les écrans.
  */
-test("la page d'accueil se rend", async ({ page }) => {
+test("la racine est protégée et renvoie vers la connexion", async ({ page }) => {
   await page.goto("/");
+  await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole("heading", { name: "Audiences et Délibérés" })).toBeVisible();
 });
 

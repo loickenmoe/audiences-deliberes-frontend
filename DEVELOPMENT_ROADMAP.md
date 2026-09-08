@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-08 (**F0 validé**, **F1 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-08 (**F0 et F1 validés**, **F2 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -43,7 +43,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 
 ---
 
-## F1 — Squelette et outillage 🔵 *(livré, en attente de validation manuelle)*
+## F1 — Squelette et outillage ✅
 
 **Objectif** : un projet Next.js qui démarre, compile, se vérifie et sait parler au backend.
 
@@ -58,7 +58,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 - Vitest + Testing Library + MSW + Playwright, avec un test témoin par niveau.
 - `app/layout.tsx`, providers (thème, TanStack Query, session, toasts), page `not-found`.
 
-**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **27 tests unitaires** ✅ ·
+**Validé le 2026-09-08** (commit `4cc0cd0`). Vérifications : `typecheck` ✅ · `lint` ✅ · **27 tests unitaires** ✅ ·
 `build` ✅ (4 pages, 101 kB de JS partagé) · **3 parcours Playwright** ✅ ·
 **`npm run smoke` : 17 hypothèses vérifiées contre le backend réel** ✅.
 **Dépend de** : F0.
@@ -71,7 +71,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 
 ---
 
-## F2 — Authentification et autorisation ⏳
+## F2 — Authentification et autorisation 🔵 *(livré, en attente de validation manuelle)*
 
 **Objectif** : se connecter avec un compte Keycloak réel et voir une navigation conforme à ses rôles.
 
@@ -88,9 +88,18 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 - **QF-02** — résolution de l'`utilisateur.id` par rapprochement d'email sur `GET /utilisateurs`,
   encapsulée dans un seul hook pour être remplaçable si le backend ajoute un endpoint « moi ».
 
-**Vérifications** : connexion réussie avec les 5 comptes internes ; la navigation diffère selon le
-profil ; un jeton expiré est renouvelé sans déconnexion ; un 403 mène à l'écran non autorisé.
+**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **51 tests unitaires** ✅ ·
+`build` ✅ · **parcours d'authentification Playwright contre le Keycloak réel** ✅.
 **Dépend de** : F1. **Décisions** : QF-05 ✅.
+
+> **Points d'implémentation à retenir :**
+> - `lib/rotation-jeton.ts` isole la politique de rotation pour la rendre testable — c'est la pièce
+>   la plus facile à se tromper. Six tests y couvrent le piège de RF-02.
+> - L'augmentation de type JWT vise **`@auth/core/jwt`**, pas `next-auth/jwt` : ce dernier n'est
+>   qu'une réexportation, et l'augmenter laisse silencieusement tous les champs en `unknown`.
+> - `ERREUR_RAFRAICHISSEMENT` vit dans `lib/rotation-jeton.ts` (module partagé) et non dans
+>   `lib/auth.ts` (module serveur) : le provider client doit pouvoir le lire.
+> - L'amorçage de session appelle `GET /alertes/mes-notifications` pour contourner QF-16.
 
 ---
 
@@ -299,10 +308,10 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**1 jalon validé sur 18 · F1 livré en attente de validation · 0 écran métier sur 42 · 0 endpoint consommé sur 67.**
+**2 jalons validés sur 18 · F2 livré en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**

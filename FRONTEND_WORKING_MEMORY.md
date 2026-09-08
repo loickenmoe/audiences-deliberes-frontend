@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-08 (jalon **F1** livré — squelette Next.js, en attente de validation).
+> Dernière mise à jour : 2026-09-08 (jalon **F2** livré — authentification Keycloak, en attente de validation).
 
 ---
 
@@ -41,12 +41,13 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalon validé | **F0** — mémoire persistante, committé et poussé (`39de75d`) |
-| Jalon livré, **en attente de validation** | **F1** — squelette Next.js, outillage, types générés |
-| Jalon suivant | **F2** — authentification Keycloak, session, RBAC, gardes de route |
+| Jalons validés | **F0** mémoire persistante (`39de75d`) · **F1** squelette et outillage (`4cc0cd0`) |
+| Jalon livré, **en attente de validation** | **F2** — authentification Keycloak, session, RBAC, coquille |
+| Jalon suivant | **F3** — design system Afriland, états standards, accessibilité |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · branche `main` |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Vérifications F1 | `typecheck` ✅ · `lint` ✅ · **27 tests** ✅ · `build` ✅ · **`npm run smoke` : 17 hypothèses vérifiées sur le backend réel** ✅ |
+| Vérifications F2 | `typecheck` ✅ · `lint` ✅ · **51 tests unitaires** ✅ · `build` ✅ · **9 parcours Playwright contre le Keycloak réel** ✅ · `smoke` ✅ |
+| Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)
@@ -105,6 +106,26 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - Le jeton ne contient **pas** l'`utilisateur.id` numérique (QF-02).
 - Push temps réel : STOMP sur SockJS, endpoint `/ws`, destination `/user/queue/alertes`, jeton dans
   la trame `CONNECT`. Repli garanti : `GET /alertes/mes-notifications`.
+
+### Pièges d'implémentation rencontrés (à ne pas refaire)
+
+- **Augmentation de type NextAuth** : viser **`@auth/core/jwt`**, jamais `next-auth/jwt` — ce dernier
+  n'est qu'un `export *`, et l'augmenter laisse silencieusement tous les champs du jeton en
+  `unknown`. Pour `Session`, `next-auth` fonctionne normalement.
+- **Frontière serveur/client** : `lib/auth.ts` et `lib/env.server.ts` sont des modules serveur
+  (`server-only`). Toute constante partagée avec un composant client vit ailleurs — d'où
+  `lib/rotation-jeton.ts`.
+- **Vitest et PostCSS** : `postcss.config.mjs` utilise la syntaxe Next (greffons nommés), que Vite ne
+  sait pas lire. `vitest.config.ts` court-circuite la découverte PostCSS (`css.postcss.plugins: []`).
+- **`npm install` très lent sur ce poste** : les liens de `node_modules/.bin` n'apparaissent qu'en
+  toute fin. Ne pas conclure à un échec avant de les avoir vus.
+- **`signOut({ callbackUrl })` est déprécié en v5** — l'option courante est `redirectTo`. La
+  déprécié est ignorée en silence et renvoie l'utilisateur sur la page courante.
+- **`signOut()` ne ferme pas la session Keycloak.** La déconnexion passe par `lib/deconnexion.ts`,
+  qui enchaîne sur le point de terminaison OIDC du realm. Sans cela, poste partagé = usurpation
+  d'identité silencieuse.
+- **Playwright : délai global relevé à 90 s.** En mode développement, Next compile chaque route au
+  premier accès, et les parcours d'authentification traversent un vrai Keycloak.
 
 ### Faits vérifiés en conditions réelles (backend démarré, 2026-09-08)
 

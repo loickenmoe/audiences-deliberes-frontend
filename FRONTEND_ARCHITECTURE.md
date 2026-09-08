@@ -1,7 +1,7 @@
 # FRONTEND_ARCHITECTURE
 
 > Architecture cible du frontend. Mise à jour quand l'architecture change, pas à chaque écran.
-> Dernière mise à jour : 2026-09-08 (jalon F0 — architecture proposée et validée, non encore codée).
+> Dernière mise à jour : 2026-09-08 (jalon F2 — socle et authentification implémentés).
 
 ---
 
@@ -98,9 +98,22 @@ côté serveur Next.js uniquement). Realm `audiences-realm`, issuer
 | `keycloakId` | claim `sub` | Rapprochement avec `utilisateur.keycloakId` |
 | `nom`, `prenom`, `email` | `family_name`, `given_name`, `email` | Affichage |
 
-**RF-02 — rotation obligatoire.** Les jetons Keycloak expirent en quelques minutes. Le callback
-`jwt` rafraîchit via `grant_type=refresh_token` dès que `expiresAt` approche, et marque la session
-en erreur si le rafraîchissement échoue (déconnexion propre plutôt que boucle de 401).
+**RF-02 — rotation pilotée par le refresh token.** Durées **mesurées** sur le realm réel :
+`access_token` 3600 s, `refresh_token` **1800 s**. Le refresh expirant le premier, la politique se
+cale sur `min(expiresAt, refreshExpiresAt) − 5 min`, soit ~25 minutes — et non sur l'expiration de
+l'access token, ce qui déconnecterait tout le monde au bout d'une demi-heure.
+
+La politique vit dans **`lib/rotation-jeton.ts`**, séparée de `lib/auth.ts` : ce dernier est un
+module serveur qu'un test ne peut pas importer, et c'est la pièce la plus facile à se tromper.
+Six tests la couvrent, dont un garde-fou qui atteste que la stratégie répandue échouerait ici.
+
+Keycloak **fait tourner le refresh token** à chaque rotation : conserver l'ancien condamnerait la
+session au bout d'un cycle. En cas d'échec définitif, la session porte `ERREUR_RAFRAICHISSEMENT` et
+le provider client déclenche une déconnexion nette — préférable à une avalanche de 401.
+
+**Pièges de typage.** L'augmentation d'interface vise **`@auth/core/jwt`** et non `next-auth/jwt` :
+ce dernier n'est qu'un `export *`, et l'augmenter laisse silencieusement tous les champs du jeton en
+`unknown`. Pour `Session`, augmenter `next-auth` fonctionne normalement.
 
 **Deux chemins d'accès au jeton** :
 - Composants serveur (RSC) et route handlers → `auth()`.

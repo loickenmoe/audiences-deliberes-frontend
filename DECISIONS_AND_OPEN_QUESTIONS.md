@@ -1,7 +1,7 @@
 # DECISIONS_AND_OPEN_QUESTIONS
 
 > Arbitrages rendus, questions ouvertes, risques. Mis à jour en continu.
-> Dernière mise à jour : 2026-09-08 (jalon F0).
+> Dernière mise à jour : 2026-09-08 (jalon F2).
 
 **Légende** : `✅` tranché · `🟡` ouvert, non bloquant · `🔴` ouvert, bloquant · `⛔` bloqué par un tiers
 
@@ -43,6 +43,11 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | L'authentification du template (provider Credentials vers `/auth/login`) est **supprimée, pas adaptée** : ce chemin a été retiré du backend en M1 pour raison de sécurité (R-03). | F2 |
 | 2026-09-08 | — | Le modèle « un rôle par utilisateur » du template est **remplacé par `roles: string[]`** : chaque utilisateur porte simultanément son profil, `ROLE_CONSULTATION` et `ROLE_SAISIE`. | F2 |
 | 2026-09-08 | — | **Deux dépôts GitHub distincts.** Le travail courant se fait dans le dépôt frontend. Le backend reste en lecture seule par défaut, mais **sera modifié ponctuellement quand un jalon l'exigera**, sur décision explicite de l'utilisateur. Les lacunes QF-01, QF-03 (et le cas échéant QF-02, QF-07, QF-08) seront traitées ainsi, au jalon concerné. | F13, F16 |
+| 2026-09-08 | — | **Déconnexion OIDC complète** (`lib/deconnexion.ts`) : `signOut()` n'efface que le cookie applicatif ; la session de connexion unique restait ouverte côté Keycloak. Sur un poste partagé, la personne suivante était reconnectée **silencieusement sous l'identité précédente**. La déconnexion enchaîne désormais sur le point de terminaison OIDC du realm avec `id_token_hint`. Défaut découvert par le parcours Playwright réel, gardé fermé par un test. | F2 |
+| 2026-09-08 | — | **Rotation des jetons pilotée par `refresh_expires_in`**, jamais par `expires_in` (RF-02). Politique isolée dans `lib/rotation-jeton.ts` pour être testable ; 6 tests dédiés, dont un garde-fou qui atteste que la stratégie naïve échouerait. | F2 |
+| 2026-09-08 | — | **Aucune redirection depuis la couche HTTP.** Le projet de référence renvoyait vers `/login` depuis l'intercepteur axios : cela rend les erreurs intestables et court-circuite la gestion d'état des écrans. Les redirections appartiennent aux gardes de route (`lib/serverAuth.ts`). | F2 |
+| 2026-09-08 | — | **Navigation rattachée à des capacités, pas à des listes de rôles.** `lib/navigation.ts` référence une capacité de `lib/rbac.ts` ; la correspondance rôle → capacité reste au seul endroit dérivé des `@PreAuthorize`. | F2 |
+| 2026-09-08 | — | **Amorçage de session appelant `GET /alertes/mes-notifications`** : auto-provisionne l'utilisateur (QF-16) et alimente le badge de notifications. Un appel, deux usages. | F2 |
 | 2026-09-08 | — | **Flux de branches en deux phases.** (1) Tant que le socle F1→F4 n'est pas prêt : travail **direct sur `main`**, aucune branche. (2) Ensuite **un écran = une branche** ; une fois l'écran testé et approuvé, **l'utilisateur pousse la branche puis la merge dans `dev`**, qui rassemble les écrans fonctionnels. Je crée et j'alimente la branche locale ; **je ne pousse ni ne merge jamais.** | tous |
 
 ---

@@ -2,7 +2,7 @@
 
 > Les **67 endpoints HTTP** exposés par le backend et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-08 (jalon F0 — inventaire posé, aucun endpoint consommé).
+> Dernière mise à jour : 2026-09-08 (jalon F2 — 1 endpoint consommé pour l'amorçage de session).
 
 > **Décompte** — le backend annonce « 66 endpoints » : ce sont les **66 numérotés** `#1` à `#66`.
 > S'y ajoute `POST /dossiers/{id}/etapes`, réel mais laissé **non numéroté** par le backend
@@ -202,7 +202,7 @@
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 44 | PUT | `/alertes/seuils` | DJ | 41 | F14 | ❌ |
-| 45 | GET | `/alertes/mes-notifications?statut&page&size` | authentifié | 03 | F14 | ❌ |
+| 45 | GET | `/alertes/mes-notifications?statut&page&size` | authentifié | 03, **amorçage de session** | F14 | 🟡 **consommé en F2** pour l'amorçage (QF-16) ; l'écran 03 reste à faire |
 | 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ❌ |
 | 47 | GET | `/configurations` | CONS | 41 | F14 | ❌ |
 | 48 | PUT | `/configurations/{cle}` | DJ | 41 | F14 | ❌ |
@@ -296,7 +296,7 @@ jalon F16**, précédé d'un ajout backend limité à quelques lectures cadrées
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **67** (66 numérotés + 1 non numéroté) | 0 |
+| **Total HTTP exposé par le backend** | **67** (66 numérotés + 1 non numéroté) | 1 |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |

@@ -1,7 +1,7 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-08 (jalon F0 — carte posée, aucun écran implémenté).
+> Dernière mise à jour : 2026-09-08 (jalon F2 — écrans 01 et 04 livrés, 02 en socle).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -15,11 +15,11 @@
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 01 | Connexion | `/login` | — | flux OIDC Keycloak | F2 | ❌ |
-| 02 | Accueil contextualisé | `/` | tous | selon profil : `/tableau-de-bord` (DJ), files de travail (AST/DJA/SH), `/alertes/mes-notifications` | F2 puis enrichi | ❌ |
+| 01 | Connexion | `/login` | — | flux OIDC Keycloak (Authorization Code) | F2 | ✅ |
+| 02 | Accueil contextualisé | `/` | tous | selon profil : `/tableau-de-bord` (DJ), files de travail (AST/DJA/SH), `/alertes/mes-notifications` | F2 puis enrichi | 🟡 socle posé (identité, rôles, droits) — cartes métier à venir |
 | 03 | Mes notifications | `/notifications` | authentifié | `GET /alertes/mes-notifications`, `PATCH /alertes/{id}/traiter`, canal `/ws` | F14 | ❌ |
-| 04 | Non autorisé | `/unauthorized` | tous | — | F2 | ❌ |
-| — | Introuvable | `not-found` | tous | — | F1 | ❌ |
+| 04 | Non autorisé | `/unauthorized` | tous | — | F2 | ✅ |
+| — | Introuvable | `not-found` | tous | — | F1 | ✅ |
 
 > **02** : l'accueil n'est pas un écran unique mais un assemblage de cartes filtrées par rôle. Il
 > est posé minimalement en F2 et enrichi à chaque jalon métier.

@@ -7,6 +7,13 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./tests/e2e",
+  /**
+   * 30 s (défaut) ne suffisent pas ici : un parcours d'authentification traverse un **vrai** serveur
+   * Keycloak et, en mode développement, Next compile chaque route au premier accès. Le délai est
+   * relevé pour cette réalité, non pour masquer une lenteur applicative — les cibles de performance
+   * se mesurent sur un build de production (NF-PERF-01, jalon F17).
+   */
+  timeout: 90_000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
