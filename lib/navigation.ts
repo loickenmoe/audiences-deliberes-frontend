@@ -17,12 +17,15 @@ import {
 import type { Capacite } from "@/lib/rbac";
 
 /**
- * Navigation principale. Chaque entrée est rattachée à une **capacité**, jamais à une liste de rôles
- * écrite en dur : la correspondance rôle → capacité vit dans `lib/rbac.ts`, dérivée des
- * `@PreAuthorize` du backend. Une entrée dont l'utilisateur n'a pas la capacité n'est pas affichée.
+ * Navigation principale.
+ *
+ * Chaque entrée porte une **clé de traduction** et une **capacité**, jamais un texte ni une liste de
+ * rôles en dur : le libellé vient des fichiers de messages, la correspondance rôle → capacité de
+ * `lib/rbac.ts`, elle-même dérivée des `@PreAuthorize` du backend.
  */
 export interface EntreeNavigation {
-  titre: string;
+  /** Clé dans l'espace `navigation` des fichiers de messages. */
+  cle: string;
   href: string;
   icone: LucideIcon;
   capacite: Capacite;
@@ -31,18 +34,18 @@ export interface EntreeNavigation {
 }
 
 export const NAVIGATION: EntreeNavigation[] = [
-  { titre: "Accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
-  { titre: "Notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: false },
-  { titre: "Dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: false },
-  { titre: "Clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: false },
-  { titre: "Calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: false },
-  { titre: "Frais d'avocats", href: "/frais", icone: Receipt, capacite: "consulterFrais", livre: false },
-  { titre: "Publications", href: "/publications", icone: FileSignature, capacite: "consulterPublications", livre: false },
-  { titre: "Constitutions", href: "/constitutions", icone: Gavel, capacite: "consulterConstitutions", livre: false },
-  { titre: "Répertoire des avocats", href: "/repertoire/avocats", icone: UsersRound, capacite: "consulterRepertoire", livre: false },
-  { titre: "Jurisprudence", href: "/jurisprudences", icone: Library, capacite: "consulterJurisprudence", livre: false },
-  { titre: "Tableau de bord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: false },
-  { titre: "Rapports", href: "/rapports", icone: Library, capacite: "genererRapport", livre: false },
-  { titre: "Intervenants", href: "/admin/intervenants", icone: Users, capacite: "administrerIntervenants", livre: false },
-  { titre: "Configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: false },
+  { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
+  { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: false },
+  { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: false },
+  { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: false },
+  { cle: "calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: false },
+  { cle: "frais", href: "/frais", icone: Receipt, capacite: "consulterFrais", livre: false },
+  { cle: "publications", href: "/publications", icone: FileSignature, capacite: "consulterPublications", livre: false },
+  { cle: "constitutions", href: "/constitutions", icone: Gavel, capacite: "consulterConstitutions", livre: false },
+  { cle: "repertoire", href: "/repertoire/avocats", icone: UsersRound, capacite: "consulterRepertoire", livre: false },
+  { cle: "jurisprudence", href: "/jurisprudences", icone: Library, capacite: "consulterJurisprudence", livre: false },
+  { cle: "tableauDeBord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: false },
+  { cle: "rapports", href: "/rapports", icone: Library, capacite: "genererRapport", livre: false },
+  { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "administrerIntervenants", livre: false },
+  { cle: "configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: false },
 ];

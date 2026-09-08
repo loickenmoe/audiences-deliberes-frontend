@@ -1,7 +1,7 @@
 # FRONTEND_ARCHITECTURE
 
 > Architecture cible du frontend. Mise à jour quand l'architecture change, pas à chaque écran.
-> Dernière mise à jour : 2026-09-08 (jalon F2 — socle et authentification implémentés).
+> Dernière mise à jour : 2026-09-08 (jalon F3 — design system implémenté).
 
 ---
 
@@ -18,6 +18,7 @@
 | Formulaires | **react-hook-form** + **Zod** | Schémas miroir des contraintes Bean Validation |
 | Auth | **NextAuth v5** + provider **Keycloak** (OIDC) | QF-05 |
 | Notifications UI | **sonner** | |
+| Thème | **clair uniquement** (QF-10) — `next-themes` retiré | Aligné sur les applications internes de la banque |
 | Dates | **date-fns** (locale `fr`) | |
 | Icônes | **lucide-react** | |
 | Graphiques | **recharts** | Tableau de bord (F15) |
@@ -187,45 +188,54 @@ l'exécution (RF-03).
 
 ## 6. Design system
 
-Voir `DECISIONS_AND_OPEN_QUESTIONS.md` (QF-13) pour l'état de validation.
+Implémenté au jalon F3. Source unique : `app/globals.css`. **Les ratios annoncés sont recalculés par
+`tests/unit/contraste.test.ts` depuis les jetons réels** — éclaircir une couleur de texte fait
+échouer la suite.
 
-**Faits de marque vérifiés** — extraits des fichiers vectoriels officiels de
-`Park_Logo_Afriland_First_Bank/` :
+### Sources
 
-| Couleur | Hex | Contraste sur blanc |
-|---|---|---|
-| Rouge Afriland | `#ED1C24` | 4,38:1 — **insuffisant pour le texte courant** |
-| Anthracite Afriland | `#231F20` | 16,30:1 |
-| Gris moyen | `#939598` | — |
-| Gris clair | `#C7C8CA` | — |
+| Source | Nature |
+|---|---|
+| Fichiers vectoriels officiels (`images/Park_Logo_Afriland_First_Bank/`) | **Vérifiée** — quatre couleurs, deux lockups |
+| Signature « The Pact with Success », symbole en poignée de main | **Vérifiée** (site du groupe) |
+| Capture de **GFA**, application Afriland en production (`images/login_page_template.png`) | **Vérifiée** — conventions d'interface réelles |
+| Tout le reste | **Recommandation**, documentée et mesurée |
 
-Signature institutionnelle : « The Pact with Success » ; le groupe décrit le symbole comme une
-poignée de main. L'en-tête officiel comporte une frise de motifs traditionnels camerounais.
-**Aucune charte graphique officielle n'est publiée** — tout le reste est recommandation.
+Aucune charte graphique officielle n'est publiée par la banque.
 
-**Principe retenu** : *structure en anthracite, identité en rouge*.
-- `#231F20` porte la barre latérale, les en-têtes et le texte.
-- `#ED1C24` est réservé à l'identité : logo, état actif, anneau de focus, filet de titre, action
-  principale unique par écran.
-- Rouge dérivé `#B3141B` (6,92:1) pour les liens et le texte accentué.
-- **Les couleurs de statut forment une famille distincte du rouge de marque** — sinon un rouge
-  d'erreur et un rouge institutionnel deviennent indiscernables dans une interface pleine de rejets
-  et de suppressions.
+### Palette
 
-**Assets** : `Afriland_First_Bank_idgHUUlud-_1.svg` (lockup horizontal 284,7×57,6) pour l'en-tête et
-la page de connexion ; `Afriland_First_Bank_idSqT5Q0_o_4.svg` (symbole 71,7×57,6) pour le favicon et
-les formats contraints — **à fond perdu, non détouré** (il comporte un aplat rouge à gauche).
+| Jeton | Valeur | Contraste sur blanc | Emploi |
+|---|---|---|---|
+| `--afb-rouge` | `#ED1C24` | **4,38:1** | Identité **seulement** : logo, filet, état actif, anneau de focus. **Jamais** de texte ni de fond d'action |
+| `--afb-anthracite` | `#231F20` | 16,30:1 | Texte, structure, **action principale** |
+| `--afb-rouge-texte` | `#B3141B` | 6,92:1 | Liens et texte accentués |
+| `--texte-secondaire` | `#5F5A5B` | 6,78:1 | Texte secondaire |
+| `--texte-tertiaire` | `#6B6567` | 5,06:1 | Mentions — assombri pour tenir AA sur *toutes* les surfaces |
+| `--succes` · `--attention` · `--danger` · `--info` | teal · ocre · rouge sombre · bleu | ≥ 4,5:1 | Statuts — **famille distincte du rouge de marque** |
 
-**Composants métier structurants** :
-- `CycleEtape` — frise d'états `OUVERTURE → EN_COURS → EN_DELIBERE → DELIBERE_VIDE → CLOTURE →
-  ARCHIVE`, avec les boucles prorogation et rabattement. Présent en liste et en fiche : c'est
-  l'information la plus consultée de l'application.
-- `StatutChip` — famille de couleurs sémantiques, distincte du rouge de marque.
-- `MontantFcfa` — formatage FCFA, chiffres tabulaires.
-- `DataTable` — TanStack Table, pagination serveur, états vide/chargement/erreur intégrés.
+**Le principe qui tient tout** : l'action principale est anthracite. Un bouton rouge deviendrait
+indiscernable du rouge d'erreur dans une interface pleine de rejets et de suppressions — et le rouge
+de marque n'atteint de toute façon pas le seuil de lisibilité du texte.
 
-**Accessibilité** : cible AA. Contraste ≥ 4,5:1 pour le texte, focus visible partout, navigation au
-clavier, libellés de formulaire associés, `prefers-reduced-motion` respecté.
+### Typographie
+
+**IBM Plex Sans** pour l'interface, **IBM Plex Mono** pour les données alignées (références,
+montants, codes d'erreur). Sans empattement, conformément à l'usage des applications internes de la
+banque. Échelle de rapport 1,2 ancrée sur **15 px**, densité adaptée au travail bureautique.
+
+### Composants du socle
+
+`Button` (4 variantes, plus `classesBouton()` pour les liens — imbriquer un `<a>` dans un `<button>`
+produit du HTML invalide) · `Card` · `Skeleton` · `Logo` · `StatutChip` · `EtatVide` · `EtatErreur` ·
+`EtatChargement`.
+
+### Accessibilité
+
+Contraste AA vérifié par calcul · anneau de focus systématique (rouge de marque, 4,38:1 > seuil de
+3:1 des indicateurs) · `prefers-reduced-motion` respecté · la couleur **double** toujours un libellé,
+elle ne le remplace jamais · ossatures de chargement annoncées en `role=status` et masquées aux
+technologies d'assistance.
 
 ## 7. États d'interface
 

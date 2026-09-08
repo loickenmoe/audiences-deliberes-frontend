@@ -1,7 +1,7 @@
 # DECISIONS_AND_OPEN_QUESTIONS
 
 > Arbitrages rendus, questions ouvertes, risques. Mis à jour en continu.
-> Dernière mise à jour : 2026-09-08 (jalon F2).
+> Dernière mise à jour : 2026-09-08 (jalon F3).
 
 **Légende** : `✅` tranché · `🟡` ouvert, non bloquant · `🔴` ouvert, bloquant · `⛔` bloqué par un tiers
 
@@ -43,6 +43,12 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | L'authentification du template (provider Credentials vers `/auth/login`) est **supprimée, pas adaptée** : ce chemin a été retiré du backend en M1 pour raison de sécurité (R-03). | F2 |
 | 2026-09-08 | — | Le modèle « un rôle par utilisateur » du template est **remplacé par `roles: string[]`** : chaque utilisateur porte simultanément son profil, `ROLE_CONSULTATION` et `ROLE_SAISIE`. | F2 |
 | 2026-09-08 | — | **Deux dépôts GitHub distincts.** Le travail courant se fait dans le dépôt frontend. Le backend reste en lecture seule par défaut, mais **sera modifié ponctuellement quand un jalon l'exigera**, sur décision explicite de l'utilisateur. Les lacunes QF-01, QF-03 (et le cas échéant QF-02, QF-07, QF-08) seront traitées ainsi, au jalon concerné. | F13, F16 |
+| 2026-09-08 | **QF-19** | **Une seule racine `/`, au contenu adapté au profil** — pas de redirection vers des pages différentes selon le rôle. Aucun des cinq profils internes n'a de métier unique : tous portent `ROLE_SAISIE` et `ROLE_CONSULTATION` en plus de leur profil (le SH lui-même dispose de 11 capacités sur 36). Rediriger reviendrait à choisir à leur place laquelle de leurs casquettes compte, et casserait les liens profonds des notifications. L'écran 02 est enrichi au fil des jalons métier. | 02, F4+ |
+| 2026-09-08 | **QF-18** | **Le formulaire d'identification vit dans l'application** (`grant_type=password`), pour la cohérence visuelle avec les applications internes de la banque. Keycloak reste seul détenteur des identités et seul émetteur de jetons. Décision utilisateur prise en connaissance des limites ci-dessous. | F3 |
+| 2026-09-08 | **QF-09** | ~~Français uniquement~~ → **révisé le jour même sur décision utilisateur : bilingue français / anglais**, les deux langues officielles du Cameroun. `next-intl`, langue en cookie, **sans préfixe d'URL** pour préserver les liens profonds. Le backend n'a aucun mécanisme de localisation, mais ne renvoie que des **codes stables** : l'interface est donc intégralement traduisible sans le modifier. | **F3b** |
+| 2026-09-08 | **QF-10** | **Thème clair uniquement.** L'application interne de référence (GFA) est claire, l'usage est bureautique et diurne, et un second thème doublerait la surface de vérification des contrastes sans bénéfice métier. `next-themes` désinstallé ; les jetons restent structurés pour qu'un thème sombre puisse être ajouté sans refonte. | F3 |
+| 2026-09-08 | **QF-13** | **Palette validée et vérifiée par le calcul.** Quatre couleurs officielles inchangées, rouge dérivé `#B3141B` pour le texte, famille de statut distincte du rouge de marque. **L'action principale est anthracite, jamais rouge.** 24 assertions de contraste dans `tests/unit/contraste.test.ts`, calculées sur les jetons réels de `globals.css`. | F3 |
+| 2026-09-08 | — | **Conventions d'interface alignées sur GFA**, application Afriland en production (capture fournie par l'utilisateur) : carte blanche centrée sur fond gris clair, lockup horizontal en tête, formule « Bienvenue sur … – First Bank », pied de page de copyright. Écart assumé sur la connexion : la saisie des identifiants reste déléguée à Keycloak, cette page n'en collecte jamais. | F3 |
 | 2026-09-08 | — | **Déconnexion OIDC complète** (`lib/deconnexion.ts`) : `signOut()` n'efface que le cookie applicatif ; la session de connexion unique restait ouverte côté Keycloak. Sur un poste partagé, la personne suivante était reconnectée **silencieusement sous l'identité précédente**. La déconnexion enchaîne désormais sur le point de terminaison OIDC du realm avec `id_token_hint`. Défaut découvert par le parcours Playwright réel, gardé fermé par un test. | F2 |
 | 2026-09-08 | — | **Rotation des jetons pilotée par `refresh_expires_in`**, jamais par `expires_in` (RF-02). Politique isolée dans `lib/rotation-jeton.ts` pour être testable ; 6 tests dédiés, dont un garde-fou qui atteste que la stratégie naïve échouerait. | F2 |
 | 2026-09-08 | — | **Aucune redirection depuis la couche HTTP.** Le projet de référence renvoyait vers `/login` depuis l'intercepteur axios : cela rend les erreurs intestables et court-circuite la gestion d'état des écrans. Les redirections appartiennent aux gardes de route (`lib/serverAuth.ts`). | F2 |
@@ -183,16 +189,84 @@ Les documents sont servis par des URL MinIO pré-signées sur `http://localhost:
 MinIO et `next.config.ts` doivent être vérifiés ; l'affichage inline des PDF et images peut être
 bloqué par le navigateur. **À trancher en F10.**
 
-### 🟡 QF-09 — Internationalisation
+### ✅ QF-18 — Saisie des identifiants dans l'application — tranché en F3
 
-Interface intégralement en français, sans mécanisme i18n. Cohérent avec le backend (messages métier
-en français). **À confirmer en F3.**
+**Décision utilisateur du 2026-09-08**, prise après exposé des alternatives et des limites.
 
-### 🟡 QF-10 — Thème sombre
+Le formulaire d'identification vit dans l'application. Keycloak valide les credentials via le flux
+« mot de passe » (`grant_type=password`) et émet les jetons ; il ne présente jamais sa propre page.
 
-Le template propose un thème sombre. Pour une application bancaire institutionnelle destinée à un
-usage bureautique, sa valeur est discutable et il double le coût de vérification des contrastes.
-**À trancher en F3.**
+**Mise en œuvre.** `authorize` s'exécute **côté serveur Next.js** : le mot de passe va du champ au
+serveur, puis du serveur à Keycloak. Il ne figure ni dans le paquet navigateur, ni dans un état
+React, ni dans la session, ni dans un journal. Un refus reçoit **toujours le même message**, que le
+compte n'existe pas, soit désactivé ou attende une action — deux tests de bout en bout gardent cette
+propriété fermée. Seule l'indisponibilité du service se distingue.
+
+**Limites assumées, à rouvrir si le contexte change :**
+
+| Limite | Conséquence |
+|---|---|
+| Pas de second facteur | Si la DSI active l'OTP sur le realm, ce flux cesse de fonctionner et devra être repris |
+| Pas de réinitialisation de mot de passe | Aucun écran « mot de passe oublié » ; l'utilisateur passe par le support |
+| Pas de verrouillage après échecs | `bruteForceProtected` est désactivé sur le realm ; à activer côté Keycloak si souhaité |
+| Pas de connexion unique | Aucun partage de session avec les autres applications Afriland |
+| `grant_type=password` retiré d'OAuth 2.1 | Déconseillé par Keycloak ; fonctionnel mais non pérenne à long terme |
+
+**Alternative écartée**, à reconsidérer si l'une des limites devient bloquante : habiller la page de
+connexion de Keycloak d'un thème Afriland. Rendu visuel équivalent, aucune de ces limites, mais
+suppose un thème dans le dépôt backend.
+
+**Effet de bord favorable sur la déconnexion** : le navigateur n'ouvrant jamais de session de
+connexion unique chez Keycloak, le risque de reconnexion silencieuse sur poste partagé disparaît.
+La révocation du jeton se fait désormais **de serveur à serveur** (`app/api/deconnexion/route.ts`),
+sans redirection externe — plus simple et plus robuste que le mécanisme précédent.
+
+### ✅ QF-09 — Bilinguisme français / anglais — tranché en F3b
+
+**Première décision (français seul) révisée le 2026-09-08 sur demande de l'utilisateur.** Le Cameroun
+est officiellement bilingue et une partie du personnel d'Afriland travaille en anglais.
+
+**Vérification préalable du backend** : aucun `MessageSource`, aucun `LocaleResolver`, aucune prise
+en compte d'`Accept-Language`, et une seule colonne `libelle` sur les tables de référentiel — le tout
+en français. **Cela ne bloque pourtant presque rien**, parce que le backend ne renvoie que des codes
+stables.
+
+| Origine du texte | Traduisible | Mécanisme |
+|---|---|---|
+| Interface, libellés, boutons | ✅ | `messages/fr.json`, `messages/en.json` |
+| Énumérations du domaine | ✅ | Clé = valeur d'énumération, sous `domaine` |
+| Erreurs backend | ✅ | Clé = `code` ; le message français du backend n'est qu'un repli |
+| Référentiels (17 natures, 3 types, 7 configurations) | ✅ | Clé = `code`, listes fermées relevées en réel |
+| Dates, montants FCFA | ✅ | `Intl` avec `fr-CM` / `en-CM` |
+| **Contenu saisi par les utilisateurs** | ❌ | Comptes rendus, motifs, noms — reste dans la langue de rédaction |
+
+**Réserve** : si le Directeur Juridique ajoute une nature de dossier directement en base (CONF02 le
+permet), elle apparaîtra non traduite jusqu'à son ajout aux fichiers de messages. Le test de parité
+ne peut pas l'attraper — il ne connaît que les 17 valeurs relevées.
+
+**Mise en œuvre** : `next-intl` 4.14, langue dans un cookie, **aucun préfixe de langue dans l'URL**
+— `/dossiers/42` reste `/dossiers/42`, ce qui préserve les liens profonds des notifications
+(cohérent avec QF-19). Bascule accessible depuis l'écran de connexion **et** depuis l'en-tête : un
+utilisateur anglophone ne doit pas avoir à deviner le français pour changer de langue.
+
+**Garde-fous** : `tests/unit/messages.test.ts` vérifie la parité stricte des clés entre les deux
+fichiers, l'absence de valeur vide, et la présence d'un libellé pour **chaque** valeur d'énumération,
+chaque rôle, chaque code d'erreur et chaque entrée de référentiel. Un contrôle supplémentaire atteste
+que l'anglais ne recopie pas le français. Six parcours Playwright vérifient la bascule de bout en
+bout, y compris les messages d'erreur de connexion.
+
+### ✅ QF-09b — La préférence de langue vit dans un cookie — tranché en F3b
+
+Aucune modification du backend. **Limite** : la préférence est propre à chaque navigateur — un
+juriste changeant de poste retrouve le français par défaut. La rattacher au compte supposerait une
+colonne `langue` sur la table `utilisateur` et un endpoint pour la lire et l'écrire. À reconsidérer
+lorsqu'une évolution backend sera de toute façon nécessaire (QF-03 ou QF-16) : un seul point de
+lecture serait à changer.
+
+### ✅ QF-10 — Thème sombre — tranché en F3
+
+Abandonné. `next-themes` désinstallé, `color-scheme: light` déclaré. Les jetons restent structurés
+pour qu'un thème sombre soit ajoutable sans refonte si le besoin apparaît.
 
 ### 🟡 QF-11 — Temps réel ou rafraîchissement périodique
 
@@ -205,28 +279,28 @@ garantit un repli par `GET /alertes/mes-notifications`. **À trancher en F14.**
 : la spec est figée dans `contracts/openapi.json`**, régénérée manuellement et versionnée. Aucune
 dépendance à l'exécution.
 
-### 🟡 QF-13 — Validation de la palette Afriland
+### ✅ QF-13 — Palette Afriland — tranché en F3
 
-**Aucune charte graphique officielle n'est publiée** ; le site institutionnel est inaccessible à la
-consultation automatisée (HTTP 403).
+**Faits vérifiés** — extraits des fichiers vectoriels officiels : `#ED1C24` (rouge, **4,38:1** sur
+blanc — sous le seuil AA), `#231F20` (anthracite, **16,30:1**), `#939598`, `#C7C8CA`. Signature
+« The Pact with Success ». Aucune charte graphique officielle n'est publiée.
 
-**Faits vérifiés** — extraits des fichiers vectoriels officiels de `Park_Logo_Afriland_First_Bank/` :
+**Apport décisif de l'utilisateur** : la capture de **GFA**, application Afriland en production,
+fournit des conventions d'interface réelles plutôt que déduites — carte blanche centrée sur fond
+gris clair, lockup horizontal, action sobre, pied de page de copyright.
 
-| Couleur | Hex | Contraste mesuré sur blanc |
-|---|---|---|
-| Rouge Afriland | `#ED1C24` | **4,38:1** — sous le seuil AA de 4,5:1 pour le texte courant |
-| Anthracite Afriland | `#231F20` | **16,30:1** |
-| Gris moyen | `#939598` | — |
-| Gris clair | `#C7C8CA` | — |
+**Retenu** : structure sobre, identité rouge. L'anthracite porte texte et structure ; le rouge signe
+l'identité (logo, filet, état actif, anneau de focus) ; **l'action principale est anthracite**. La
+famille de statut (`succès`, `attention`, `danger`, `info`) est distincte du rouge de marque, faute
+de quoi rouge d'erreur et rouge institutionnel deviendraient indiscernables.
 
-Signature institutionnelle « The Pact with Success » ; le groupe décrit le symbole comme une poignée
-de main. L'en-tête officiel comporte une frise de motifs traditionnels camerounais.
+**Vérifié, non affirmé** : `tests/unit/contraste.test.ts` recalcule 24 ratios depuis les jetons réels
+de `globals.css`. Deux jetons ont d'ailleurs dû être assombris pour tenir AA sur *toutes* les
+surfaces, pas seulement sur blanc.
 
-**Recommandation soumise à validation.** Structure en anthracite, identité en rouge ; rouge dérivé
-`#B3141B` (**6,92:1**) pour les liens et le texte accentué ; couleurs de statut formant une famille
-distincte du rouge de marque, faute de quoi un rouge d'erreur et un rouge institutionnel deviennent
-indiscernables dans une interface pleine de rejets et de suppressions. **À valider en F3.**
-
+> Réserve : sur la capture de GFA, le bouton « Connexion » paraît grisé — vraisemblablement un état
+> désactivé, le formulaire étant vide. Sa couleur active reste donc inconnue ; le choix de
+> l'anthracite repose sur la mesure de contraste, non sur cette capture.
 ### ✅ QF-14 — Champ `documents` de la fiche dossier
 
 Vide par construction (Q-67 backend, tranché en M15 : « ne pas le consommer côté frontend »).

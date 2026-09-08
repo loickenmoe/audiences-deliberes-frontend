@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-08 (**F0 et F1 validés**, **F2 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-08 (**F0 à F2 validés**, **F3 et F3b livrés** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -71,7 +71,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 
 ---
 
-## F2 — Authentification et autorisation 🔵 *(livré, en attente de validation manuelle)*
+## F2 — Authentification et autorisation ✅
 
 **Objectif** : se connecter avec un compte Keycloak réel et voir une navigation conforme à ses rôles.
 
@@ -88,7 +88,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 - **QF-02** — résolution de l'`utilisateur.id` par rapprochement d'email sur `GET /utilisateurs`,
   encapsulée dans un seul hook pour être remplaçable si le backend ajoute un endpoint « moi ».
 
-**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **51 tests unitaires** ✅ ·
+**Validé le 2026-09-08** (commit `d49f36d`). Vérifications : `typecheck` ✅ · `lint` ✅ · **51 tests** ✅ ·
 `build` ✅ · **parcours d'authentification Playwright contre le Keycloak réel** ✅.
 **Dépend de** : F1. **Décisions** : QF-05 ✅.
 
@@ -103,7 +103,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 
 ---
 
-## F3 — Design system Afriland ⏳
+## F3 — Design system Afriland ✅ *(livré avec F3b)*
 
 **Objectif** : l'identité visuelle et les états standards, avant tout écran métier.
 
@@ -113,10 +113,75 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 - Intégration des logos officiels (`public/brand/`), favicon, page de connexion habillée.
 - États standards : chargement (squelettes), vide, erreur, succès.
 - Accessibilité : contraste AA, focus visible, navigation clavier, `prefers-reduced-motion`.
-- Trancher **QF-09** (i18n) et **QF-10** (thème sombre).
+- Trancher **QF-10** (thème sombre). *(QF-09 traité en F3b.)*
 
-**Vérifications** : contrastes mesurés conformes ; parcours clavier complet sur la coquille.
-**Dépend de** : F2. **Décisions attendues** : QF-13, QF-09, QF-10.
+**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **83 tests** ✅ dont
+**24 assertions de contraste recalculées depuis `globals.css`** · `build` ✅ · parcours Playwright ✅.
+**Dépend de** : F2. **Décisions rendues** : QF-09 ✅, QF-10 ✅, QF-13 ✅, **QF-18** ✅, **QF-19** ✅.
+
+> **Apport de l'utilisateur** : la capture de **GFA**, application Afriland en production
+> (`images/login_page_template.png`), a fourni des conventions d'interface réelles plutôt que
+> déduites. Elle a confirmé la direction proposée et fermé QF-13.
+>
+> **Points à retenir :**
+> - Le test de contraste lit les jetons **dans la feuille de style**, pas des valeurs recopiées :
+>   éclaircir une couleur de texte fait échouer la suite. Deux jetons ont dû être assombris.
+> - L'action principale est **anthracite**. Un bouton rouge se confondrait avec le rouge d'erreur.
+> - `classesBouton()` existe parce qu'imbriquer un `<a>` dans un `<button>` produit du HTML invalide.
+>
+> **Reprise de l'authentification en cours de jalon (QF-18)** — décision utilisateur : le formulaire
+> d'identification vit désormais dans l'application, Keycloak validant en arrière-plan
+> (`grant_type=password`). Le provider Keycloak OIDC est remplacé par un provider Credentials ; la
+> déconnexion révoque le jeton **de serveur à serveur**, sans redirection externe. Limites assumées
+> et consignées en QF-18. Deux tests garantissent qu'un refus ne révèle jamais si un compte existe.
+>
+> **QF-19** : une seule racine `/`, au contenu adapté au profil — pas de redirection par rôle.
+> Aucun profil interne n'a de métier unique ; le SH lui-même dispose de 11 capacités sur 36.
+> Le détail par profil est dans `SCREEN_MAP.md`, écran 02.
+
+---
+
+## F3b — Bilinguisme français / anglais 🔵 *(livré, en attente de validation manuelle)*
+
+**Objectif** : rendre l'interface disponible dans les **deux langues officielles du Cameroun**.
+Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
+
+**Pourquoi maintenant** : extraire les chaînes de 5 écrans coûte une soirée ; les extraire de 42
+écrans après coup en coûterait dix, avec le risque d'en oublier.
+
+- `next-intl` 4.14, langue dans un cookie, **sans préfixe de langue dans l'URL** — `/dossiers/42`
+  reste `/dossiers/42`, ce qui préserve les liens profonds des notifications (cohérent avec QF-19).
+- `messages/fr.json` et `messages/en.json` : interface, 28 énumérations, 8 rôles, 15 codes d'erreur,
+  17 natures de dossier, 3 types de client sensible, 7 clés de configuration.
+- Les libellés quittent `types/enums.ts`, qui ne porte plus que le **contrat**.
+- `lib/actions/connexion.ts` renvoie une **clé** de message, jamais un texte : la traduction
+  appartient au composant, qui connaît la langue au moment du rendu.
+- Sélecteur de langue sur l'écran de connexion **et** dans l'en-tête.
+- Typographie française : apostrophe courbe `’` dans tous les messages.
+
+**Ajustements de l'écran de connexion demandés en fin de jalon :**
+- **Bascule de visibilité du mot de passe** — l'utilisateur doit pouvoir relire sa saisie avant de
+  valider ; une faute de frappe invisible est la première cause d'échec de connexion. Libellé et
+  `aria-pressed` traduits, l'état est donc lisible par les technologies d'assistance.
+- **Filet rouge retiré** de la connexion — et, par cohérence, des pages « introuvable » et « accès
+  refusé », qui forment la même famille hors application. Le rouge de marque subsiste sur l'anneau de
+  focus et l'indicateur de navigation active.
+- **Écran non défilable** (`h-svh` + `overflow-hidden`). Espacements resserrés en conséquence :
+  vérifié à 1280×600 et 1280×720, débordement nul et pied de page visible aux deux hauteurs.
+
+**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **98 tests** ✅ ·
+`build` ✅ · **20 parcours Playwright** ✅ dont 6 dédiés au bilinguisme · `smoke` ✅.
+**Dépend de** : F3. **Décisions rendues** : QF-09 (révisée) ✅, QF-09b ✅.
+
+> **Le garde-fou qui compte** : `tests/unit/messages.test.ts` vérifie la **parité stricte des clés**
+> entre les deux fichiers et la présence d'un libellé pour chaque valeur d'énumération, chaque rôle,
+> chaque code d'erreur et chaque entrée de référentiel. Le risque n'est pas de mal traduire, c'est
+> d'**oublier** de traduire — un oubli passerait inaperçu jusqu'à ce qu'un utilisateur anglophone
+> tombe sur un code technique.
+>
+> **Le backend n'a aucun mécanisme de localisation**, mais ne renvoie que des codes stables :
+> l'interface est intégralement traduisible sans le modifier. Seul le contenu **saisi par les
+> utilisateurs** (comptes rendus, motifs de rejet) reste dans sa langue de rédaction — c'est normal.
 
 ---
 
@@ -308,10 +373,10 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅+🔵 | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**2 jalons validés sur 18 · F2 livré en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**
+**3 jalons validés sur 18 · F3 + F3b livrés en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**

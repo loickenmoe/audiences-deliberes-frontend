@@ -1,6 +1,9 @@
+import { getTranslations } from "next-intl/server";
+
+import { SelecteurLangue } from "@/components/global";
 import { UserNav } from "@/components/layout/user-nav";
 
-export function Navbar({
+export async function Navbar({
   nom,
   prenom,
   email,
@@ -11,10 +14,17 @@ export function Navbar({
   email?: string | null;
   roles: readonly string[];
 }) {
+  const t = await getTranslations("commun");
+
   return (
-    <header className="flex items-center justify-between border-b border-(--color-border) px-6 py-3">
-      <p className="font-(family-name:--font-serif) text-lg font-semibold">Audiences et Délibérés</p>
-      <UserNav nom={nom} prenom={prenom} email={email} roles={roles} />
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-bordure bg-surface px-6">
+      <p className="text-[length:var(--taille-lg)] font-semibold tracking-tight">
+        {t("application")}
+      </p>
+      <div className="flex items-center gap-5">
+        <SelecteurLangue />
+        <UserNav nom={nom} prenom={prenom} email={email} roles={roles} />
+      </div>
     </header>
   );
 }

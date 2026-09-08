@@ -1,18 +1,31 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-export default function NotFound() {
+import { Logo } from "@/components/global";
+import { classesBouton } from "@/components/ui/button";
+
+export default async function NotFound() {
+  const t = await getTranslations("pages");
+
   return (
-    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center gap-4 px-6 text-center">
-      <p className="font-mono text-xs uppercase tracking-[0.13em] text-(--color-muted-foreground)">
-        Erreur 404
-      </p>
-      <h1 className="font-(family-name:--font-serif) text-3xl font-semibold">Page introuvable</h1>
-      <p className="text-(--color-muted-foreground)">
-        Cette page n’existe pas ou a été déplacée.
-      </p>
-      <Link href="/" className="mt-2 font-medium underline underline-offset-4">
-        Revenir à l’accueil
-      </Link>
-    </main>
+    <div className="flex min-h-svh flex-col justify-center">
+      <main className="mx-auto flex max-w-md flex-1 flex-col justify-center gap-4 px-6 text-center">
+        <div className="flex justify-center">
+          <Logo hauteur={30} />
+        </div>
+        <p className="mt-4 font-mono text-[length:var(--taille-2xs)] uppercase tracking-[0.13em] text-texte-tertiaire">
+          {t("introuvableCode")}
+        </p>
+        <h1 className="text-balance text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("introuvableTitre")}
+        </h1>
+        <p className="text-texte-secondaire">{t("introuvableTexte")}</p>
+        <div className="mt-2 flex justify-center">
+          <Link href="/" className={classesBouton({ variante: "secondaire" })}>
+            {t("retourAccueil")}
+          </Link>
+        </div>
+      </main>
+    </div>
   );
 }

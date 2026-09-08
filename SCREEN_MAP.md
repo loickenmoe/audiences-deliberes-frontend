@@ -21,8 +21,24 @@
 | 04 | Non autorisé | `/unauthorized` | tous | — | F2 | ✅ |
 | — | Introuvable | `not-found` | tous | — | F1 | ✅ |
 
-> **02** : l'accueil n'est pas un écran unique mais un assemblage de cartes filtrées par rôle. Il
-> est posé minimalement en F2 et enrichi à chaque jalon métier.
+> **02 — décision QF-19** : **une seule racine `/` pour tous**, dont le contenu s'adapte au profil.
+> Pas de redirection vers des pages différentes selon le rôle : aucun profil interne n'a de métier
+> unique — tous portent `ROLE_SAISIE` et `ROLE_CONSULTATION` en plus du leur, y compris le Supérieur
+> Hiérarchique (11 capacités sur 36). Rediriger reviendrait à choisir à leur place, et casserait les
+> liens profonds que les notifications pointeront vers des dossiers précis.
+>
+> Contenu cible, enrichi à chaque jalon métier :
+>
+> | Profil | Cartes de l'accueil | Disponible à partir de |
+> |---|---|---|
+> | **Juriste** | Ses dossiers · audiences à J-7/J-3/J-1 · délibérés en attente · alarmes échues | F6, F8, F9 |
+> | **DJ** | Les 6 indicateurs · sensibilités à valider · dérogations de seuil · validations conjointes | F7, F11, F15 |
+> | **DJA** | Contrôles d'opportunité en attente · validations conjointes · sensibilités à valider | F7, F11 |
+> | **Assistante** | Frais à contrôler · publications à valider · frais validés à payer | F11, F12 |
+> | **SH** | Constitutions à signer · ses dossiers · documents qu'il a chargés | F7, F10, F12 |
+> | **Avocat** | Ses demandes de frais · ses publications | F16 |
+>
+> Posé minimalement en F2 (identité, rôles, droits résolus).
 
 ## 1. Dossiers (Épic 1)
 

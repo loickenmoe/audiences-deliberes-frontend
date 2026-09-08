@@ -1,67 +1,76 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
-import { auth, signIn } from "@/lib/auth";
+import { Logo, SelecteurLangue } from "@/components/global";
+import { FormulaireConnexion } from "@/components/modules/auth/formulaire-connexion";
+import { auth } from "@/lib/auth";
 
-export const metadata = { title: "Connexion" };
+export async function generateMetadata() {
+  const t = await getTranslations("connexion");
+  return { title: t("titre") };
+}
 
-const MOTIFS: Record<string, string> = {
-  "session-expiree": "Votre session a expiré. Reconnectez-vous pour continuer.",
-  AccessDenied: "Ce compte n'a pas accès à l'application.",
-  Configuration: "La connexion est mal configurée. Contactez la DSI.",
-};
-
+/**
+ * Écran de connexion.
+ *
+ * Composition reprise de **GFA**, application Afriland en production : carte blanche centrée sur
+ * fond gris clair, lockup horizontal, formule de bienvenue, sous-titre développant l'intitulé,
+ * action pleine largeur, pied de page de copyright.
+ *
+ * **Page non défilable** : `h-svh` avec `overflow-hidden`. Un écran de connexion tient dans une
+ * fenêtre — le faire défiler donnerait l'impression qu'il manque quelque chose. Les espacements
+ * sont resserrés en conséquence, pour que le contenu tienne sur les hauteurs d'écran courantes.
+ *
+ * Le sélecteur de langue est présent **avant** la connexion : un utilisateur anglophone doit
+ * pouvoir basculer sans avoir à deviner le français.
+ */
 export default async function PageConnexion({
   searchParams,
 }: {
-  searchParams: Promise<{ motif?: string; error?: string }>;
+  searchParams: Promise<{ motif?: string }>;
 }) {
   const session = await auth();
   if (session?.user && !session.erreur) redirect("/");
 
-  const { motif, error } = await searchParams;
-  const message = MOTIFS[motif ?? ""] ?? MOTIFS[error ?? ""] ?? null;
+  const t = await getTranslations("connexion");
+  const tc = await getTranslations("commun");
+  const { motif } = await searchParams;
+  const message = motif === "session-expiree" ? t("sessionExpiree") : null;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center gap-8 px-6 py-16">
-      <div className="flex flex-col gap-3">
-        <p className="font-mono text-xs uppercase tracking-[0.13em] text-(--color-muted-foreground)">
-          Afriland First Bank · Direction Juridique
-        </p>
-        <h1 className="font-(family-name:--font-serif) text-3xl font-semibold tracking-tight">
-          Audiences et Délibérés
-        </h1>
-        <p className="text-(--color-muted-foreground)">
-          Suivi des audiences, des délibérés et des décisions devenues définitives.
-        </p>
+    <div className="flex h-svh flex-col overflow-hidden">
+      <div className="flex justify-end px-6 pt-4">
+        <SelecteurLangue />
       </div>
 
-      {message ? (
-        <p
-          role="status"
-          className="rounded border border-(--color-border) bg-(--color-muted) px-4 py-3 text-sm"
-        >
-          {message}
-        </p>
-      ) : null}
+      <main className="flex flex-1 items-center justify-center px-6 py-3">
+        <div className="w-full max-w-[25rem]">
+          <div className="rounded-lg border border-bordure bg-surface px-8 py-7 shadow-[var(--ombre-carte)]">
+            <div className="flex justify-center">
+              <Logo hauteur={32} />
+            </div>
 
-      <form
-        action={async () => {
-          "use server";
-          await signIn("keycloak", { redirectTo: "/" });
-        }}
-      >
-        <button
-          type="submit"
-          className="w-full rounded bg-(--color-foreground) px-4 py-3 font-medium text-(--color-background) transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          Se connecter
-        </button>
-      </form>
+            <div className="mt-5 flex flex-col items-center gap-1 text-center">
+              <h1 className="text-balance text-[length:var(--taille-xl)] font-semibold tracking-tight">
+                {t("bienvenue")}
+              </h1>
+              <p className="text-pretty text-[length:var(--taille-sm)] text-texte-secondaire">
+                {t("sousTitre")}
+              </p>
+            </div>
 
-      <p className="text-sm text-(--color-muted-foreground)">
-        L’authentification est assurée par le service d’identité de la banque. Vos identifiants ne
-        transitent jamais par cette application.
-      </p>
-    </main>
+            <FormulaireConnexion messageInitial={message} />
+
+            <p className="mt-4 text-center text-[length:var(--taille-xs)] leading-relaxed text-texte-tertiaire">
+              {t("mention")}
+            </p>
+          </div>
+
+          <p className="mt-4 text-center text-[length:var(--taille-xs)] text-texte-tertiaire">
+            {tc("copyright", { annee: new Date().getFullYear() })}
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }

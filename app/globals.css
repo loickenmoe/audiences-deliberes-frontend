@@ -1,48 +1,160 @@
 @import "tailwindcss";
 
-/*
- * Jetons neutres du jalon F1 — l'identité Afriland (structure anthracite, identité rouge)
- * est posée au jalon F3. Ne pas ajouter de couleur de marque ici avant cet arbitrage (QF-13).
- */
+/* ============================================================================
+   DESIGN SYSTEM — Audiences et Délibérés
+   Direction Juridique · Afriland First Bank Cameroun
+
+   Sources de vérité :
+   · Couleurs de marque — extraites des fichiers vectoriels officiels
+     (`images/Park_Logo_Afriland_First_Bank/`). Ces quatre valeurs sont les seules
+     couleurs que la banque publie. Tout le reste est dérivé et documenté.
+   · Conventions d'interface — relevées sur GFA, application Afriland en production
+     (`images/login_page_template.png`) : carte blanche centrée sur fond gris clair,
+     lockup horizontal en tête, action sobre, pied de page de copyright.
+
+   Principe directeur : STRUCTURE SOBRE, IDENTITÉ ROUGE.
+   Le rouge #ED1C24 mesure 4,38:1 sur blanc — sous le seuil AA de 4,5:1 pour le texte
+   courant. Il ne peut donc porter ni texte, ni fond d'action principale. Il signe
+   l'identité : logo, filet de titre, indicateur d'état actif, anneau de focus.
+   L'anthracite #231F20 (16,30:1) porte la structure et le texte.
+
+   Corollaire : l'action principale est ANTHRACITE, jamais rouge. Sans cela, dans une
+   interface pleine de rejets et de suppressions, le rouge de marque et le rouge d'erreur
+   deviennent indiscernables.
+
+   Les ratios de contraste annoncés sont vérifiés par `tests/unit/contraste.test.ts`.
+   ============================================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #231f20;
-  --muted: #f4f1f1;
-  --muted-foreground: #5a5456;
-  --border: #e4dfdf;
+  color-scheme: light;
+
+  /* ── Couleurs de marque — VÉRIFIÉES, ne pas modifier ─────────────────── */
+  --afb-rouge: #ed1c24;
+  --afb-anthracite: #231f20;
+  --afb-gris: #939598;
+  --afb-gris-clair: #c7c8ca;
+
+  /* ── Rouge dérivé, lisible en texte (6,92:1) ─────────────────────────── */
+  --afb-rouge-texte: #b3141b;
+
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
+  --fond: #f4f5f7;
+  --surface: #ffffff;
+  --surface-attenuee: #edeef1;
+  --surface-survol: #e7e9ed;
+
+  /* ── Texte ───────────────────────────────────────────────────────────── */
+  --texte: #231f20; /* 16,30:1 */
+  --texte-secondaire: #5f5a5b; /* 6,78:1 */
+  --texte-tertiaire: #6b6567; /* assombri pour tenir 4,5:1 sur TOUTES les surfaces, pas seulement sur blanc */
+  --texte-inverse: #ffffff;
+
+  /* ── Bordures ────────────────────────────────────────────────────────── */
+  --bordure: #dfe1e6;
+  --bordure-forte: #c7c8ca;
+
+  /* ── Couleurs de statut — famille DISTINCTE du rouge de marque ───────── */
+  --succes: #1b6b5a; /* 6,37:1 */
+  --succes-fond: #e8f1ee;
+  --attention: #855a0d;
+  --attention-fond: #faf5ea;
+  --danger: #b3141b; /* 6,92:1 */
+  --danger-fond: #fbeaeb;
+  --info: #1f5c8b; /* 7,09:1 */
+  --info-fond: #e8eff5;
+
+  /* ── Typographie ─────────────────────────────────────────────────────── */
+  --police-sans: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --police-mono: var(--font-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Échelle de type — rapport 1,2, ancrée sur 15px pour la densité bureautique */
+  --taille-2xs: 0.6875rem; /* 11px — étiquettes capitales */
+  --taille-xs: 0.75rem; /* 12px — mentions, données tabulaires */
+  --taille-sm: 0.8125rem; /* 13px — texte secondaire, tableaux */
+  --taille-base: 0.9375rem; /* 15px — texte courant */
+  --taille-lg: 1.125rem; /* 18px — sous-titres */
+  --taille-xl: 1.375rem; /* 22px — titres de section */
+  --taille-2xl: 1.75rem; /* 28px — titres d'écran */
+  --taille-3xl: 2.125rem; /* 34px — titre de connexion */
+
+  /* ── Rayons et ombres ────────────────────────────────────────────────── */
+  --rayon-sm: 3px;
+  --rayon: 5px;
+  --rayon-lg: 8px;
+  --ombre-carte: 0 1px 2px rgb(35 31 32 / 0.05), 0 4px 16px -8px rgb(35 31 32 / 0.12);
+  --ombre-elevee: 0 2px 4px rgb(35 31 32 / 0.06), 0 12px 32px -12px rgb(35 31 32 / 0.22);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --background: #171415;
-    --foreground: #efebeb;
-    --muted: #262122;
-    --muted-foreground: #b3acad;
-    --border: #332d2e;
-  }
-}
-
-:root[data-theme="dark"] {
-  --background: #171415;
-  --foreground: #efebeb;
-  --muted: #262122;
-  --muted-foreground: #b3acad;
-  --border: #332d2e;
-}
-
+/* Tailwind v4 : exposition des jetons en utilitaires (`bg-surface`, `text-texte`, …). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
+  --color-fond: var(--fond);
+  --color-surface: var(--surface);
+  --color-surface-attenuee: var(--surface-attenuee);
+  --color-surface-survol: var(--surface-survol);
+  --color-texte: var(--texte);
+  --color-texte-secondaire: var(--texte-secondaire);
+  --color-texte-tertiaire: var(--texte-tertiaire);
+  --color-texte-inverse: var(--texte-inverse);
+  --color-bordure: var(--bordure);
+  --color-bordure-forte: var(--bordure-forte);
+  --color-marque: var(--afb-rouge);
+  --color-marque-texte: var(--afb-rouge-texte);
+  --color-anthracite: var(--afb-anthracite);
+  --color-succes: var(--succes);
+  --color-succes-fond: var(--succes-fond);
+  --color-attention: var(--attention);
+  --color-attention-fond: var(--attention-fond);
+  --color-danger: var(--danger);
+  --color-danger-fond: var(--danger-fond);
+  --color-info: var(--info);
+  --color-info-fond: var(--info-fond);
+
+  --font-sans: var(--police-sans);
+  --font-mono: var(--police-mono);
+
+  --radius-sm: var(--rayon-sm);
+  --radius-DEFAULT: var(--rayon);
+  --radius-lg: var(--rayon-lg);
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--police-sans);
+  font-size: var(--taille-base);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/**
+ * Anneau de focus : c'est le seul usage systématique du rouge de marque dans
+ * l'interface — il signe l'identité là où l'accessibilité l'exige de toute façon.
+ * Son contraste de 4,38:1 dépasse le seuil de 3:1 requis pour un indicateur.
+ */
+:focus-visible {
+  outline: 2px solid var(--afb-rouge);
+  outline-offset: 2px;
+  border-radius: var(--rayon-sm);
+}
+
+::selection {
+  background: var(--afb-rouge);
+  color: var(--texte-inverse);
+}
+
+/* Les chiffres s'alignent partout où ils se comparent : montants, compteurs, dates. */
+table,
+[data-nombres] {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -50,6 +162,18 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes pulsation {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }

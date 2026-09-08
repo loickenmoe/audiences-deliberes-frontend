@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-08 (jalon **F2** livré — authentification Keycloak, en attente de validation).
+> Dernière mise à jour : 2026-09-08 (jalons **F3 + F3b** livrés — design system et bilinguisme, en attente de validation).
 
 ---
 
@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** mémoire persistante (`39de75d`) · **F1** squelette et outillage (`4cc0cd0`) |
-| Jalon livré, **en attente de validation** | **F2** — authentification Keycloak, session, RBAC, coquille |
-| Jalon suivant | **F3** — design system Afriland, états standards, accessibilité |
+| Jalons validés | **F0** (`39de75d`) · **F1** (`4cc0cd0`) · **F2** authentification (`d49f36d`) |
+| Jalons livrés, **en attente de validation** | **F3** design system Afriland · **F3b** bilinguisme français / anglais |
+| Jalon suivant | **F4** — composants métier réutilisables (table paginée, filtres, formulaires, frise d'étapes) |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · branche `main` |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Vérifications F2 | `typecheck` ✅ · `lint` ✅ · **51 tests unitaires** ✅ · `build` ✅ · **9 parcours Playwright contre le Keycloak réel** ✅ · `smoke` ✅ |
+| Vérifications F3+F3b | `typecheck` ✅ · `lint` ✅ · **98 tests** ✅ (24 contrastes calculés, 16 de parité des messages) · `build` ✅ · **20 parcours Playwright** ✅ |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
@@ -61,7 +61,15 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | — | **Routage par fonction, pas par rôle** — pas de routes parallèles `@role` (les profils se recouvrent). | 2026-09-08 |
 | — | **RBAC frontend dérivé des `@PreAuthorize` backend**, jamais réinventé. Le backend reste l'arbitre. | 2026-09-08 |
 | — | **Types TS générés depuis `/v3/api-docs`**, spec figée dans le dépôt. | 2026-09-08 |
-| — | Design : **structure anthracite `#231F20`, identité rouge `#ED1C24`**, couleurs de statut distinctes du rouge de marque. | 2026-09-08 |
+| — | Design : **structure anthracite `#231F20`, identité rouge `#ED1C24`**, couleurs de statut distinctes du rouge de marque. **L'action principale est anthracite, jamais rouge.** | 2026-09-08 |
+| **QF-09** | **Français uniquement**, sans i18n. | 2026-09-08 |
+| **QF-10** | **Thème clair uniquement** — `next-themes` désinstallé. | 2026-09-08 |
+| **QF-13** | Palette validée, **vérifiée par 24 assertions de contraste** calculées sur les jetons réels. | 2026-09-08 |
+| **QF-18** | **Formulaire d'identification dans l'application** (`grant_type=password`) ; Keycloak valide en arrière-plan. Limites connues : ni MFA, ni réinitialisation, ni connexion unique. | 2026-09-08 |
+| **QF-19** | **Une seule racine `/`**, au contenu adapté au profil. **Pas** de redirection par rôle : aucun profil interne n'a de métier unique. | 2026-09-08 |
+| **QF-09** | ~~Français seul~~ → **bilingue français / anglais** (`next-intl`, cookie, sans préfixe d'URL). Libellés dans `messages/*.json`, jamais dans le code. | 2026-09-08 |
+| **QF-09b** | Préférence de langue dans un **cookie** — propre au navigateur, pas au compte. | 2026-09-08 |
+| — | Conventions d'interface alignées sur **GFA** (application Afriland en production, capture dans `images/`). | 2026-09-08 |
 
 ## 5. Conventions
 
@@ -73,8 +81,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   jamais masquer une fonctionnalité pour éviter d'exposer la lacune. Consigner sous `QF-xx` dans
   `DECISIONS_AND_OPEN_QUESTIONS.md`. *(Consigne utilisateur du 2026-09-08. Modèles de signalement :
   QF-01, QF-02, QF-03, QF-07, QF-08.)*
-- **Langue** : interface, libellés, messages et commentaires en **français**. Identifiants
-  techniques en français quand ils reprennent le domaine (`dossier`, `delibere`, `etapeId`).
+- **Langue** : l'interface est **bilingue français / anglais**. **Aucun texte visible en dur dans
+  le code** — tout passe par `messages/fr.json` et `messages/en.json`. Le code, les commentaires et
+  les identifiants techniques restent en français (`dossier`, `delibere`, `etapeId`).
+  Ajouter une clé dans une seule langue fait échouer `tests/unit/messages.test.ts`.
 - **Arborescence** : `services/` (miroir 1:1 des endpoints) → `hooks/` (TanStack Query) →
   `components/modules/<module>/`. Clés de cache centralisées.
 - **Commits** : Conventional Commits avec scope (`feat(dossiers):`). **Ne jamais committer sans
@@ -103,6 +113,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - **Multipart** : métadonnées en `@RequestParam`, seul `file` en `@RequestPart`.
 - **`ROLE_SAISIE` est composite** : porté automatiquement par JURISTE, DJ, DJA, ASSISTANTE, SH.
 - **`AVOCAT` n'a PAS `ROLE_CONSULTATION`** → il n'atteint que 6 endpoints. Cause de QF-01.
+- **Les cinq profils internes sont tous des « juristes augmentés »** : chacun porte `ROLE_SAISIE` et
+  `ROLE_CONSULTATION` en plus de son profil. Ne pas se fier aux descriptions fonctionnelles du
+  backend (« le SH signe les constitutions ») pour en déduire ses droits — il en a **11 sur 36**.
+  Se référer à `lib/rbac.ts`, dérivé des `@PreAuthorize`.
 - Le jeton ne contient **pas** l'`utilisateur.id` numérique (QF-02).
 - Push temps réel : STOMP sur SockJS, endpoint `/ws`, destination `/user/queue/alertes`, jeton dans
   la trame `CONNECT`. Repli garanti : `GET /alertes/mes-notifications`.
@@ -126,6 +140,13 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   d'identité silencieuse.
 - **Playwright : délai global relevé à 90 s.** En mode développement, Next compile chaque route au
   premier accès, et les parcours d'authentification traversent un vrai Keycloak.
+- **`getByLabel` fait une correspondance partielle.** Le bouton « Afficher le mot de passe » capte
+  `getByLabel("Mot de passe")` : utiliser `{ exact: true }` plutôt que dégrader un libellé utile aux
+  lecteurs d'écran.
+- **Ne pas cliquer avant la fin de l'hydratation** dans un script de capture : `waitUntil: "load"`
+  puis une pause. Un clic perdu donne l'illusion d'un composant cassé.
+- **L'écran de connexion est non défilable** (`h-svh` + `overflow-hidden`) : toute addition de
+  contenu doit être vérifiée à 1280×600, sinon elle sera coupée sans avertissement.
 
 ### Faits vérifiés en conditions réelles (backend démarré, 2026-09-08)
 
@@ -158,10 +179,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-08** | Aucune file « sensibilité à valider » ni « dérogations en attente » pour DJ/DJA | F7 |
 | QF-02 | Pas d'endpoint « moi » → contournement par rapprochement d'email | F2 |
 | QF-06 | CORS MinIO / affichage inline des documents | F10 |
-| QF-09 | Confirmer : français seul, sans i18n | F3 |
-| QF-10 | Conserver ou non le thème sombre | F3 |
 | QF-11 | Temps réel STOMP ou rafraîchissement périodique | F14 |
-| QF-13 | Validation de la palette Afriland | F3 |
 
 Détail complet et recommandations : `DECISIONS_AND_OPEN_QUESTIONS.md`.
 

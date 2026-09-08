@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
-import { Source_Serif_4, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { AppProvider } from "@/providers";
 
 import "./globals.css";
 
+/**
+ * QF-09 (révisé) : **français et anglais**, les deux langues officielles du Cameroun. La langue
+ * active vient d'un cookie ; l'URL ne porte aucun préfixe, afin que les liens profonds des
+ * notifications restent valables d'un utilisateur à l'autre.
+ *
+ * Typographie sans empattement, conformément à l'usage des applications internes de la banque.
+ * Le mono sert aux données alignées : références de dossier, montants, codes d'erreur.
+ */
 const sans = IBM_Plex_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -12,27 +22,31 @@ const sans = IBM_Plex_Sans({
   display: "swap",
 });
 
-const serif = Source_Serif_4({
-  variable: "--font-serif",
+const mono = IBM_Plex_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Audiences et Délibérés",
-    template: "%s · Audiences et Délibérés",
-  },
-  description:
-    "Suivi des audiences, des délibérés et des décisions définitives — Direction Juridique, Afriland First Bank Cameroun.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("commun");
+  return {
+    title: { default: t("application"), template: `%s · ${t("application")}` },
+    description: `${t("direction")} — ${t("organisation")}`,
+    icons: { icon: "/brand/symbole-afriland.svg" },
+  };
+}
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <body className={`${sans.variable} ${serif.variable} antialiased`}>
-        <AppProvider>{children}</AppProvider>
+    <html lang={locale}>
+      <body className={`${sans.variable} ${mono.variable}`}>
+        <NextIntlClientProvider>
+          <AppProvider>{children}</AppProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

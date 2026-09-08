@@ -1,15 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  PROFILS_METIER,
-  Role,
-  StatutCycleVie,
-  TypeAlerte,
-  libelleRole,
-  libelleStatutCycleVie,
-  libelleTypeAlerte,
-} from "@/types/enums";
+import { PROFILS_METIER, Role, StatutCycleVie, TypeAlerte } from "@/types/enums";
 
+/**
+ * Ce fichier vérifie le **contrat** : les valeurs que le backend renvoie. Les libellés, eux, sont
+ * vérifiés par `messages.test.ts` — ils vivent désormais dans les fichiers de traduction.
+ */
 describe("énumérations du domaine", () => {
   it("couvre les 17 types d'alerte du backend (Q-22)", () => {
     expect(TypeAlerte).toHaveLength(17);
@@ -28,17 +24,6 @@ describe("énumérations du domaine", () => {
 
   it("expose les 8 rôles Keycloak du realm", () => {
     expect(Role).toHaveLength(8);
-  });
-
-  /** Aucune valeur technique ne doit jamais atteindre l'utilisateur faute de libellé. */
-  it.each([
-    ["StatutCycleVie", StatutCycleVie, libelleStatutCycleVie],
-    ["TypeAlerte", TypeAlerte, libelleTypeAlerte],
-    ["Role", Role, libelleRole],
-  ])("%s : chaque valeur a un libellé français non vide", (_nom, valeurs, libelles) => {
-    for (const valeur of valeurs) {
-      expect(libelles[valeur as keyof typeof libelles]).toBeTruthy();
-    }
   });
 
   it("exclut les rôles transverses des profils métier", () => {

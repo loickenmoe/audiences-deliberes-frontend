@@ -1,0 +1,296 @@
+{
+  "commun": {
+    "application": "Hearings and Deliberations",
+    "organisation": "Afriland First Bank",
+    "direction": "Legal Department",
+    "copyright": "© {annee} Afriland First Bank. All rights reserved.",
+    "chargement": "Loading",
+    "reessayer": "Try again",
+    "annuler": "Cancel",
+    "enregistrer": "Save",
+    "fermer": "Close",
+    "rechercher": "Search",
+    "aucuneValeur": "—",
+    "profilInconnu": "Unknown profile",
+    "langue": "Language",
+    "francais": "Français",
+    "anglais": "English"
+  },
+  "connexion": {
+    "titre": "Sign in",
+    "bienvenue": "Welcome to Hearings and Deliberations",
+    "sousTitre": "Legal Department - hearings, deliberations and final judgments",
+    "identifiant": "Username",
+    "motDePasse": "Password",
+    "action": "Sign in",
+    "enCours": "Signing in…",
+    "mention": "Use the credentials of your Afriland First Bank account.",
+    "deconnexion": "Sign out",
+    "champsRequis": "Enter your username and password.",
+    "identifiantsRefuses": "Incorrect username or password.",
+    "serviceIndisponible": "The identity service is temporarily unavailable. Please try again shortly.",
+    "sessionExpiree": "Your session has expired. Sign in again to continue.",
+    "afficherMotDePasse": "Show password",
+    "masquerMotDePasse": "Hide password"
+  },
+  "navigation": {
+    "principale": "Main navigation",
+    "accueil": "Home",
+    "notifications": "Notifications",
+    "dossiers": "Case files",
+    "clients": "Clients",
+    "calendrier": "Hearing calendar",
+    "frais": "Counsel fees",
+    "publications": "Filings",
+    "constitutions": "Letters of engagement",
+    "repertoire": "Counsel directory",
+    "jurisprudence": "Case law",
+    "tableauDeBord": "Dashboard",
+    "rapports": "Reports",
+    "intervenants": "Service providers",
+    "configuration": "Settings",
+    "modulesAVenir": "Further modules will appear as milestones are delivered."
+  },
+  "accueil": {
+    "titre": "Home",
+    "bonjour": "Hello {prenom}",
+    "bonjourSansPrenom": "Hello",
+    "sessionActive": "Your session is active. Business modules will appear as milestones are delivered.",
+    "rolesTitre": "Roles on your account",
+    "rolesDescription": "An account carries several roles at once: its business profile plus the cross-cutting roles.",
+    "droitsTitre": "Permissions granted",
+    "droitsDescription": "{accordees} of {total} capabilities, derived from the backend authorisations."
+  },
+  "erreurs": {
+    "titreGenerique": "Loading failed",
+    "reseau": "The server cannot be reached. Check your connection.",
+    "generique": "Something went wrong.",
+    "ERR-001": "Required information is missing.",
+    "ERR-002": "This case file reference is already in use.",
+    "ERR-003": "This assignment already exists.",
+    "ERR-004": "This stage transition is not allowed.",
+    "ERR-005": "A hearing is already scheduled on that date for this stage.",
+    "ERR-006": "This invoice reference has already been submitted.",
+    "ERR-008": "Document format or size not accepted.",
+    "ERR-009": "This filing is not available to you.",
+    "ERR-VALIDATION": "The request is invalid.",
+    "ERR-UNAUTHENTICATED": "Your session has expired. Sign in again.",
+    "ERR-FORBIDDEN": "You do not have the permissions required for this action.",
+    "ERR-NOT-FOUND": "This item cannot be found.",
+    "ERR-CONFLICT": "This operation conflicts with the current state of the data.",
+    "ERR-BUSINESS-RULE": "This operation breaches a business rule.",
+    "ERR-INTERNAL": "An internal error occurred. Please try again shortly."
+  },
+  "pages": {
+    "introuvableCode": "Error 404",
+    "introuvableTitre": "Page not found",
+    "introuvableTexte": "This page does not exist or has been moved.",
+    "retourAccueil": "Back to home",
+    "refusCode": "Access denied",
+    "refusTitre": "You do not have the required permissions",
+    "refusTexte": "This page is reserved for other profiles. If you believe this is a mistake, contact the Legal Department."
+  },
+  "roles": {
+    "ROLE_JURISTE": "Legal Officer",
+    "ROLE_DJ": "Legal Director",
+    "ROLE_DJA": "Deputy Legal Director",
+    "ROLE_ASSISTANTE": "Executive Assistant",
+    "ROLE_SH": "Department Head",
+    "ROLE_AVOCAT": "External Counsel",
+    "ROLE_CONSULTATION": "Read access",
+    "ROLE_SAISIE": "Data entry"
+  },
+  "domaine": {
+    "CategorieDossier": {
+      "RECOUVREMENT": "Debt recovery",
+      "EXPLOITATION_LITIGES": "Operational disputes"
+    },
+    "TypeEtape": {
+      "INSTANCE": "First instance",
+      "RECOURS_1": "First appeal",
+      "RECOURS_2": "Second appeal"
+    },
+    "StatutCycleVie": {
+      "OUVERTURE": "Opened",
+      "EN_COURS": "In progress",
+      "EN_DELIBERE": "Reserved for judgment",
+      "DELIBERE_VIDE": "Judgment delivered",
+      "CLOTURE": "Closed",
+      "ARCHIVE": "Archived"
+    },
+    "StatutValidation": {
+      "EN_ATTENTE": "Pending",
+      "VALIDEE": "Approved",
+      "REJETEE": "Rejected"
+    },
+    "SeuilOrigine": {
+      "GLOBAL": "Global threshold",
+      "DEROGATION": "Approved derogation"
+    },
+    "StatutAudience": {
+      "PLANIFIEE": "Scheduled",
+      "TENUE": "Held",
+      "ANNULEE": "Cancelled"
+    },
+    "StatutAlarme": {
+      "ACTIVE": "Active",
+      "TRAITEE": "Handled"
+    },
+    "PeriodeCalendrier": {
+      "HEBDOMADAIRE": "Week",
+      "MENSUELLE": "Month",
+      "TRIMESTRIELLE": "Quarter"
+    },
+    "FormatExport": {
+      "JSON": "On screen",
+      "PDF": "PDF",
+      "EXCEL": "Excel"
+    },
+    "ResultatDelibere": {
+      "FAVORABLE": "Favourable",
+      "DEFAVORABLE": "Unfavourable",
+      "MIXTE": "Mixed"
+    },
+    "StatutExpedition": {
+      "A_LEVER": "To be obtained",
+      "LEVEE": "Obtained"
+    },
+    "StatutCircuitFrais": {
+      "DEPOSEE": "Submitted",
+      "CONFORMITE": "Compliance checked",
+      "OPPORTUNITE": "Awaiting joint approval",
+      "VALIDEE": "Approved",
+      "REJETEE": "Rejected",
+      "PAYEE": "Paid"
+    },
+    "StatutPaiementFrais": {
+      "EN_ATTENTE": "Awaiting payment",
+      "PAYEE": "Paid"
+    },
+    "TypePublication": {
+      "CR_AUDIENCE": "Hearing report",
+      "AUTRE": "Other filing"
+    },
+    "TypeAutrePublication": {
+      "PIECE": "Exhibit",
+      "DECISION": "Judgment",
+      "CONCLUSION": "Submissions"
+    },
+    "StatutPublication": {
+      "DEPOSE": "Submitted",
+      "VALIDE": "Approved",
+      "REJETE": "Rejected"
+    },
+    "TypeIntervenant": {
+      "AVOCAT": "Counsel",
+      "AUTRE_PRESTATAIRE": "Other service provider"
+    },
+    "StatutConstitution": {
+      "EN_ATTENTE": "Awaiting signature",
+      "VALIDEE": "Signed",
+      "REJETEE": "Rejected"
+    },
+    "FormatDocument": {
+      "PDF": "PDF",
+      "PNG": "PNG image",
+      "JPG": "JPEG image",
+      "TXT": "Text",
+      "XLSX": "Excel workbook"
+    },
+    "StatutSuppression": {
+      "EN_ATTENTE": "Awaiting approval",
+      "APPROUVEE": "Approved",
+      "REJETEE": "Rejected"
+    },
+    "StatutAlerte": {
+      "DECLENCHEE": "Unread",
+      "TRAITEE": "Handled"
+    },
+    "CanalAlerte": {
+      "APPLICATIF": "In-app",
+      "OUTLOOK": "Outlook",
+      "TEAMS": "Teams"
+    },
+    "TypeAlerte": {
+      "RAPPEL_AUDIENCE": "Hearing reminder",
+      "DELAI_RECOURS": "Appeal deadline",
+      "PROROGATION": "Repeated extensions",
+      "ALARME": "Reminder due",
+      "DOUBLON_AFFECTATION": "Duplicate assignment",
+      "DOUBLON_AUDIENCE": "Duplicate hearing",
+      "DOUBLON_FACTURE": "Duplicate invoice",
+      "NOUVELLE_DEMANDE_FRAIS": "New fee claim",
+      "VALIDATION_CONJOINTE_REQUISE": "Joint approval required",
+      "PAIEMENT_EFFECTUE": "Payment made",
+      "NOUVELLE_PUBLICATION": "New filing",
+      "DOCUMENT_CHARGE": "Document uploaded",
+      "SUPPRESSION_DOCUMENT": "Document deletion",
+      "CONSTITUTION_A_SIGNER": "Letter of engagement to sign",
+      "CHARGE_MAX_AVOCAT": "Counsel workload threshold",
+      "DELIBERE_ATTENDU": "Judgment expected",
+      "DOSSIER_INCOMPLET": "Incomplete case file"
+    },
+    "SensCondamnation": {
+      "BANQUE_REDEVABLE": "The bank is liable",
+      "TIERS_REDEVABLE": "The third party is liable"
+    },
+    "StatutPaiementCondamnation": {
+      "EN_ATTENTE": "Pending",
+      "PAYE": "Paid",
+      "RECOUVREMENT_FORCE": "Enforced recovery"
+    },
+    "TypeArchiveJurisprudence": {
+      "EXTRAIT_MINUTE": "Extract of the record",
+      "EXPEDITION": "Certified copy",
+      "GROSSE": "Enforceable copy"
+    },
+    "TypeRapport": {
+      "JOURNALIER": "Daily",
+      "HEBDOMADAIRE": "Weekly",
+      "MENSUEL": "Monthly",
+      "TRIMESTRIEL": "Quarterly",
+      "ANNUEL": "Annual"
+    },
+    "FormatRapport": {
+      "JSON": "On screen",
+      "PDF": "PDF",
+      "EXCEL": "Excel",
+      "CSV": "CSV"
+    }
+  },
+  "referentiels": {
+    "naturesDossier": {
+      "SAISIE_IMMOBILIERE": "Real property attachment",
+      "HYPOTHEQUE_JUDICIAIRE": "Judicial mortgage (provisional and final registration, enforcement)",
+      "RECOUVREMENT_LEASING": "Judicial recovery on leasing or lease-back",
+      "INTERDICTION_CREDIT": "Blacklisting, credit ban",
+      "ASSIGNATION_PAIEMENT": "Writ of summons for payment",
+      "SAISIE_MOBILIERE": "Attachment of tangible movable property",
+      "INJONCTION_PAYER": "Order to pay or to deliver",
+      "SAISIE_CREANCES": "Application for garnishment of receivables or challenge",
+      "RECOUVREMENT_PENAL": "Recovery through criminal proceedings",
+      "AUTRES_CONTENTIEUX_RECOUVREMENT": "Other recovery litigation",
+      "CONTENTIEUX_EXECUTION": "Enforcement litigation",
+      "CIVIL_COMMERCIAL": "Civil and commercial",
+      "SOCIAL": "Labour",
+      "PENAL": "Criminal",
+      "ASSIGNATIONS_DIVERSES": "Writs of summons (for payment, for release of funds, etc.)",
+      "RECOUVREMENT_INCIDENT_COMPTE": "Recovery of account incidents",
+      "PROCEDURES_SPECIFIQUES": "Other specific proceedings (arbitration, administrative litigation)"
+    },
+    "typesClientSensible": {
+      "VIP": "VIP client",
+      "ENTREPRISE": "Company / legal entity",
+      "PARTICULIER": "Individual"
+    },
+    "configurations": {
+      "SEUIL_MONTANT_DEFAUT": "Amount above which a fee claim requires the joint approval of the Legal Director and the Deputy Legal Director.",
+      "SEUIL_PROROGATIONS": "Number of extensions beyond which an alert is raised.",
+      "CANAUX_NOTIFICATION_DEFAUT": "Channels used by default to deliver alerts.",
+      "DELAI_VALIDATION_CONJOINTE": "Maximum number of days for the joint approval of a fee claim.",
+      "TAILLE_MAX_GED": "Maximum size of a document uploaded to the document management system.",
+      "FORMATS_GED": "File formats accepted by the document management system.",
+      "CHARGE_MAX_AVOCAT": "Maximum number of active case files per counsel before an alert is raised."
+    }
+  }
+}

@@ -1,0 +1,296 @@
+{
+  "commun": {
+    "application": "Audiences et Délibérés",
+    "organisation": "Afriland First Bank",
+    "direction": "Direction Juridique",
+    "copyright": "© {annee} Afriland First Bank. Tous droits réservés.",
+    "chargement": "Chargement en cours",
+    "reessayer": "Réessayer",
+    "annuler": "Annuler",
+    "enregistrer": "Enregistrer",
+    "fermer": "Fermer",
+    "rechercher": "Rechercher",
+    "aucuneValeur": "—",
+    "profilInconnu": "Profil inconnu",
+    "langue": "Langue",
+    "francais": "Français",
+    "anglais": "English"
+  },
+  "connexion": {
+    "titre": "Connexion",
+    "bienvenue": "Bienvenue sur Audiences et Délibérés",
+    "sousTitre": "Direction Juridique - audiences, délibérés et décisions définitives",
+    "identifiant": "Identifiant",
+    "motDePasse": "Mot de passe",
+    "action": "Connexion",
+    "enCours": "Connexion en cours…",
+    "mention": "Vos identifiants sont ceux de votre compte Afriland First Bank.",
+    "deconnexion": "Se déconnecter",
+    "champsRequis": "Renseignez votre identifiant et votre mot de passe.",
+    "identifiantsRefuses": "Identifiant ou mot de passe incorrect.",
+    "serviceIndisponible": "Le service d’identité est momentanément injoignable. Réessayez dans un instant.",
+    "sessionExpiree": "Votre session a expiré. Reconnectez-vous pour continuer.",
+    "afficherMotDePasse": "Afficher le mot de passe",
+    "masquerMotDePasse": "Masquer le mot de passe"
+  },
+  "navigation": {
+    "principale": "Navigation principale",
+    "accueil": "Accueil",
+    "notifications": "Notifications",
+    "dossiers": "Dossiers",
+    "clients": "Clients",
+    "calendrier": "Calendrier",
+    "frais": "Frais d’avocats",
+    "publications": "Publications",
+    "constitutions": "Constitutions",
+    "repertoire": "Répertoire des avocats",
+    "jurisprudence": "Jurisprudence",
+    "tableauDeBord": "Tableau de bord",
+    "rapports": "Rapports",
+    "intervenants": "Intervenants",
+    "configuration": "Configuration",
+    "modulesAVenir": "Les autres modules apparaîtront au fil des jalons."
+  },
+  "accueil": {
+    "titre": "Accueil",
+    "bonjour": "Bonjour {prenom}",
+    "bonjourSansPrenom": "Bonjour",
+    "sessionActive": "Votre session est active. Les modules métier apparaîtront au fil des jalons.",
+    "rolesTitre": "Rôles de votre compte",
+    "rolesDescription": "Un compte porte plusieurs rôles simultanément : son profil métier et les rôles transverses.",
+    "droitsTitre": "Droits accordés",
+    "droitsDescription": "{accordees} sur {total} capacités, dérivées des autorisations du backend."
+  },
+  "erreurs": {
+    "titreGenerique": "Le chargement a échoué",
+    "reseau": "Le serveur est injoignable. Vérifiez votre connexion.",
+    "generique": "Une erreur est survenue.",
+    "ERR-001": "Des informations obligatoires sont manquantes.",
+    "ERR-002": "Cette référence de dossier est déjà utilisée.",
+    "ERR-003": "Cette affectation existe déjà.",
+    "ERR-004": "Ce changement d’étape n’est pas autorisé.",
+    "ERR-005": "Une audience est déjà planifiée à cette date pour cette étape.",
+    "ERR-006": "Cette référence de facture a déjà été déposée.",
+    "ERR-008": "Format ou taille de document non conforme.",
+    "ERR-009": "Cette publication ne vous est pas accessible.",
+    "ERR-VALIDATION": "La demande est invalide.",
+    "ERR-UNAUTHENTICATED": "Votre session a expiré. Reconnectez-vous.",
+    "ERR-FORBIDDEN": "Vous n’avez pas les droits nécessaires pour cette action.",
+    "ERR-NOT-FOUND": "Cet élément est introuvable.",
+    "ERR-CONFLICT": "Cette opération entre en conflit avec l’état actuel des données.",
+    "ERR-BUSINESS-RULE": "Cette opération ne respecte pas une règle de gestion.",
+    "ERR-INTERNAL": "Une erreur interne est survenue. Réessayez dans un instant."
+  },
+  "pages": {
+    "introuvableCode": "Erreur 404",
+    "introuvableTitre": "Page introuvable",
+    "introuvableTexte": "Cette page n’existe pas ou a été déplacée.",
+    "retourAccueil": "Revenir à l’accueil",
+    "refusCode": "Accès refusé",
+    "refusTitre": "Vous n’avez pas les droits nécessaires",
+    "refusTexte": "Cette page est réservée à d’autres profils. Si vous pensez qu’il s’agit d’une erreur, contactez la Direction Juridique."
+  },
+  "roles": {
+    "ROLE_JURISTE": "Juriste",
+    "ROLE_DJ": "Directeur Juridique",
+    "ROLE_DJA": "Directeur Juridique Adjoint",
+    "ROLE_ASSISTANTE": "Assistante de Direction",
+    "ROLE_SH": "Supérieur Hiérarchique",
+    "ROLE_AVOCAT": "Avocat partenaire",
+    "ROLE_CONSULTATION": "Consultation",
+    "ROLE_SAISIE": "Saisie"
+  },
+  "domaine": {
+    "CategorieDossier": {
+      "RECOUVREMENT": "Recouvrement",
+      "EXPLOITATION_LITIGES": "Litiges d’exploitation"
+    },
+    "TypeEtape": {
+      "INSTANCE": "Instance",
+      "RECOURS_1": "Premier recours",
+      "RECOURS_2": "Second recours"
+    },
+    "StatutCycleVie": {
+      "OUVERTURE": "Ouverture",
+      "EN_COURS": "En cours",
+      "EN_DELIBERE": "En délibéré",
+      "DELIBERE_VIDE": "Délibéré vidé",
+      "CLOTURE": "Clôturée",
+      "ARCHIVE": "Archivée"
+    },
+    "StatutValidation": {
+      "EN_ATTENTE": "En attente",
+      "VALIDEE": "Validée",
+      "REJETEE": "Rejetée"
+    },
+    "SeuilOrigine": {
+      "GLOBAL": "Seuil global",
+      "DEROGATION": "Dérogation validée"
+    },
+    "StatutAudience": {
+      "PLANIFIEE": "Planifiée",
+      "TENUE": "Tenue",
+      "ANNULEE": "Annulée"
+    },
+    "StatutAlarme": {
+      "ACTIVE": "Active",
+      "TRAITEE": "Traitée"
+    },
+    "PeriodeCalendrier": {
+      "HEBDOMADAIRE": "Semaine",
+      "MENSUELLE": "Mois",
+      "TRIMESTRIELLE": "Trimestre"
+    },
+    "FormatExport": {
+      "JSON": "Écran",
+      "PDF": "PDF",
+      "EXCEL": "Excel"
+    },
+    "ResultatDelibere": {
+      "FAVORABLE": "Favorable",
+      "DEFAVORABLE": "Défavorable",
+      "MIXTE": "Mixte"
+    },
+    "StatutExpedition": {
+      "A_LEVER": "À lever",
+      "LEVEE": "Levée"
+    },
+    "StatutCircuitFrais": {
+      "DEPOSEE": "Déposée",
+      "CONFORMITE": "Conformité contrôlée",
+      "OPPORTUNITE": "Validation conjointe attendue",
+      "VALIDEE": "Validée",
+      "REJETEE": "Rejetée",
+      "PAYEE": "Payée"
+    },
+    "StatutPaiementFrais": {
+      "EN_ATTENTE": "En attente de paiement",
+      "PAYEE": "Payée"
+    },
+    "TypePublication": {
+      "CR_AUDIENCE": "Compte rendu d’audience",
+      "AUTRE": "Autre publication"
+    },
+    "TypeAutrePublication": {
+      "PIECE": "Pièce",
+      "DECISION": "Décision",
+      "CONCLUSION": "Conclusion"
+    },
+    "StatutPublication": {
+      "DEPOSE": "Déposée",
+      "VALIDE": "Validée",
+      "REJETE": "Rejetée"
+    },
+    "TypeIntervenant": {
+      "AVOCAT": "Avocat",
+      "AUTRE_PRESTATAIRE": "Autre prestataire"
+    },
+    "StatutConstitution": {
+      "EN_ATTENTE": "En attente de signature",
+      "VALIDEE": "Signée",
+      "REJETEE": "Rejetée"
+    },
+    "FormatDocument": {
+      "PDF": "PDF",
+      "PNG": "Image PNG",
+      "JPG": "Image JPEG",
+      "TXT": "Texte",
+      "XLSX": "Classeur Excel"
+    },
+    "StatutSuppression": {
+      "EN_ATTENTE": "En attente d’approbation",
+      "APPROUVEE": "Approuvée",
+      "REJETEE": "Rejetée"
+    },
+    "StatutAlerte": {
+      "DECLENCHEE": "Non lue",
+      "TRAITEE": "Traitée"
+    },
+    "CanalAlerte": {
+      "APPLICATIF": "Application",
+      "OUTLOOK": "Outlook",
+      "TEAMS": "Teams"
+    },
+    "TypeAlerte": {
+      "RAPPEL_AUDIENCE": "Rappel d’audience",
+      "DELAI_RECOURS": "Délai de recours",
+      "PROROGATION": "Prorogations répétées",
+      "ALARME": "Alarme arrivée à échéance",
+      "DOUBLON_AFFECTATION": "Doublon d’affectation",
+      "DOUBLON_AUDIENCE": "Doublon d’audience",
+      "DOUBLON_FACTURE": "Facture en double",
+      "NOUVELLE_DEMANDE_FRAIS": "Nouvelle demande de frais",
+      "VALIDATION_CONJOINTE_REQUISE": "Validation conjointe requise",
+      "PAIEMENT_EFFECTUE": "Paiement effectué",
+      "NOUVELLE_PUBLICATION": "Nouvelle publication",
+      "DOCUMENT_CHARGE": "Document ajouté",
+      "SUPPRESSION_DOCUMENT": "Suppression de document",
+      "CONSTITUTION_A_SIGNER": "Constitution à signer",
+      "CHARGE_MAX_AVOCAT": "Charge maximale d’un avocat",
+      "DELIBERE_ATTENDU": "Délibéré attendu",
+      "DOSSIER_INCOMPLET": "Dossier incomplet"
+    },
+    "SensCondamnation": {
+      "BANQUE_REDEVABLE": "La banque est redevable",
+      "TIERS_REDEVABLE": "Le tiers est redevable"
+    },
+    "StatutPaiementCondamnation": {
+      "EN_ATTENTE": "En attente",
+      "PAYE": "Payée",
+      "RECOUVREMENT_FORCE": "Recouvrement forcé"
+    },
+    "TypeArchiveJurisprudence": {
+      "EXTRAIT_MINUTE": "Extrait de minute",
+      "EXPEDITION": "Expédition",
+      "GROSSE": "Grosse"
+    },
+    "TypeRapport": {
+      "JOURNALIER": "Journalier",
+      "HEBDOMADAIRE": "Hebdomadaire",
+      "MENSUEL": "Mensuel",
+      "TRIMESTRIEL": "Trimestriel",
+      "ANNUEL": "Annuel"
+    },
+    "FormatRapport": {
+      "JSON": "Écran",
+      "PDF": "PDF",
+      "EXCEL": "Excel",
+      "CSV": "CSV"
+    }
+  },
+  "referentiels": {
+    "naturesDossier": {
+      "SAISIE_IMMOBILIERE": "Saisie immobilière",
+      "HYPOTHEQUE_JUDICIAIRE": "Hypothèque judiciaire (inscription provisoire, définitive, réalisation)",
+      "RECOUVREMENT_LEASING": "Recouvrement judiciaire sur leasing ou lease-back",
+      "INTERDICTION_CREDIT": "Mise à l’index, interdiction de crédit",
+      "ASSIGNATION_PAIEMENT": "Assignation en paiement",
+      "SAISIE_MOBILIERE": "Saisies mobilières corporelles",
+      "INJONCTION_PAYER": "Injonction de payer ou de délivrer",
+      "SAISIE_CREANCES": "Requête aux fins de saisie de créances ou contestation",
+      "RECOUVREMENT_PENAL": "Recouvrement par voie pénale",
+      "AUTRES_CONTENTIEUX_RECOUVREMENT": "Autres contentieux (recouvrement)",
+      "CONTENTIEUX_EXECUTION": "Contentieux de l’exécution",
+      "CIVIL_COMMERCIAL": "Civil et commercial",
+      "SOCIAL": "Social",
+      "PENAL": "Pénal",
+      "ASSIGNATIONS_DIVERSES": "Assignations (en paiement, en déblocage, etc.)",
+      "RECOUVREMENT_INCIDENT_COMPTE": "Recouvrement d’incidents de compte",
+      "PROCEDURES_SPECIFIQUES": "Autres procédures spécifiques (arbitral, contentieux administratif)"
+    },
+    "typesClientSensible": {
+      "VIP": "Client VIP",
+      "ENTREPRISE": "Entreprise / personne morale",
+      "PARTICULIER": "Particulier"
+    },
+    "configurations": {
+      "SEUIL_MONTANT_DEFAUT": "Montant à partir duquel une demande de frais requiert la validation conjointe du Directeur Juridique et de son Adjoint.",
+      "SEUIL_PROROGATIONS": "Nombre de prorogations au-delà duquel une alerte est déclenchée.",
+      "CANAUX_NOTIFICATION_DEFAUT": "Canaux utilisés par défaut pour l’envoi des alertes.",
+      "DELAI_VALIDATION_CONJOINTE": "Délai maximal, en jours, pour la validation conjointe d’une demande de frais.",
+      "TAILLE_MAX_GED": "Poids maximal d’un document chargé dans la gestion documentaire.",
+      "FORMATS_GED": "Formats de fichiers acceptés dans la gestion documentaire.",
+      "CHARGE_MAX_AVOCAT": "Nombre maximal de dossiers actifs par avocat avant déclenchement d’une alerte."
+    }
+  }
+}
