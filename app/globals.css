@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/*
+ * Jetons neutres du jalon F1 — l'identité Afriland (structure anthracite, identité rouge)
+ * est posée au jalon F3. Ne pas ajouter de couleur de marque ici avant cet arbitrage (QF-13).
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #231f20;
+  --muted: #f4f1f1;
+  --muted-foreground: #5a5456;
+  --border: #e4dfdf;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #171415;
+    --foreground: #efebeb;
+    --muted: #262122;
+    --muted-foreground: #b3acad;
+    --border: #332d2e;
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: #171415;
+  --foreground: #efebeb;
+  --muted: #262122;
+  --muted-foreground: #b3acad;
+  --border: #332d2e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

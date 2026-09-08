@@ -33,7 +33,7 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | Date | Réf. | Décision | Impact |
 |---|---|---|---|
 | 2026-09-08 | **QF-01** | **Le portail Avocat est reporté au jalon F16.** Les 5 profils internes sont livrés d'abord. Un ajout backend limité (lectures cadrées sur l'avocat connecté) le précédera. | Écrans 30 et 33 hors périmètre jusqu'à F16 |
-| 2026-09-08 | **QF-05** | **Réutilisation du client Keycloak `audiences-api`** (confidentiel, secret côté serveur Next.js, `redirectUris` inclut déjà `http://localhost:3000/*`). **Aucune modification du realm backend.** | F2 |
+| 2026-09-08 | **QF-05** | **Réutilisation du client Keycloak `audiences-api`** (confidentiel, secret côté serveur Next.js, `redirectUris` inclut déjà `http://localhost:3000/*`). **Aucune modification du realm backend.** ⚠️ Vérifié en réel : le `client_secret` est **obligatoire** — la commande du `README.md` backend, qui l'omet, échoue en `unauthorized_client`. Secret dans `keycloak/audiences-realm.json`, à ne jamais exposer au navigateur. | F2 |
 | 2026-09-08 | **QF-15** | **Vitest + Testing Library + MSW** (unitaire/intégration) et **Playwright** (e2e). Le template n'avait aucun test. | F1 |
 | 2026-09-08 | — | Pile : Next.js 15 App Router · React 19 · TS strict · Tailwind v4 · shadcn/ui · TanStack Query + Table · react-hook-form + Zod · axios · sonner · date-fns · lucide · recharts. | F1 |
 | 2026-09-08 | — | **Routage par fonction, pas par rôle.** Pas de routes parallèles `@role` : les profils se recouvrent (le DJ est un juriste augmenté). Un arbre unique + gardes de route + navigation filtrée. | F2 |
@@ -42,6 +42,8 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | **Design : structure anthracite `#231F20`, identité rouge `#ED1C24`.** Rouge dérivé `#B3141B` pour le texte. Couleurs de statut distinctes du rouge de marque. | F3 |
 | 2026-09-08 | — | L'authentification du template (provider Credentials vers `/auth/login`) est **supprimée, pas adaptée** : ce chemin a été retiré du backend en M1 pour raison de sécurité (R-03). | F2 |
 | 2026-09-08 | — | Le modèle « un rôle par utilisateur » du template est **remplacé par `roles: string[]`** : chaque utilisateur porte simultanément son profil, `ROLE_CONSULTATION` et `ROLE_SAISIE`. | F2 |
+| 2026-09-08 | — | **Deux dépôts GitHub distincts.** Le travail courant se fait dans le dépôt frontend. Le backend reste en lecture seule par défaut, mais **sera modifié ponctuellement quand un jalon l'exigera**, sur décision explicite de l'utilisateur. Les lacunes QF-01, QF-03 (et le cas échéant QF-02, QF-07, QF-08) seront traitées ainsi, au jalon concerné. | F13, F16 |
+| 2026-09-08 | — | **Flux de branches en deux phases.** (1) Tant que le socle F1→F4 n'est pas prêt : travail **direct sur `main`**, aucune branche. (2) Ensuite **un écran = une branche** ; une fois l'écran testé et approuvé, **l'utilisateur pousse la branche puis la merge dans `dev`**, qui rassemble les écrans fonctionnels. Je crée et j'alimente la branche locale ; **je ne pousse ni ne merge jamais.** | tous |
 
 ---
 
@@ -114,6 +116,44 @@ qui requièrent leur intervention — alors que ces deux validations leur sont e
 
 **Recommandation.** Un paramètre `?sensibiliteStatut=EN_ATTENTE` sur #2 et une file des dérogations
 suffiraient. Même raisonnement que les trois files ajoutées en M15. **Statut : ouvert, impacte F7.**
+
+### 🔴 QF-16 — Provisionnement paresseux : un juriste jamais connecté est inaffectable
+
+**Constat, vérifié en conditions réelles le 2026-09-08** (backend démarré, base fraîche). La table
+`utilisateur` est alimentée **paresseusement** : un compte n'y apparaît qu'au premier appel d'un
+endpoint qui résout l'utilisateur courant. Séquence observée :
+
+```
+GET /utilisateurs                 → []          (juriste.test pourtant authentifié)
+GET /alertes/mes-notifications    → 200         (déclenche le provisionnement)
+GET /utilisateurs                 → [{id:1, nom:"Juriste", profil:"JURISTE", actif:true}]
+```
+
+`GET /dossiers` et `GET /utilisateurs` **ne déclenchent pas** le provisionnement.
+
+**Conséquences.**
+1. **Le sélecteur « juristes affectés » de l'écran 06 ne listera que les collègues déjà connectés.**
+   Un juriste à qui l'on veut confier un dossier avant sa première connexion est **invisible et
+   inaffectable**, alors que `juristesAffectes` est `@NotEmpty`.
+2. **Amorçage impossible sur base neuve** : aucun `utilisateur` n'existe, donc **le tout premier
+   dossier ne peut pas être créé** tant qu'aucun juriste ne s'est connecté.
+3. Le contournement de QF-02 (retrouver son propre `id` par rapprochement d'email) ne fonctionne
+   qu'après auto-provisionnement.
+
+**Traitement côté frontend (F2), suffisant pour 2 et 3.** Appeler
+`GET /alertes/mes-notifications` **dans l'amorçage de session, juste après la connexion**. Un seul
+appel qui auto-provisionne l'utilisateur *et* alimente le badge de notifications dont toutes les
+pages ont besoin. C'est une contrainte de conception, pas un contournement caché.
+
+**Reste à arbitrer : le point 1.** Est-il acceptable qu'un juriste doive s'être connecté au moins
+une fois pour être affectable ? En pratique la Direction Juridique compte peu d'utilisateurs et
+tous se connecteront, mais un dossier urgent confié à un collègue absent resterait bloqué.
+
+**Recommandation.** Accepter la limite pour la V1 et la documenter dans la doc utilisateur (« chaque
+utilisateur doit se connecter une fois pour apparaître dans les listes d'affectation »). Si elle est
+jugée inacceptable, un pré-provisionnement backend depuis Keycloak serait nécessaire — évolution non
+triviale, à ne décider qu'en connaissance de cause. **Statut : ouvert, impacte F2 (traitement) et
+F6 (arbitrage).**
 
 ### 🟡 QF-02 — Pas d'endpoint « moi »
 
@@ -191,12 +231,27 @@ Utiliser `GET /dossiers/{id}/documents` (#43). **Contrainte connue, pas une ques
 
 ## RISQUES
 
-### 🔴 RF-02 — Expiration de session en cours de saisie
+### 🔴 RF-02 — Le refresh token expire AVANT l'access token
 
-Les jetons Keycloak expirent en quelques minutes. Sans rotation du refresh token dans le callback
-`jwt` de NextAuth, l'utilisateur serait déconnecté en pleine saisie d'un formulaire long — le
-formulaire de création de dossier compte une vingtaine de champs. **À traiter en F2, pas après.**
-Prévoir aussi une déconnexion propre si le rafraîchissement échoue, plutôt qu'une boucle de 401.
+**Mesuré le 2026-09-08 sur le Keycloak réel** (et non supposé) :
+
+| Jeton | Durée de vie |
+|---|---|
+| `access_token` | **3600 s — 60 min** |
+| `refresh_token` | **1800 s — 30 min** |
+
+Le refresh token est **deux fois plus court** que l'access token. La rotation naïve — « rafraîchir
+quand l'access token approche de son expiration », le patron NextAuth le plus répandu — **échouerait
+systématiquement** : à 55 minutes, le refresh token est mort depuis 25 minutes. L'utilisateur serait
+déconnecté à chaque session dépassant la demi-heure, en pleine saisie d'un formulaire de création de
+dossier qui compte une vingtaine de champs.
+
+**Conception à retenir en F2** : piloter le rafraîchissement sur **`refresh_expires_in`**, pas sur
+`expires_in` — se rafraîchir vers **25 minutes**, ce qui fait tourner le refresh token et prolonge
+la fenêtre. Prévoir une déconnexion propre si le rafraîchissement échoue, plutôt qu'une boucle de
+401. **À traiter en F2, pas après.**
+
+> Ces durées sont celles du realm de développement. À revérifier si le realm de production diffère.
 
 ### 🟡 RF-01 — CORS et affichage des documents MinIO
 
@@ -207,11 +262,27 @@ Voir QF-06. **À vérifier en F10.**
 `/v3/api-docs` et `/swagger-ui` sont accessibles sans authentification (R-08 backend, à fermer avant
 production). Le frontend est conçu pour ne pas en dépendre (QF-12). **Aucune action frontend.**
 
-### 🟡 RF-04 — Dépôt git non initialisé
+### 🔴 RF-04 — `.gitignore` absent sur un dépôt déjà publié
 
-Le répertoire frontend n'est pas un dépôt git. **À faire en F1.** Ne jamais versionner de secret :
-le backend a connu une fuite d'identifiants réels via un `env.template` versionné (R-01) — ne pas
-reproduire.
+**Résolu partiellement le 2026-09-08** : le dépôt est initialisé et poussé
+(`git@github.com:loickenmoe/audiences-deliberes-frontend.git`, branche `main`, commit `39de75d`).
+
+**Mais aucun `.gitignore` n'existe.** Le dépôt ne contient aujourd'hui que 13 fichiers sûrs (6
+fichiers de contexte, le prompt de cadrage, 6 logos). Dès le premier `npm install` de F1 :
+
+- `node_modules/` (des dizaines de milliers de fichiers) devient committable ;
+- `.next/`, les artefacts de build et les rapports de couverture aussi ;
+- surtout, un `.env.local` porteur du **secret du client Keycloak `audiences-api`** deviendrait
+  committable — et le dépôt est déjà en ligne.
+
+Le backend a connu précisément cette fuite : `env.template` versionné avec des identifiants Neon et
+iDrive e2 réels (R-01), dont la rotation reste une action utilisateur en attente. **Ne pas
+reproduire.**
+
+**Action : créer le `.gitignore` en tout premier lieu au jalon F1, avant toute installation de
+dépendance.** Couvrir au minimum `node_modules/`, `.next/`, `out/`, `build/`, `coverage/`,
+`playwright-report/`, `test-results/`, `.env*` (avec exception explicite pour `env.template`),
+`*.tsbuildinfo`, `.DS_Store`.
 
 ### 🟡 RF-05 — Annuaires non paginés
 

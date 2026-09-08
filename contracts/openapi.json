@@ -1,0 +1,4887 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Audiences Application API",
+    "description": "API documentation for the Audiences Web Application",
+    "termsOfService": "http://swagger.io/terms/",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://springdoc.org"
+    },
+    "version": "v1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/publications/{id}/validation": {
+      "put": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "valider",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValiderPublicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/{id}/approbation-suppression": {
+      "put": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "approuverOuRejeter",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprobationSuppressionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeSuppressionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/frais/demandes/{id}/opportunite": {
+      "put": {
+        "tags": [
+          "frais-controller"
+        ],
+        "operationId": "controlerOpportunite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControleOpportuniteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeFraisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/frais/demandes/{id}/conformite": {
+      "put": {
+        "tags": [
+          "frais-controller"
+        ],
+        "operationId": "controlerConformite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControleConformiteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeFraisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/seuil-derogation/{auditId}": {
+      "put": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "validerDerogationSeuil",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "auditId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValiderDerogationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditSeuilResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/affectation": {
+      "put": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "modifierAffectation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "forcer",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierAffectationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deliberes/{id}/expedition": {
+      "put": {
+        "tags": [
+          "delibere-controller"
+        ],
+        "operationId": "modifierExpedition",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DelibereResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/constitutions/prestataires/{id}/validation": {
+      "put": {
+        "tags": [
+          "constitution-controller"
+        ],
+        "operationId": "valider_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValiderConstitutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeConstitutionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configurations/{cle}": {
+      "put": {
+        "tags": [
+          "configuration-controller"
+        ],
+        "operationId": "modifier",
+        "parameters": [
+          {
+            "name": "cle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierConfigurationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audiences/{id}/compte-rendu": {
+      "put": {
+        "tags": [
+          "audience-controller"
+        ],
+        "operationId": "enregistrerCompteRendu",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnregistrerCompteRenduRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudienceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertes/seuils": {
+      "put": {
+        "tags": [
+          "alerte-controller"
+        ],
+        "operationId": "modifierSeuil",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierSeuilRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alarmes/{id}/reprogrammer": {
+      "put": {
+        "tags": [
+          "alarme-controller"
+        ],
+        "operationId": "reprogrammerAlarme",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprogrammerAlarmeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/{id}/correspondance": {
+      "post": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "transmettreCorrespondance",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrespondanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrespondanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/{id}/commentaires": {
+      "post": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "commenter",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentaireRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentaireResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/cr-audience": {
+      "post": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "deposerCompteRendu",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeposerCompteRenduRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/autres": {
+      "post": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "deposerAutre",
+        "parameters": [
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "typeDocument",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PIECE",
+                "DECISION",
+                "CONCLUSION"
+              ]
+            }
+          },
+          {
+            "name": "restrictionAcces",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jurisprudences": {
+      "get": {
+        "tags": [
+          "jurisprudence-controller"
+        ],
+        "operationId": "rechercher",
+        "parameters": [
+          {
+            "name": "motCle",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "natureDecision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "juridiction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseJurisprudenceResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "jurisprudence-controller"
+        ],
+        "operationId": "creer",
+        "parameters": [
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "typeArchive",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EXTRAIT_MINUTE",
+                "EXPEDITION",
+                "GROSSE"
+              ]
+            }
+          },
+          {
+            "name": "motsCles",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "natureDecision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "juridiction",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateDecision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JurisprudenceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/intervenants": {
+      "get": {
+        "tags": [
+          "intervenant-controller"
+        ],
+        "operationId": "lister_3",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AVOCAT",
+                "AUTRE_PRESTATAIRE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IntervenantResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "intervenant-controller"
+        ],
+        "operationId": "creer_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerIntervenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntervenantResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents": {
+      "post": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "uploaderDocument",
+        "parameters": [
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "typeDocument",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/frais/demandes": {
+      "get": {
+        "tags": [
+          "frais-controller"
+        ],
+        "operationId": "lister_4",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DEPOSEE",
+                "CONFORMITE",
+                "OPPORTUNITE",
+                "VALIDEE",
+                "REJETEE",
+                "PAYEE"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDemandeFraisResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "frais-controller"
+        ],
+        "operationId": "deposer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeposerFraisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeFraisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/frais/demandes/{id}/validation-conjointe": {
+      "post": {
+        "tags": [
+          "frais-controller"
+        ],
+        "operationId": "validerConjointement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationConjointeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeFraisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers": {
+      "get": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "listerDossiers",
+        "parameters": [
+          {
+            "name": "nature",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categorie",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECOUVREMENT",
+                "EXPLOITATION_LITIGES"
+              ]
+            }
+          },
+          {
+            "name": "juridiction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDossierResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "creerDossier",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerDossierRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/seuil-derogation": {
+      "post": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "demanderDerogationSeuil",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemandeDerogationSeuilRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditSeuilResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/sensibilite/validation": {
+      "post": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "validerSensibilite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValiderSensibiliteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/etapes": {
+      "post": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "creerEtape",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerEtapeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EtapeProcedureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/deliberes": {
+      "get": {
+        "tags": [
+          "delibere-controller"
+        ],
+        "operationId": "listerDeliberesDossier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DelibereResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "delibere-controller"
+        ],
+        "operationId": "enregistrerDelibere",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnregistrerDelibereRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DelibereResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/condamnations": {
+      "post": {
+        "tags": [
+          "decision-definitive-controller"
+        ],
+        "operationId": "creerCondamnation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerCondamnationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CondamnationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/audiences": {
+      "get": {
+        "tags": [
+          "audience-controller"
+        ],
+        "operationId": "listerAudiencesDossier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudienceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "audience-controller"
+        ],
+        "operationId": "planifierAudience",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "forcer",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanifierAudienceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudienceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/alarmes": {
+      "get": {
+        "tags": [
+          "alarme-controller"
+        ],
+        "operationId": "listerAlarmesDossier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlarmeResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "alarme-controller"
+        ],
+        "operationId": "creerAlarme",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerAlarmeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/adjudications": {
+      "post": {
+        "tags": [
+          "decision-definitive-controller"
+        ],
+        "operationId": "creerAdjudication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerAdjudicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjudicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deliberes/{id}/rabattement": {
+      "post": {
+        "tags": [
+          "delibere-controller"
+        ],
+        "operationId": "rabattre",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RabattementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EtapeProcedureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deliberes/{id}/prorogations": {
+      "post": {
+        "tags": [
+          "delibere-controller"
+        ],
+        "operationId": "proroger",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerProrogationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProrogationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/constitutions/prestataires": {
+      "get": {
+        "tags": [
+          "constitution-controller"
+        ],
+        "operationId": "lister_5",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EN_ATTENTE",
+                "VALIDEE",
+                "REJETEE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DemandeConstitutionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "constitution-controller"
+        ],
+        "operationId": "creerDemande",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerConstitutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeConstitutionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients": {
+      "get": {
+        "tags": [
+          "client-controller"
+        ],
+        "operationId": "rechercherClients",
+        "parameters": [
+          {
+            "name": "nom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reference",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseClientResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "client-controller"
+        ],
+        "operationId": "creerClient",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreerClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/frais/demandes/{id}/paiement": {
+      "patch": {
+        "tags": [
+          "frais-controller"
+        ],
+        "operationId": "enregistrerPaiement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeFraisResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/etapes/{etapeId}/statut": {
+      "patch": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "modifierStatutEtape",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierStatutEtapeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EtapeProcedureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/condamnations/{id}/statut": {
+      "patch": {
+        "tags": [
+          "decision-definitive-controller"
+        ],
+        "operationId": "modifierStatutCondamnation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierStatutCondamnationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CondamnationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertes/{id}/traiter": {
+      "patch": {
+        "tags": [
+          "alerte-controller"
+        ],
+        "operationId": "traiter",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlerteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/utilisateurs": {
+      "get": {
+        "tags": [
+          "utilisateur-controller"
+        ],
+        "operationId": "lister",
+        "parameters": [
+          {
+            "name": "profil",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inclureInactifs",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UtilisateurResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tableau-de-bord": {
+      "get": {
+        "tags": [
+          "reporting-controller"
+        ],
+        "operationId": "tableauDeBord",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableauDeBordResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/repertoire/avocats": {
+      "get": {
+        "tags": [
+          "repertoire-controller"
+        ],
+        "operationId": "lister_1",
+        "parameters": [
+          {
+            "name": "nom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvocatRepertoireResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/referentiels/types-client-sensible": {
+      "get": {
+        "tags": [
+          "referentiel-controller"
+        ],
+        "operationId": "typesClientSensible",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TypeClientSensibleResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/referentiels/natures-dossier": {
+      "get": {
+        "tags": [
+          "referentiel-controller"
+        ],
+        "operationId": "naturesDossier",
+        "parameters": [
+          {
+            "name": "categorie",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECOUVREMENT",
+                "EXPLOITATION_LITIGES"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NatureDossierResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapports": {
+      "get": {
+        "tags": [
+          "reporting-controller"
+        ],
+        "operationId": "rapports",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JOURNALIER",
+                "HEBDOMADAIRE",
+                "MENSUEL",
+                "TRIMESTRIEL",
+                "ANNUEL"
+              ]
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "JSON",
+              "enum": [
+                "JSON",
+                "PDF",
+                "EXCEL",
+                "CSV"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications": {
+      "get": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "lister_2",
+        "parameters": [
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DEPOSE",
+                "VALIDE",
+                "REJETE"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponsePublicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/{id}": {
+      "get": {
+        "tags": [
+          "publication-controller"
+        ],
+        "operationId": "obtenir",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/rapport-journalier": {
+      "get": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "rapportJournalier",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RapportJournalierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/{id}": {
+      "get": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "obtenirDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "supprimerOuDemander",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/demandes-suppression": {
+      "get": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "listerDemandesSuppression",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EN_ATTENTE",
+                "APPROUVEE",
+                "REJETEE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DemandeSuppressionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}": {
+      "get": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "consulterDossier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dossiers/{id}/documents": {
+      "get": {
+        "tags": [
+          "ged-controller"
+        ],
+        "operationId": "listerDocumentsDossier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deliberes/{id}/recours": {
+      "get": {
+        "tags": [
+          "delibere-controller"
+        ],
+        "operationId": "consulterRecours",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoursResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configurations": {
+      "get": {
+        "tags": [
+          "configuration-controller"
+        ],
+        "operationId": "lister_6",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConfigurationResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{id}": {
+      "get": {
+        "tags": [
+          "client-controller"
+        ],
+        "operationId": "consulterClient",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{clientId}/dossiers": {
+      "get": {
+        "tags": [
+          "client-controller"
+        ],
+        "operationId": "vueConsolidee",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VueClientDossiersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audiences/calendrier": {
+      "get": {
+        "tags": [
+          "audience-controller"
+        ],
+        "operationId": "calendrier",
+        "parameters": [
+          {
+            "name": "periode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HEBDOMADAIRE",
+                "MENSUELLE",
+                "TRIMESTRIELLE"
+              ]
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "JSON",
+              "enum": [
+                "JSON",
+                "PDF",
+                "EXCEL"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertes/mes-notifications": {
+      "get": {
+        "tags": [
+          "alerte-controller"
+        ],
+        "operationId": "mesNotifications",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DECLENCHEE",
+                "TRAITEE"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAlerteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ValiderPublicationRequest": {
+        "required": [
+          "statut"
+        ],
+        "type": "object",
+        "properties": {
+          "statut": {
+            "type": "string",
+            "enum": [
+              "DEPOSE",
+              "VALIDE",
+              "REJETE"
+            ]
+          },
+          "motifRejet": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CR_AUDIENCE",
+              "AUTRE"
+            ]
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "avocatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateDepot": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "statutValidation": {
+            "type": "string",
+            "enum": [
+              "DEPOSE",
+              "VALIDE",
+              "REJETE"
+            ]
+          },
+          "motifRejet": {
+            "type": "string"
+          },
+          "restrictionAccesId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "audienceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contenu": {
+            "type": "string"
+          },
+          "typeDocument": {
+            "type": "string",
+            "enum": [
+              "PIECE",
+              "DECISION",
+              "CONCLUSION"
+            ]
+          }
+        }
+      },
+      "ApprobationSuppressionRequest": {
+        "required": [
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "APPROUVEE",
+              "REJETEE"
+            ]
+          },
+          "motifRejet": {
+            "type": "string"
+          }
+        }
+      },
+      "DemandeSuppressionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "documentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "demandeurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "motif": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "APPROUVEE",
+              "REJETEE"
+            ]
+          },
+          "valideParId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "motifRejet": {
+            "type": "string"
+          },
+          "dateDemande": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateDerniereRelance": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ControleOpportuniteRequest": {
+        "required": [
+          "accord"
+        ],
+        "type": "object",
+        "properties": {
+          "accord": {
+            "type": "boolean"
+          },
+          "motifRejet": {
+            "type": "string"
+          }
+        }
+      },
+      "DemandeFraisResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "avocatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "montant": {
+            "type": "number",
+            "format": "double"
+          },
+          "piecesJustificatives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "statutCircuit": {
+            "type": "string",
+            "enum": [
+              "DEPOSEE",
+              "CONFORMITE",
+              "OPPORTUNITE",
+              "VALIDEE",
+              "REJETEE",
+              "PAYEE"
+            ]
+          },
+          "motifRejet": {
+            "type": "string"
+          },
+          "statutPaiement": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "PAYEE"
+            ]
+          },
+          "referenceFacture": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ControleConformiteRequest": {
+        "required": [
+          "conforme"
+        ],
+        "type": "object",
+        "properties": {
+          "conforme": {
+            "type": "boolean"
+          },
+          "motifRejet": {
+            "type": "string"
+          }
+        }
+      },
+      "ValiderDerogationRequest": {
+        "required": [
+          "statut"
+        ],
+        "type": "object",
+        "properties": {
+          "statut": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "VALIDEE",
+              "REJETEE"
+            ]
+          },
+          "motif": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "AuditSeuilResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utilisateurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ancienSeuil": {
+            "type": "number",
+            "format": "double"
+          },
+          "nouveauSeuil": {
+            "type": "number",
+            "format": "double"
+          },
+          "motif": {
+            "type": "string"
+          },
+          "validePar": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "VALIDEE",
+              "REJETEE"
+            ]
+          },
+          "dateAction": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ModifierAffectationRequest": {
+        "type": "object",
+        "properties": {
+          "juristesAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "avocatsAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "DossierResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "nature": {
+            "type": "string"
+          },
+          "categorie": {
+            "type": "string",
+            "enum": [
+              "RECOUVREMENT",
+              "EXPLOITATION_LITIGES"
+            ]
+          },
+          "juridictionSaisie": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "clientNom": {
+            "type": "string"
+          },
+          "parties": {
+            "$ref": "#/components/schemas/PartiesDto"
+          },
+          "risqueEncouru": {
+            "type": "number",
+            "format": "double"
+          },
+          "recoursExerces": {
+            "type": "string"
+          },
+          "motifRenvoi": {
+            "type": "string"
+          },
+          "codeAgenceOrigine": {
+            "type": "string"
+          },
+          "codeAgenceContentieuse": {
+            "type": "string"
+          },
+          "dossierCreditOrigine": {
+            "type": "string"
+          },
+          "pvTransfert": {
+            "type": "string"
+          },
+          "incidentCompteReference": {
+            "type": "string"
+          },
+          "elementsJustificatifs": {
+            "type": "string"
+          },
+          "champAlarme": {
+            "type": "string"
+          },
+          "estSensible": {
+            "type": "boolean"
+          },
+          "seuilMontant": {
+            "type": "number",
+            "format": "double"
+          },
+          "typeClientSensible": {
+            "type": "string"
+          },
+          "seuilOrigine": {
+            "type": "string",
+            "enum": [
+              "GLOBAL",
+              "DEROGATION"
+            ]
+          },
+          "sensibiliteStatut": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "VALIDEE",
+              "REJETEE"
+            ]
+          },
+          "sensibiliteMotifRejet": {
+            "type": "string"
+          },
+          "etapes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtapeProcedureResponse"
+            }
+          },
+          "juristesAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "avocatsAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "historique": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoriqueActionResponse"
+            }
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EtapeProcedureResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "INSTANCE",
+              "RECOURS_1",
+              "RECOURS_2"
+            ]
+          },
+          "statutCycleVie": {
+            "type": "string",
+            "enum": [
+              "OUVERTURE",
+              "EN_COURS",
+              "EN_DELIBERE",
+              "DELIBERE_VIDE",
+              "CLOTURE",
+              "ARCHIVE"
+            ]
+          }
+        }
+      },
+      "HistoriqueActionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utilisateurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "action": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "dateAction": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PartiesDto": {
+        "type": "object",
+        "properties": {
+          "demandeur": {
+            "type": "string"
+          },
+          "defendeur": {
+            "type": "string"
+          }
+        }
+      },
+      "ExpeditionRequest": {
+        "required": [
+          "statutExpedition"
+        ],
+        "type": "object",
+        "properties": {
+          "statutExpedition": {
+            "type": "string",
+            "enum": [
+              "A_LEVER",
+              "LEVEE"
+            ]
+          }
+        }
+      },
+      "DelibereResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateDeliberee": {
+            "type": "string",
+            "format": "date"
+          },
+          "resultat": {
+            "type": "string",
+            "enum": [
+              "FAVORABLE",
+              "DEFAVORABLE",
+              "MIXTE"
+            ]
+          },
+          "statutExpedition": {
+            "type": "string",
+            "enum": [
+              "A_LEVER",
+              "LEVEE"
+            ]
+          },
+          "dateEcheanceRecours": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ValiderConstitutionRequest": {
+        "required": [
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "VALIDEE",
+              "REJETEE"
+            ]
+          },
+          "motifRejet": {
+            "type": "string"
+          }
+        }
+      },
+      "DemandeConstitutionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "prestataireId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "demandeurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "motif": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "VALIDEE",
+              "REJETEE"
+            ]
+          },
+          "valideParId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "motifRejet": {
+            "type": "string"
+          },
+          "lettreDocumentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateDemande": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ModifierConfigurationRequest": {
+        "required": [
+          "valeur"
+        ],
+        "type": "object",
+        "properties": {
+          "valeur": {
+            "type": "string"
+          }
+        }
+      },
+      "ConfigurationResponse": {
+        "type": "object",
+        "properties": {
+          "cle": {
+            "type": "string"
+          },
+          "valeur": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "modifiablePar": {
+            "type": "string"
+          },
+          "dateModification": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EnregistrerCompteRenduRequest": {
+        "required": [
+          "compteRendu"
+        ],
+        "type": "object",
+        "properties": {
+          "compteRendu": {
+            "type": "string"
+          }
+        }
+      },
+      "AudienceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "datePlanifiee": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateTenue": {
+            "type": "string",
+            "format": "date"
+          },
+          "compteRendu": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "PLANIFIEE",
+              "TENUE",
+              "ANNULEE"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ModifierSeuilRequest": {
+        "required": [
+          "seuil",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "RAPPEL_AUDIENCE",
+              "DELAI_RECOURS",
+              "PROROGATION",
+              "ALARME",
+              "DOUBLON_AFFECTATION",
+              "DOUBLON_AUDIENCE",
+              "DOUBLON_FACTURE",
+              "NOUVELLE_DEMANDE_FRAIS",
+              "VALIDATION_CONJOINTE_REQUISE",
+              "PAIEMENT_EFFECTUE",
+              "NOUVELLE_PUBLICATION",
+              "DOCUMENT_CHARGE",
+              "SUPPRESSION_DOCUMENT",
+              "CONSTITUTION_A_SIGNER",
+              "CHARGE_MAX_AVOCAT",
+              "DELIBERE_ATTENDU",
+              "DOSSIER_INCOMPLET"
+            ]
+          },
+          "seuil": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ReprogrammerAlarmeRequest": {
+        "required": [
+          "dateEcheance"
+        ],
+        "type": "object",
+        "properties": {
+          "objet": {
+            "type": "string"
+          },
+          "dateEcheance": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AlarmeResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "objet": {
+            "type": "string"
+          },
+          "dateEcheance": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "TRAITEE"
+            ]
+          },
+          "dateTraitement": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "alarmePrecedenteId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdBy": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CorrespondanceRequest": {
+        "required": [
+          "contenu"
+        ],
+        "type": "object",
+        "properties": {
+          "contenu": {
+            "type": "string"
+          }
+        }
+      },
+      "CorrespondanceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "publicationId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "auteurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contenu": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CommentaireRequest": {
+        "required": [
+          "contenu"
+        ],
+        "type": "object",
+        "properties": {
+          "contenu": {
+            "type": "string"
+          }
+        }
+      },
+      "CommentaireResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "publicationId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "auteurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contenu": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeposerCompteRenduRequest": {
+        "required": [
+          "audienceId",
+          "contenu",
+          "dossierId"
+        ],
+        "type": "object",
+        "properties": {
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "audienceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contenu": {
+            "type": "string"
+          },
+          "restrictionAcces": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "JurisprudenceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "typeArchive": {
+            "type": "string",
+            "enum": [
+              "EXTRAIT_MINUTE",
+              "EXPEDITION",
+              "GROSSE"
+            ]
+          },
+          "motsCles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "natureDecision": {
+            "type": "string"
+          },
+          "juridiction": {
+            "type": "string"
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date"
+          },
+          "urlTelechargement": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreerIntervenantRequest": {
+        "required": [
+          "nom",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "AVOCAT",
+              "AUTRE_PRESTATAIRE"
+            ]
+          },
+          "nom": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "telephone": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "compteKeycloak": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "notification": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IntervenantResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "AVOCAT",
+              "AUTRE_PRESTATAIRE"
+            ]
+          },
+          "nom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "compteKeycloak": {
+            "type": "string"
+          },
+          "notification": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DocumentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nomFichier": {
+            "type": "string"
+          },
+          "typeDocument": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "PDF",
+              "PNG",
+              "JPG",
+              "TXT",
+              "XLSX"
+            ]
+          },
+          "poids": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "auteurChargementId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateChargement": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estSupprime": {
+            "type": "boolean"
+          },
+          "urlTelechargement": {
+            "type": "string"
+          }
+        }
+      },
+      "DeposerFraisRequest": {
+        "required": [
+          "dossierId",
+          "montant",
+          "piecesJustificatives",
+          "referenceFacture"
+        ],
+        "type": "object",
+        "properties": {
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "montant": {
+            "type": "number",
+            "format": "double"
+          },
+          "piecesJustificatives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "referenceFacture": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationConjointeRequest": {
+        "required": [
+          "accord"
+        ],
+        "type": "object",
+        "properties": {
+          "accord": {
+            "type": "boolean"
+          },
+          "motifRejet": {
+            "type": "string"
+          }
+        }
+      },
+      "CreerDossierRequest": {
+        "required": [
+          "avocatsAffectes",
+          "clientId",
+          "juridictionSaisie",
+          "juristesAffectes",
+          "nature",
+          "reference",
+          "risqueEncouru"
+        ],
+        "type": "object",
+        "properties": {
+          "reference": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nature": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "categorie": {
+            "type": "string",
+            "enum": [
+              "RECOUVREMENT",
+              "EXPLOITATION_LITIGES"
+            ]
+          },
+          "juridictionSaisie": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "clientId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "parties": {
+            "$ref": "#/components/schemas/PartiesDto"
+          },
+          "risqueEncouru": {
+            "type": "number",
+            "format": "double"
+          },
+          "recoursExerces": {
+            "type": "string"
+          },
+          "motifRenvoi": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "codeAgenceOrigine": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "codeAgenceContentieuse": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "dossierCreditOrigine": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "pvTransfert": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "incidentCompteReference": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "elementsJustificatifs": {
+            "type": "string"
+          },
+          "champAlarme": {
+            "type": "string"
+          },
+          "estSensible": {
+            "type": "boolean"
+          },
+          "seuilMontant": {
+            "type": "number",
+            "format": "double"
+          },
+          "typeClientSensible": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "juristesAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "avocatsAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "DemandeDerogationSeuilRequest": {
+        "required": [
+          "motif",
+          "nouveauSeuil"
+        ],
+        "type": "object",
+        "properties": {
+          "nouveauSeuil": {
+            "type": "number",
+            "format": "double"
+          },
+          "motif": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "ValiderSensibiliteRequest": {
+        "required": [
+          "statut"
+        ],
+        "type": "object",
+        "properties": {
+          "statut": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "VALIDEE",
+              "REJETEE"
+            ]
+          },
+          "motifRejet": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "seuilMontantAjuste": {
+            "type": "number",
+            "format": "double"
+          },
+          "typeClientSensibleAjuste": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "CreerEtapeRequest": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "INSTANCE",
+              "RECOURS_1",
+              "RECOURS_2"
+            ]
+          }
+        }
+      },
+      "EnregistrerDelibereRequest": {
+        "required": [
+          "dateDeliberee",
+          "etapeId",
+          "resultat"
+        ],
+        "type": "object",
+        "properties": {
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateDeliberee": {
+            "type": "string",
+            "format": "date"
+          },
+          "resultat": {
+            "type": "string",
+            "enum": [
+              "FAVORABLE",
+              "DEFAVORABLE",
+              "MIXTE"
+            ]
+          },
+          "dateEcheanceRecours": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreerCondamnationRequest": {
+        "required": [
+          "dateDecision",
+          "naturePaiement",
+          "sens"
+        ],
+        "type": "object",
+        "properties": {
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sens": {
+            "type": "string",
+            "enum": [
+              "BANQUE_REDEVABLE",
+              "TIERS_REDEVABLE"
+            ]
+          },
+          "naturePaiement": {
+            "type": "string"
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "CondamnationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sens": {
+            "type": "string",
+            "enum": [
+              "BANQUE_REDEVABLE",
+              "TIERS_REDEVABLE"
+            ]
+          },
+          "naturePaiement": {
+            "type": "string"
+          },
+          "statutPaiement": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "PAYE",
+              "RECOUVREMENT_FORCE"
+            ]
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PlanifierAudienceRequest": {
+        "required": [
+          "datePlanifiee",
+          "etapeId"
+        ],
+        "type": "object",
+        "properties": {
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "datePlanifiee": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "CreerAlarmeRequest": {
+        "required": [
+          "dateEcheance",
+          "etapeId",
+          "objet"
+        ],
+        "type": "object",
+        "properties": {
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "objet": {
+            "type": "string"
+          },
+          "dateEcheance": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreerAdjudicationRequest": {
+        "required": [
+          "beneficiaire",
+          "dateDecision",
+          "etapeId",
+          "mutation",
+          "reliquat",
+          "repriseProvision",
+          "restitutionSoulte",
+          "statutComptabilisation"
+        ],
+        "type": "object",
+        "properties": {
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "beneficiaire": {
+            "type": "string"
+          },
+          "statutComptabilisation": {
+            "type": "string"
+          },
+          "repriseProvision": {
+            "type": "boolean"
+          },
+          "restitutionSoulte": {
+            "type": "boolean"
+          },
+          "mutation": {
+            "type": "boolean"
+          },
+          "reliquat": {
+            "type": "number",
+            "format": "double"
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "AdjudicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "etapeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "beneficiaire": {
+            "type": "string"
+          },
+          "statutComptabilisation": {
+            "type": "string"
+          },
+          "repriseProvision": {
+            "type": "boolean"
+          },
+          "restitutionSoulte": {
+            "type": "boolean"
+          },
+          "mutation": {
+            "type": "boolean"
+          },
+          "reliquat": {
+            "type": "number",
+            "format": "double"
+          },
+          "dateDecision": {
+            "type": "string",
+            "format": "date"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RabattementRequest": {
+        "required": [
+          "date",
+          "motif"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "motif": {
+            "type": "string"
+          }
+        }
+      },
+      "CreerProrogationRequest": {
+        "required": [
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "motif": {
+            "type": "string"
+          }
+        }
+      },
+      "ProrogationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "delibereId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "motif": {
+            "type": "string"
+          },
+          "compteur": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "alerte": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreerConstitutionRequest": {
+        "required": [
+          "dossierId",
+          "motif",
+          "prestataireId"
+        ],
+        "type": "object",
+        "properties": {
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "prestataireId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "motif": {
+            "type": "string"
+          }
+        }
+      },
+      "CreerClientRequest": {
+        "required": [
+          "nom",
+          "reference"
+        ],
+        "type": "object",
+        "properties": {
+          "reference": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nom": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "telephone": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "ClientResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ModifierStatutEtapeRequest": {
+        "required": [
+          "nouveauStatut"
+        ],
+        "type": "object",
+        "properties": {
+          "nouveauStatut": {
+            "type": "string",
+            "enum": [
+              "OUVERTURE",
+              "EN_COURS",
+              "EN_DELIBERE",
+              "DELIBERE_VIDE",
+              "CLOTURE",
+              "ARCHIVE"
+            ]
+          }
+        }
+      },
+      "ModifierStatutCondamnationRequest": {
+        "required": [
+          "statutPaiement"
+        ],
+        "type": "object",
+        "properties": {
+          "statutPaiement": {
+            "type": "string",
+            "enum": [
+              "EN_ATTENTE",
+              "PAYE",
+              "RECOUVREMENT_FORCE"
+            ]
+          }
+        }
+      },
+      "AlerteResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "destinataireId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "RAPPEL_AUDIENCE",
+              "DELAI_RECOURS",
+              "PROROGATION",
+              "ALARME",
+              "DOUBLON_AFFECTATION",
+              "DOUBLON_AUDIENCE",
+              "DOUBLON_FACTURE",
+              "NOUVELLE_DEMANDE_FRAIS",
+              "VALIDATION_CONJOINTE_REQUISE",
+              "PAIEMENT_EFFECTUE",
+              "NOUVELLE_PUBLICATION",
+              "DOCUMENT_CHARGE",
+              "SUPPRESSION_DOCUMENT",
+              "CONSTITUTION_A_SIGNER",
+              "CHARGE_MAX_AVOCAT",
+              "DELIBERE_ATTENDU",
+              "DOSSIER_INCOMPLET"
+            ]
+          },
+          "declencheur": {
+            "type": "string"
+          },
+          "canal": {
+            "type": "string",
+            "enum": [
+              "APPLICATIF",
+              "OUTLOOK",
+              "TEAMS"
+            ]
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "DECLENCHEE",
+              "TRAITEE"
+            ]
+          },
+          "dateDeclenchement": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateTraitement": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UtilisateurResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "prenom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "profil": {
+            "type": "string"
+          },
+          "actif": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TableauDeBordResponse": {
+        "type": "object",
+        "properties": {
+          "nbDossiersActifs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nbAudiencesPlanifiees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nbDemandesFraisEnAttente": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nbProrogationsAlerte": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tauxSuccesRecouvrement": {
+            "type": "number",
+            "format": "double"
+          },
+          "provisionsReprises": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "AvocatRepertoireResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "indicateurCharge": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "indicateurPerformance": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TypeClientSensibleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "code": {
+            "type": "string"
+          },
+          "libelle": {
+            "type": "string"
+          }
+        }
+      },
+      "NatureDossierResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "code": {
+            "type": "string"
+          },
+          "libelle": {
+            "type": "string"
+          },
+          "categorie": {
+            "type": "string",
+            "enum": [
+              "RECOUVREMENT",
+              "EXPLOITATION_LITIGES"
+            ]
+          }
+        }
+      },
+      "PageResponsePublicationResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicationResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResponseJurisprudenceResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JurisprudenceResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ActePlanifieResponse": {
+        "type": "object",
+        "properties": {
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "datePlanifiee": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RapportJournalierResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "dossiersManipules": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "piecesAjoutees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "affairesNouvelles": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "planificationActes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActePlanifieResponse"
+            }
+          }
+        }
+      },
+      "PageResponseDemandeFraisResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemandeFraisResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResponseDossierResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DossierResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RecoursResponse": {
+        "type": "object",
+        "properties": {
+          "delibereId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateEcheanceRecours": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recoursExerce": {
+            "type": "boolean"
+          },
+          "delaiExpire": {
+            "type": "boolean"
+          },
+          "cloture": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageResponseClientResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClientResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "VueClientDossiersResponse": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "clientNom": {
+            "type": "string"
+          },
+          "recouvrement": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DossierResponse"
+            }
+          },
+          "exploitationLitiges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DossierResponse"
+            }
+          }
+        }
+      },
+      "PageResponseAlerteResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlerteResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "name": "bearerAuth",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

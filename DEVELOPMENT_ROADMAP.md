@@ -1,9 +1,10 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-08 (**F0 achevé**, F1 à préparer).
+> Dernière mise à jour : 2026-09-08 (**F0 validé**, **F1 livré** en attente de validation).
 
-**Statut** : `✅` validé manuellement · `🔵` en cours · `⏳` à faire · `⛔` bloqué
+**Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
+`🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
 
 ---
 
@@ -32,7 +33,7 @@ dossier, aucun délibéré avant une audience.
 
 ## F0 — Mémoire persistante ✅
 
-**Achevé le 2026-09-08.** Aucun code.
+**Achevé, committé et poussé le 2026-09-08** (`39de75d`). Aucun code.
 
 Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECTURE.md`,
 `SCREEN_MAP.md`, `API_INTEGRATION_STATUS.md`, `DEVELOPMENT_ROADMAP.md`,
@@ -42,22 +43,31 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 
 ---
 
-## F1 — Squelette et outillage ⏳
+## F1 — Squelette et outillage 🔵 *(livré, en attente de validation manuelle)*
 
 **Objectif** : un projet Next.js qui démarre, compile, se vérifie et sait parler au backend.
 
-- `git init`, `.gitignore`, `README.md`, `env.template` (valeurs locales, **aucun secret réel**).
+- 🔴 **`.gitignore` EN TOUT PREMIER**, avant `npm install` (RF-04) — le dépôt est déjà en ligne et
+  n'en a pas. Puis `README.md` et `env.template` (valeurs locales, **aucun secret réel**).
+  *(`git init` : fait le 2026-09-08, hors jalon.)*
 - Next.js 15 App Router, TypeScript strict, Tailwind v4, shadcn/ui (`components.json`).
 - ESLint + Prettier ; scripts `dev`, `build`, `lint`, `typecheck`, `test`, `test:e2e`.
 - `lib/env.ts` — validation Zod de l'environnement, **échec explicite** si une variable manque.
 - `contracts/openapi.json` figé + génération de `types/api.generated.ts` (`openapi-typescript`).
-- `types/enums.ts` — les 31 énumérations du domaine et leurs libellés français.
+- `types/enums.ts` — les **28 énumérations exposées par l'API** (sur 31 côté backend ; 3 sont internes, recoupé avec `contracts/openapi.json`) et leurs libellés français.
 - Vitest + Testing Library + MSW + Playwright, avec un test témoin par niveau.
 - `app/layout.tsx`, providers (thème, TanStack Query, session, toasts), page `not-found`.
 
-**Vérifications** : `npm run build`, `lint`, `typecheck` et `test` passent ; `npm run dev` sert une
-page.
+**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **27 tests unitaires** ✅ ·
+`build` ✅ (4 pages, 101 kB de JS partagé) · **3 parcours Playwright** ✅ ·
+**`npm run smoke` : 17 hypothèses vérifiées contre le backend réel** ✅.
 **Dépend de** : F0.
+
+> **Ajouts hors périmètre annoncé, justifiés en cours de jalon :**
+> `scripts/smoke-backend.mjs` (`npm run smoke`) — vérifie que les hypothèses du code frontend tiennent
+> sur le backend réel : forme des erreurs, forme de la pagination, claim `roles`, durées de vie des
+> jetons, provisionnement paresseux, périmètre du profil avocat. À rejouer **à chaque jalon**.
+> `.gitattributes` — normalisation des fins de ligne, git signalait des conversions LF/CRLF.
 
 ---
 
@@ -219,13 +229,15 @@ lettre consultable dans la GED ; répertoire trié par charge croissante.
 
 ---
 
-## F13 — Décisions définitives et jurisprudence ⛔
+## F13 — Décisions définitives et jurisprudence ⏳ *(inclut une évolution backend)*
 
 Écrans **14**, **38**. Endpoints **#51-55**.
 
-⛔ **Bloqué en lecture par QF-03** : aucun `GET` sur les adjudications ni les condamnations.
-L'onglet 14 ne peut être livré qu'en écriture seule tant que ce point n'est pas tranché. La base
-jurisprudentielle (**38**), elle, est complète et livrable.
+🔧 **Comprend une évolution backend (QF-03)** : aucun `GET` n'existe sur les adjudications ni les
+condamnations, l'onglet 14 serait sinon en écriture seule. Ajout attendu :
+`GET /dossiers/{id}/decisions`, symétrique de #56/#57/#58 livrés en M15, sans règle métier nouvelle.
+**À décider et à réaliser au début de ce jalon**, dans le dépôt backend. La base jurisprudentielle
+(**38**) est livrable sans cette évolution.
 
 **Vérifications** : adjudication refusée hors étape `CLOTURE` ; reliquat négatif refusé ; indexation
 jurisprudentielle incomplète refusée ; recherche par mots-clés, nature et juridiction ;
@@ -257,13 +269,15 @@ restrictions de rôle respectées.
 
 ---
 
-## F16 — Portail Avocat ⛔
+## F16 — Portail Avocat ⏳ *(inclut une évolution backend)*
 
 Écrans **30**, **33**. Endpoints **#23**, **#29**, **#31**, **#45-46**, **#28**.
 
-⛔ **Conditionné à un ajout backend** (décision QF-01 actée) : l'avocat doit pouvoir découvrir ses
+🔧 **Comprend une évolution backend** (décision QF-01 actée) : l'avocat doit pouvoir découvrir ses
 dossiers et les audiences associées, relire ses publications et consulter ses lettres de
-constitution. Quatre lectures cadrées sur l'avocat connecté suffiraient.
+constitution. Quatre lectures cadrées sur l'avocat connecté suffiraient — **sans** lui accorder
+`ROLE_CONSULTATION`, qui lui ouvrirait tous les dossiers, clients et employés.
+**À spécifier et à réaliser au début de ce jalon**, dans le dépôt backend.
 
 **Vérifications** : un avocat ne voit **que** ses dossiers, ses demandes et ses publications ; il ne
 peut énumérer ni le personnel interne, ni les clients, ni les autres dossiers.
@@ -285,10 +299,10 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | ⛔ | ⏳ | ⏳ | ⛔ | ⏳ |
+| **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**1 jalon sur 18 achevé · 0 écran sur 42 · 0 endpoint sur 67.**
+**1 jalon validé sur 18 · F1 livré en attente de validation · 0 écran métier sur 42 · 0 endpoint consommé sur 67.**
