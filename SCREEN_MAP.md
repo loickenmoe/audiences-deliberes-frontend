@@ -1,7 +1,7 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-08 (jalon F2 — écrans 01 et 04 livrés, 02 en socle).
+> Dernière mise à jour : 2026-09-09 (jalon F5 — écrans 19, 20, 21 et 42 livrés).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -80,9 +80,9 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ❌ |
-| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ❌ |
-| 21 | Création client | modale | SAI | `POST /clients` | F5 | ❌ |
+| 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ✅ |
+| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ✅ |
+| 21 | Création client | modale (écran 19) | SAI | `POST /clients` | F5 | ✅ |
 
 > **20** : la réponse regroupe les dossiers en `{recouvrement[], exploitationLitiges[]}` et est
 > **indépendante de l'affectation du juriste**. Structure vide (200) si aucun dossier.
@@ -205,7 +205,7 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}`, `PUT /alertes/seuils` | F14 | ❌ |
-| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ❌ |
+| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.

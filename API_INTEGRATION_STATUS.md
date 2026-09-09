@@ -2,7 +2,7 @@
 
 > Les **67 endpoints HTTP** exposés par le backend et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-08 (jalon F2 — 1 endpoint consommé pour l'amorçage de session).
+> Dernière mise à jour : 2026-09-09 (jalon F5 — 7 endpoints consommés, 2 prêts).
 
 > **Décompte** — le backend annonce « 66 endpoints » : ce sont les **66 numérotés** `#1` à `#66`.
 > S'y ajoute `POST /dossiers/{id}/etapes`, réel mais laissé **non numéroté** par le backend
@@ -58,10 +58,10 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 9 | GET | `/clients?nom&reference&page&size` | CONS | 19 | F5 | ❌ |
-| 10 | GET | `/clients/{id}` | CONS | 20 | F5 | ❌ |
-| 11 | GET | `/clients/{clientId}/dossiers` | CONS | 20 | F5 | ❌ |
-| 12 | POST | `/clients` | SAI | 21 | F5 | ❌ |
+| 9 | GET | `/clients?nom&reference&page&size` | CONS | 19 | F5 | ✅ |
+| 10 | GET | `/clients/{id}` | CONS | 20 | F5 | ✅ |
+| 11 | GET | `/clients/{clientId}/dossiers` | CONS | 20 | F5 | ✅ |
+| 12 | POST | `/clients` | SAI | 21 | F5 | ✅ |
 
 - **#11** — renvoie `{clientId, clientNom, recouvrement[], exploitationLitiges[]}`, indépendant de
   l'affectation du juriste. 404 si le client n'existe pas ; structure vide (200) sinon.
@@ -160,8 +160,8 @@
 | 36 | PUT | `/constitutions/prestataires/{id}/validation` | SH | 35 | F12 | ❌ |
 | 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ❌ |
 | 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ❌ |
-| 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ❌ |
-| 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ❌ |
+| 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
+| 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |
 
 - **#35** — `dossierId`, `prestataireId`, **motif obligatoire**. Notifie les SH.
 - **#36** — l'approbation **génère la lettre de constitution** (PDF) et l'attache comme document
@@ -240,9 +240,9 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 64 | GET | `/referentiels/natures-dossier?categorie=` | CONS | 06 | F5 | ❌ |
-| 65 | GET | `/referentiels/types-client-sensible` | CONS | 06 | F5 | ❌ |
-| 66 | GET | `/utilisateurs?profil=&inclureInactifs=` | CONS | 06, 16 | F5 | ❌ |
+| 64 | GET | `/referentiels/natures-dossier?categorie=` | CONS | 06 | F5 | 🟡 service et hook prêts, consommés à l'écran en F6 |
+| 65 | GET | `/referentiels/types-client-sensible` | CONS | 06 | F5 | 🟡 service et hook prêts, consommés à l'écran en F6 |
+| 66 | GET | `/utilisateurs?profil=&inclureInactifs=` | CONS | 06, 16 | F5 | ✅ consommé par `useLibelles` |
 
 - **#64** — filtrable par catégorie, entrées actives seulement. Lecture seule (administré en base
   par le DJ, CONF02).
@@ -276,7 +276,7 @@ jalon F16**, précédé d'un ajout backend limité à quelques lectures cadrées
 | Code | HTTP | Traitement UI |
 |---|---|---|
 | `ERR-001` | 400 | Erreurs de champ sur le formulaire |
-| `ERR-002` | 409 | Erreur sur `reference` |
+| `ERR-002` | 409 | Erreur sur `reference` — **référence de dossier uniquement** (`DossierService`) |
 | `ERR-003` | 409 | **Dialogue de confirmation** → rejeu `?forcer=true` |
 | `ERR-004` | 400 | Message + états de transition permis |
 | `ERR-005` | 409 | **Dialogue de confirmation** → rejeu `?forcer=true` |
@@ -287,16 +287,47 @@ jalon F16**, précédé d'un ajout backend limité à quelques lectures cadrées
 | `ERR-UNAUTHENTICATED` | 401 | Reconnexion |
 | `ERR-FORBIDDEN` | 403 | Écran non autorisé |
 | `ERR-NOT-FOUND` | 404 | Écran introuvable |
-| `ERR-CONFLICT` / `ERR-BUSINESS-RULE` | 409 / 422 | Message métier tel quel |
+| `ERR-CONFLICT` | 409 | **Générique : 10 conflits distincts.** Le corps nomme le champ visé dans `champ` quand il y en a un |
+| `ERR-BUSINESS-RULE` | 422 | Message métier tel quel |
 | `ERR-INTERNAL` | 500 | Message générique |
 
 `ERR-007` **n'existe pas** : au-delà du seuil, une prorogation renvoie 201 avec `alerte: true`.
+
+### `ERR-CONFLICT` et le champ fautif (constat, puis correction — 2026-09-09)
+
+Le doublon de **référence client** ne renvoie pas `ERR-002` — réservé aux dossiers — mais le code
+générique `ERR-CONFLICT` :
+
+```
+POST /clients (2e fois)  →  409
+{"code":"ERR-CONFLICT","message":"La référence client 'CLI-DIAG-101107' est déjà utilisée","details":null}
+```
+
+Le backend emploie ce même code pour **dix conflits sans rapport entre eux** : référence client
+prise (`ClientService`), compte Keycloak déjà rattaché à un avocat (`IntervenantService`), étape
+déjà ouverte (`DossierService`), accord de frais déjà enregistré, demande de suppression déjà en
+attente, publication déjà traitée, correspondance déjà transmise, demande de constitution déjà
+traitée. `details` est toujours `null` : **aucun champ n'est nommé**.
+
+**Corrigé le jour même dans le backend** (QF-21). Le corps d'erreur porte désormais un champ
+`champ`, distinct de `details`, présent uniquement quand une erreur vise un champ précis :
+
+```
+POST /clients (doublon)  →  409
+{"code":"ERR-CONFLICT","message":"La référence client '…' est déjà utilisée","details":null,"champ":"reference"}
+```
+
+Cinq erreurs le renseignent : référence client, `compteKeycloak` d'un avocat, `ERR-002` référence de
+dossier, `type` d'une étape déjà ouverte, `ERR-006` référence de facture. Les conflits d'état n'en
+nomment aucun et la clé est alors **absente** du JSON — l'ajout ne change rien aux réponses
+existantes. Côté frontend, `ErreurApi.champ` fait autorité ; la table déclarée par formulaire ne
+subsiste qu'en repli, le temps que tous les environnements portent ce backend.
 
 ## 14. Récapitulatif
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **67** (66 numérotés + 1 non numéroté) | 1 |
+| **Total HTTP exposé par le backend** | **67** (66 numérotés + 1 non numéroté) | **8** |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |

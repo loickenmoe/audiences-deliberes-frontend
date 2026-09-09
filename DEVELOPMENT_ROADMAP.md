@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-09 (**F0 à F3b validés**, **F4 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-09 (**F0 à F4 validés**, **F5 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -185,7 +185,7 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 
 ---
 
-## F4 — Composants métier réutilisables 🔵 *(livré, en attente de validation manuelle)*
+## F4 — Composants métier réutilisables ✅
 
 **Objectif** : ne plus jamais réécrire une table, un filtre ou un formulaire.
 
@@ -200,8 +200,8 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 - `CycleEtape` — frise d'états avec boucles prorogation et rabattement.
 - `StatutChip`, `MontantFcfa`, `DateFr`, hook `useLibelles()` (résolution des identifiants).
 
-**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **119 tests** ✅ (21 dédiés
-aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans régression · `smoke` ✅.
+**Validé le 2026-09-09** (commit `c4548bb`). Vérifications : `typecheck` ✅ · `lint` ✅ ·
+**119 tests** ✅ · `build` ✅ · **20 parcours Playwright** ✅ sans régression · `smoke` ✅.
 **Dépend de** : F3.
 
 > **Décisions et pièges du jalon :**
@@ -223,7 +223,7 @@ aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans r�
 
 ---
 
-## F5 — Référentiels, clients, intervenants ⏳
+## F5 — Référentiels, clients, intervenants 🔵 *(livré, en attente de validation manuelle)*
 
 **Objectif** : disposer des données sans lesquelles aucun dossier n'est créable.
 
@@ -231,9 +231,52 @@ aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans r�
 des intervenants.
 Endpoints **#9-12**, **#61-62**, **#64-66**. Mise en place des caches longs de résolution des noms.
 
-**Vérifications** : créer un client puis un avocat ; les sélecteurs du futur formulaire de dossier
-se peuplent ; un avocat sans compte Keycloak est refusé (400), un compte déjà pris aussi (409).
+**Livré le 2026-09-09** sur la branche `feat/f5-referentiels-clients`, première fonctionnalité
+suivant la convention « un écran = une branche ».
+
+**Premier jalon consommant l'API métier** — 7 endpoints branchés, 2 prêts (référentiels de
+formulaire, dont les écrans arrivent en F6).
+
+- `services/` : `clientService`, `intervenantService`, `referentielService` — miroir 1:1 des
+  endpoints, sans logique métier.
+- `hooks/` : clés de cache centralisées, `useClients`, `useIntervenants`, `useReferentiels`,
+  et **`useLibelles`** qui résout les identifiants numériques en noms.
+- `types/domaine.ts` : formes de données relevées dans les DTO du backend.
+- Écrans **19** recherche clients, **20** vue consolidée, **21** création client (modale),
+  **42** référentiel des intervenants.
+
+**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **132 tests** ✅ (8 sur les
+services via MSW, 5 sur le rattachement des erreurs aux champs) · `build` ✅ · **28 parcours
+Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅.
 **Dépend de** : F4.
+
+> **Points à retenir :**
+> - **Les référentiels sont mis en cache 30 minutes** : ils changent au rythme d'une décision
+>   d'administration, pas d'une session. Ils ne sont pas paginés côté backend (RF-05).
+> - **`useLibelles` existe parce que le backend ne renvoie jamais de nom** — un dossier expose
+>   `juristesAffectes: [3, 7]`. Un juriste jamais connecté n'y figure pas (QF-16) : la résolution
+>   retombe sur `#id` plutôt que sur un blanc trompeur.
+> - **Le formulaire d'intervenant s'adapte au type** : un avocat exige un compte applicatif et
+>   refuse `notification` ; un autre prestataire refuse tout compte. Afficher les deux champs en
+>   permanence produirait des refus incompréhensibles.
+> - **Le doublon de référence client remonte en `ERR-CONFLICT`, pas en `ERR-002`** — vérifié en
+>   provoquant le cas sur le backend. `ERR-002` ne concerne que les dossiers, et `ERR-CONFLICT` sert
+>   à dix conflits différents sans jamais nommer de champ. C'est donc le formulaire, seul à savoir
+>   quel endpoint il appelle, qui déclare le champ visé (QF-21). Un parcours e2e vérifie
+>   l'`aria-invalid` sur `reference`, un autre sur `compteKeycloak`.
+> - **Rien de décoratif dans un `<label>`** : l'astérisque des champs obligatoires y rendait le nom
+>   accessible « Nom\* ». Cinq parcours e2e échouaient, et un lecteur d'écran annonçait « Nom
+>   étoile ». Elle vit désormais à côté de l'étiquette, `aria-hidden`.
+> - **Keycloak refuse plus lentement un compte inexistant** qu'un mot de passe faux : c'est sa
+>   protection contre l'énumération de comptes. Les assertions e2e sur ce cas exigent une attente
+>   explicite.
+> - Les filtres passent par l'URL, écrits **au `blur`** et non à la frappe : sinon une requête et une
+>   entrée d'historique par caractère.
+> - Délai de démarrage Playwright porté à **300 s** : après un `rm -rf .next`, la compilation à
+>   froid dépasse largement 120 s sur ce poste. Budget **par test** porté à 180 s : mesuré serveur
+>   chaud, une navigation douce du routeur App demande ~5 s en développement — l'URL ne change qu'à
+>   l'arrivée de la charge RSC. La suite gagnerait à tourner contre un build de production ; à
+>   trancher en **F17**.
 
 ---
 
@@ -391,10 +434,10 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**5 jalons validés sur 18 · F4 livré en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**
+**6 jalons validés sur 18 · F5 livré en attente de validation · 7 écrans sur 42 · 8 endpoints consommés sur 67.**

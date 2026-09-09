@@ -37,7 +37,7 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
   { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: false },
   { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: false },
-  { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: false },
+  { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: true },
   { cle: "calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: false },
   { cle: "frais", href: "/frais", icone: Receipt, capacite: "consulterFrais", livre: false },
   { cle: "publications", href: "/publications", icone: FileSignature, capacite: "consulterPublications", livre: false },
@@ -46,6 +46,6 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "jurisprudence", href: "/jurisprudences", icone: Library, capacite: "consulterJurisprudence", livre: false },
   { cle: "tableauDeBord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: false },
   { cle: "rapports", href: "/rapports", icone: Library, capacite: "genererRapport", livre: false },
-  { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "administrerIntervenants", livre: false },
+  { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "consulterReferentiels", livre: true },
   { cle: "configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: false },
 ];

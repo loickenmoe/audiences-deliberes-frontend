@@ -102,10 +102,16 @@ test("un compte inexistant reçoit exactement le même message", async ({ page }
   await page.getByLabel("Mot de passe", { exact: true }).fill("Password1!");
   await page.getByRole("button", { name: "Connexion" }).click();
 
-  // Message identique au cas précédent : l'interface ne dit pas quels comptes existent.
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Identifiant ou mot de passe incorrect.",
-  );
+  /**
+   * Message identique au cas précédent : l'interface ne dit pas quels comptes existent.
+   *
+   * L'attente d'affichage est explicite et longue : Keycloak met **plus de temps** à refuser un
+   * compte inexistant qu'un mot de passe faux — c'est délibéré de sa part (protection contre
+   * l'énumération de comptes par mesure du temps de réponse). Les 5 s par défaut ne suffisent pas.
+   */
+  const alerte = page.getByRole("main").getByRole("alert");
+  await expect(alerte).toBeVisible({ timeout: 20_000 });
+  await expect(alerte).toHaveText("Identifiant ou mot de passe incorrect.");
 });
 
 test("un juriste se connecte et voit son profil et ses rôles réels", async ({ page }) => {
