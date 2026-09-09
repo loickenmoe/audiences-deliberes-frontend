@@ -152,6 +152,21 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   API incompatible. Épingler la majeure attendue, surtout pour les paquets du projet de référence.
 - **`manualPagination: true`** est obligatoire sur `TableDonnees` : le serveur pagine déjà.
 - **jsdom n'implémente pas `<dialog>`** : le complément est dans `tests/setup.ts`.
+- **`ERR-002` ne concerne que les dossiers.** Un doublon de référence **client** remonte en
+  `ERR-CONFLICT`. Vérifier le code d'erreur *en provoquant le cas sur le backend* avant de bâtir une
+  correspondance champ/erreur — la lecture du contrat d'API ne suffit pas (QF-21).
+- **`details` n'est pas un porte-données.** Il contient du texte pour un humain
+  (`"reference: must not be blank"`). Ma première idée pour QF-21 était d'y glisser le nom du champ :
+  elle aurait rendu les deux illisibles. Un besoin machine réclame une clé à lui — d'où `champ`.
+- **Keycloak refuse plus lentement un compte inexistant** qu'un mot de passe faux (protection contre
+  l'énumération par mesure du temps de réponse). Les assertions e2e sur ce cas ont besoin d'une
+  attente explicite ; les 5 s par défaut de Playwright ne suffisent pas.
+- **Rien de décoratif dans un `<label>`.** L'astérisque des champs obligatoires était *à
+  l'intérieur* de l'étiquette : le nom accessible du champ devenait « Nom\* », et plus aucun
+  `getByLabel("Nom", { exact: true })` ne le trouvait — cinq parcours e2e en échec pour un caractère
+  mal placé. L'astérisque vit désormais à côté du `<label>`, `aria-hidden`, l'information
+  « obligatoire » restant portée par `required`. Le symptôme trompe : la modale s'ouvrait
+  parfaitement, seul le champ semblait absent.
 
 ### Faits vérifiés en conditions réelles (backend démarré, 2026-09-08)
 
@@ -179,7 +194,8 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 |---|---|---|
 | **QF-16** | **Provisionnement paresseux** : un utilisateur n'existe en base qu'après son premier appel à un endpoint « utilisateur courant ». Un juriste jamais connecté est donc **inaffectable** à un dossier | **F2, F6** |
 | **QF-03** | Aucun `GET` sur adjudications/condamnations — écran de suivi sans source | **F13** |
-| **QF-20** | L'avocat ne peut pas déposer un compte rendu **en document** : `/publications/cr-audience` n'accepte que du texte, `/publications/autres` accepte un fichier mais sans `audienceId` | **F12**, F16 |
+| **QF-20** | L'avocat ne peut pas déposer un compte rendu **en document**. ✅ **Direction retenue le 2026-09-09** : rendre `contenu` optionnel sur `POST /publications/cr-audience` et lui accepter un fichier. **Évolution backend à réaliser — rappeler à l'ouverture de F12.** | **F12**, F16 |
+| **QF-21** | ✅ **Résolu le 2026-09-09 dans le backend** : le corps d'erreur porte un champ `champ`, absent quand aucun champ n'est visé. `ErreurApi.champ` fait autorité côté frontend ; la table par formulaire ne subsiste qu'en repli de version. | — |
 | **QF-04** | Qui génère les rapports ? `GET /rapports` = JURISTE, `GET /tableau-de-bord` = DJ, contredit le parcours P9 | **F15** |
 | **QF-07** | `GET /dossiers` ne filtre que nature/catégorie/juridiction — ni référence, ni client, ni « mes dossiers » | F6 |
 | **QF-08** | Aucune file « sensibilité à valider » ni « dérogations en attente » pour DJ/DJA | F7 |

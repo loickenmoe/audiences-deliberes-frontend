@@ -31,14 +31,22 @@ export function Champ({
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="text-[length:var(--taille-sm)] font-medium">
-        {label}
+      {/*
+        L'astérisque est **hors du `<label>`** : à l'intérieur, elle entrerait dans le texte du
+        libellé, qui vaudrait « Nom* » — l'étiquette accessible cesserait de correspondre au mot que
+        l'utilisateur lit et que les tests interrogent. Elle reste décorative : l'information
+        « obligatoire » est portée par `required` sur le contrôle.
+      */}
+      <div className="flex items-center gap-0.5">
+        <label htmlFor={id} className="text-[length:var(--taille-sm)] font-medium">
+          {label}
+        </label>
         {obligatoire ? (
-          <span aria-hidden className="ml-0.5 text-danger">
+          <span aria-hidden className="text-danger">
             *
           </span>
         ) : null}
-      </label>
+      </div>
 
       {children}
 

@@ -114,8 +114,59 @@ lien à l'audience est préservé dans tous les cas. Alternative moins bonne : a
 `TypeAutrePublication` **et** un `audienceId` optionnel à `POST /publications/autres`, ce qui
 dupliquerait la notion de compte rendu sur deux endpoints.
 
-**Statut : ouvert.** À décider avant **F12** (l'écran de validation de l'Assistante doit savoir
-afficher un compte rendu documentaire) et à réaliser avant **F16** (portail avocat).
+**✅ Direction retenue par l'utilisateur le 2026-09-09** : la recommandation ci-dessus est validée
+dans son principe — `contenu` devient optionnel sur `POST /publications/cr-audience`, qui accepte un
+fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
+
+**Échéance** : à réaliser avant **F12** (l'écran de validation de l'Assistante doit savoir afficher
+un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
+l'ouverture de F12.
+
+### ✅ QF-21 — `ERR-CONFLICT` ne disait pas quel champ est en conflit *(résolu le 2026-09-09)*
+
+**Constat, vérifié en provoquant le doublon sur l'instance locale le 2026-09-09.** Une seconde
+création de client renvoie :
+
+```
+POST /clients  →  409
+{"code":"ERR-CONFLICT","message":"La référence client 'CLI-DIAG-101107' est déjà utilisée","details":null}
+```
+
+Le code `ERR-002`, que le contrat d'API associe à une référence dupliquée, est en réalité **réservé
+aux dossiers** (`DossierService`). Le même `ERR-CONFLICT` sert à **dix conflits sans rapport** :
+référence client, compte Keycloak d'un avocat, étape déjà ouverte, accord de frais déjà donné,
+suppression déjà demandée, publication déjà traitée, correspondance déjà transmise, constitution
+déjà traitée. Et `details` vaut toujours `null`.
+
+**Conséquence.** Le frontend ne peut pas déduire de la réponse le champ à corriger. Il a coûté
+un échec e2e réel : le doublon de référence client s'affichait dans un bandeau au lieu du champ.
+
+**✅ Résolu dans le backend le 2026-09-09**, sur autorisation explicite de l'utilisateur.
+
+La correction **n'est pas** celle que j'avais d'abord proposée. Je voulais mettre le nom du champ
+dans `details` — c'était une erreur : `details` porte déjà du texte destiné à un humain
+(`"reference: must not be blank"`), et lui faire porter aussi un identifiant machine aurait rendu les
+deux illisibles. Le corps d'erreur gagne donc un champ **`champ`** distinct, absent du JSON quand
+l'erreur ne vise personne — l'ajout est ainsi rétrocompatible.
+
+```json
+POST /clients (doublon)      → {"code":"ERR-CONFLICT", "message":"…", "details":null, "champ":"reference"}
+POST /intervenants (doublon) → {"code":"ERR-CONFLICT", "message":"…", "details":null, "champ":"compteKeycloak"}
+GET  /dossiers (avocat)      → {"code":"ERR-FORBIDDEN","message":"Droits insuffisants","details":null}
+```
+
+Cinq sites nomment désormais leur champ : référence client, compte Keycloak d'un avocat, référence de
+dossier (`ERR-002`), étape déjà ouverte, référence de facture (`ERR-006`). Les conflits d'**état**
+(« cette demande a déjà été traitée ») n'en nomment aucun, et c'est volontaire : désigner un champ au
+hasard serait pire que se taire.
+
+**Côté frontend**, `ErreurApi.champ` est désormais l'autorité. La table déclarée par formulaire
+subsiste en **repli de compatibilité** — les deux dépôts se déploient séparément, un backend
+antérieur ne renvoie pas `champ` — et devra disparaître quand plus aucun environnement ne fera
+tourner un backend d'avant cette date.
+
+**Vérifié en réel le 2026-09-09** contre le backend démarré, sur les quatre cas ci-dessus, plus
+257 tests backend et un test d'intégration qui contrôle la présence **et l'absence** de la clé.
 
 ### 🟡 QF-04 — Qui produit les rapports d'activité ?
 
