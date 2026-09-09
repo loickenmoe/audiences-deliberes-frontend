@@ -36,7 +36,7 @@ export interface EntreeNavigation {
 export const NAVIGATION: EntreeNavigation[] = [
   { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
   { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: false },
-  { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: false },
+  { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: true },
   { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: true },
   { cle: "calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: false },
   { cle: "frais", href: "/frais", icone: Receipt, capacite: "consulterFrais", livre: false },

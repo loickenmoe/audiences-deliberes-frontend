@@ -152,6 +152,16 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   API incompatible. Épingler la majeure attendue, surtout pour les paquets du projet de référence.
 - **`manualPagination: true`** est obligatoire sur `TableDonnees` : le serveur pagine déjà.
 - **jsdom n'implémente pas `<dialog>`** : le complément est dans `tests/setup.ts`.
+- **`nature` d'un dossier s'envoie par son *libellé*.** Le backend le résout par
+  `findByLibelleIgnoreCase` — ni le code, ni l'identifiant. Trois libellés de la taxonomie
+  dépassaient la largeur de `dossier.nature` : corrigé par la migration V7 (Q-71 backend).
+- **Ne jamais rediriger vers une route non encore livrée.** Le routeur App échoue *en silence* :
+  l'URL ne change même pas, et le bouton semble cassé alors que le backend a répondu 201. Découvert
+  en renvoyant vers `/dossiers/{id}`, écran livré seulement en F7 (QF-22).
+- **Les tests e2e tournent contre un build de production** (`next build && next start`). En
+  développement, la compilation à la demande produisait quatre échecs *tournants* par exécution sur
+  des tests valides. Relever les délais ne faisait que déplacer le problème : 37/37 en 7,8 min
+  contre 33/37 en 17,2 min.
 - **`ERR-002` ne concerne que les dossiers.** Un doublon de référence **client** remonte en
   `ERR-CONFLICT`. Vérifier le code d'erreur *en provoquant le cas sur le backend* avant de bâtir une
   correspondance champ/erreur — la lecture du contrat d'API ne suffit pas (QF-21).
@@ -195,6 +205,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-16** | **Provisionnement paresseux** : un utilisateur n'existe en base qu'après son premier appel à un endpoint « utilisateur courant ». Un juriste jamais connecté est donc **inaffectable** à un dossier | **F2, F6** |
 | **QF-03** | Aucun `GET` sur adjudications/condamnations — écran de suivi sans source | **F13** |
 | **QF-20** | L'avocat ne peut pas déposer un compte rendu **en document**. ✅ **Direction retenue le 2026-09-09** : rendre `contenu` optionnel sur `POST /publications/cr-audience` et lui accepter un fichier. **Évolution backend à réaliser — rappeler à l'ouverture de F12.** | **F12**, F16 |
+| **QF-22** | La liste des dossiers affiche la référence **sans lien**, et la création renvoie vers la liste filtrée : la fiche est l'écran 07, livré en F7. Dette assumée, à lever à l'ouverture de F7. | **F7** |
 | **QF-21** | ✅ **Résolu le 2026-09-09 dans le backend** : le corps d'erreur porte un champ `champ`, absent quand aucun champ n'est visé. `ErreurApi.champ` fait autorité côté frontend ; la table par formulaire ne subsiste qu'en repli de version. | — |
 | **QF-04** | Qui génère les rapports ? `GET /rapports` = JURISTE, `GET /tableau-de-bord` = DJ, contredit le parcours P9 | **F15** |
 | **QF-07** | `GET /dossiers` ne filtre que nature/catégorie/juridiction — ni référence, ni client, ni « mes dossiers » | F6 |

@@ -28,8 +28,8 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 1 | POST | `/dossiers` | SAI | 06 | F6 | ❌ |
-| 2 | GET | `/dossiers?nature&categorie&juridiction&page&size` | CONS | 05 | F6 | ❌ |
+| 1 | POST | `/dossiers` | SAI | 06 | F6 | ✅ |
+| 2 | GET | `/dossiers?reference&clientId&mesDossiers&nature&categorie&juridiction&page&size` | CONS | 05 | F6 | ✅ |
 | 3 | GET | `/dossiers/{id}` | CONS | 07, 15 | F7 | ❌ |
 | 4 | PUT | `/dossiers/{id}/affectation?forcer=` | JUR, DJ | 16 | F7 | ❌ |
 | 5 | PATCH | `/dossiers/{id}/etapes/{etapeId}/statut` | JUR | 08 | F7 | ❌ |
@@ -42,8 +42,20 @@
 - **#1** — corps `CreerDossierRequest` : `reference`, `nature`, `categorie`, `juridictionSaisie`,
   `clientId`, `parties{demandeur,defendeur}`, `risqueEncouru`, champs conditionnels par catégorie,
   `estSensible`, `seuilMontant`, `typeClientSensible`, **`juristesAffectes[]` et `avocatsAffectes[]`
-  obligatoires et non vides**. 409 `ERR-002` si la référence existe. Crée l'étape `INSTANCE` en
-  `OUVERTURE`.
+  obligatoires et non vides**. 409 `ERR-002` (avec `champ: "reference"`) si la référence existe.
+  Crée l'étape `INSTANCE` en `OUVERTURE`.
+
+  ⚠ **Trois pièges, vérifiés en sondant l'endpoint** (F6) :
+  · `nature` est le **libellé** du référentiel, résolu par `findByLibelleIgnoreCase` — ni le code,
+    ni l'identifiant. Trois libellés de la taxonomie dépassaient la largeur de `dossier.nature` et
+    rendaient ces natures inutilisables : corrigé par la migration backend V7 (Q-71) ;
+  · `categorie` est **déduite** de la nature (RG-DOS-02). La transmettre n'apporte rien et provoque
+    un 400 si elle diverge : le frontend ne l'envoie pas ;
+  · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), désormais validé
+    contre le référentiel (Q-73).
+- **#2** — `reference` (partielle, insensible à la casse), `clientId` et `mesDossiers` ont été
+  ajoutés au backend en M16 (Q-72, QF-07). `mesDossiers` se résout sur **l'utilisateur
+  authentifié** : il ne permet pas de consulter le portefeuille d'un collègue.
 - **#3** — `documents[]` est **vide par construction** (Q-67 backend) : ne pas le consommer, passer
   par #43. `historique[]` et `etapes[]` sont en revanche renseignés.
 - **#4** — 409 `ERR-003` en cas de doublon → dialogue de confirmation, rejeu avec `?forcer=true`.
@@ -287,7 +299,7 @@ jalon F16**, précédé d'un ajout backend limité à quelques lectures cadrées
 | `ERR-UNAUTHENTICATED` | 401 | Reconnexion |
 | `ERR-FORBIDDEN` | 403 | Écran non autorisé |
 | `ERR-NOT-FOUND` | 404 | Écran introuvable |
-| `ERR-CONFLICT` | 409 | **Générique : 10 conflits distincts.** Le corps nomme le champ visé dans `champ` quand il y en a un |
+| `ERR-CONFLICT` | 409 | **Générique : 9 conflits distincts.** Le corps nomme le champ visé dans `champ` quand il y en a un |
 | `ERR-BUSINESS-RULE` | 422 | Message métier tel quel |
 | `ERR-INTERNAL` | 500 | Message générique |
 
@@ -303,7 +315,7 @@ POST /clients (2e fois)  →  409
 {"code":"ERR-CONFLICT","message":"La référence client 'CLI-DIAG-101107' est déjà utilisée","details":null}
 ```
 
-Le backend emploie ce même code pour **dix conflits sans rapport entre eux** : référence client
+Le backend emploie ce même code pour **neuf conflits sans rapport entre eux** : référence client
 prise (`ClientService`), compte Keycloak déjà rattaché à un avocat (`IntervenantService`), étape
 déjà ouverte (`DossierService`), accord de frais déjà enregistré, demande de suppression déjà en
 attente, publication déjà traitée, correspondance déjà transmise, demande de constitution déjà
@@ -327,7 +339,7 @@ subsiste qu'en repli, le temps que tous les environnements portent ce backend.
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **67** (66 numérotés + 1 non numéroté) | **8** |
+| **Total HTTP exposé par le backend** | **67** (66 numérotés + 1 non numéroté) | **10** |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |
