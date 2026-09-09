@@ -292,5 +292,31 @@
       "FORMATS_GED": "Formats de fichiers acceptés dans la gestion documentaire.",
       "CHARGE_MAX_AVOCAT": "Nombre maximal de dossiers actifs par avocat avant déclenchement d’une alerte."
     }
+  },
+  "metier": {
+    "cycleEtape": "Cycle de vie de l’étape",
+    "prorogations": "{nombre, plural, one {# prorogation} other {# prorogations}}",
+    "rabattementPossible": "Rabattement possible",
+    "aucunResultat": "Aucun résultat",
+    "aucunResultatFiltres": "Aucun élément ne correspond à ces filtres.",
+    "effacerFiltres": "Effacer les filtres",
+    "filtres": "Filtres",
+    "page": "Page {page} sur {total}",
+    "elements": "{nombre, plural, =0 {Aucun élément} one {# élément} other {# éléments}}",
+    "precedent": "Page précédente",
+    "suivant": "Page suivante",
+    "trierPar": "Trier par {colonne}",
+    "confirmer": "Confirmer",
+    "exporter": "Exporter",
+    "formatExport": "Format d’export",
+    "choisirFichier": "Choisir un fichier",
+    "aucunFichier": "Aucun fichier sélectionné",
+    "retirerFichier": "Retirer le fichier",
+    "formatsAcceptes": "Formats acceptés : {formats}",
+    "tailleMax": "Taille maximale : {taille}",
+    "fichierTropVolumineux": "Ce fichier dépasse la taille maximale de {taille}.",
+    "formatNonAccepte": "Ce format n’est pas accepté. Formats admis : {formats}.",
+    "champObligatoire": "Ce champ est obligatoire.",
+    "corrigezErreurs": "Corrigez les champs signalés avant de valider."
   }
 }

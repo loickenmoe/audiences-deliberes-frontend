@@ -292,5 +292,31 @@
       "FORMATS_GED": "File formats accepted by the document management system.",
       "CHARGE_MAX_AVOCAT": "Maximum number of active case files per counsel before an alert is raised."
     }
+  },
+  "metier": {
+    "cycleEtape": "Stage lifecycle",
+    "prorogations": "{nombre, plural, one {# extension} other {# extensions}}",
+    "rabattementPossible": "Reopening possible",
+    "aucunResultat": "No results",
+    "aucunResultatFiltres": "No item matches these filters.",
+    "effacerFiltres": "Clear filters",
+    "filtres": "Filters",
+    "page": "Page {page} of {total}",
+    "elements": "{nombre, plural, =0 {No items} one {# item} other {# items}}",
+    "precedent": "Previous page",
+    "suivant": "Next page",
+    "trierPar": "Sort by {colonne}",
+    "confirmer": "Confirm",
+    "exporter": "Export",
+    "formatExport": "Export format",
+    "choisirFichier": "Choose a file",
+    "aucunFichier": "No file selected",
+    "retirerFichier": "Remove file",
+    "formatsAcceptes": "Accepted formats: {formats}",
+    "tailleMax": "Maximum size: {taille}",
+    "fichierTropVolumineux": "This file exceeds the maximum size of {taille}.",
+    "formatNonAccepte": "This format is not accepted. Allowed formats: {formats}.",
+    "champObligatoire": "This field is required.",
+    "corrigezErreurs": "Correct the highlighted fields before submitting."
   }
 }

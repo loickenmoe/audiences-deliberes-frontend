@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-08 (jalons **F3 + F3b** livrés — design system et bilinguisme, en attente de validation).
+> Dernière mise à jour : 2026-09-09 (jalon **F4** livré — composants métier, en attente de validation).
 
 ---
 
@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** (`39de75d`) · **F1** (`4cc0cd0`) · **F2** authentification (`d49f36d`) |
-| Jalons livrés, **en attente de validation** | **F3** design system Afriland · **F3b** bilinguisme français / anglais |
-| Jalon suivant | **F4** — composants métier réutilisables (table paginée, filtres, formulaires, frise d'étapes) |
+| Jalons validés | **F0** (`39de75d`) · **F1** (`4cc0cd0`) · **F2** (`d49f36d`) · **F3 + F3b** (`2248918`) |
+| Jalon livré, **en attente de validation** | **F4** — composants métier réutilisables |
+| Jalon suivant | **F5** — référentiels, clients, intervenants (premiers appels métier au backend) |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · branche `main` |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Vérifications F3+F3b | `typecheck` ✅ · `lint` ✅ · **98 tests** ✅ (24 contrastes calculés, 16 de parité des messages) · `build` ✅ · **20 parcours Playwright** ✅ |
+| Vérifications F4 | `typecheck` ✅ · `lint` ✅ · **119 tests** ✅ · `build` ✅ · **20 parcours Playwright** ✅ · `smoke` ✅ |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
@@ -62,7 +62,6 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | — | **RBAC frontend dérivé des `@PreAuthorize` backend**, jamais réinventé. Le backend reste l'arbitre. | 2026-09-08 |
 | — | **Types TS générés depuis `/v3/api-docs`**, spec figée dans le dépôt. | 2026-09-08 |
 | — | Design : **structure anthracite `#231F20`, identité rouge `#ED1C24`**, couleurs de statut distinctes du rouge de marque. **L'action principale est anthracite, jamais rouge.** | 2026-09-08 |
-| **QF-09** | **Français uniquement**, sans i18n. | 2026-09-08 |
 | **QF-10** | **Thème clair uniquement** — `next-themes` désinstallé. | 2026-09-08 |
 | **QF-13** | Palette validée, **vérifiée par 24 assertions de contraste** calculées sur les jetons réels. | 2026-09-08 |
 | **QF-18** | **Formulaire d'identification dans l'application** (`grant_type=password`) ; Keycloak valide en arrière-plan. Limites connues : ni MFA, ni réinitialisation, ni connexion unique. | 2026-09-08 |
@@ -96,6 +95,8 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
      propre branche. Une fois **testé et approuvé** par l'utilisateur, **c'est lui qui pousse**
      la branche puis la **merge dans `dev`**, qui rassemble tous les écrans fonctionnels.
   Je crée la branche locale et j'y travaille ; **je ne pousse ni ne merge jamais moi-même.**
+  → **Le socle s'achève avec F4 : la phase 2 s'applique à partir de F5.** Rappelé par l'utilisateur
+  le 2026-09-09. `dev` doit être créée par l'utilisateur ; elle n'existe pas encore en ligne.
 - **Jalons** : périmètre annoncé → implémentation → vérifications → mise à jour du contexte →
   instructions de test manuel → **STOP et attente de validation**. Les tests automatisés qui
   passent ne valent **pas** validation.
@@ -147,6 +148,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   puis une pause. Un clic perdu donne l'illusion d'un composant cassé.
 - **L'écran de connexion est non défilable** (`h-svh` + `overflow-hidden`) : toute addition de
   contenu doit être vérifiée à 1280×600, sinon elle sera coupée sans avertissement.
+- **`npm install <paquet>` sert la dernière majeure.** `@tanstack/react-table` est arrivé en **v9**,
+  API incompatible. Épingler la majeure attendue, surtout pour les paquets du projet de référence.
+- **`manualPagination: true`** est obligatoire sur `TableDonnees` : le serveur pagine déjà.
+- **jsdom n'implémente pas `<dialog>`** : le complément est dans `tests/setup.ts`.
 
 ### Faits vérifiés en conditions réelles (backend démarré, 2026-09-08)
 
@@ -174,6 +179,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 |---|---|---|
 | **QF-16** | **Provisionnement paresseux** : un utilisateur n'existe en base qu'après son premier appel à un endpoint « utilisateur courant ». Un juriste jamais connecté est donc **inaffectable** à un dossier | **F2, F6** |
 | **QF-03** | Aucun `GET` sur adjudications/condamnations — écran de suivi sans source | **F13** |
+| **QF-20** | L'avocat ne peut pas déposer un compte rendu **en document** : `/publications/cr-audience` n'accepte que du texte, `/publications/autres` accepte un fichier mais sans `audienceId` | **F12**, F16 |
 | **QF-04** | Qui génère les rapports ? `GET /rapports` = JURISTE, `GET /tableau-de-bord` = DJ, contredit le parcours P9 | **F15** |
 | **QF-07** | `GET /dossiers` ne filtre que nature/catégorie/juridiction — ni référence, ni client, ni « mes dossiers » | F6 |
 | **QF-08** | Aucune file « sensibilité à valider » ni « dérogations en attente » pour DJ/DJA | F7 |

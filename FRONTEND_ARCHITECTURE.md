@@ -1,7 +1,7 @@
 # FRONTEND_ARCHITECTURE
 
 > Architecture cible du frontend. Mise à jour quand l'architecture change, pas à chaque écran.
-> Dernière mise à jour : 2026-09-08 (jalon F3 — design system implémenté).
+> Dernière mise à jour : 2026-09-09 (jalon F4 — composants métier implémentés).
 
 ---
 
@@ -12,8 +12,8 @@
 | Framework | **Next.js 15**, App Router | Retenu en conception (REF-05 §3), pile du template |
 | UI | **React 19**, TypeScript strict | idem |
 | Styles | **Tailwind v4** (`@theme inline`, tokens OKLCH) | Mécanique du template conservée, valeurs remplacées |
-| Composants | **shadcn/ui** (style `new-york`) | 28 primitives déjà éprouvées dans le template |
-| Données | **TanStack Query v5** + **TanStack Table v8** | Cache, invalidation, tables paginées serveur |
+| Composants | **primitives écrites à la main** sur nos jetons | shadcn/ui aurait demandé un rethéming complet ; ses conventions (`cn`, variantes) sont conservées |
+| Données | **TanStack Query v5** + **TanStack Table v8** *(épinglée : la v9 est une réécriture incompatible)* | Cache, invalidation, tables paginées serveur |
 | HTTP | **axios** | Intercepteurs, cohérence avec le template |
 | Formulaires | **react-hook-form** + **Zod** | Schémas miroir des contraintes Bean Validation |
 | Auth | **NextAuth v5** + provider **Keycloak** (OIDC) | QF-05 |
@@ -236,6 +236,26 @@ Contraste AA vérifié par calcul · anneau de focus systématique (rouge de mar
 3:1 des indicateurs) · `prefers-reduced-motion` respecté · la couleur **double** toujours un libellé,
 elle ne le remplace jamais · ossatures de chargement annoncées en `role=status` et masquées aux
 technologies d'assistance.
+
+## 6b. Composants métier (jalon F4)
+
+Le socle sur lequel les 40 écrans suivants se construisent. Un écran qui les consomme n'a ni à
+réimplémenter les quatre états, ni à gérer la pagination, ni à retraduire une énumération.
+
+| Composant | Rôle | Point non évident |
+|---|---|---|
+| `CycleEtape` | Frise du cycle de vie d'une étape (RG-DOS-04) | Les **boucles** — prorogation, rabattement — sont invisibles sur une frise linéaire : elles sont dites en toutes lettres |
+| `TableDonnees` | Table paginée **côté serveur** | `manualPagination: true` obligatoire ; les quatre états sont intégrés |
+| `Pagination` | Contrôle de page | Le backend compte à partir de 0, l'utilisateur lit à partir de 1 |
+| `useFiltresUrl` | Filtres et page dans l'URL | Un changement de filtre **remet à la première page**, sinon l'utilisateur voit une page vide |
+| `BarreFiltres` | Mise en forme des filtres | Le bouton d'effacement n'apparaît que si un filtre est actif |
+| `Dialog` | Modale native `<dialog>` | Focus piégé, Échap et inertie fournis par le navigateur — aucune dépendance |
+| `DialogueConfirmation` | Motif `ERR-003` / `ERR-005` | Ces 409 ne sont **pas des échecs** : ils demandent une confirmation, rejouée avec `?forcer=true` |
+| `Televersement` | Choix de fichier avec contrôle local | Format dérivé de l'**extension**, pas du type MIME — règle du backend (Q-46) |
+| `MenuExport` | Choix du format d'export | Les formats diffèrent selon l'endpoint : le composant ne présume rien |
+| `Champ`, `Input`, `Select`, `Textarea` | Primitives de formulaire | `aria-invalid` + `aria-describedby` : la bordure rouge seule ne suffit pas |
+| `appliquerErreurApi` | Report des erreurs backend sur les champs | `ERR-002` vise `reference`, `ERR-006` vise `referenceFacture` — évite un bandeau générique sur un formulaire de vingt champs |
+| `MontantFcfa`, `DateValeur`, `PoidsFichier` | Valeurs formatées | Existent pour que **personne n'appelle `Intl` à la main** : la langue se lit au même endroit |
 
 ## 7. États d'interface
 

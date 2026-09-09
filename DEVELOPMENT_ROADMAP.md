@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-08 (**F0 à F2 validés**, **F3 et F3b livrés** en attente de validation).
+> Dernière mise à jour : 2026-09-09 (**F0 à F3b validés**, **F4 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -141,7 +141,7 @@ Les six fichiers de contexte : `FRONTEND_WORKING_MEMORY.md`, `FRONTEND_ARCHITECT
 
 ---
 
-## F3b — Bilinguisme français / anglais 🔵 *(livré, en attente de validation manuelle)*
+## F3b — Bilinguisme français / anglais ✅
 
 **Objectif** : rendre l'interface disponible dans les **deux langues officielles du Cameroun**.
 Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
@@ -169,8 +169,8 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 - **Écran non défilable** (`h-svh` + `overflow-hidden`). Espacements resserrés en conséquence :
   vérifié à 1280×600 et 1280×720, débordement nul et pied de page visible aux deux hauteurs.
 
-**Vérifications exécutées le 2026-09-08** : `typecheck` ✅ · `lint` ✅ · **98 tests** ✅ ·
-`build` ✅ · **20 parcours Playwright** ✅ dont 6 dédiés au bilinguisme · `smoke` ✅.
+**Validé le 2026-09-08** (commit `2248918`, avec F3). Vérifications : `typecheck` ✅ · `lint` ✅ ·
+**98 tests** ✅ · `build` ✅ · **20 parcours Playwright** ✅ dont 6 dédiés au bilinguisme · `smoke` ✅.
 **Dépend de** : F3. **Décisions rendues** : QF-09 (révisée) ✅, QF-09b ✅.
 
 > **Le garde-fou qui compte** : `tests/unit/messages.test.ts` vérifie la **parité stricte des clés**
@@ -185,7 +185,7 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 
 ---
 
-## F4 — Composants métier réutilisables ⏳
+## F4 — Composants métier réutilisables 🔵 *(livré, en attente de validation manuelle)*
 
 **Objectif** : ne plus jamais réécrire une table, un filtre ou un formulaire.
 
@@ -200,8 +200,26 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 - `CycleEtape` — frise d'états avec boucles prorogation et rabattement.
 - `StatutChip`, `MontantFcfa`, `DateFr`, hook `useLibelles()` (résolution des identifiants).
 
-**Vérifications** : tests de composants sur les quatre états et sur le motif de confirmation.
+**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **119 tests** ✅ (21 dédiés
+aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans régression · `smoke` ✅.
 **Dépend de** : F3.
+
+> **Décisions et pièges du jalon :**
+> - **`@tanstack/react-table` figé en v8.** `npm install` a d'abord posé la **v9**, une réécriture à
+>   l'API incompatible (`getCoreRowModel` → `createCoreRowModel`). La v8 est celle du projet de
+>   référence et de l'écosystème. Toujours vérifier la majeure servie par `latest`.
+> - **`manualPagination: true`** sur la table : sans cela TanStack repagine une page déjà paginée par
+>   le serveur et n'affiche qu'une fraction des lignes. Un test le garde fermé.
+> - **`<dialog>` natif plutôt qu'une bibliothèque de modale** : piégeage du focus, fermeture par
+>   Échap et inertie de l'arrière-plan sont fournis par le navigateur. jsdom ne l'implémente pas —
+>   `tests/setup.ts` fournit le minimum comportemental.
+> - **Filtres dans l'URL, pas dans un état React** : un juriste doit pouvoir partager le lien de sa
+>   recherche filtrée. Tout changement de filtre remet à la première page, sinon l'utilisateur
+>   atterrit sur une page vide qu'il lit comme « aucun résultat ».
+> - **Le format d'un fichier se dérive de l'extension**, pas du type MIME — c'est la règle du backend
+>   (Q-46). S'en écarter ferait accepter localement ce que le serveur refusera.
+> - `userEvent.upload` respecte `accept` : les tests de refus passent `applyAccept: false`, car un
+>   navigateur laisse de toute façon choisir « tous les fichiers ».
 
 ---
 
@@ -373,10 +391,10 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅+🔵 | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**3 jalons validés sur 18 · F3 + F3b livrés en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**
+**5 jalons validés sur 18 · F4 livré en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**

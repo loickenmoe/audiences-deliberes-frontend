@@ -1,7 +1,7 @@
 # DECISIONS_AND_OPEN_QUESTIONS
 
 > Arbitrages rendus, questions ouvertes, risques. Mis à jour en continu.
-> Dernière mise à jour : 2026-09-08 (jalon F3).
+> Dernière mise à jour : 2026-09-09 (jalon F4).
 
 **Légende** : `✅` tranché · `🟡` ouvert, non bloquant · `🔴` ouvert, bloquant · `⛔` bloqué par un tiers
 
@@ -85,6 +85,37 @@ foulée de la création. (C) Reporter tout le volet décisions.
 
 **Recommandation : A.** L'ajout est mécaniquement identique à trois endpoints déjà livrés en M15 et
 sans règle métier nouvelle. **Statut : ouvert, bloque F13 en lecture.**
+
+### 🔴 QF-20 — L'avocat ne peut pas déposer son compte rendu sous forme de document
+
+**Besoin exprimé par l'utilisateur le 2026-09-09** : l'avocat externe doit pouvoir envoyer un compte
+rendu d'audience **en pièce jointe**, pas seulement en texte saisi.
+
+**Constat, vérifié dans le code du backend.** Deux endpoints existent, aucun ne le permet :
+
+| Endpoint | Charge utile | Rattaché à une audience |
+|---|---|---|
+| `POST /publications/cr-audience` | **JSON** — `contenu` est `@NotBlank String` | ✅ `audienceId` `@NotNull` |
+| `POST /publications/autres` | **multipart** — `file` | ❌ aucun `audienceId` |
+
+`TypeAutrePublication` n'admet que `PIECE`, `DECISION`, `CONCLUSION` : aucune valeur ne désigne un
+compte rendu.
+
+**Conséquence.** L'avocat doit choisir entre rattacher son compte rendu à l'audience (texte
+uniquement) ou déposer un fichier (sans lien avec l'audience, et mal étiqueté).
+
+**Contournement écarté.** Déposer le fichier en `PIECE` ferait perdre le lien à l'audience :
+l'Assistante qui valide (US 5.2) ne saurait pas de quelle audience il s'agit, et l'onglet
+« Publications » d'une fiche dossier ne pourrait pas le rattacher à la bonne ligne.
+
+**Recommandation.** Rendre `contenu` **optionnel** sur `POST /publications/cr-audience` et lui
+accepter un fichier en multipart. L'avocat enverrait alors un texte, un document, ou les deux — et le
+lien à l'audience est préservé dans tous les cas. Alternative moins bonne : ajouter `COMPTE_RENDU` à
+`TypeAutrePublication` **et** un `audienceId` optionnel à `POST /publications/autres`, ce qui
+dupliquerait la notion de compte rendu sur deux endpoints.
+
+**Statut : ouvert.** À décider avant **F12** (l'écran de validation de l'Assistante doit savoir
+afficher un compte rendu documentaire) et à réaliser avant **F16** (portail avocat).
 
 ### 🟡 QF-04 — Qui produit les rapports d'activité ?
 

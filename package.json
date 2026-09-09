@@ -19,7 +19,9 @@
     "smoke": "node scripts/smoke-backend.mjs"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.62.7",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
@@ -28,6 +30,7 @@
     "next-intl": "^4.14.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.87.0",
     "server-only": "^0.0.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",

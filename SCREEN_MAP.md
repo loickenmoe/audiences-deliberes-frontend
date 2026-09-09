@@ -137,7 +137,7 @@ ses propres demandes pour un avocat · les deux accords sont requis, un seul ref
 |---|---|---|---|---|---|---|
 | 31 | File des publications | `/publications` | AST, JUR, DJ, DJA | `GET /publications?dossierId&statut&page&size` | F12 | ❌ |
 | 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ❌ |
-| 33 | Dépôt de compte rendu / pièce | `/publications/nouvelle` | AVO | `POST /publications/cr-audience`, `POST /publications/autres` | **F16** | ❌ |
+| 33 | Dépôt de compte rendu / pièce | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (texte), `POST /publications/autres` (fichier) — ⚠ **QF-20** : pas de compte rendu en pièce jointe | **F16** | ❌ |
 | 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ❌ |
 | 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ❌ |
 
