@@ -122,6 +122,75 @@ fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
 un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
 l'ouverture de F12.
 
+### ✅ QF-28 — Les dates seules s'affichaient la veille à l'ouest de Greenwich *(corrigée en F8)*
+
+**Constat, dans le frontend.** `formaterDate` lisait `2026-09-10` par `new Date(iso)`, que
+JavaScript interprète comme **minuit UTC**. Invisible à Douala (UTC+1), mais partout à l'ouest de
+Greenwich chaque date s'affichait **la veille**. Une date d'audience décalée d'un jour n'est pas une
+imprécision : c'est une audience manquée.
+
+**Corrigé** : une date seule est lue en heure locale ; les horodatages (`LocalDateTime`, sans
+fuseau) l'étaient déjà. Le test construit son attente en date locale, si bien qu'il échouerait avec
+l'ancienne lecture sur n'importe quel poste à l'ouest de Greenwich.
+
+### ✅ QF-29 — Une alarme n'est jamais close, sauf en la reprogrammant *(résolue : Q-77 backend)*
+
+**Décision du porteur du projet (2026-09-10)** : suivre la recommandation. `PATCH /alarmes/{id}/traiter`
+ajouté au backend (M16, Q-77) ; l'onglet Alarmes propose « Marquer traitée », avec confirmation, à
+côté de « Reprogrammer ». Le constat d'origine est conservé ci-dessous.
+
+**Constat, vérifié dans le code.** Les seules actions sur une alarme sont la création (#16) et la
+reprogrammation (#17), qui clôt l'ancienne. À l'échéance, `AlarmeEcheanceScheduler` **signale**
+l'alarme mais ne change pas son statut. Une alarme traitée par le juriste reste donc `ACTIVE` pour
+toujours, et la liste mélange ce qui reste à faire et ce qui est fait.
+
+**Traitement en F8.** Une alarme active échue est marquée « Échue », pour qu'elle se distingue.
+
+**Recommandation (backend, non bloquante).** `PATCH /alarmes/{id}/traiter`, qui la passe
+`TRAITEE` avec sa date de traitement, sans en créer une nouvelle. **Statut : soumis à l'utilisateur.**
+
+### ✅ QF-30 — Une audience ne peut être ni annulée ni reportée *(résolue : Q-76 backend)*
+
+**Décision du porteur du projet (2026-09-10)** : suivre la recommandation. `PATCH
+/audiences/{id}/annulation` ajouté au backend (M16, Q-76), motif obligatoire ; l'audience annulée
+quitte le calendrier, ses exports et ses rappels, et ne compte plus comme doublon. Le report se fait
+en annulant puis en replanifiant — l'endpoint de renvoi dédié n'a pas été retenu. L'onglet Audiences
+propose « Annuler » sur chaque audience planifiée et affiche le motif. Constat d'origine ci-dessous.
+
+**Constat, vérifié dans le code.** `StatutAudience` prévoit `ANNULEE`, mais **aucun endpoint** ne
+le pose, et aucun ne modifie la date d'une audience. Une audience planifiée à la mauvaise date, ou
+renvoyée par le tribunal — cas très fréquent —, reste `PLANIFIEE` pour toujours : elle figure au
+calendrier, dans les exports, et déclenche ses rappels J-7/J-3/J-1 (FR-AUD-01) à une date qui n'a
+plus lieu d'être.
+
+**Contournement écarté.** Planifier une nouvelle audience ne supprime pas l'ancienne : le calendrier
+afficherait les deux.
+
+**Recommandation (backend).** Un `PATCH /audiences/{id}/annulation` (motif obligatoire, statut
+`ANNULEE`, rappels non envoyés) ; le report consistant alors à annuler puis replanifier, ou un
+endpoint de renvoi dédié qui fait les deux en gardant le lien. **Statut : soumis à l'utilisateur.**
+
+### 🟡 QF-31 — Le calendrier compte le premier jour de la période suivante
+
+**Constat, vérifié dans le code.** `PeriodeCalendrier.dateFin` renvoie `début + 1 semaine / 1 mois /
+3 mois`, et la requête utilise `BETWEEN`, bornes **incluses**. Une semaine commençant un lundi
+ramène donc aussi les audiences du lundi suivant ; deux semaines consécutives affichent le même jour,
+et les exports aussi.
+
+**Traitement en F8.** L'écran annonce la période réelle (« du 7 au 14 septembre ») et ne masque
+rien : l'écran doit dire la même chose que le document qu'on en exporte.
+
+**Recommandation (backend, non bloquante).** `dateFin` retranchée d'un jour. **Statut : ouvert.**
+
+### 🟡 QF-32 — Une audience est dite « tenue » le jour où l'on saisit son compte rendu
+
+**Constat, vérifié dans le code.** `enregistrerCompteRendu` pose `dateTenue = LocalDate.now()`.
+Un compte rendu saisi trois jours après l'audience la date donc de trois jours plus tard, et
+ressaisir un compte rendu la déplace encore.
+
+**Recommandation (backend, non bloquante).** `dateTenue = datePlanifiee`, ou une date saisie par le
+juriste. **Statut : ouvert.**
+
 ### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
 
 **Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige

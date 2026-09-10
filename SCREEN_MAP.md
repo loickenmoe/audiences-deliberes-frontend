@@ -1,7 +1,7 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-09 (jalon F5 — écrans 19, 20, 21 et 42 livrés).
+> Dernière mise à jour : 2026-09-10 (jalon F8 — écrans 09, 11, 22, 23, 24 et 25 livrés).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -48,9 +48,9 @@
 | 06 | Création de dossier | `/dossiers/nouveau` | SAI | `POST /dossiers` + 4 référentiels (voir ci-dessous) | F6 | ✅ |
 | 07 | Fiche — Synthèse | `/dossiers/[id]` | CONS | `GET /dossiers/{id}` | F7 | ✅ |
 | 08 | Fiche — Étapes | onglet | JUR | `PATCH /dossiers/{id}/etapes/{etapeId}/statut`, `POST /dossiers/{id}/etapes` | F7 | ✅ |
-| 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences` | F8 | ❌ |
+| 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences`, `PATCH /audiences/{id}/annulation` | F8 | ✅ (annulation motivée — QF-30) |
 | 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes` | F9 | ❌ |
-| 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes` | F8 | ❌ |
+| 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes`, `PATCH /alarmes/{id}/traiter` | F8 | ✅ (« Marquer traitée » — QF-29) |
 | 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
 | 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ❌ |
 | 14 | Fiche — Décisions définitives | onglet | JUR | `POST .../adjudications`, `POST .../condamnations` — **aucune lecture, cf. QF-03** | F13 | ❌ |
@@ -91,10 +91,10 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 22 | Calendrier des audiences | `/audiences/calendrier` | JUR, DJ | `GET /audiences/calendrier?periode&dateDebut&format` | F8 | ❌ |
-| 23 | Planifier une audience | modale (fiche 09) | JUR | `POST /dossiers/{id}/audiences[?forcer=true]` | F8 | ❌ |
-| 24 | Saisie du compte rendu | modale | JUR | `PUT /audiences/{id}/compte-rendu` | F8 | ❌ |
-| 25 | Créer / reprogrammer une alarme | modale (fiche 11) | JUR | `POST /dossiers/{id}/alarmes`, `PUT /alarmes/{id}/reprogrammer` | F8 | ❌ |
+| 22 | Calendrier des audiences | `/audiences/calendrier` | JUR, DJ | `GET /audiences/calendrier?periode&dateDebut&format` | F8 | ✅ (agenda par jour, exports PDF et Excel) |
+| 23 | Planifier une audience | modale (fiche 09) | JUR | `POST /dossiers/{id}/audiences[?forcer=true]` | F8 | ✅ (doublon confirmable, ERR-005) |
+| 24 | Saisie du compte rendu | modale | JUR | `PUT /audiences/{id}/compte-rendu` | F8 | ✅ (proposé à partir du jour de l'audience) |
+| 25 | Créer / reprogrammer une alarme | modale (fiche 11) | JUR | `POST /dossiers/{id}/alarmes`, `PUT /alarmes/{id}/reprogrammer` | F8 | ✅ |
 
 **Règles à porter dans l'UI** : étape au statut `EN_COURS` requise pour planifier · date future
 obligatoire · doublon (même étape + même date) → 409 `ERR-005` confirmable · compte rendu refusé sur

@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-10 (**F0 à F6 validés**, **F7 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-10 (**F0 à F7 validés**, **F8 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -366,14 +366,47 @@ dernier débloqué par l'ajout de `GET /dossiers/{id}/seuil-derogation` au backe
 
 ---
 
-## F8 — Audiences, alarmes, calendrier ⏳
+## F8 — Audiences, alarmes, calendrier 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **09**, **11**, **22**, **23**, **24**, **25**. Endpoints **#13-17**, **#56-57**.
+Écrans **09**, **11**, **22**, **23**, **24**, **25**. Endpoints **#13-17**, **#56-57**. **Livré le
+2026-09-10** sur `feat/f8-audiences`, branchée sur F7.
 
-**Vérifications** : planification refusée sur étape non `EN_COURS` et sur date passée ; doublon
-confirmable ; compte rendu refusé sur audience future ; calendrier dans les trois vues ; exports PDF
-et Excel téléchargés et ouvrables ; reprogrammation d'alarme chaînée.
-**Dépend de** : F7.
+- `services/audienceService.ts`, `hooks/useAudiences.ts` : mutations qui rafraîchissent les listes
+  du dossier, la fiche **et** le calendrier.
+- Fiche : onglets **Audiences** (planification, doublon `ERR-005` confirmable, compte rendu proposé
+  seulement à partir du jour de l'audience) et **Alarmes** (création, reprogrammation chaînée,
+  alarme échue signalée).
+- `/audiences/calendrier` : agenda par jour, semaine / mois / trimestre alignés sur des bornes
+  naturelles, exports PDF et Excel nommés par période.
+- `lib/calendrier.ts` : dates locales, jamais `toISOString` (QF-28 corrigée : les dates seules
+  s'affichaient la veille à l'ouest de Greenwich).
+- Client HTTP : une erreur arrivée en binaire (export) est relue dans l'intercepteur, pour que le
+  message du backend atteigne l'utilisateur.
+
+**Vérifications exécutées le 2026-09-10** : `typecheck` ✅ · `lint` ✅ · **188 tests unitaires** ✅ ·
+`build` ✅ · **58 parcours Playwright contre le backend réel, Keycloak et MinIO** ✅ (build de
+production) · `smoke` ✅. *Piège relevé* : `reuseExistingServer` réutilise un `next dev` resté
+ouvert sur le port 3000 — la suite tourne alors, sans le dire, contre le serveur de développement.
+
+**Complément du 2026-09-10 (décision du porteur du projet)** : QF-29 et QF-30 levées par deux
+endpoints ajoutés au backend (M16, Q-76, Q-77). Annulation motivée d'une audience planifiée — elle
+quitte calendrier, exports et rappels, et ne compte plus comme doublon ; « Marquer traitée » sur une
+alarme active. **Revérifié** : **190 tests unitaires** ✅ · **60 parcours Playwright** contre le
+backend réel (build de production) ✅, dont l'annulation suivie d'une replanification à la même date
+sans demande de confirmation. Backend : 277 tests, `BUILD SUCCESS`, V8 appliquée.
+
+**Dépend de** : F7. **Non bloquants** : QF-31, QF-32.
+
+> **Points à retenir :**
+> - **Une confirmation rejoue la demande refusée, pas le formulaire.** Relire le formulaire au
+>   moment de confirmer un doublon envoyait une date vide : un `useEffect` de réinitialisation
+>   dépendait d'un tableau recréé à chaque rendu. Même défaut corrigé dans la création d'alarme.
+> - **Un test qui attend un message peut lire celui d'avant.** Le toast de la première
+>   planification masquait l'échec de la seconde : attendre l'effet (la ligne ajoutée).
+> - **next-intl** : un argument `{debut}` n'accepte qu'un texte ; une fonction n'y affiche rien.
+> - **Le compte rendu ne peut pas être joué en e2e** : le backend n'accepte qu'une audience future,
+>   et son compte rendu qu'à partir de sa date. Le parcours vérifie qu'il n'est pas proposé trop
+>   tôt ; la saisie est couverte par les tests du backend et par la recette manuelle.
 
 ---
 
@@ -496,10 +529,12 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**8 jalons validés sur 18 · F7 livré en attente de validation · 16 écrans sur 42 · 22 endpoints consommés sur 68.**
+**8 jalons validés sur 18 (F0 à F7) · F8 livré en attente de validation · 21 écrans sur 42 ·
+32 endpoints consommés sur 70** (plus #45 en partie ; 70 depuis les ajouts de M16). Le « 22 endpoints » annoncé en fin de F7 était
+un sous-décompte : c'était 23 (#64 et #65 restés marqués 🟡).

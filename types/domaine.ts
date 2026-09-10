@@ -1,6 +1,8 @@
 import type {
   CategorieDossier,
   FormatDocument,
+  StatutAlarme,
+  StatutAudience,
   SeuilOrigine,
   StatutCycleVie,
   StatutValidation,
@@ -257,6 +259,76 @@ export interface FiltresDossiers {
   mesDossiers?: boolean;
   page?: number;
   size?: number;
+}
+
+// ─────────────────────────────── Audiences et alarmes ───────────────────────────────
+
+/** Audience d'une étape (#13, #14, #56). `datePlanifiee` et `dateTenue` sont des dates seules. */
+export interface Audience {
+  id: number;
+  dossierId: number;
+  etapeId: number;
+  datePlanifiee: string;
+  /** ⚠ Posée par le backend au jour de la **saisie** du compte rendu, pas au jour de l'audience (QF-32). */
+  dateTenue: string | null;
+  compteRendu: string | null;
+  statut: StatutAudience;
+  createdAt: string;
+  /** Posés à l'annulation (QF-30, Q-76 backend) : motif obligatoire, horodatage sans fuseau. */
+  motifAnnulation: string | null;
+  dateAnnulation: string | null;
+}
+
+/**
+ * Alarme d'une étape (#16, #17, #57). `dateEcheance` est un horodatage sans fuseau.
+ * Reprogrammer clôt l'alarme (`TRAITEE`) et en crée une nouvelle qui la cite dans
+ * `alarmePrecedenteId` : c'est une chaîne, pas une modification.
+ */
+export interface Alarme {
+  id: number;
+  dossierId: number;
+  etapeId: number;
+  objet: string;
+  dateEcheance: string;
+  statut: StatutAlarme;
+  dateTraitement: string | null;
+  alarmePrecedenteId: number | null;
+  createdBy: number | null;
+  createdAt: string;
+}
+
+/** Ligne du calendrier (#15). Les affectations sont des identifiants, résolus en noms à l'affichage. */
+export interface EntreeCalendrier {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string;
+  etape: string;
+  juristesAffectes: number[];
+  avocatsAffectes: number[];
+  codeAgenceOrigine: string | null;
+  clientNom: string | null;
+  risqueEncouru: number | null;
+  datePlanifiee: string;
+}
+
+export interface PlanifierAudience {
+  etapeId: number;
+  /** `YYYY-MM-DD`, strictement future (RG-AUD-07). */
+  datePlanifiee: string;
+}
+
+export interface CreerAlarme {
+  etapeId: number;
+  objet: string;
+  /** `YYYY-MM-DDTHH:mm`, strictement future. */
+  dateEcheance: string;
+}
+
+export interface ReprogrammerAlarme {
+  /** Facultatif : vide, l'objet de l'alarme précédente est repris. */
+  objet?: string;
+  dateEcheance: string;
 }
 
 // ─────────────────────────────── Intervenants ───────────────────────────────

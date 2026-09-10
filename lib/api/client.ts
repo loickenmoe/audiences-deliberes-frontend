@@ -52,8 +52,34 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
  */
 apiClient.interceptors.response.use(
   (reponse) => reponse,
-  (erreur) => Promise.reject(normaliserErreur(erreur)),
+  async (erreur) => Promise.reject(normaliserErreur(await relireCorpsBinaire(erreur))),
 );
+
+/**
+ * Une requête demandée en binaire (`responseType: "blob"`, pour un export PDF ou Excel) reçoit
+ * **aussi** ses erreurs en binaire : un `Blob` dans un navigateur, un tampon ou un texte sous Node.
+ * `normaliserErreur` étant synchrone, il ne pouvait pas le lire, et retombait sur le message
+ * générique du statut — le message du backend était perdu. On le relit ici, une fois pour tous les
+ * téléchargements de l'application.
+ */
+async function relireCorpsBinaire(erreur: unknown): Promise<unknown> {
+  const reponse = (erreur as { response?: { data?: unknown } } | null)?.response;
+  if (!reponse) return erreur;
+  const donnees = reponse.data;
+  let texte: string | null = null;
+  if (typeof Blob !== "undefined" && donnees instanceof Blob) texte = await donnees.text();
+  else if (donnees instanceof ArrayBuffer) texte = new TextDecoder().decode(donnees);
+  else if (ArrayBuffer.isView(donnees)) texte = new TextDecoder().decode(donnees);
+  else if (typeof donnees === "string") texte = donnees;
+  if (texte !== null) {
+    try {
+      reponse.data = JSON.parse(texte);
+    } catch {
+      // Pas du JSON (page d'erreur d'un proxy, par exemple) : le statut suffira à qualifier l'erreur.
+    }
+  }
+  return erreur;
+}
 
 /** Enveloppe de pagination du backend — `{content, totalPages, totalElements}`, sans écho de page. */
 export interface PageReponse<T> {

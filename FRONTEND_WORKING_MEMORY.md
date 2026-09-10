@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** (`39de75d`) · **F1** (`4cc0cd0`) · **F2** (`d49f36d`) · **F3 + F3b** (`2248918`) |
-| Jalon livré, **en attente de validation** | **F4** — composants métier réutilisables |
-| Jalon suivant | **F5** — référentiels, clients, intervenants (premiers appels métier au backend) |
-| Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · branche `main` |
+| Jalons validés | **F0** à **F7** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8` pièces jointes) |
+| Jalon livré, **en attente de validation** | **F8** — audiences, alarmes, calendrier (`feat/f8-audiences`, non commité) |
+| Jalon suivant | **F9** — délibérés et recours |
+| Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Vérifications F4 | `typecheck` ✅ · `lint` ✅ · **119 tests** ✅ · `build` ✅ · **20 parcours Playwright** ✅ · `smoke` ✅ |
+| Décompte | **21 écrans sur 42** · **32 endpoints consommés sur 70** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
@@ -174,6 +174,13 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   `Authorization` ferait vérifier le jeton Keycloak à la place de la signature. MinIO autorise
   l'origine `localhost:3000` (CORS vérifié) : aperçu en `blob:` et téléchargement sous le nom
   d'origine. L'URL ne vit que 10 minutes : la demander au clic, pas à l'affichage de la liste.
+- **Une date seule (`YYYY-MM-DD`) se lit en heure locale**, jamais par `new Date(iso)` qui la
+  prend pour minuit UTC et l'affiche la veille à l'ouest de Greenwich (QF-28). Et elle se
+  sérialise par `versIso` (`lib/calendrier.ts`), jamais par `toISOString()`, qui repasse par UTC.
+- **Une réponse demandée en binaire reçoit ses erreurs en binaire.** L'intercepteur du client HTTP
+  normalisait toute erreur de façon synchrone, et perdait le message d'un corps `Blob`. Il relit
+  désormais ces corps (`relireCorpsBinaire`, `lib/api/client.ts`) : ne jamais le refaire service
+  par service — une relecture locale arrive trop tard, l'erreur est déjà normalisée.
 - **Un endpoint peut exister et rester inatteignable.** #7 est déclaré, codé, testé — mais aucun
   écran ne peut fournir l'`auditId` qu'il exige. Vérifier, pour chaque endpoint qui prend un
   identifiant, **d'où l'interface le tiendrait** ; et le vérifier sur `/v3/api-docs`, pas seulement
@@ -197,6 +204,16 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   mal placé. L'astérisque vit désormais à côté du `<label>`, `aria-hidden`, l'information
   « obligatoire » restant portée par `required`. Le symptôme trompe : la modale s'ouvrait
   parfaitement, seul le champ semblait absent.
+- **Une confirmation rejoue la demande refusée, pas le formulaire.** La planification relisait le
+  formulaire (`getValues`) au moment de confirmer un doublon ; entre-temps, un `useEffect` de
+  réinitialisation dépendant d'un tableau recréé à chaque rendu (`etapes`) avait vidé la date — le
+  second envoi partait sans date, 400 « Requête invalide ». Deux règles : garder la charge refusée
+  telle quelle pour la rejouer, et ne réinitialiser un formulaire qu'à l'ouverture (dépendances
+  primitives). Le test e2e n'avait rien vu : il attendait le toast, **resté affiché** depuis la
+  première tentative — attendre l'effet (la ligne ajoutée), pas le message.
+- **next-intl : `{arg}` n'accepte qu'un texte, `<balise>` une fonction.** Passer une fonction à un
+  argument simple de `t.rich` n'affiche **rien**, sans erreur à l'exécution (« Du au ») ; `tsc` le
+  refuse. Formater la valeur en chaîne avant de la passer.
 
 ### Faits vérifiés en conditions réelles (backend démarré, 2026-09-08)
 
@@ -228,6 +245,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-22** | ✅ Levée en F7 : la liste mène à la fiche, la création y redirige. | — |
 | **QF-23** | ✅ Levée le 2026-09-10 : `GET /dossiers/{id}/seuil-derogation` ajouté au backend (Q-74). #7 exige en outre une sensibilité validée — la proposition initiale est aussi un audit `EN_ATTENTE`. | — |
 | **QF-24** | L'historique est rédigé **en français** par le backend (`action` = phrase, pas code) : non traduisible. Signalé dans l'interface en anglais. | aucun |
+| ~~QF-29~~ | ✅ **Levée** (2026-09-10) : `PATCH /alarmes/{id}/traiter` ajouté au backend (Q-77), « Marquer traitée » dans l'onglet Alarmes. | F8 |
+| ~~QF-30~~ | ✅ **Levée** (2026-09-10) : `PATCH /audiences/{id}/annulation` ajouté au backend (Q-76), motif obligatoire ; report = annuler puis replanifier. | F8 |
+| **QF-31** | Le calendrier inclut le 1er jour de la période suivante (`BETWEEN` borne incluse). Non bloquant. | aucun |
+| **QF-32** | `dateTenue` = jour de saisie du compte rendu, pas de l'audience. Non bloquant. | aucun |
 | **QF-26** | Les pièces justificatives des frais sont une **liste de noms**, pas des fichiers (`List<String>`). À trancher à l'ouverture de F11. | **F11**, F16 |
 | **QF-27** | Aucun endpoint « utilisateur courant » : l'interface ne sait pas si l'on est l'auteur d'une pièce. Non bloquant. | aucun |
 | **QF-25** | ✅ Levée le 2026-09-10 (Q-75) : `@NotEmpty` + `@Valid` sur `PUT /affectation`. Reste ouvert : l'alerte au DJ à presque chaque changement d'affectation (règle métier RG-DOS-07, à confirmer par la DJ). | — |

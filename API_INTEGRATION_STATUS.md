@@ -1,8 +1,12 @@
 # API_INTEGRATION_STATUS
 
-> Les **67 endpoints HTTP** exposés par le backend et leur état de consommation par le frontend.
+> Les **70 endpoints HTTP** exposés par le backend (67 d'origine, plus trois ajouts de M16 : Q-74,
+> Q-76, Q-77) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-09 (jalon F5 — 7 endpoints consommés, 2 prêts).
+> Dernière mise à jour : 2026-09-10 (jalon F8 — **32 endpoints consommés sur 70**, plus #45 en partie,
+> après l'ajout au backend de l'annulation d'audience et du traitement d'alarme, QF-29/QF-30 ;
+> décompte mesuré sur ce tableau. Le « 22 » annoncé en fin de F7 était faux : c'était 23, #64 et #65
+> étant restés marqués 🟡 alors que l'écran les consommait depuis F6).
 
 > **Décompte** — le backend annonce « 66 endpoints » : ce sont les **66 numérotés** `#1` à `#66`.
 > S'y ajoute `POST /dossiers/{id}/etapes`, réel mais laissé **non numéroté** par le backend
@@ -91,13 +95,15 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 13 | POST | `/dossiers/{id}/audiences?forcer=` | JUR | 23 | F8 | ❌ |
-| 14 | PUT | `/audiences/{id}/compte-rendu` | JUR | 24 | F8 | ❌ |
-| 15 | GET | `/audiences/calendrier?periode&dateDebut&format` | JUR, DJ | 22 | F8 | ❌ |
-| 16 | POST | `/dossiers/{id}/alarmes` | JUR | 25 | F8 | ❌ |
-| 17 | PUT | `/alarmes/{id}/reprogrammer` | JUR | 25 | F8 | ❌ |
-| 56 | GET | `/dossiers/{id}/audiences` | CONS | 09 | F8 | ❌ |
-| 57 | GET | `/dossiers/{id}/alarmes` | CONS | 11 | F8 | ❌ |
+| 13 | POST | `/dossiers/{id}/audiences?forcer=` | JUR | 23 | F8 | ✅ |
+| 14 | PUT | `/audiences/{id}/compte-rendu` | JUR | 24 | F8 | ✅ |
+| 15 | GET | `/audiences/calendrier?periode&dateDebut&format` | JUR, DJ | 22 | F8 | ✅ |
+| 16 | POST | `/dossiers/{id}/alarmes` | JUR | 25 | F8 | ✅ |
+| 17 | PUT | `/alarmes/{id}/reprogrammer` | JUR | 25 | F8 | ✅ |
+| 56 | GET | `/dossiers/{id}/audiences` | CONS | 09 | F8 | ✅ |
+| 57 | GET | `/dossiers/{id}/alarmes` | CONS | 11 | F8 | ✅ |
+| — | PATCH | `/audiences/{id}/annulation` 🆕 Q-76 | JUR | 09 (annulation motivée) | F8 | ✅ (QF-30) |
+| — | PATCH | `/alarmes/{id}/traiter` 🆕 Q-77 | JUR | 11 (« Marquer traitée ») | F8 | ✅ (QF-29) |
 
 - **#13** — étape au statut `EN_COURS` requise, date future obligatoire. 409 `ERR-005` sur doublon
   (même étape + même date) → confirmable par `?forcer=true`. Programme les rappels J-7/J-3/J-1.
@@ -260,8 +266,8 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 64 | GET | `/referentiels/natures-dossier?categorie=` | CONS | 06 | F5 | 🟡 service et hook prêts, consommés à l'écran en F6 |
-| 65 | GET | `/referentiels/types-client-sensible` | CONS | 06 | F5 | 🟡 service et hook prêts, consommés à l'écran en F6 |
+| 64 | GET | `/referentiels/natures-dossier?categorie=` | CONS | 05 (filtre), 06 | F5 · F6 | ✅ consommé à l'écran en F6 *(statut corrigé en F8 : resté à 🟡 par oubli)* |
+| 65 | GET | `/referentiels/types-client-sensible` | CONS | 06, 18 | F5 · F6 | ✅ consommé à l'écran en F6 et F7 *(statut corrigé en F8 : resté à 🟡 par oubli)* |
 | 66 | GET | `/utilisateurs?profil=&inclureInactifs=` | CONS | 06, 16 | F5 | ✅ consommé par `useLibelles` |
 
 - **#64** — filtrable par catégorie, entrées actives seulement. Lecture seule (administré en base
