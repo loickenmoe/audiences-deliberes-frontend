@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-09 (**F0 à F5 validés**, **F6 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-10 (**F0 à F6 validés**, **F7 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -319,16 +319,39 @@ explicite de l'utilisateur) : voir Q-71, Q-72, Q-73 côté backend, QF-07 côté
 
 ---
 
-## F7 — Fiche dossier ⏳
+## F7 — Fiche dossier 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **07**, **08**, **15**, **16**, **17**, **18**. Endpoints **#3-8**, **#43**.
-Onglets synthèse, étapes (avec `CycleEtape`), historique ; modales affectation, dérogation de seuil,
-validation de sensibilité.
+Écrans **07** synthèse, **08** étapes, **15** historique, **16** affectation, **18** sensibilité,
+plus un onglet documents (#43, lecture), et **17** dérogation de seuil — demande et arbitrage, ce
+dernier débloqué par l'ajout de `GET /dossiers/{id}/seuil-derogation` au backend (Q-74, QF-23). **Livré le 2026-09-10** sur `feat/f7-fiche-dossier`, branchée sur F6.
 
-**Vérifications** : transition interdite → `ERR-004` avec états permis ; doublon d'affectation →
-dialogue puis `?forcer=true` ; création directe de `RECOURS_2` créant les étapes intermédiaires ;
-historique chronologique complet ; **le champ `documents` n'est pas consommé**.
-**Dépend de** : F6. **Note** : QF-08 conditionne les files DJ/DJA.
+- `services/dossierService.ts` étendu (#3 à #8, positionnement direct), `services/gedService.ts`
+  (#43), hooks de mutation qui rafraîchissent la fiche **et** les listes.
+- `lib/transitions.ts` : miroir exact du validateur de transitions du backend — seules les
+  transitions permises sont proposées.
+- Fiche à onglets accessible (motif WAI-ARIA, navigation aux flèches), trois modales.
+- QF-22 levée : la liste mène à la fiche, la création y redirige.
+
+**Vérifications exécutées le 2026-09-10** : `typecheck` ✅ · `lint` ✅ · **164 tests unitaires** ✅ ·
+`build` ✅ · **48 parcours Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅.
+**Dépend de** : F6. **Note** : QF-08 (files transverses DJ/DJA) reste ouverte ; QF-23 levée (Q-74).
+
+> **Points à retenir :**
+> - **Un endpoint peut exister et rester inatteignable.** #7 exige l'`auditId` d'une demande de
+>   dérogation, que rien n'expose (ni `GET`, ni champ du dossier, ni historique) — vérifié sur
+>   `/v3/api-docs`. Pour chaque endpoint qui prend un identifiant : d'où l'interface le tiendra-t-elle ?
+> - **Annoncer les effets de bord du backend avant confirmation** : exercer un recours ouvre
+>   l'étape suivante ; positionner au second recours crée le premier. Tous deux passent par un
+>   dialogue qui les nomme.
+> - **`PUT /affectation` remplace, n'ajoute pas** : les sélections partent de l'affectation
+>   actuelle. Conserver quelqu'un déclenche `ERR-003`, traité comme une demande de confirmation.
+> - **Deux défauts de `Dialog`, révélés par les parcours de F7 et corrigés à la racine** : titres
+>   à identifiant fixe (toutes les modales s'appelaient comme la première) et relais de la fermeture
+>   programmatique (masquer une modale refermait tout le parcours). Ils touchaient toute
+>   l'application.
+> - **Les parcours e2e préparent leur socle** (`tests/e2e/preparation.ts`) : une base recréée à
+>   neuf avait fait tomber 10 parcours sur 11 sans qu'aucune ligne de l'application soit en cause.
+> - L'historique est rédigé en français par le serveur (QF-24) : l'interface anglaise le dit.
 
 ---
 
@@ -468,4 +491,4 @@ documentation utilisateur, revue de sécurité frontend.
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**7 jalons validés sur 18 · F6 livré en attente de validation · 9 écrans sur 42 · 10 endpoints consommés sur 67.**
+**8 jalons validés sur 18 · F7 livré en attente de validation · 15 écrans sur 42 · 19 endpoints consommés sur 68.**

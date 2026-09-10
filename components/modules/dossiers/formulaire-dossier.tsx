@@ -196,13 +196,8 @@ export function FormulaireDossier() {
         juristesAffectes: valeurs.juristesAffectes.map(Number),
         avocatsAffectes: valeurs.avocatsAffectes.map(Number),
       });
-      /*
-       * Retour à la liste, filtrée sur la référence créée — et **non** vers `/dossiers/{id}` :
-       * la fiche dossier est l'écran 07, livré en F7. Y renvoyer maintenant enverrait
-       * l'utilisateur sur une route inexistante, ce qui échoue de surcroît en silence dans le
-       * routeur App (l'URL ne change même pas). À rebrancher sur la fiche à l'ouverture de F7.
-       */
-      routeur.push(`/dossiers?reference=${encodeURIComponent(cree.reference)}`);
+      // Le dossier créé s'ouvre directement : c'est ce que l'utilisateur va consulter ensuite.
+      routeur.push(`/dossiers/${cree.id}`);
     } catch (erreur) {
       // Le backend nomme lui-même le champ fautif depuis M16 (Q-70) : une référence en doublon
       // arrive avec `champ: "reference"` et se pose au bon endroit sans table de correspondance.

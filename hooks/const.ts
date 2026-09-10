@@ -10,6 +10,8 @@ export const CLES = {
   clientDossiers: "client-dossiers",
   dossiers: "dossiers",
   dossier: "dossier",
+  documentsDossier: "documents-dossier",
+  derogations: "derogations",
   intervenants: "intervenants",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",

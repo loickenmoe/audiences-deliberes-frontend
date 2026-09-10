@@ -158,6 +158,18 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - **Ne jamais rediriger vers une route non encore livrée.** Le routeur App échoue *en silence* :
   l'URL ne change même pas, et le bouton semble cassé alors que le backend a répondu 201. Découvert
   en renvoyant vers `/dossiers/{id}`, écran livré seulement en F7 (QF-22).
+- **Un `<dialog>` fermé reste dans le DOM.** Deux conséquences, corrigées dans `components/ui/dialog.tsx`
+  en F7 : (1) un identifiant de titre **fixe** donnait à toutes les modales montées le nom de la
+  première — d'où `useId` ; (2) le navigateur émet `close` **aussi** quand le programme ferme :
+  relayer ce cas refermait tout un parcours en cascade (masquer une modale pour afficher sa
+  confirmation). `onFermeture` n'est relayé que pour une fermeture décidée par l'utilisateur.
+- **Les parcours e2e préparent leur propre socle** (`tests/e2e/preparation.ts` : un client, un
+  avocat, via l'API réelle). Une base recréée à neuf avait fait tomber 10 parcours sur 11 : une
+  suite qui dépend de l'état laissé par l'exécution précédente teste l'historique de la base.
+- **Un endpoint peut exister et rester inatteignable.** #7 est déclaré, codé, testé — mais aucun
+  écran ne peut fournir l'`auditId` qu'il exige. Vérifier, pour chaque endpoint qui prend un
+  identifiant, **d'où l'interface le tiendrait** ; et le vérifier sur `/v3/api-docs`, pas seulement
+  dans le code (QF-23).
 - **Les tests e2e tournent contre un build de production** (`next build && next start`). En
   développement, la compilation à la demande produisait quatre échecs *tournants* par exécution sur
   des tests valides. Relever les délais ne faisait que déplacer le problème : 37/37 en 7,8 min
@@ -205,7 +217,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-16** | **Provisionnement paresseux** : un utilisateur n'existe en base qu'après son premier appel à un endpoint « utilisateur courant ». Un juriste jamais connecté est donc **inaffectable** à un dossier | **F2, F6** |
 | **QF-03** | Aucun `GET` sur adjudications/condamnations — écran de suivi sans source | **F13** |
 | **QF-20** | L'avocat ne peut pas déposer un compte rendu **en document**. ✅ **Direction retenue le 2026-09-09** : rendre `contenu` optionnel sur `POST /publications/cr-audience` et lui accepter un fichier. **Évolution backend à réaliser — rappeler à l'ouverture de F12.** | **F12**, F16 |
-| **QF-22** | La liste des dossiers affiche la référence **sans lien**, et la création renvoie vers la liste filtrée : la fiche est l'écran 07, livré en F7. Dette assumée, à lever à l'ouverture de F7. | **F7** |
+| **QF-22** | ✅ Levée en F7 : la liste mène à la fiche, la création y redirige. | — |
+| **QF-23** | ✅ Levée le 2026-09-10 : `GET /dossiers/{id}/seuil-derogation` ajouté au backend (Q-74). #7 exige en outre une sensibilité validée — la proposition initiale est aussi un audit `EN_ATTENTE`. | — |
+| **QF-24** | L'historique est rédigé **en français** par le backend (`action` = phrase, pas code) : non traduisible. Signalé dans l'interface en anglais. | aucun |
+| **QF-25** | ✅ Levée le 2026-09-10 (Q-75) : `@NotEmpty` + `@Valid` sur `PUT /affectation`. Reste ouvert : l'alerte au DJ à presque chaque changement d'affectation (règle métier RG-DOS-07, à confirmer par la DJ). | — |
 | **QF-21** | ✅ **Résolu le 2026-09-09 dans le backend** : le corps d'erreur porte un champ `champ`, absent quand aucun champ n'est visé. `ErreurApi.champ` fait autorité côté frontend ; la table par formulaire ne subsiste qu'en repli de version. | — |
 | **QF-04** | Qui génère les rapports ? `GET /rapports` = JURISTE, `GET /tableau-de-bord` = DJ, contredit le parcours P9 | **F15** |
 | **QF-07** | `GET /dossiers` ne filtre que nature/catégorie/juridiction — ni référence, ni client, ni « mes dossiers » | F6 |

@@ -1,5 +1,6 @@
 import type {
   CategorieDossier,
+  FormatDocument,
   SeuilOrigine,
   StatutCycleVie,
   StatutValidation,
@@ -114,8 +115,83 @@ export interface Dossier {
   etapes: EtapeProcedure[];
   juristesAffectes: number[];
   avocatsAffectes: number[];
+  /**
+   * Renseigné par `GET /dossiers/{id}` seulement, du plus récent au plus ancien. Les listes le
+   * renvoient vide : ne jamais s'y fier ailleurs que sur la fiche.
+   */
+  historique?: HistoriqueAction[];
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Entrée de l'historique d'un dossier.
+ *
+ * ⚠ `action` est une **phrase en français rédigée par le backend** (« Changement de statut de
+ * l'étape INSTANCE »), pas un code : elle ne peut pas être traduite côté client. Signalé à
+ * l'utilisateur (QF-24). `details` est un objet libre dont la forme dépend de l'action.
+ */
+export interface HistoriqueAction {
+  id: number;
+  utilisateurId: number | null;
+  action: string;
+  details: Record<string, unknown> | null;
+  dateAction: string;
+}
+
+/** Demande de dérogation de seuil et son arbitrage (#6, #7). */
+export interface AuditSeuil {
+  id: number;
+  dossierId: number;
+  utilisateurId: number | null;
+  ancienSeuil: number | null;
+  nouveauSeuil: number;
+  motif: string | null;
+  validePar: number | null;
+  statut: StatutValidation;
+  dateAction: string;
+}
+
+/** `PUT /dossiers/{id}/affectation` **remplace** les deux listes : il n'ajoute pas. */
+export interface ModifierAffectation {
+  juristesAffectes: number[];
+  avocatsAffectes: number[];
+}
+
+export interface DemandeDerogation {
+  nouveauSeuil: number;
+  motif: string;
+}
+
+export interface ValiderDerogation {
+  statut: Exclude<StatutValidation, "EN_ATTENTE">;
+  /** Obligatoire en cas de rejet. */
+  motif?: string;
+}
+
+/**
+ * Validation de la sensibilité par le DJ/DJA (#8). Le seuil et le type peuvent être **ajustés** au
+ * moment de valider ; `typeClientSensibleAjuste` est un code, validé contre le référentiel (Q-73).
+ */
+export interface ValiderSensibilite {
+  statut: Exclude<StatutValidation, "EN_ATTENTE">;
+  motifRejet?: string;
+  seuilMontantAjuste?: number;
+  typeClientSensibleAjuste?: string;
+}
+
+/** Document rattaché à un dossier (#43). */
+export interface DocumentDossier {
+  id: number;
+  dossierId: number;
+  nomFichier: string;
+  typeDocument: string | null;
+  format: FormatDocument;
+  poids: number;
+  auteurChargementId: number | null;
+  dateChargement: string;
+  estSupprime: boolean;
+  urlTelechargement: string | null;
 }
 
 /**

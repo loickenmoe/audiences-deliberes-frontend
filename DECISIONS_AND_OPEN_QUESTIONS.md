@@ -122,7 +122,77 @@ fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
 un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
 l'ouverture de F12.
 
-### 🟡 QF-22 — La liste des dossiers ne mène pas encore à la fiche
+### ✅ QF-23 — Une dérogation de seuil demandée ne pouvait pas être arbitrée *(résolue le 2026-09-10)*
+
+**Constat, vérifié dans le code du backend le 2026-09-10.** L'arbitrage d'une dérogation
+(#7, `PUT /dossiers/{id}/seuil-derogation/{auditId}`) exige l'identifiant de la demande. Or cet
+identifiant **n'est exposé nulle part** une fois la demande créée :
+
+| Source possible | Contient l'`auditId` ? |
+|---|---|
+| Réponse de `POST /dossiers/{id}/seuil-derogation` (#6) | ✅ — mais au **demandeur** seulement |
+| Un `GET` des demandes d'un dossier | ❌ n'existe pas |
+| `DossierResponse` | ❌ aucun champ |
+| Historique (« Demande de dérogation de seuil ») | ❌ `details` = `{nouveauSeuil, motif}` |
+
+**Conséquence.** Le DJ/DJA — seul habilité à arbitrer — n'a aucun moyen de connaître la demande à
+arbitrer. L'endpoint #7 est **inatteignable** depuis une interface : l'écran 17 ne peut être livré
+qu'à moitié (la demande, pas l'arbitrage). Le dossier reste bloqué avec une demande en attente.
+
+**Contournement écarté.** Retrouver l'identifiant en le devinant ou en l'extrayant d'un champ libre
+serait fragile et faux dès la deuxième demande.
+
+**Recommandation (évolution backend, bloquante pour l'écran 17).** Exposer les demandes d'un
+dossier : `GET /dossiers/{id}/seuil-derogation` renvoyant `List<AuditSeuilResponse>`, sous
+`ROLE_CONSULTATION`. C'est une lecture, sans règle métier nouvelle. Elle résout aussi la moitié de
+QF-08 si on lui ajoute un filtre `?statut=EN_ATTENTE`. **Statut : ouvert, soumis à l'utilisateur.**
+
+**✅ Résolue dans le backend le 2026-09-10 (Q-74)**, sur autorisation de l'utilisateur :
+`GET /dossiers/{id}/seuil-derogation[?statut=]` renvoie les demandes de seuil du dossier, la plus
+récente d'abord. La fiche affiche au DJ/DJA une carte « Dérogations de seuil en attente » avec un
+bouton d'arbitrage : l'écran 17 est complet.
+
+**Défaut latent découvert au passage et corrigé dans le même geste.** La proposition initiale de
+sensibilité est **elle aussi** un audit `EN_ATTENTE`. Tant que la sensibilité n'est pas validée, #7
+permettait de l'« arbitrer » comme une dérogation — fixant un seuil en laissant la sensibilité en
+attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
+#7 exige désormais une sensibilité validée, comme #6.
+
+### 🟡 QF-24 — L'historique est rédigé en français par le serveur
+
+**Constat.** `HistoriqueActionResponse.action` est une phrase française (« Changement de statut de
+l'étape INSTANCE ») et non un code. C'est la seule donnée du backend qui contredise le principe sur
+lequel repose le bilinguisme : *le backend ne renvoie que des codes stables*.
+
+**Conséquence.** En anglais, l'onglet Historique affiche des libellés français. La fiche le signale
+explicitement plutôt que de laisser croire à un oubli de traduction.
+
+**Recommandation (évolution backend, non bloquante).** Ajouter un code d'action stable
+(`CREATION_DOSSIER`, `CHANGEMENT_STATUT_ETAPE`…) à côté du libellé, que le frontend traduirait.
+**Statut : ouvert, non bloquant.**
+
+### ✅ QF-25 — L'affectation pouvait vider un dossier de ses juristes *(résolue le 2026-09-10)*
+
+**Constat.** `PUT /dossiers/{id}/affectation` **remplace** les listes et n'impose aucun minimum :
+`ModifierAffectationRequest` ne porte pas le `@NotEmpty` de la création. Un dossier peut donc se
+retrouver sans juriste ni avocat, contre RG-DOS-03 (« au moins un juriste par dossier »).
+
+**Traitement retenu côté frontend.** La modale exige au moins un juriste et un avocat, comme la
+création. Mais c'est une protection d'interface : un appel direct à l'API passe.
+
+**Recommandation (évolution backend, non bloquante).** Aligner la validation sur la création.
+
+**Observation liée.** Conserver une personne déjà affectée déclenche `ERR-003` puis, sur
+confirmation, une alerte au DJ. Comme l'endpoint remplace tout, **presque toute modification**
+conserve quelqu'un — le DJ risque d'être alerté à chaque changement d'affectation. Comportement
+fidèle à RG-DOS-07 tel qu'implémenté ; à confirmer avec la Direction Juridique.
+**Statut : ouvert, non bloquant.**
+
+**✅ Résolue dans le backend le 2026-09-10 (Q-75)** : `@NotEmpty` sur les deux listes et `@Valid`
+sur le contrôleur, qui n'en avait pas. Même règle qu'à la création. L'observation sur l'alerte au DJ
+reste ouverte : c'est une règle métier, à faire confirmer par la Direction Juridique.
+
+### ✅ QF-22 — La liste des dossiers ne mène pas encore à la fiche *(levée en F7)*
 
 **Constat.** L'écran 05 affiche la référence de chaque dossier en texte simple, et la création
 renvoie vers la liste filtrée plutôt que vers le dossier créé. La fiche dossier est l'écran **07**,
@@ -136,6 +206,8 @@ redirection ne se produisait pas.
 **À faire à l'ouverture de F7** : rebrancher la colonne « Référence » sur `/dossiers/{id}` et la
 redirection de création sur la fiche du dossier créé. Les deux emplacements portent un commentaire
 le rappelant. **Statut : dette assumée, levée en F7.**
+
+**✅ Levée le 2026-09-10 (F7)** : la référence mène à la fiche, et la création y redirige.
 
 ### ✅ QF-21 — `ERR-CONFLICT` ne disait pas quel champ est en conflit *(résolu le 2026-09-09)*
 
