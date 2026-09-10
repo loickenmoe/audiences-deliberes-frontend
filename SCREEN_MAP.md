@@ -44,8 +44,8 @@
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 05 | Liste des dossiers | `/dossiers` | CONS | `GET /dossiers?nature&categorie&juridiction&page&size` | F6 | ❌ |
-| 06 | Création de dossier | `/dossiers/nouveau` | SAI | `POST /dossiers` + 4 référentiels (voir ci-dessous) | F6 | ❌ |
+| 05 | Liste des dossiers | `/dossiers` | CONS | `GET /dossiers?reference&clientId&mesDossiers&nature&categorie&juridiction&page&size` | F6 | ✅ |
+| 06 | Création de dossier | `/dossiers/nouveau` | SAI | `POST /dossiers` + 4 référentiels (voir ci-dessous) | F6 | ✅ |
 | 07 | Fiche — Synthèse | `/dossiers/[id]` | CONS | `GET /dossiers/{id}` | F7 | ❌ |
 | 08 | Fiche — Étapes | onglet | JUR | `PATCH /dossiers/{id}/etapes/{etapeId}/statut`, `POST /dossiers/{id}/etapes` | F7 | ❌ |
 | 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences` | F8 | ❌ |

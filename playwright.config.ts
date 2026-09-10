@@ -21,6 +21,19 @@ export default defineConfig({
    * gagnerait d'ailleurs à s'exécuter contre `next build && next start` — à trancher en F17.
    */
   timeout: 180_000,
+  /**
+   * Délai d'assertion par défaut relevé de 5 s à 20 s.
+   *
+   * Les 5 s de Playwright supposent une application déjà servie. Ici, chaque assertion peut attendre
+   * une compilation de route à la demande, un aller-retour vers un vrai Keycloak et un vrai backend,
+   * le tout avec plusieurs travailleurs en parallèle sur la même instance de développement. Des
+   * assertions parfaitement valides échouaient alors par intermittence — c'était le harnais qui
+   * mentait, pas l'application.
+   *
+   * La bonne réponse de fond est d'exécuter la suite contre un build de production
+   * (`next build && next start`), qui supprime la compilation à la demande : à trancher en F17.
+   */
+  expect: { timeout: 20_000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -32,7 +45,18 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run dev",
+    /**
+     * **Build de production, pas serveur de développement.**
+     *
+     * En développement, Next compile chaque route au premier accès. Avec plusieurs travailleurs en
+     * parallèle, cela produisait des échecs *intermittents et tournants* — quatre tests différents à
+     * chaque exécution, tous parfaitement valides — et une suite de 17 minutes. Relever les délais
+     * n'a fait que déplacer le problème : c'était le harnais qui mentait sur l'application.
+     *
+     * Servir un build de production supprime la compilation à la demande, rend la suite déterministe
+     * et la rapproche de ce qui est réellement livré. Le coût est un build en tête d'exécution.
+     */
+    command: "npm run build && npm run start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     // Compilation à froid : après un `rm -rf .next`, Next reconstruit tout avant de répondre.

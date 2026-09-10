@@ -122,6 +122,21 @@ fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
 un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
 l'ouverture de F12.
 
+### 🟡 QF-22 — La liste des dossiers ne mène pas encore à la fiche
+
+**Constat.** L'écran 05 affiche la référence de chaque dossier en texte simple, et la création
+renvoie vers la liste filtrée plutôt que vers le dossier créé. La fiche dossier est l'écran **07**,
+livré en **F7**.
+
+**Pourquoi ce choix.** Un lien vers `/dossiers/{id}` serait mort jusque-là — et le routeur App
+échoue *en silence* sur une route inexistante : l'URL ne change même pas, ce qui donne l'illusion
+d'un bouton cassé. Découvert en testant la création : le backend répondait `201`, mais la
+redirection ne se produisait pas.
+
+**À faire à l'ouverture de F7** : rebrancher la colonne « Référence » sur `/dossiers/{id}` et la
+redirection de création sur la fiche du dossier créé. Les deux emplacements portent un commentaire
+le rappelant. **Statut : dette assumée, levée en F7.**
+
 ### ✅ QF-21 — `ERR-CONFLICT` ne disait pas quel champ est en conflit *(résolu le 2026-09-09)*
 
 **Constat, vérifié en provoquant le doublon sur l'instance locale le 2026-09-09.** Une seconde
@@ -133,7 +148,7 @@ POST /clients  →  409
 ```
 
 Le code `ERR-002`, que le contrat d'API associe à une référence dupliquée, est en réalité **réservé
-aux dossiers** (`DossierService`). Le même `ERR-CONFLICT` sert à **dix conflits sans rapport** :
+aux dossiers** (`DossierService`). Le même `ERR-CONFLICT` sert à **neuf conflits sans rapport** :
 référence client, compte Keycloak d'un avocat, étape déjà ouverte, accord de frais déjà donné,
 suppression déjà demandée, publication déjà traitée, correspondance déjà transmise, constitution
 déjà traitée. Et `details` vaut toujours `null`.
@@ -186,7 +201,7 @@ d'implémentation, mais une divergence entre les user stories et le parcours de 
 construirai les écrans selon les droits réellement en vigueur — mais découvrir l'écart en recette
 serait coûteux. **Statut : ouvert, à trancher avant F15.**
 
-### 🟡 QF-07 — Recherche de dossiers limitée
+### ✅ QF-07 — Recherche de dossiers limitée *(résolue le 2026-09-09)*
 
 **Constat.** `GET /dossiers` n'accepte que `nature`, `categorie`, `juridiction`, `page`, `size`. Ni
 recherche par référence de dossier, ni par client, ni filtre « mes dossiers ».
@@ -195,8 +210,20 @@ recherche par référence de dossier, ni par client, ni filtre « mes dossiers �
 retrouver le sien. Un filtrage effectué côté navigateur sur une liste paginée **donnerait des
 résultats faux** (il ne verrait que la page courante).
 
-**Recommandation.** Confirmer si ces trois filtres sont attendus en V1. Si oui, ils relèvent d'un
-ajout backend (paramètres supplémentaires sur un endpoint existant). **Statut : ouvert, impacte F6.**
+**✅ Résolue dans le backend le 2026-09-09** (Q-72), sur autorisation explicite de l'utilisateur, à
+l'ouverture de F6.
+
+`GET /dossiers` accepte désormais trois paramètres optionnels :
+· `reference` — recherche **partielle**, insensible à la casse ;
+· `clientId` ;
+· `mesDossiers` — booléen, résolu sur **l'utilisateur authentifié** et non sur un identifiant reçu,
+  de sorte qu'il ne peut pas servir à consulter le portefeuille d'un collègue.
+
+Le filtre de portefeuille passe par une sous-requête `EXISTS`, non par une jointure, qui aurait
+dupliqué les lignes et faussé le total de la pagination.
+
+**Vérifié en réel le 2026-09-09** : `reference=DOS-F6` → 1, `reference=ZZZZ` → 0, `clientId=1` → 1,
+`clientId=2` → 0, `mesDossiers` → 1 pour le juriste affecté et 0 pour l'assistante.
 
 ### 🟡 QF-08 — Files d'attente absentes pour le DJ/DJA
 

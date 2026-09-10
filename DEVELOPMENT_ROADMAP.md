@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-09 (**F0 à F4 validés**, **F5 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-09 (**F0 à F5 validés**, **F6 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -261,7 +261,7 @@ Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅.
 >   permanence produirait des refus incompréhensibles.
 > - **Le doublon de référence client remonte en `ERR-CONFLICT`, pas en `ERR-002`** — vérifié en
 >   provoquant le cas sur le backend. `ERR-002` ne concerne que les dossiers, et `ERR-CONFLICT` sert
->   à dix conflits différents sans jamais nommer de champ. C'est donc le formulaire, seul à savoir
+>   à neuf conflits différents sans jamais nommer de champ. C'est donc le formulaire, seul à savoir
 >   quel endpoint il appelle, qui déclare le champ visé (QF-21). Un parcours e2e vérifie
 >   l'`aria-invalid` sur `reference`, un autre sur `compteKeycloak`.
 > - **Rien de décoratif dans un `<label>`** : l'astérisque des champs obligatoires y rendait le nom
@@ -280,14 +280,42 @@ Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅.
 
 ---
 
-## F6 — Dossiers : liste et création ⏳
+## F6 — Dossiers : liste et création 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **05**, **06**. Endpoints **#1-2**, plus les référentiels de F5.
-Formulaire adaptatif par catégorie (Q-11), section affectation obligatoire, case « dossier sensible ».
+Écrans **05** liste des dossiers, **06** création. Endpoints **#1**, **#2**, plus les référentiels
+de F5. **Livré le 2026-09-09** sur la branche `feat/f6-dossiers`.
 
-**Vérifications** : création nominale ; référence en doublon → `ERR-002` sur le bon champ ; champs
-conditionnels exigés selon la catégorie ; affectation vide refusée ; pagination et filtres corrects.
-**Dépend de** : F5. **Note** : QF-07 conditionne l'étendue de la recherche.
+- `services/dossierService.ts`, `hooks/useDossiers.ts`, types `CreerDossier` et `FiltresDossiers`.
+- Formulaire adaptatif : la **catégorie est dérivée de la nature**, jamais demandée — le backend la
+  déduit (RG-DOS-02) et refuse une valeur divergente.
+- Sections identification, parties, pièces conditionnelles, affectation, sensibilité.
+
+**Trois blocages backend levés au passage** (jalon **M16** du dépôt backend, sur autorisation
+explicite de l'utilisateur) : voir Q-71, Q-72, Q-73 côté backend, QF-07 côté frontend.
+
+**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **141 tests unitaires** ✅ ·
+`build` ✅ · **37 parcours Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅ ·
+**265 tests backend** ✅.
+**Dépend de** : F5.
+
+> **Points à retenir :**
+> - **`nature` s'envoie par son libellé**, pas par son code ni son identifiant : le backend le résout
+>   par `findByLibelleIgnoreCase`. Trois libellés de la taxonomie dépassaient la largeur de
+>   `dossier.nature` et rendaient ces natures inutilisables — corrigé par la migration V7 (Q-71).
+> - **La catégorie ne se demande pas, elle se déduit.** La demander créerait une contradiction
+>   possible avec la nature, pour aucun gain. Elle est affichée en lecture seule.
+> - **Les champs conditionnels sont exigés en ET, pas en OU** (Q-11) : recouvrement → dossier de
+>   crédit **et** PV de transfert ; litige → incident de compte **et** éléments justificatifs.
+>   N'afficher que la paire concernée évite de laisser croire que les quatre sont exigés.
+> - **`typeClientSensible` s'envoie par son code**, désormais validé contre le référentiel (Q-73).
+> - **Ne jamais rediriger vers une route non livrée.** La création renvoyait vers `/dossiers/{id}`,
+>   écran 07 livré en F7 : le routeur App échoue *en silence*, l'URL ne change même pas et le bouton
+>   semble cassé alors que le backend a répondu 201. Redirection vers la liste filtrée, et référence
+>   affichée sans lien, jusqu'à F7 (QF-22).
+> - **La suite e2e tourne désormais contre un build de production.** En développement, la
+>   compilation à la demande produisait quatre échecs *tournants* par exécution, sur des tests
+>   valides, pour 17 minutes. Contre `next build && next start` : 37/37 en 7,8 minutes, build
+>   compris. Relever les délais n'avait fait que déplacer le problème.
 
 ---
 
@@ -440,4 +468,4 @@ documentation utilisateur, revue de sécurité frontend.
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**6 jalons validés sur 18 · F5 livré en attente de validation · 7 écrans sur 42 · 8 endpoints consommés sur 67.**
+**7 jalons validés sur 18 · F6 livré en attente de validation · 9 écrans sur 42 · 10 endpoints consommés sur 67.**

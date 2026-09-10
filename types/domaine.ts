@@ -118,6 +118,56 @@ export interface Dossier {
   updatedAt: string;
 }
 
+/**
+ * Création d'un dossier (#1, FR-DOS-01).
+ *
+ * Trois pièges du contrat, vérifiés dans `DossierService` du backend :
+ * · `nature` est le **libellé** du référentiel, pas son code ni son identifiant — le backend le
+ *   résout par `findByLibelleIgnoreCase` ;
+ * · `categorie` est **déduite** de la nature (RG-DOS-02). L'envoyer n'est utile à rien et, si elle
+ *   diverge, provoque un 400. Le formulaire la dérive côté client pour piloter ses champs, sans la
+ *   transmettre ;
+ * · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), pas le libellé.
+ */
+export interface CreerDossier {
+  reference: string;
+  nature: string;
+  juridictionSaisie: string;
+  clientId: number;
+  parties?: { demandeur?: string; defendeur?: string };
+  risqueEncouru: number;
+  recoursExerces?: string;
+  motifRenvoi?: string;
+  codeAgenceOrigine?: string;
+  codeAgenceContentieuse?: string;
+  /** Exigés ensemble pour un dossier `RECOUVREMENT` (Q-11, en ET et non en OU). */
+  dossierCreditOrigine?: string;
+  pvTransfert?: string;
+  /** Exigés ensemble pour un dossier `EXPLOITATION_LITIGES`. */
+  incidentCompteReference?: string;
+  elementsJustificatifs?: string;
+  champAlarme?: string;
+  /** `seuilMontant` et `typeClientSensible` deviennent obligatoires quand ceci est vrai. */
+  estSensible?: boolean;
+  seuilMontant?: number;
+  typeClientSensible?: string;
+  /** Tous deux non vides : un dossier sans juriste ou sans avocat est refusé. */
+  juristesAffectes: number[];
+  avocatsAffectes: number[];
+}
+
+/** Filtres de `GET /dossiers` (#2). `mesDossiers` se résout sur l'utilisateur authentifié. */
+export interface FiltresDossiers {
+  nature?: string;
+  categorie?: CategorieDossier;
+  juridiction?: string;
+  reference?: string;
+  clientId?: number;
+  mesDossiers?: boolean;
+  page?: number;
+  size?: number;
+}
+
 // ─────────────────────────────── Intervenants ───────────────────────────────
 
 export interface Intervenant {
