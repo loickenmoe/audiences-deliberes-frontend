@@ -500,5 +500,41 @@
     "motifDemande": "Motif de la demande",
     "motifDecision": "Motif de la décision",
     "derogationArbitree": "Dérogation arbitrée."
+  },
+  "documents": {
+    "types": {
+      "DOSSIER_CREDIT": "Dossier de crédit d’origine",
+      "PV_TRANSFERT": "PV de transfert",
+      "INCIDENT_COMPTE": "Pièce de l’incident de compte",
+      "ELEMENT_JUSTIFICATIF": "Élément justificatif",
+      "AUTRE": "Autre pièce"
+    },
+    "piecesTitre": "Pièces à joindre",
+    "piecesAide": "Facultatif : ces pièces pourront aussi être ajoutées plus tard depuis la fiche du dossier.",
+    "autresPieces": "Autres pièces",
+    "ajouterAutre": "Ajouter une autre pièce",
+    "retirerPiece": "Retirer cette pièce",
+    "apercu": "Aperçu",
+    "apercuTitre": "Aperçu — {nom}",
+    "apercuImpossible": "Aperçu indisponible pour ce format : téléchargez le fichier pour l’ouvrir.",
+    "apercuErreur": "Le document n’a pas pu être chargé.",
+    "depotEnCours": "Dépôt des pièces…",
+    "depotEchec": "Le dossier est créé, mais {nombre, plural, one {# pièce n’a pas pu être déposée} other {# pièces n’ont pas pu être déposées}} : {noms}. Ajoutez-{nombre, plural, one {la} other {les}} depuis l’onglet Documents.",
+    "ajouterPiece": "Ajouter une pièce",
+    "typePiece": "Type de pièce",
+    "deposer": "Déposer",
+    "pieceDeposee": "Pièce déposée.",
+    "colonneType": "Type",
+    "colonneActions": "Actions",
+    "consulter": "Consulter",
+    "telecharger": "Télécharger",
+    "supprimer": "Supprimer",
+    "demanderSuppression": "Demander la suppression",
+    "suppressionTitre": "Supprimer ce document ?",
+    "suppressionMessage": "Le document « {nom} » sera supprimé définitivement.",
+    "demandeSuppressionTitre": "Demander la suppression ?",
+    "demandeSuppressionMessage": "Le document « {nom} » restera visible jusqu’à la décision du DJ ou du DJA.",
+    "documentSupprime": "Document supprimé.",
+    "demandeEnvoyee": "Demande de suppression envoyée au DJ et au DJA."
   }
 }

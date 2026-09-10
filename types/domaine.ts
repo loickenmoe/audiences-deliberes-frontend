@@ -180,6 +180,21 @@ export interface ValiderSensibilite {
   typeClientSensibleAjuste?: string;
 }
 
+/** Demande de suppression créée quand un juriste auteur supprime une pièce (#40, réponse 202). */
+export interface DemandeSuppression {
+  id: number;
+  documentId: number;
+  demandeurId: number | null;
+  motif: string | null;
+  statut: "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
+  dateDemande: string;
+}
+
+/** Issue d'une suppression : immédiate (DJ/DJA, 200) ou soumise à décision (juriste, 202). */
+export type ResultatSuppression =
+  | { immediate: true; document: DocumentDossier }
+  | { immediate: false; demande: DemandeSuppression };
+
 /** Document rattaché à un dossier (#43). */
 export interface DocumentDossier {
   id: number;

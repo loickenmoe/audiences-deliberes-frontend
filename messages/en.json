@@ -500,5 +500,41 @@
     "motifDemande": "Reason for the request",
     "motifDecision": "Reason for the decision",
     "derogationArbitree": "Waiver decided."
+  },
+  "documents": {
+    "types": {
+      "DOSSIER_CREDIT": "Originating credit file",
+      "PV_TRANSFERT": "Transfer record",
+      "INCIDENT_COMPTE": "Account incident document",
+      "ELEMENT_JUSTIFICATIF": "Supporting evidence",
+      "AUTRE": "Other document"
+    },
+    "piecesTitre": "Documents to attach",
+    "piecesAide": "Optional: these documents can also be added later from the case page.",
+    "autresPieces": "Other documents",
+    "ajouterAutre": "Add another document",
+    "retirerPiece": "Remove this document",
+    "apercu": "Preview",
+    "apercuTitre": "Preview — {nom}",
+    "apercuImpossible": "No preview for this format: download the file to open it.",
+    "apercuErreur": "The document could not be loaded.",
+    "depotEnCours": "Uploading documents…",
+    "depotEchec": "The case was created, but {nombre, plural, one {# document could not be uploaded} other {# documents could not be uploaded}}: {noms}. Add {nombre, plural, one {it} other {them}} from the Documents tab.",
+    "ajouterPiece": "Add a document",
+    "typePiece": "Document type",
+    "deposer": "Upload",
+    "pieceDeposee": "Document uploaded.",
+    "colonneType": "Type",
+    "colonneActions": "Actions",
+    "consulter": "View",
+    "telecharger": "Download",
+    "supprimer": "Delete",
+    "demanderSuppression": "Request deletion",
+    "suppressionTitre": "Delete this document?",
+    "suppressionMessage": "The document “{nom}” will be permanently deleted.",
+    "demandeSuppressionTitre": "Request deletion?",
+    "demandeSuppressionMessage": "The document “{nom}” will remain visible until the Legal Director or Deputy decides.",
+    "documentSupprime": "Document deleted.",
+    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy."
   }
 }

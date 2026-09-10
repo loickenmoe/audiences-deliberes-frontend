@@ -51,7 +51,7 @@
 | 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences` | F8 | ❌ |
 | 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes` | F9 | ❌ |
 | 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes` | F8 | ❌ |
-| 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F10 | ❌ |
+| 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
 | 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ❌ |
 | 14 | Fiche — Décisions définitives | onglet | JUR | `POST .../adjudications`, `POST .../condamnations` — **aucune lecture, cf. QF-03** | F13 | ❌ |
 | 15 | Fiche — Historique | onglet | CONS | inclus dans `GET /dossiers/{id}` (`historique[]`) | F7 | ✅ (libellés en français, QF-24) |

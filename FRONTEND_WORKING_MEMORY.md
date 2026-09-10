@@ -166,6 +166,14 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - **Les parcours e2e préparent leur propre socle** (`tests/e2e/preparation.ts` : un client, un
   avocat, via l'API réelle). Une base recréée à neuf avait fait tomber 10 parcours sur 11 : une
   suite qui dépend de l'état laissé par l'exécution précédente teste l'historique de la base.
+- **axios 1.x convertit un `FormData` en JSON** quand le type par défaut du client est
+  `application/json` — le nôtre. Tout envoi de fichier doit déclarer `multipart/form-data`
+  (`gedService.deposer`). Et le tester **sous Node** : sous jsdom, MSW ne relit jamais un corps
+  `FormData` et le test expire sans rien vérifier.
+- **Une URL MinIO pré-signée se lit par `fetch` nu**, jamais par `apiClient` : notre en-tête
+  `Authorization` ferait vérifier le jeton Keycloak à la place de la signature. MinIO autorise
+  l'origine `localhost:3000` (CORS vérifié) : aperçu en `blob:` et téléchargement sous le nom
+  d'origine. L'URL ne vit que 10 minutes : la demander au clic, pas à l'affichage de la liste.
 - **Un endpoint peut exister et rester inatteignable.** #7 est déclaré, codé, testé — mais aucun
   écran ne peut fournir l'`auditId` qu'il exige. Vérifier, pour chaque endpoint qui prend un
   identifiant, **d'où l'interface le tiendrait** ; et le vérifier sur `/v3/api-docs`, pas seulement
@@ -220,6 +228,8 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-22** | ✅ Levée en F7 : la liste mène à la fiche, la création y redirige. | — |
 | **QF-23** | ✅ Levée le 2026-09-10 : `GET /dossiers/{id}/seuil-derogation` ajouté au backend (Q-74). #7 exige en outre une sensibilité validée — la proposition initiale est aussi un audit `EN_ATTENTE`. | — |
 | **QF-24** | L'historique est rédigé **en français** par le backend (`action` = phrase, pas code) : non traduisible. Signalé dans l'interface en anglais. | aucun |
+| **QF-26** | Les pièces justificatives des frais sont une **liste de noms**, pas des fichiers (`List<String>`). À trancher à l'ouverture de F11. | **F11**, F16 |
+| **QF-27** | Aucun endpoint « utilisateur courant » : l'interface ne sait pas si l'on est l'auteur d'une pièce. Non bloquant. | aucun |
 | **QF-25** | ✅ Levée le 2026-09-10 (Q-75) : `@NotEmpty` + `@Valid` sur `PUT /affectation`. Reste ouvert : l'alerte au DJ à presque chaque changement d'affectation (règle métier RG-DOS-07, à confirmer par la DJ). | — |
 | **QF-21** | ✅ **Résolu le 2026-09-09 dans le backend** : le corps d'erreur porte un champ `champ`, absent quand aucun champ n'est visé. `ErreurApi.champ` fait autorité côté frontend ; la table par formulaire ne subsiste qu'en repli de version. | — |
 | **QF-04** | Qui génère les rapports ? `GET /rapports` = JURISTE, `GET /tableau-de-bord` = DJ, contredit le parcours P9 | **F15** |

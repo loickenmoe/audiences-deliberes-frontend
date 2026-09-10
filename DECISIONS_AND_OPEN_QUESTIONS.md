@@ -122,6 +122,30 @@ fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
 un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
 l'ouverture de F12.
 
+### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
+
+**Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige
+`piecesJustificatives: List<String>` non vide — une **liste de noms**, stockée en `TEXT[]`. Aucun
+fichier n'est reçu : l'avocat « déclare » ses pièces sans pouvoir les joindre, et l'Assistante qui
+contrôle la conformité ne peut rien ouvrir.
+
+**Recommandation.** À trancher à l'ouverture de F11 : soit les pièces passent par la GED (dépôt
+préalable, la demande référence des identifiants de documents), soit la demande accepte des
+fichiers en multipart. **Statut : ouvert, impacte F11 et F16.**
+
+### 🟡 QF-27 — Aucun endpoint ne donne l'identifiant de l'utilisateur connecté
+
+**Constat.** Le backend identifie les auteurs par un identifiant numérique (`auteurChargementId`,
+`utilisateurId`…), mais n'expose ni `GET /utilisateurs/moi` ni cet identifiant dans le jeton.
+L'interface ne peut donc pas savoir si l'utilisateur est l'auteur d'une pièce.
+
+**Conséquence en F7.** Un juriste voit « Demander la suppression » sur toutes les pièces ; le
+backend refuse (403) celles qu'il n'a pas déposées, avec son propre message. Correct, mais moins
+précis que de n'afficher l'action qu'à l'auteur. Le besoin reviendra (« mes demandes », « mes
+dépôts »).
+
+**Recommandation (non bloquante).** `GET /utilisateurs/moi`, en lecture seule. **Statut : ouvert.**
+
 ### ✅ QF-23 — Une dérogation de seuil demandée ne pouvait pas être arbitrée *(résolue le 2026-09-10)*
 
 **Constat, vérifié dans le code du backend le 2026-09-10.** L'arbitrage d'une dérogation
@@ -364,11 +388,20 @@ pas `ROLE_CONSULTATION` — ce qui rejoint QF-01.
 **Recommandation.** Un `GET /utilisateurs/moi` côté backend rendrait le contournement inutile.
 **Statut : ouvert, non bloquant.**
 
-### 🟡 QF-06 — Affichage des documents stockés
+### ✅ QF-06 — Affichage des documents stockés *(tranchée le 2026-09-10, en F7)*
 
-Les documents sont servis par des URL MinIO pré-signées sur `http://localhost:9000`. Le CORS de
-MinIO et `next.config.ts` doivent être vérifiés ; l'affichage inline des PDF et images peut être
-bloqué par le navigateur. **À trancher en F10.**
+Les documents sont servis par des URL MinIO pré-signées sur `http://localhost:9000`, valables
+10 minutes. **Vérifié en réel** : MinIO répond `Access-Control-Allow-Origin: http://localhost:3000`,
+préflight compris, et l'application n'impose aucune politique de sécurité de contenu.
+
+**Tranché** : le contenu est lu dans la page par `fetch` (sans en-tête `Authorization`, que MinIO
+vérifierait à la place de la signature), puis affiché depuis une URL `blob:` locale — PDF en
+`iframe`, image, texte ; un XLSX se télécharge. Le téléchargement passe par le même contenu et garde
+le nom d'origine, ce qu'un lien direct vers MinIO ne permettrait pas (`download` ignoré entre
+origines). Vérifié par les parcours e2e : aperçu d'une image stockée, téléchargement d'un PDF.
+
+⚠ En production, l'URL publique de MinIO et son CORS devront être reconfigurés pour l'origine réelle
+de l'application : `MINIO_API_URL` est aujourd'hui `localhost`.
 
 ### ✅ QF-18 — Saisie des identifiants dans l'application — tranché en F3
 

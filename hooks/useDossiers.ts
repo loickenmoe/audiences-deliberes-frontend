@@ -141,3 +141,33 @@ export function useValiderDerogation(id: number) {
     "derogationArbitree",
   );
 }
+
+/**
+ * Dépôt et suppression de pièces. Pas de notification ici : à la création d'un dossier, plusieurs
+ * pièces partent d'affilée, et un toast par pièce noierait l'utilisateur. Les écrans notifient.
+ * La fiche est rafraîchie aussi : chaque dépôt ou suppression entre dans l'historique.
+ */
+function useInvalidationDocuments(dossierId: number) {
+  const client = useQueryClient();
+  return () => {
+    void client.invalidateQueries({ queryKey: [CLES.documentsDossier, dossierId] });
+    void client.invalidateQueries({ queryKey: [CLES.dossier, dossierId] });
+  };
+}
+
+export function useDeposerDocument(dossierId: number) {
+  const invalider = useInvalidationDocuments(dossierId);
+  return useMutation({
+    mutationFn: ({ typeDocument, fichier }: { typeDocument: string; fichier: File }) =>
+      gedService.deposer(dossierId, typeDocument, fichier),
+    onSuccess: invalider,
+  });
+}
+
+export function useSupprimerDocument(dossierId: number) {
+  const invalider = useInvalidationDocuments(dossierId);
+  return useMutation({
+    mutationFn: (documentId: number) => gedService.supprimer(documentId),
+    onSuccess: invalider,
+  });
+}

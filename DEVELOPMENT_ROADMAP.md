@@ -331,9 +331,12 @@ dernier débloqué par l'ajout de `GET /dossiers/{id}/seuil-derogation` au backe
   transitions permises sont proposées.
 - Fiche à onglets accessible (motif WAI-ARIA, navigation aux flèches), trois modales.
 - QF-22 levée : la liste mène à la fiche, la création y redirige.
+- **Pièces jointes** (demandées à la recette de F7) : pièces facultatives dès la création, lisibles
+  avant l'envoi ; onglet Documents complet — dépôt, aperçu, téléchargement, suppression (écran 12
+  avancé depuis F10). Endpoints #38, #39, #40. QF-06 tranchée.
 
-**Vérifications exécutées le 2026-09-10** : `typecheck` ✅ · `lint` ✅ · **164 tests unitaires** ✅ ·
-`build` ✅ · **48 parcours Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅.
+**Vérifications exécutées le 2026-09-10** : `typecheck` ✅ · `lint` ✅ · **174 tests unitaires** ✅ ·
+`build` ✅ · **52 parcours Playwright contre le backend réel et MinIO** ✅ · `smoke` 17/17 ✅.
 **Dépend de** : F6. **Note** : QF-08 (files transverses DJ/DJA) reste ouverte ; QF-23 levée (Q-74).
 
 > **Points à retenir :**
@@ -352,6 +355,14 @@ dernier débloqué par l'ajout de `GET /dossiers/{id}/seuil-derogation` au backe
 > - **Les parcours e2e préparent leur socle** (`tests/e2e/preparation.ts`) : une base recréée à
 >   neuf avait fait tomber 10 parcours sur 11 sans qu'aucune ligne de l'application soit en cause.
 > - L'historique est rédigé en français par le serveur (QF-24) : l'interface anglaise le dit.
+> - **Les pièces partent après le dossier, jamais avec lui** : le dépôt en GED exige son identifiant
+>   (et le module dossier ne dépend pas de la GED, Q-67). Un dépôt qui échoue n'annule pas le
+>   dossier : la fiche s'ouvre sur ses documents en nommant les pièces à redéposer.
+> - **axios 1.x convertit un `FormData` en JSON** sous notre type par défaut `application/json` :
+>   l'envoi déclare `multipart/form-data`, et son test tourne sous Node — sous jsdom, MSW ne relit
+>   jamais le corps et le test expire sans rien prouver.
+> - **Une URL pré-signée se lit sans `Authorization`** et au clic (10 minutes de vie). Le CORS de
+>   MinIO autorise l'application : aperçu en `blob:`, téléchargement sous le nom d'origine.
 
 ---
 
@@ -491,4 +502,4 @@ documentation utilisateur, revue de sécurité frontend.
 |---|---|---|---|---|---|---|---|---|---|
 | **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**8 jalons validés sur 18 · F7 livré en attente de validation · 15 écrans sur 42 · 19 endpoints consommés sur 68.**
+**8 jalons validés sur 18 · F7 livré en attente de validation · 16 écrans sur 42 · 22 endpoints consommés sur 68.**

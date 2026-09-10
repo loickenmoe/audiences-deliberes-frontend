@@ -196,9 +196,9 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 38 | POST | `/ged/documents` *(multipart)* | SAI | 12 | F10 | ❌ |
-| 39 | GET | `/ged/documents/{id}` | CONS | 12 | F10 | ❌ |
-| 40 | DELETE | `/ged/documents/{id}` | JUR (202) / DJ, DJA (200) | 12 | F10 | ❌ |
+| 38 | POST | `/ged/documents` *(multipart)* | SAI | 06 (pièces à la création), 12 | F7 · F10 | ✅ |
+| 39 | GET | `/ged/documents/{id}` | CONS | 12 (consulter, télécharger) | F7 · F10 | ✅ |
+| 40 | DELETE | `/ged/documents/{id}` | JUR (202) / DJ, DJA (200) | 12 | F7 · F10 | ✅ |
 | 41 | PUT | `/ged/documents/{id}/approbation-suppression` | DJ, DJA | 36 | F10 | ❌ |
 | 42 | GET | `/ged/rapport-journalier?date=` | JURISTE | 37 | F10 | ❌ |
 | 43 | GET | `/dossiers/{id}/documents` | CONS | 07 (onglet Documents), 12 | F7 (lecture) · F10 | ✅ |
@@ -347,7 +347,7 @@ subsiste qu'en repli, le temps que tous les environnements portent ce backend.
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **68** (66 numérotés + 2 non numérotés) | **19** |
+| **Total HTTP exposé par le backend** | **68** (66 numérotés + 2 non numérotés) | **22** |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |

@@ -48,12 +48,22 @@ const TON_SENSIBILITE: Record<StatutValidation, TonStatut> = {
  * · la validation de sensibilité n'a de sens que tant qu'une proposition est **en attente**.
  * Proposer ces boutons hors de ces états conduirait l'utilisateur à un refus.
  */
-export function FicheDossier({ dossierId, roles }: { dossierId: number; roles: readonly string[] }) {
+export function FicheDossier({
+  dossierId,
+  roles,
+  ongletInitial,
+}: {
+  dossierId: number;
+  roles: readonly string[];
+  ongletInitial?: string;
+}) {
   const t = useTranslations("fiche");
   const td = useTranslations("dossiers");
   const tdom = useTranslations("domaine");
   const requete = useDossier(dossierId);
-  const [onglet, setOnglet] = useState<Onglet>("synthese");
+  const [onglet, setOnglet] = useState<Onglet>(
+    (ONGLETS as readonly string[]).includes(ongletInitial ?? "") ? (ongletInitial as Onglet) : "synthese",
+  );
   const [modale, setModale] = useState<"affectation" | "derogation" | "sensibilite" | null>(null);
   const refsOnglets = useRef<Record<Onglet, HTMLButtonElement | null>>({
     synthese: null,
@@ -190,7 +200,7 @@ export function FicheDossier({ dossierId, roles }: { dossierId: number; roles: r
           {onglet === "synthese" ? <OngletSynthese dossier={dossier} /> : null}
           {onglet === "etapes" ? <OngletEtapes dossier={dossier} roles={roles} /> : null}
           {onglet === "historique" ? <OngletHistorique historique={dossier.historique ?? []} /> : null}
-          {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} /> : null}
+          {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} roles={roles} /> : null}
         </div>
       </div>
 

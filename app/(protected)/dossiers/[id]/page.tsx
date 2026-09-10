@@ -17,7 +17,13 @@ export async function generateMetadata() {
  * Les actions de la fiche sont ensuite filtrées capacité par capacité — mais c'est le backend qui
  * les refuse réellement : masquer un bouton ne protège rien.
  */
-export default async function PageDossier({ params }: { params: Promise<{ id: string }> }) {
+export default async function PageDossier({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ onglet?: string }>;
+}) {
   const session = await exigerCapacite("consulterDossiers");
 
   const { id } = await params;
@@ -25,5 +31,8 @@ export default async function PageDossier({ params }: { params: Promise<{ id: st
   // Une URL malformée ne doit pas produire un appel `/dossiers/NaN` au backend.
   if (Number.isNaN(dossierId) || dossierId <= 0) notFound();
 
-  return <FicheDossier dossierId={dossierId} roles={session.roles} />;
+  // `?onglet=documents` : après une création dont une pièce a échoué, on ouvre là où la redéposer.
+  const { onglet } = await searchParams;
+
+  return <FicheDossier dossierId={dossierId} roles={session.roles} ongletInitial={onglet} />;
 }
