@@ -96,11 +96,10 @@ test("un juriste crée un dossier dont la nature dépasse 50 caractères", async
    * Cette nature fait 71 caractères. Avant la migration V7, le backend la refusait en 400 : trois
    * des dix-sept natures de la taxonomie étaient ainsi inutilisables.
    *
-   * La création renvoie vers la liste filtrée sur la référence créée, et non vers la fiche : celle-ci
-   * est l'écran 07, livré en F7.
+   * La création mène à la fiche du dossier créé (écran 07, livré en F7 — levée de QF-22).
    */
-  await page.waitForURL(new RegExp(`reference=${reference}`), { timeout: 60_000 });
-  await expect(page.getByRole("cell", { name: reference })).toBeVisible({ timeout: 30_000 });
+  await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
+  await expect(page.getByText(reference, { exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
 test("une référence de dossier en doublon est signalée sur le champ concerné", async ({ page }) => {
@@ -116,7 +115,7 @@ test("une référence de dossier en doublon est signalée sur le champ concerné
     await page.getByRole("button", { name: "Enregistrer" }).click();
 
     if (tentative === 1) {
-      await page.waitForURL(new RegExp(`reference=${reference}`), { timeout: 60_000 });
+      await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
     }
   }
 

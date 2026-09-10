@@ -122,7 +122,170 @@ fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
 un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
 l'ouverture de F12.
 
-### 🟡 QF-22 — La liste des dossiers ne mène pas encore à la fiche
+### ✅ QF-28 — Les dates seules s'affichaient la veille à l'ouest de Greenwich *(corrigée en F8)*
+
+**Constat, dans le frontend.** `formaterDate` lisait `2026-09-10` par `new Date(iso)`, que
+JavaScript interprète comme **minuit UTC**. Invisible à Douala (UTC+1), mais partout à l'ouest de
+Greenwich chaque date s'affichait **la veille**. Une date d'audience décalée d'un jour n'est pas une
+imprécision : c'est une audience manquée.
+
+**Corrigé** : une date seule est lue en heure locale ; les horodatages (`LocalDateTime`, sans
+fuseau) l'étaient déjà. Le test construit son attente en date locale, si bien qu'il échouerait avec
+l'ancienne lecture sur n'importe quel poste à l'ouest de Greenwich.
+
+### ✅ QF-29 — Une alarme n'est jamais close, sauf en la reprogrammant *(résolue : Q-77 backend)*
+
+**Décision du porteur du projet (2026-09-10)** : suivre la recommandation. `PATCH /alarmes/{id}/traiter`
+ajouté au backend (M16, Q-77) ; l'onglet Alarmes propose « Marquer traitée », avec confirmation, à
+côté de « Reprogrammer ». Le constat d'origine est conservé ci-dessous.
+
+**Constat, vérifié dans le code.** Les seules actions sur une alarme sont la création (#16) et la
+reprogrammation (#17), qui clôt l'ancienne. À l'échéance, `AlarmeEcheanceScheduler` **signale**
+l'alarme mais ne change pas son statut. Une alarme traitée par le juriste reste donc `ACTIVE` pour
+toujours, et la liste mélange ce qui reste à faire et ce qui est fait.
+
+**Traitement en F8.** Une alarme active échue est marquée « Échue », pour qu'elle se distingue.
+
+**Recommandation (backend, non bloquante).** `PATCH /alarmes/{id}/traiter`, qui la passe
+`TRAITEE` avec sa date de traitement, sans en créer une nouvelle. **Statut : soumis à l'utilisateur.**
+
+### ✅ QF-30 — Une audience ne peut être ni annulée ni reportée *(résolue : Q-76 backend)*
+
+**Décision du porteur du projet (2026-09-10)** : suivre la recommandation. `PATCH
+/audiences/{id}/annulation` ajouté au backend (M16, Q-76), motif obligatoire ; l'audience annulée
+quitte le calendrier, ses exports et ses rappels, et ne compte plus comme doublon. Le report se fait
+en annulant puis en replanifiant — l'endpoint de renvoi dédié n'a pas été retenu. L'onglet Audiences
+propose « Annuler » sur chaque audience planifiée et affiche le motif. Constat d'origine ci-dessous.
+
+**Constat, vérifié dans le code.** `StatutAudience` prévoit `ANNULEE`, mais **aucun endpoint** ne
+le pose, et aucun ne modifie la date d'une audience. Une audience planifiée à la mauvaise date, ou
+renvoyée par le tribunal — cas très fréquent —, reste `PLANIFIEE` pour toujours : elle figure au
+calendrier, dans les exports, et déclenche ses rappels J-7/J-3/J-1 (FR-AUD-01) à une date qui n'a
+plus lieu d'être.
+
+**Contournement écarté.** Planifier une nouvelle audience ne supprime pas l'ancienne : le calendrier
+afficherait les deux.
+
+**Recommandation (backend).** Un `PATCH /audiences/{id}/annulation` (motif obligatoire, statut
+`ANNULEE`, rappels non envoyés) ; le report consistant alors à annuler puis replanifier, ou un
+endpoint de renvoi dédié qui fait les deux en gardant le lien. **Statut : soumis à l'utilisateur.**
+
+### 🟡 QF-31 — Le calendrier compte le premier jour de la période suivante
+
+**Constat, vérifié dans le code.** `PeriodeCalendrier.dateFin` renvoie `début + 1 semaine / 1 mois /
+3 mois`, et la requête utilise `BETWEEN`, bornes **incluses**. Une semaine commençant un lundi
+ramène donc aussi les audiences du lundi suivant ; deux semaines consécutives affichent le même jour,
+et les exports aussi.
+
+**Traitement en F8.** L'écran annonce la période réelle (« du 7 au 14 septembre ») et ne masque
+rien : l'écran doit dire la même chose que le document qu'on en exporte.
+
+**Recommandation (backend, non bloquante).** `dateFin` retranchée d'un jour. **Statut : ouvert.**
+
+### 🟡 QF-32 — Une audience est dite « tenue » le jour où l'on saisit son compte rendu
+
+**Constat, vérifié dans le code.** `enregistrerCompteRendu` pose `dateTenue = LocalDate.now()`.
+Un compte rendu saisi trois jours après l'audience la date donc de trois jours plus tard, et
+ressaisir un compte rendu la déplace encore.
+
+**Recommandation (backend, non bloquante).** `dateTenue = datePlanifiee`, ou une date saisie par le
+juriste. **Statut : ouvert.**
+
+### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
+
+**Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige
+`piecesJustificatives: List<String>` non vide — une **liste de noms**, stockée en `TEXT[]`. Aucun
+fichier n'est reçu : l'avocat « déclare » ses pièces sans pouvoir les joindre, et l'Assistante qui
+contrôle la conformité ne peut rien ouvrir.
+
+**Recommandation.** À trancher à l'ouverture de F11 : soit les pièces passent par la GED (dépôt
+préalable, la demande référence des identifiants de documents), soit la demande accepte des
+fichiers en multipart. **Statut : ouvert, impacte F11 et F16.**
+
+### 🟡 QF-27 — Aucun endpoint ne donne l'identifiant de l'utilisateur connecté
+
+**Constat.** Le backend identifie les auteurs par un identifiant numérique (`auteurChargementId`,
+`utilisateurId`…), mais n'expose ni `GET /utilisateurs/moi` ni cet identifiant dans le jeton.
+L'interface ne peut donc pas savoir si l'utilisateur est l'auteur d'une pièce.
+
+**Conséquence en F7.** Un juriste voit « Demander la suppression » sur toutes les pièces ; le
+backend refuse (403) celles qu'il n'a pas déposées, avec son propre message. Correct, mais moins
+précis que de n'afficher l'action qu'à l'auteur. Le besoin reviendra (« mes demandes », « mes
+dépôts »).
+
+**Recommandation (non bloquante).** `GET /utilisateurs/moi`, en lecture seule. **Statut : ouvert.**
+
+### ✅ QF-23 — Une dérogation de seuil demandée ne pouvait pas être arbitrée *(résolue le 2026-09-10)*
+
+**Constat, vérifié dans le code du backend le 2026-09-10.** L'arbitrage d'une dérogation
+(#7, `PUT /dossiers/{id}/seuil-derogation/{auditId}`) exige l'identifiant de la demande. Or cet
+identifiant **n'est exposé nulle part** une fois la demande créée :
+
+| Source possible | Contient l'`auditId` ? |
+|---|---|
+| Réponse de `POST /dossiers/{id}/seuil-derogation` (#6) | ✅ — mais au **demandeur** seulement |
+| Un `GET` des demandes d'un dossier | ❌ n'existe pas |
+| `DossierResponse` | ❌ aucun champ |
+| Historique (« Demande de dérogation de seuil ») | ❌ `details` = `{nouveauSeuil, motif}` |
+
+**Conséquence.** Le DJ/DJA — seul habilité à arbitrer — n'a aucun moyen de connaître la demande à
+arbitrer. L'endpoint #7 est **inatteignable** depuis une interface : l'écran 17 ne peut être livré
+qu'à moitié (la demande, pas l'arbitrage). Le dossier reste bloqué avec une demande en attente.
+
+**Contournement écarté.** Retrouver l'identifiant en le devinant ou en l'extrayant d'un champ libre
+serait fragile et faux dès la deuxième demande.
+
+**Recommandation (évolution backend, bloquante pour l'écran 17).** Exposer les demandes d'un
+dossier : `GET /dossiers/{id}/seuil-derogation` renvoyant `List<AuditSeuilResponse>`, sous
+`ROLE_CONSULTATION`. C'est une lecture, sans règle métier nouvelle. Elle résout aussi la moitié de
+QF-08 si on lui ajoute un filtre `?statut=EN_ATTENTE`. **Statut : ouvert, soumis à l'utilisateur.**
+
+**✅ Résolue dans le backend le 2026-09-10 (Q-74)**, sur autorisation de l'utilisateur :
+`GET /dossiers/{id}/seuil-derogation[?statut=]` renvoie les demandes de seuil du dossier, la plus
+récente d'abord. La fiche affiche au DJ/DJA une carte « Dérogations de seuil en attente » avec un
+bouton d'arbitrage : l'écran 17 est complet.
+
+**Défaut latent découvert au passage et corrigé dans le même geste.** La proposition initiale de
+sensibilité est **elle aussi** un audit `EN_ATTENTE`. Tant que la sensibilité n'est pas validée, #7
+permettait de l'« arbitrer » comme une dérogation — fixant un seuil en laissant la sensibilité en
+attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
+#7 exige désormais une sensibilité validée, comme #6.
+
+### 🟡 QF-24 — L'historique est rédigé en français par le serveur
+
+**Constat.** `HistoriqueActionResponse.action` est une phrase française (« Changement de statut de
+l'étape INSTANCE ») et non un code. C'est la seule donnée du backend qui contredise le principe sur
+lequel repose le bilinguisme : *le backend ne renvoie que des codes stables*.
+
+**Conséquence.** En anglais, l'onglet Historique affiche des libellés français. La fiche le signale
+explicitement plutôt que de laisser croire à un oubli de traduction.
+
+**Recommandation (évolution backend, non bloquante).** Ajouter un code d'action stable
+(`CREATION_DOSSIER`, `CHANGEMENT_STATUT_ETAPE`…) à côté du libellé, que le frontend traduirait.
+**Statut : ouvert, non bloquant.**
+
+### ✅ QF-25 — L'affectation pouvait vider un dossier de ses juristes *(résolue le 2026-09-10)*
+
+**Constat.** `PUT /dossiers/{id}/affectation` **remplace** les listes et n'impose aucun minimum :
+`ModifierAffectationRequest` ne porte pas le `@NotEmpty` de la création. Un dossier peut donc se
+retrouver sans juriste ni avocat, contre RG-DOS-03 (« au moins un juriste par dossier »).
+
+**Traitement retenu côté frontend.** La modale exige au moins un juriste et un avocat, comme la
+création. Mais c'est une protection d'interface : un appel direct à l'API passe.
+
+**Recommandation (évolution backend, non bloquante).** Aligner la validation sur la création.
+
+**Observation liée.** Conserver une personne déjà affectée déclenche `ERR-003` puis, sur
+confirmation, une alerte au DJ. Comme l'endpoint remplace tout, **presque toute modification**
+conserve quelqu'un — le DJ risque d'être alerté à chaque changement d'affectation. Comportement
+fidèle à RG-DOS-07 tel qu'implémenté ; à confirmer avec la Direction Juridique.
+**Statut : ouvert, non bloquant.**
+
+**✅ Résolue dans le backend le 2026-09-10 (Q-75)** : `@NotEmpty` sur les deux listes et `@Valid`
+sur le contrôleur, qui n'en avait pas. Même règle qu'à la création. L'observation sur l'alerte au DJ
+reste ouverte : c'est une règle métier, à faire confirmer par la Direction Juridique.
+
+### ✅ QF-22 — La liste des dossiers ne mène pas encore à la fiche *(levée en F7)*
 
 **Constat.** L'écran 05 affiche la référence de chaque dossier en texte simple, et la création
 renvoie vers la liste filtrée plutôt que vers le dossier créé. La fiche dossier est l'écran **07**,
@@ -136,6 +299,8 @@ redirection ne se produisait pas.
 **À faire à l'ouverture de F7** : rebrancher la colonne « Référence » sur `/dossiers/{id}` et la
 redirection de création sur la fiche du dossier créé. Les deux emplacements portent un commentaire
 le rappelant. **Statut : dette assumée, levée en F7.**
+
+**✅ Levée le 2026-09-10 (F7)** : la référence mène à la fiche, et la création y redirige.
 
 ### ✅ QF-21 — `ERR-CONFLICT` ne disait pas quel champ est en conflit *(résolu le 2026-09-09)*
 
@@ -292,11 +457,20 @@ pas `ROLE_CONSULTATION` — ce qui rejoint QF-01.
 **Recommandation.** Un `GET /utilisateurs/moi` côté backend rendrait le contournement inutile.
 **Statut : ouvert, non bloquant.**
 
-### 🟡 QF-06 — Affichage des documents stockés
+### ✅ QF-06 — Affichage des documents stockés *(tranchée le 2026-09-10, en F7)*
 
-Les documents sont servis par des URL MinIO pré-signées sur `http://localhost:9000`. Le CORS de
-MinIO et `next.config.ts` doivent être vérifiés ; l'affichage inline des PDF et images peut être
-bloqué par le navigateur. **À trancher en F10.**
+Les documents sont servis par des URL MinIO pré-signées sur `http://localhost:9000`, valables
+10 minutes. **Vérifié en réel** : MinIO répond `Access-Control-Allow-Origin: http://localhost:3000`,
+préflight compris, et l'application n'impose aucune politique de sécurité de contenu.
+
+**Tranché** : le contenu est lu dans la page par `fetch` (sans en-tête `Authorization`, que MinIO
+vérifierait à la place de la signature), puis affiché depuis une URL `blob:` locale — PDF en
+`iframe`, image, texte ; un XLSX se télécharge. Le téléchargement passe par le même contenu et garde
+le nom d'origine, ce qu'un lien direct vers MinIO ne permettrait pas (`download` ignoré entre
+origines). Vérifié par les parcours e2e : aperçu d'une image stockée, téléchargement d'un PDF.
+
+⚠ En production, l'URL publique de MinIO et son CORS devront être reconfigurés pour l'origine réelle
+de l'application : `MINIO_API_URL` est aujourd'hui `localhost`.
 
 ### ✅ QF-18 — Saisie des identifiants dans l'application — tranché en F3
 

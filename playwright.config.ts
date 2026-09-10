@@ -7,6 +7,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Socle de données garanti avant tout parcours : un client et un avocat (voir le fichier).
+  globalSetup: "./tests/e2e/preparation.ts",
   /**
    * 30 s (défaut) ne suffisent pas ici : un parcours d'authentification traverse un **vrai** serveur
    * Keycloak et, en mode développement, Next compile chaque route au premier accès.

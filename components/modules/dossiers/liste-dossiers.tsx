@@ -49,10 +49,14 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       {
         accessorKey: "reference",
         header: t("colonneReference"),
-        // Pas de lien vers la fiche : c'est l'écran 07, livré en F7. Un lien mort serait pire
-        // qu'une absence de lien — à rebrancher à l'ouverture de F7.
+        // La référence est le point d'entrée naturel vers la fiche (écran 07).
         cell: ({ row }) => (
-          <span className="font-mono text-[length:var(--taille-xs)]">{row.original.reference}</span>
+          <Link
+            href={`/dossiers/${row.original.id}`}
+            className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+          >
+            {row.original.reference}
+          </Link>
         ),
       },
       {

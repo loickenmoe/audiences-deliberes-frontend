@@ -58,8 +58,19 @@ export function formaterOctets(octets: number | null | undefined, langue: Langue
   return `${formate} ${unites[rang]}`;
 }
 
+/**
+ * Lit une valeur de date du backend.
+ *
+ * Une date **seule** (`LocalDate` : `2026-09-10`) doit être lue en heure locale : `new Date(iso)` la
+ * traite comme minuit UTC, ce qui l'affiche la **veille** partout à l'ouest de Greenwich. Invisible
+ * à Douala (UTC+1), mais une date d'audience décalée d'un jour n'est pas une imprécision : c'est une
+ * audience manquée. Les horodatages (`LocalDateTime`, sans fuseau) sont déjà lus en heure locale.
+ */
 function enDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
-  const date = new Date(iso);
+  const jourSeul = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const date = jourSeul
+    ? new Date(Number(jourSeul[1]), Number(jourSeul[2]) - 1, Number(jourSeul[3]))
+    : new Date(iso);
   return Number.isNaN(date.getTime()) ? null : date;
 }

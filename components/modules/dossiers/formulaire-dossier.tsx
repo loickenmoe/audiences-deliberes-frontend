@@ -5,8 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
@@ -19,6 +20,8 @@ import { useIntervenants } from "@/hooks/useIntervenants";
 import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
+import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
+import { gedService } from "@/services/gedService";
 
 /**
  * Écran 06 — création d'un dossier (US 1.1, FR-DOS-01).
@@ -55,7 +58,10 @@ export function FormulaireDossier() {
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
+  const tdoc = useTranslations("documents");
   const routeur = useRouter();
+  const [pieces, setPieces] = useState<PieceAJoindre[]>([]);
+  const [envoiPieces, setEnvoiPieces] = useState(false);
   const creer = useCreerDossier();
 
   const natures = useNaturesDossier();
@@ -197,12 +203,34 @@ export function FormulaireDossier() {
         avocatsAffectes: valeurs.avocatsAffectes.map(Number),
       });
       /*
-       * Retour à la liste, filtrée sur la référence créée — et **non** vers `/dossiers/{id}` :
-       * la fiche dossier est l'écran 07, livré en F7. Y renvoyer maintenant enverrait
-       * l'utilisateur sur une route inexistante, ce qui échoue de surcroît en silence dans le
-       * routeur App (l'URL ne change même pas). À rebrancher sur la fiche à l'ouverture de F7.
+       * Deuxième temps : les pièces, déposées en GED une fois le dossier créé — le dépôt exige son
+       * identifiant. À ce stade **le dossier existe** : un échec de dépôt ne doit ni l'annuler ni
+       * inviter à le recréer. On dépose tout ce qui peut l'être, puis on ouvre la fiche sur ses
+       * documents en nommant les pièces à redéposer.
        */
-      routeur.push(`/dossiers?reference=${encodeURIComponent(cree.reference)}`);
+      const echecs: string[] = [];
+      if (pieces.length > 0) {
+        setEnvoiPieces(true);
+        for (const piece of pieces) {
+          try {
+            await gedService.deposer(cree.id, piece.type, piece.fichier);
+          } catch {
+            echecs.push(piece.fichier.name);
+          }
+        }
+        setEnvoiPieces(false);
+      }
+
+      if (echecs.length > 0) {
+        // Sans expiration : l'utilisateur doit pouvoir lire la liste des pièces à redéposer.
+        toast.warning(tdoc("depotEchec", { nombre: echecs.length, noms: echecs.join(", ") }), {
+          duration: Infinity,
+        });
+        routeur.push(`/dossiers/${cree.id}?onglet=documents`);
+        return;
+      }
+      // Le dossier créé s'ouvre directement : c'est ce que l'utilisateur va consulter ensuite.
+      routeur.push(`/dossiers/${cree.id}`);
     } catch (erreur) {
       // Le backend nomme lui-même le champ fautif depuis M16 (Q-70) : une référence en doublon
       // arrive avec `champ: "reference"` et se pose au bon endroit sans table de correspondance.
@@ -445,6 +473,17 @@ export function FormulaireDossier() {
           </Card>
         ) : null}
 
+        {categorie ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{tdoc("piecesTitre")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PiecesAJoindre categorie={categorie} onChangement={setPieces} />
+            </CardContent>
+          </Card>
+        ) : null}
+
         <Card>
           <CardHeader>
             <CardTitle>{t("sectionAffectation")}</CardTitle>
@@ -566,8 +605,8 @@ export function FormulaireDossier() {
           <Link href="/dossiers" className="self-center text-[length:var(--taille-sm)] underline underline-offset-4">
             {tc("annuler")}
           </Link>
-          <Button type="submit" disabled={isSubmitting || creer.isPending}>
-            {tc("enregistrer")}
+          <Button type="submit" disabled={isSubmitting || creer.isPending || envoiPieces}>
+            {envoiPieces ? tdoc("depotEnCours") : tc("enregistrer")}
           </Button>
         </div>
       </form>
