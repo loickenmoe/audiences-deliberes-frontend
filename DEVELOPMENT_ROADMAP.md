@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-11 (**F0 à F8 validés**, **F9 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-11 (**F0 à F9 validés**, **F10 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -446,15 +446,45 @@ complète à 62/64, puis les 2 parcours corrigés — sélecteurs ambigus — re
 
 ---
 
-## F10 — Gestion documentaire ⏳
+## F10 — Gestion documentaire 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **12**, **36**, **37**. Endpoints **#38-43**, **#63**.
+Écrans **12**, **36**, **37**. Endpoints **#38-43**, **#63**. **Livré le 2026-09-11** sur
+`feat/f10-ged`, branchée sur `origin/dev` (F9 fusionné).
 
-**Vérifications** : format non conforme et fichier > 10 Mo refusés avec message explicite ;
-**suppression par un juriste auteur → 202 (demande), par un DJ → 200 (immédiate)**, les deux
-correctement interprétés ; approbation et rejet avec motif ; document supprimé → 404 ; rapport
-journalier à zéro affiché comme état vide. Trancher **QF-06** (affichage des URL MinIO).
+L'écran 12 (onglet Documents) et #38, #39, #40, #43 étaient livrés depuis F7, QF-06 tranchée ; F10
+apporte la **file des demandes de suppression** (36) et le **rapport journalier** (37).
+
+**L'audit a trouvé deux défauts backend, corrigés sur décision du porteur du projet (M16)** :
+- **Q-79 / QF-34** — une suppression directe (DJ/DJA) laissait la demande du juriste en attente,
+  indécidable (404) et relancée toutes les 72 h ; notre propre parcours e2e de F7 en créait une à
+  chaque exécution. Et la file ne nommait ni le fichier ni le dossier. Corrigé, plus V10 pour les
+  orphelines existantes (une en base locale).
+- **Q-80 / QF-35** — le rapport journalier n'était servi qu'au juriste ; ouvert au DJ, à la DJA et
+  à l'Assistante, comme le veulent les sources.
+- **QF-36 / Q-81**, constaté au même audit et tranché le même jour — le DJ et la DJA n'avaient pas
+  les droits d'un juriste : `ROLE_JURISTE` ajouté à leurs composites (realm et Keycloak en
+  service), le backend choisissant désormais le profil par priorité. Côté frontend, rien à lister :
+  leur jeton porte `ROLE_JURISTE`. Parcours `droits-dj.spec.ts` : le DJ fait avancer une étape et
+  planifie une audience, reste affiché « Directeur Juridique » et garde son menu de DJ.
+
+- `gedService` (#63, #41, #42), `hooks/useGed.ts`, deux entrées de menu (DJ/DJA ; 4 profils).
+- **Écran 36** : vues « en attente » (ordre de traitement) et « toutes » (historique), fichier et
+  dossier nommés, aperçu du document avant décision, approbation confirmée, rejet à motif
+  obligatoire, décideur et date de la décision.
+- **Écran 37** : date au choix (aujourd'hui par défaut), trois indicateurs, audiences du jour ;
+  un jour sans activité affiché comme un état vide explicite.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **200 tests unitaires** ✅ ·
+`build` ✅ · **69 parcours Playwright contre le backend réel et MinIO** ✅ (build de production, une
+seule exécution, après Q-81). Backend : 293 tests, `BUILD SUCCESS`, V10 appliquée.
 **Dépend de** : F7.
+
+> **Points à retenir :**
+> - **Un de nos propres tests fabriquait le défaut.** Le parcours « le juriste demande, le DJ
+>   supprime » de F7 était vert et laissait, à chaque exécution, une demande indécidable en base.
+>   Un test qui passe ne dit rien de l'état qu'il laisse.
+> - **Un port libre ne prouve pas l'absence de backend** : un `spring-boot:run` peut vivre sans
+>   écouter, et devtools le redémarre sur le nouveau `target/` au prochain build.
 
 ---
 
@@ -557,8 +587,8 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | 🔵 | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | 🔵 | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**9 jalons validés sur 18 (F0 à F8) · F9 livré en attente de validation · 24 écrans sur 42 ·
-40 endpoints consommés sur 72** (plus #45 en partie ; 72 depuis les ajouts de M16, dont Q-78) —
+**10 jalons validés sur 18 (F0 à F9) · F10 livré en attente de validation · 26 écrans sur 42 ·
+43 endpoints consommés sur 72** (plus #45 en partie ; 72 depuis les ajouts de M16) —
 mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.

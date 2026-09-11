@@ -186,13 +186,37 @@ export interface ValiderSensibilite {
 }
 
 /** Demande de suppression créée quand un juriste auteur supprime une pièce (#40, réponse 202). */
+export type StatutSuppression = "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
+
+/**
+ * Demande de suppression (#40 en 202, #41, #63). Depuis Q-79, elle nomme ce qu'elle vise — fichier,
+ * type, dossier — y compris quand le document a déjà été supprimé.
+ */
 export interface DemandeSuppression {
   id: number;
   documentId: number;
+  documentNom: string;
+  typeDocument: string | null;
+  dossierId: number;
+  referenceDossier: string;
   demandeurId: number | null;
   motif: string | null;
-  statut: "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
+  statut: StatutSuppression;
+  valideParId: number | null;
+  motifRejet: string | null;
   dateDemande: string;
+  dateDecision: string | null;
+  /** Relance automatique aux DJ/DJA toutes les 72 h tant que la demande attend. */
+  dateDerniereRelance: string | null;
+}
+
+/** Rapport journalier GED (#42) : zéros et liste vide un jour sans activité, jamais d'erreur. */
+export interface RapportJournalier {
+  date: string;
+  dossiersManipules: number;
+  piecesAjoutees: number;
+  affairesNouvelles: number;
+  planificationActes: { dossierId: number; reference: string; datePlanifiee: string }[];
 }
 
 /** Issue d'une suppression : immédiate (DJ/DJA, 200) ou soumise à décision (juriste, 202). */
