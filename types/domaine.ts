@@ -1,7 +1,10 @@
 import type {
   CategorieDossier,
+  EtatDelibere,
   FormatDocument,
+  ResultatDelibere,
   StatutAlarme,
+  StatutExpedition,
   StatutAudience,
   SeuilOrigine,
   StatutCycleVie,
@@ -329,6 +332,74 @@ export interface ReprogrammerAlarme {
   /** Facultatif : vide, l'objet de l'alarme précédente est repris. */
   objet?: string;
   dateEcheance: string;
+}
+
+// ─────────────────────────────── Délibérés ───────────────────────────────
+
+/**
+ * Délibéré (#58, cycle Q-78). Il naît à la mise en délibéré, **sans résultat** : `dateDeliberee` est
+ * alors la date annoncée, que chaque prorogation remplace. `resultat` et `statutExpedition` ne
+ * sont posés qu'une fois la décision rendue (`etat` = `VIDE`).
+ */
+export interface Delibere {
+  id: number;
+  dossierId: number;
+  etapeId: number;
+  dateDeliberee: string;
+  etat: EtatDelibere;
+  resultat: ResultatDelibere | null;
+  statutExpedition: StatutExpedition | null;
+  /** Horodatage sans fuseau ; seulement pour un résultat défavorable ou mixte. */
+  dateEcheanceRecours: string | null;
+  nombreProrogations: number;
+  dateRabattement: string | null;
+  motifRabattement: string | null;
+  createdAt: string;
+}
+
+/** Prorogation (#19, historique 🆕 Q-78). `alerte` : au-delà du seuil — un avertissement, pas une erreur. */
+export interface Prorogation {
+  id: number;
+  delibereId: number;
+  date: string;
+  motif: string | null;
+  compteur: number;
+  alerte: boolean;
+  createdAt: string;
+}
+
+/** Suivi du délai de recours (#21), en lecture seule. */
+export interface Recours {
+  delibereId: number;
+  dateEcheanceRecours: string | null;
+  recoursExerce: boolean;
+  delaiExpire: boolean;
+  cloture: boolean;
+}
+
+/** #18 — sans `resultat` : mise en délibéré ; avec : délibéré déjà rendu, vidé d'un même geste. */
+export interface EnregistrerDelibere {
+  etapeId: number;
+  dateDeliberee: string;
+  resultat?: ResultatDelibere;
+  dateEcheanceRecours?: string;
+}
+
+/** 🆕 Q-78 — la décision est rendue. Échéance exigée pour un résultat défavorable ou mixte. */
+export interface ViderDelibere {
+  resultat: ResultatDelibere;
+  dateEcheanceRecours?: string;
+}
+
+export interface ProrogerDelibere {
+  /** `YYYY-MM-DD`, strictement future (US 3.2). */
+  date: string;
+  motif?: string;
+}
+
+export interface RabattreDelibere {
+  date: string;
+  motif: string;
 }
 
 // ─────────────────────────────── Intervenants ───────────────────────────────

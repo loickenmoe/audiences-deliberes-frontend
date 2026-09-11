@@ -191,6 +191,22 @@ ressaisir un compte rendu la déplace encore.
 **Recommandation (backend, non bloquante).** `dateTenue = datePlanifiee`, ou une date saisie par le
 juriste. **Statut : ouvert.**
 
+### ✅ QF-33 — Prorogation et rabattement n'étaient possibles qu'après la décision *(résolue : Q-78 backend)*
+
+**Constat de l'audit F9, vérifié dans le code et dans les sources.** Le backend ne créait un
+délibéré qu'avec son résultat, qui vidait aussitôt l'étape ; prorogation et rabattement ne
+portaient donc que sur une décision déjà rendue. Toutes les sources les placent au contraire
+**pendant** la délibération : US 3.2 et 3.4 (« l'étape est EN_DELIBERE et un délibéré existe »),
+UC-DEL-04 et 05 (précondition « En délibéré »), RG-DEL-06 et 07, le diagramme d'états. Deux manques
+s'y ajoutaient : aucune lecture des prorogations, et un délibéré rabattu indiscernable.
+
+**Conséquence si on ne faisait rien** : pour noter « délibéré prorogé au 15 octobre », le juriste
+aurait dû saisir un résultat fictif.
+
+**Décision du porteur du projet (2026-09-11)** : aligner le backend (Q-78) — mise en délibéré sans
+résultat, prorogation et rabattement pendant l'attente, résultat qui vide le délibéré ; lecture des
+prorogations ; état dérivé du délibéré. L'écran 10 suit ce cycle.
+
 ### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
 
 **Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige

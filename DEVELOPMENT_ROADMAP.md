@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-10 (**F0 à F7 validés**, **F8 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-11 (**F0 à F8 validés**, **F9 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -410,15 +410,39 @@ sans demande de confirmation. Backend : 277 tests, `BUILD SUCCESS`, V8 appliqué
 
 ---
 
-## F9 — Délibérés ⏳
+## F9 — Délibérés 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **10**, **26**, **27**. Endpoints **#18-22**, **#58**.
+Écrans **10**, **26**, **27**. Endpoints **#18-22**, **#58**, plus deux ajouts du backend (Q-78).
+**Livré le 2026-09-11** sur `feat/f9-deliberes`, branchée sur `dev` (F8 fusionné).
 
-**Vérifications** : délibéré refusé hors `EN_DELIBERE` ; échéance de recours exigée pour
-`DEFAVORABLE`/`MIXTE` et refusée sinon ; **prorogation au-delà du seuil affichée comme un
-avertissement, pas comme une erreur** ; rabattement refusé hors `DELIBERE_VIDE` et motif obligatoire ;
-suivi du recours cohérent avec l'état de l'étape.
+**L'audit a changé le jalon.** Le backend plaçait prorogation et rabattement **après** la décision ;
+toutes les sources les placent pendant « En délibéré » (QF-33). Sur décision du porteur du projet,
+le backend a été aligné (M16, Q-78) avant l'écran : mise en délibéré sans résultat, prorogation et
+rabattement pendant l'attente, décision qui vide le délibéré, historique des prorogations. Le
+critère « rabattement refusé hors `DELIBERE_VIDE` » de ce jalon, écrit d'après l'ancien backend,
+devient « rabattement refusé une fois la décision rendue ».
+
+- `services/delibereService.ts` (8 endpoints), `hooks/useDeliberes.ts`, énumération `EtatDelibere`.
+- Onglet **Délibérés** de la fiche : mettre en délibéré (ou enregistrer une décision déjà rendue),
+  proroger — **au-delà du seuil, un avertissement, pas une erreur** —, historique des prorogations,
+  rabattre, enregistrer la décision (échéance exigée si défavorable ou mixte), expédition, suivi du
+  délai de recours. Seules les actions recevables à chaque état sont proposées.
+- L'onglet Étapes renvoie vers l'onglet Délibérés pour une étape en délibéré.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **196 tests unitaires** ✅ ·
+`build` ✅ · **64 parcours Playwright contre le backend réel** ✅ (build de production ; suite
+complète à 62/64, puis les 2 parcours corrigés — sélecteurs ambigus — rejoués à 4/4). Backend :
+287 tests, `BUILD SUCCESS`, V9 appliquée.
 **Dépend de** : F8.
+
+> **Points à retenir :**
+> - **Auditer contre les sources, pas seulement contre l'API.** L'API « marchait » (Q-44 l'avait
+>   rendue appelable) ; elle ne faisait pas ce que la procédure fait. Seules les US, les UC et le
+>   diagramme d'états, lus dans les `.docx`, l'ont montré.
+> - **Une modale fermée reste dans la page.** Ses `<option>` portent les mêmes libellés que les
+>   pastilles : un `getByText("Favorable")` sur toute la page est ambigu. Cibler la carte.
+> - **`next build` a dépassé les 300 s** de `webServer` sur un poste chargé (894 s) : construire à
+>   la main, démarrer `next start`, laisser Playwright le réutiliser.
 
 ---
 
@@ -529,12 +553,12 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | 🔵 | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**8 jalons validés sur 18 (F0 à F7) · F8 livré en attente de validation · 21 écrans sur 42 ·
-32 endpoints consommés sur 70** (plus #45 en partie ; 70 depuis les ajouts de M16). Le « 22 endpoints » annoncé en fin de F7 était
-un sous-décompte : c'était 23 (#64 et #65 restés marqués 🟡).
+**9 jalons validés sur 18 (F0 à F8) · F9 livré en attente de validation · 24 écrans sur 42 ·
+40 endpoints consommés sur 72** (plus #45 en partie ; 72 depuis les ajouts de M16, dont Q-78) —
+mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.

@@ -1,7 +1,7 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-10 (jalon F8 — écrans 09, 11, 22, 23, 24 et 25 livrés).
+> Dernière mise à jour : 2026-09-11 (jalon F9 — écrans 10, 26 et 27 livrés, cycle du délibéré Q-78).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -49,7 +49,7 @@
 | 07 | Fiche — Synthèse | `/dossiers/[id]` | CONS | `GET /dossiers/{id}` | F7 | ✅ |
 | 08 | Fiche — Étapes | onglet | JUR | `PATCH /dossiers/{id}/etapes/{etapeId}/statut`, `POST /dossiers/{id}/etapes` | F7 | ✅ |
 | 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences`, `PATCH /audiences/{id}/annulation` | F8 | ✅ (annulation motivée — QF-30) |
-| 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes` | F9 | ❌ |
+| 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes`, `GET /deliberes/{id}/prorogations` | F9 | ✅ (état de chaque délibéré, historique des prorogations — Q-78) |
 | 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes`, `PATCH /alarmes/{id}/traiter` | F8 | ✅ (« Marquer traitée » — QF-29) |
 | 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
 | 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ❌ |
@@ -105,8 +105,8 @@ une audience future, non vide obligatoire · vues `HEBDOMADAIRE`/`MENSUELLE`/`TR
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 26 | Enregistrer / proroger / rabattre / expédition | modales (fiche 10) | JUR | `POST /dossiers/{id}/deliberes`, `POST /deliberes/{id}/prorogations`, `POST /deliberes/{id}/rabattement`, `PUT /deliberes/{id}/expedition` | F9 | ❌ |
-| 27 | Suivi du délai de recours | panneau (fiche 10) | JUR | `GET /deliberes/{id}/recours` | F9 | ❌ |
+| 26 | Enregistrer / proroger / rabattre / expédition | modales (fiche 10) | JUR | `POST /dossiers/{id}/deliberes`, `PUT /deliberes/{id}/resultat`, `POST /deliberes/{id}/prorogations`, `POST /deliberes/{id}/rabattement`, `PUT /deliberes/{id}/expedition` | F9 | ✅ (mise en délibéré, décision, prorogation — seuil en avertissement —, rabattement) |
+| 27 | Suivi du délai de recours | panneau (fiche 10) | JUR | `GET /deliberes/{id}/recours` | F9 | ✅ |
 
 **Règles** : étape `EN_DELIBERE` requise · `dateEcheanceRecours` **obligatoire et postérieure** si
 `resultat ∈ {DEFAVORABLE, MIXTE}`, **absente sinon** (Q-42) · prorogation **toujours 201**, corps
