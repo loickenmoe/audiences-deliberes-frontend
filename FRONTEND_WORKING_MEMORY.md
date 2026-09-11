@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F7** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8` pièces jointes) |
-| Jalon livré, **en attente de validation** | **F8** — audiences, alarmes, calendrier (`feat/f8-audiences`, non commité) |
-| Jalon suivant | **F9** — délibérés et recours |
+| Jalons validés | **F0** à **F8** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`) |
+| Jalon livré, **en attente de validation** | **F9** — délibérés (`feat/f9-deliberes`) ; backend aligné sur `fix/deliberes-cycle` (Q-78). Rien de commité. |
+| Jalon suivant | **F10** — gestion documentaire |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **21 écrans sur 42** · **32 endpoints consommés sur 70** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
+| Décompte | **24 écrans sur 42** · **40 endpoints consommés sur 72** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
@@ -211,6 +211,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   telle quelle pour la rejouer, et ne réinitialiser un formulaire qu'à l'ouverture (dépendances
   primitives). Le test e2e n'avait rien vu : il attendait le toast, **resté affiché** depuis la
   première tentative — attendre l'effet (la ligne ajoutée), pas le message.
+- **Une modale fermée reste dans le DOM, options comprises.** Un `getByText("Favorable")` sur la
+  page trouvait l'`<option>` d'une liste « Résultat » d'une modale fermée en plus de la pastille —
+  violation du mode strict de Playwright (F9). Cibler le conteneur (la carte, la ligne).
+- **Relire les sources métier, pas seulement l'API.** En F9, l'API des délibérés répondait
+  correctement mais plaçait prorogation et rabattement après la décision ; seuls les `.docx`
+  (US 3.2/3.4, UC-DEL-04/05, diagramme d'états) l'ont révélé (QF-33).
 - **next-intl : `{arg}` n'accepte qu'un texte, `<balise>` une fonction.** Passer une fonction à un
   argument simple de `t.rich` n'affiche **rien**, sans erreur à l'exécution (« Du au ») ; `tsc` le
   refuse. Formater la valeur en chaîne avant de la passer.
@@ -249,6 +255,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | ~~QF-30~~ | ✅ **Levée** (2026-09-10) : `PATCH /audiences/{id}/annulation` ajouté au backend (Q-76), motif obligatoire ; report = annuler puis replanifier. | F8 |
 | **QF-31** | Le calendrier inclut le 1er jour de la période suivante (`BETWEEN` borne incluse). Non bloquant. | aucun |
 | **QF-32** | `dateTenue` = jour de saisie du compte rendu, pas de l'audience. Non bloquant. | aucun |
+| ~~QF-33~~ | ✅ **Levée** (2026-09-11) : prorogation et rabattement n'existaient qu'après la décision, contre toutes les sources. Backend aligné (Q-78) : mise en délibéré sans résultat, `PUT /deliberes/{id}/resultat`, `GET /deliberes/{id}/prorogations`. | F9 |
 | **QF-26** | Les pièces justificatives des frais sont une **liste de noms**, pas des fichiers (`List<String>`). À trancher à l'ouverture de F11. | **F11**, F16 |
 | **QF-27** | Aucun endpoint « utilisateur courant » : l'interface ne sait pas si l'on est l'auteur d'une pièce. Non bloquant. | aucun |
 | **QF-25** | ✅ Levée le 2026-09-10 (Q-75) : `@NotEmpty` + `@Valid` sur `PUT /affectation`. Reste ouvert : l'alerte au DJ à presque chaque changement d'affectation (règle métier RG-DOS-07, à confirmer par la DJ). | — |

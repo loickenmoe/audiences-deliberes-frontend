@@ -1,10 +1,11 @@
 # API_INTEGRATION_STATUS
 
-> Les **70 endpoints HTTP** exposés par le backend (67 d'origine, plus trois ajouts de M16 : Q-74,
-> Q-76, Q-77) et leur état de consommation par le frontend.
+> Les **72 endpoints HTTP** exposés par le backend (67 d'origine, plus cinq ajouts de M16 : Q-74,
+> Q-76, Q-77 et les deux de Q-78) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-10 (jalon F8 — **32 endpoints consommés sur 70**, plus #45 en partie,
-> après l'ajout au backend de l'annulation d'audience et du traitement d'alarme, QF-29/QF-30 ;
+> Dernière mise à jour : 2026-09-11 (jalon F9 — **40 endpoints consommés sur 72**, plus #45 en partie,
+> après l'alignement du cycle du délibéré sur les sources, QF-33/Q-78).
+> Précédente : 2026-09-10 (jalon F8 — 32 sur 70, après l'annulation d'audience et le traitement d'alarme ;
 > décompte mesuré sur ce tableau. Le « 22 » annoncé en fin de F7 était faux : c'était 23, #64 et #65
 > étant restés marqués 🟡 alors que l'écran les consommait depuis F6).
 
@@ -118,21 +119,31 @@
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 18 | POST | `/dossiers/{id}/deliberes` | JUR | 26 | F9 | ❌ |
-| 19 | POST | `/deliberes/{id}/prorogations` | JUR | 26 | F9 | ❌ |
-| 20 | POST | `/deliberes/{id}/rabattement` | JUR | 26 | F9 | ❌ |
-| 21 | GET | `/deliberes/{id}/recours` | JUR | 27 | F9 | ❌ |
-| 22 | PUT | `/deliberes/{id}/expedition` | JUR | 26 | F9 | ❌ |
-| 58 | GET | `/dossiers/{id}/deliberes` | CONS | 10 | F9 | ❌ |
+| 18 | POST | `/dossiers/{id}/deliberes` | JUR | 26 | F9 | ✅ |
+| 19 | POST | `/deliberes/{id}/prorogations` | JUR | 26 | F9 | ✅ |
+| 20 | POST | `/deliberes/{id}/rabattement` | JUR | 26 | F9 | ✅ |
+| 21 | GET | `/deliberes/{id}/recours` | JUR | 27 | F9 | ✅ |
+| 22 | PUT | `/deliberes/{id}/expedition` | JUR | 26 | F9 | ✅ |
+| 58 | GET | `/dossiers/{id}/deliberes` | CONS | 10 | F9 | ✅ |
+| — | PUT | `/deliberes/{id}/resultat` 🆕 Q-78 | JUR | 26 (enregistrer la décision) | F9 | ✅ (QF-33) |
+| — | GET | `/deliberes/{id}/prorogations` 🆕 Q-78 | CONS | 10 (historique) | F9 | ✅ (QF-33) |
 
-- **#18** — étape `EN_DELIBERE` requise. `dateEcheanceRecours` **obligatoire et postérieure à
-  `dateDeliberee`** si `resultat ∈ {DEFAVORABLE, MIXTE}`, **absente sinon** (Q-42). Bascule l'étape
-  en `DELIBERE_VIDE`.
+**Cycle depuis Q-78 (QF-33)** : mise en délibéré sans résultat → prorogations et rabattement pendant
+l'attente → décision, qui vide le délibéré. La réponse porte `etat` (`EN_ATTENTE`/`VIDE`/`RABATTU`),
+`nombreProrogations`, `dateRabattement`, `motifRabattement` ; `resultat` et `statutExpedition` sont
+nuls tant que la décision n'est pas rendue.
+
+- **#18** — étape `EN_DELIBERE` requise. **Sans** `resultat` : mise en délibéré, l'étape ne bouge
+  pas, aucune échéance admise ; un seul délibéré en attente par étape (409). **Avec** `resultat` :
+  délibéré déjà rendu, vidé d'un même geste — `dateEcheanceRecours` **obligatoire et postérieure à
+  `dateDeliberee`** si `resultat ∈ {DEFAVORABLE, MIXTE}`, **absente sinon** (Q-42).
 - **#19** — **toujours 201**, corps `{...prorogation, compteur, alerte}`. `alerte: true` signale le
-  franchissement de `SEUIL_PROROGATIONS` — **ce n'est pas une erreur** (Q-17). Aucune précondition
-  de statut d'étape (Q-44).
-- **#20** — réservé aux délibérés dont l'étape est encore `DELIBERE_VIDE`. **Motif obligatoire.**
-  Ne rouvre jamais l'étape suivante — distinct de l'exercice d'un recours.
+  franchissement de `SEUIL_PROROGATIONS` — **ce n'est pas une erreur** (Q-17) : l'écran l'affiche en
+  avertissement. Délibéré en attente et date **future** exigés ; elle devient la date annoncée.
+- **#20** — délibéré en attente, étape `EN_DELIBERE` (le juge rouvre les débats avant de statuer).
+  **Motif obligatoire**, conservé sur le délibéré. Ne rouvre jamais l'étape suivante — distinct de
+  l'exercice d'un recours.
+- **#22** — refusé tant que le délibéré n'est pas vidé.
 - **#21** — strictement consultatif (Q-19) : `{delibereId, dateEcheanceRecours, recoursExerce,
   delaiExpire, cloture}`. Le suivi réel est assuré par un planificateur backend.
 

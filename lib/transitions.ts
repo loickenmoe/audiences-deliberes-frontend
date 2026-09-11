@@ -8,10 +8,11 @@ import type { StatutCycleVie, TypeEtape } from "@/types/enums";
  * opposer un `ERR-004`. Le backend reste l'arbitre : si les deux divergent un jour, c'est lui qui a
  * raison, et le test `transitions.test.ts` doit être mis à jour avec lui.
  *
- * Deux absences volontaires :
- * · `EN_DELIBERE → DELIBERE_VIDE` passe par l'enregistrement d'un délibéré (module délibérés),
- *   qui collecte le résultat et l'échéance du délai de recours ;
- * · le **rabattement** (`EN_DELIBERE → EN_COURS`) a son propre endpoint, qui exige un motif.
+ * Deux absences volontaires — les sorties de « En délibéré » passent par le module délibérés (Q-78) :
+ * · `EN_DELIBERE → DELIBERE_VIDE` quand la décision est rendue (`PUT /deliberes/{id}/resultat`,
+ *   ou enregistrement direct d'un délibéré déjà rendu), qui collecte le résultat et l'échéance ;
+ * · le **rabattement** (`EN_DELIBERE → EN_COURS`, le juge rouvre les débats) a son propre endpoint,
+ *   qui exige un motif. Il ne frappe qu'un délibéré en attente, jamais une décision rendue.
  */
 const TRANSITIONS_AUTORISEES: Readonly<Record<StatutCycleVie, readonly StatutCycleVie[]>> = {
   OUVERTURE: ["EN_COURS"],
