@@ -207,6 +207,36 @@ aurait dû saisir un résultat fictif.
 résultat, prorogation et rabattement pendant l'attente, résultat qui vide le délibéré ; lecture des
 prorogations ; état dérivé du délibéré. L'écran 10 suit ce cycle.
 
+### ✅ QF-34 — Une suppression directe laissait la demande orpheline *(résolue : Q-79 backend)*
+
+**Constat de l'audit F10, vérifié dans le code.** Quand le DJ supprime directement une pièce dont le
+juriste a demandé la suppression, la demande restait en attente : indécidable (404) et relancée
+toutes les 72 h. Notre propre parcours e2e de F7 en créait une à chaque exécution. Et la file ne
+nommait ni le fichier ni le dossier. **Décision du porteur du projet (2026-09-11)** : la suppression
+directe ferme la demande ; la demande porte nom, type et dossier ; V10 ferme les orphelines
+existantes. L'écran 36 s'appuie dessus.
+
+### ✅ QF-35 — Le rapport journalier n'était ouvert qu'au rôle juriste *(résolue : Q-80 backend)*
+
+« Tout juriste » (FR-GED-04), le DJ et la DJA ayant tous les droits d'un juriste, et l'Assistante
+selon le document d'analyse. **Décision (2026-09-11)** : ouvert au juriste, au DJ, à la DJA et à
+l'Assistante.
+
+### ✅ QF-36 — Le DJ et la DJA n'avaient pas les droits d'un juriste *(résolue : Q-81 backend)*
+
+**Décision du porteur du projet (2026-09-11)** : `ROLE_JURISTE` ajouté aux rôles composites de
+`ROLE_DJ` et `ROLE_DJA` (fichier du realm et Keycloak en service). Côté frontend, rien à lister :
+le jeton du DJ porte `ROLE_JURISTE`, donc toute capacité « juriste » lui est ouverte, et
+`profilPrincipal` l'affiche toujours « Directeur Juridique ». Côté backend, le provisionnement
+choisit désormais le profil par priorité — sinon un nouveau DJ aurait pu être enregistré comme
+juriste. Constat d'origine ci-dessous.
+
+Dans le realm, `ROLE_DJ` et `ROLE_DJA` n'incluent pas `ROLE_JURISTE`, alors que les sources leur
+donnent « tous les droits d'un juriste ». Conséquence visible : aucun des écrans réservés au
+juriste (audiences, étapes, délibérés, alarmes…) ne leur propose d'action. **À trancher** : ajouter
+`ROLE_JURISTE` aux composites des deux rôles, ou élargir endpoint par endpoint. Non bloquant pour
+F10.
+
 ### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
 
 **Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige

@@ -12,7 +12,13 @@ import type { Role } from "@/types/enums";
  * `API_INTEGRATION_STATUS.md`, lui-même relevé endpoint par endpoint dans le code du backend.
  */
 
-/** Les cinq profils internes. Tous portent `ROLE_CONSULTATION` et `ROLE_SAISIE` (composite). */
+/**
+ * Les cinq profils internes. Tous portent `ROLE_CONSULTATION` et `ROLE_SAISIE` (composite).
+ *
+ * Depuis Q-81, `ROLE_DJ` et `ROLE_DJA` incluent aussi `ROLE_JURISTE` (composite) : leur jeton porte
+ * les deux, si bien que toute capacité « juriste » ci-dessous leur est ouverte **sans** qu'ils y
+ * soient listés. `profilPrincipal` garde le DJ et la DJA en tête, pour l'affichage.
+ */
 export const ROLES_INTERNES = [
   "ROLE_JURISTE",
   "ROLE_DJ",
@@ -114,8 +120,8 @@ export const CAPACITES = {
   supprimerDocument: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
   /** `GET /ged/demandes-suppression`, `PUT .../approbation-suppression` — DJ, DJA */
   arbitrerSuppressions: ["ROLE_DJ", "ROLE_DJA"],
-  /** `GET /ged/rapport-journalier` — JURISTE */
-  consulterRapportJournalier: ["ROLE_JURISTE"],
+  /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE (Q-80 backend) */
+  consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE"],
 
   // ── Décisions définitives ─────────────────────────────────────────────────
   /** adjudications, condamnations, jurisprudences (écriture) — JURISTE */

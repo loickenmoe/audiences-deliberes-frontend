@@ -1,7 +1,7 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-11 (jalon F9 — écrans 10, 26 et 27 livrés, cycle du délibéré Q-78).
+> Dernière mise à jour : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -154,8 +154,8 @@ notification applicative (Q-52).
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ❌ |
-| 37 | Rapport journalier | `/ged/rapport-journalier` | JUR | `GET /ged/rapport-journalier?date=` | F10 | ❌ |
+| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ✅ (fichier et dossier nommés, aperçu, rejet motivé, historique — Q-79) |
+| 37 | Rapport journalier | `/ged/rapport-journalier` | JUR, DJ, DJA, AST | `GET /ged/rapport-journalier?date=` | F10 | ✅ (état vide explicite ; ouvert à 4 profils — Q-80) |
 
 **`DELETE /ged/documents/{id}` a deux comportements** selon le profil résolu côté serveur :
 **202** pour le juriste auteur du chargement (demande créée, document intact), **200** pour DJ/DJA

@@ -3,8 +3,9 @@
 > Les **72 endpoints HTTP** exposés par le backend (67 d'origine, plus cinq ajouts de M16 : Q-74,
 > Q-76, Q-77 et les deux de Q-78) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-11 (jalon F9 — **40 endpoints consommés sur 72**, plus #45 en partie,
-> après l'alignement du cycle du délibéré sur les sources, QF-33/Q-78).
+> Dernière mise à jour : 2026-09-11 (jalon F10 — **43 endpoints consommés sur 72**, plus #45 en partie ;
+> la file des suppressions et le rapport journalier s'appuient sur Q-79/Q-80).
+> Précédente : 2026-09-11 (jalon F9 — 40 sur 72, cycle du délibéré aligné sur les sources, QF-33/Q-78).
 > Précédente : 2026-09-10 (jalon F8 — 32 sur 70, après l'annulation d'audience et le traitement d'alarme ;
 > décompte mesuré sur ce tableau. Le « 22 » annoncé en fin de F7 était faux : c'était 23, #64 et #65
 > étant restés marqués 🟡 alors que l'écran les consommait depuis F6).
@@ -216,10 +217,10 @@ nuls tant que la décision n'est pas rendue.
 | 38 | POST | `/ged/documents` *(multipart)* | SAI | 06 (pièces à la création), 12 | F7 · F10 | ✅ |
 | 39 | GET | `/ged/documents/{id}` | CONS | 12 (consulter, télécharger) | F7 · F10 | ✅ |
 | 40 | DELETE | `/ged/documents/{id}` | JUR (202) / DJ, DJA (200) | 12 | F7 · F10 | ✅ |
-| 41 | PUT | `/ged/documents/{id}/approbation-suppression` | DJ, DJA | 36 | F10 | ❌ |
-| 42 | GET | `/ged/rapport-journalier?date=` | JURISTE | 37 | F10 | ❌ |
+| 41 | PUT | `/ged/documents/{id}/approbation-suppression` | DJ, DJA | 36 | F10 | ✅ (rejet : motif obligatoire, 255 car.) |
+| 42 | GET | `/ged/rapport-journalier?date=` | JUR, DJ, DJA, AST (Q-80) | 37 | F10 | ✅ |
 | 43 | GET | `/dossiers/{id}/documents` | CONS | 07 (onglet Documents), 12 | F7 (lecture) · F10 | ✅ |
-| 63 | GET | `/ged/demandes-suppression?statut=` | DJ, DJA | 36 | F10 | ❌ |
+| 63 | GET | `/ged/demandes-suppression?statut=` | DJ, DJA | 36 | F10 | ✅ (nomme fichier et dossier depuis Q-79) |
 
 - **#38** — multipart : `dossierId`, `typeDocument` (texte libre) en `@RequestParam` ; `file` en
   `@RequestPart`. Format **dérivé de l'extension** (pas du `Content-Type`) parmi

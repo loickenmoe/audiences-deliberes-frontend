@@ -11,6 +11,8 @@ export const CLES = {
   dossiers: "dossiers",
   dossier: "dossier",
   documentsDossier: "documents-dossier",
+  demandesSuppression: "demandes-suppression",
+  rapportJournalier: "rapport-journalier",
   derogations: "derogations",
   audiencesDossier: "audiences-dossier",
   alarmesDossier: "alarmes-dossier",
