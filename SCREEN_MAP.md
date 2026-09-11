@@ -1,7 +1,8 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
+> Dernière mise à jour : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
+> Précédente : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
 > Précédente : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
 > Précédente : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
 
@@ -55,7 +56,7 @@
 | 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes`, `PATCH /alarmes/{id}/traiter` | F8 | ✅ (« Marquer traitée » — QF-29) |
 | 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
 | 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ✅ (Assistante : tout ; autres : validées) |
-| 14 | Fiche — Décisions définitives | onglet | JUR | `POST .../adjudications`, `POST .../condamnations` — **aucune lecture, cf. QF-03** | F13 | ❌ |
+| 14 | Fiche — Décisions définitives | onglet | CONS / JUR | `GET /dossiers/{id}/decisions` (Q-88), `POST .../adjudications`, `POST .../condamnations`, `PATCH /condamnations/{id}/statut`, jurisprudences du dossier | F13 | ✅ (adjudication proposée sur étape clôturée seulement ; statut de condamnation modifiable sur sa ligne) |
 | 15 | Fiche — Historique | onglet | CONS | inclus dans `GET /dossiers/{id}` (`historique[]`) | F7 | ✅ (libellés en français, QF-24) |
 | 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ✅ |
 | 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ✅ (arbitrage débloqué par Q-74) |
@@ -172,8 +173,8 @@ L'interface doit interpréter le code de retour, pas le rôle local.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 14 | Décisions du dossier | onglet (fiche) | JUR | `POST /dossiers/{id}/adjudications`, `POST /dossiers/{id}/condamnations`, `PATCH /condamnations/{id}/statut` | F13 | ❌ |
-| 38 | Base jurisprudentielle | `/jurisprudences` | CONS / JUR | `GET /jurisprudences?motCle&natureDecision&juridiction&page&size`, `POST /jurisprudences` | F13 | ❌ |
+| 14 | Décisions du dossier | onglet (fiche) | CONS / JUR | `GET /dossiers/{id}/decisions`, `POST /dossiers/{id}/adjudications`, `POST /dossiers/{id}/condamnations`, `PATCH /condamnations/{id}/statut` | F13 | ✅ (voir la ligne 14 ci-dessus) |
+| 38 | Base jurisprudentielle | `/jurisprudences` | CONS / JUR | `GET /jurisprudences?motCle&natureDecision&juridiction&page&size`, `POST /jurisprudences` | F13 | ✅ (recherche partielle, filtres dans l'URL, archivage PDF) |
 
 > ⚠ **QF-03 — bloquant fonctionnel.** Il n'existe **aucun `GET`** sur les adjudications ni les
 > condamnations. L'écran « Suivi des condamnations » prévu par `FUNCTIONAL_MAP.md` §8 n'a pas de

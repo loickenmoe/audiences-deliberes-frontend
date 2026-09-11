@@ -15,6 +15,7 @@ import { ModaleDerogation } from "@/components/modules/dossiers/modale-derogatio
 import { ModaleSensibilite } from "@/components/modules/dossiers/modale-sensibilite";
 import { OngletAlarmes } from "@/components/modules/dossiers/onglet-alarmes";
 import { OngletAudiences } from "@/components/modules/dossiers/onglet-audiences";
+import { OngletDecisions } from "@/components/modules/dossiers/onglet-decisions";
 import { OngletDeliberes } from "@/components/modules/dossiers/onglet-deliberes";
 import { OngletDocuments } from "@/components/modules/dossiers/onglet-documents";
 import { OngletEtapes } from "@/components/modules/dossiers/onglet-etapes";
@@ -28,7 +29,17 @@ import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { StatutValidation } from "@/types/enums";
 
-const ONGLETS = ["synthese", "etapes", "audiences", "deliberes", "alarmes", "historique", "documents", "publications"] as const;
+const ONGLETS = [
+  "synthese",
+  "etapes",
+  "audiences",
+  "deliberes",
+  "alarmes",
+  "decisions",
+  "historique",
+  "documents",
+  "publications",
+] as const;
 type Onglet = (typeof ONGLETS)[number];
 
 const LIBELLES_ONGLETS: Record<Onglet, string> = {
@@ -37,6 +48,7 @@ const LIBELLES_ONGLETS: Record<Onglet, string> = {
   audiences: "ongletAudiences",
   deliberes: "ongletDeliberes",
   alarmes: "ongletAlarmes",
+  decisions: "ongletDecisions",
   historique: "ongletHistorique",
   documents: "ongletDocuments",
   publications: "ongletPublications",
@@ -80,6 +92,7 @@ export function FicheDossier({
     audiences: null,
     deliberes: null,
     alarmes: null,
+    decisions: null,
     historique: null,
     documents: null,
     publications: null,
@@ -224,6 +237,7 @@ export function FicheDossier({
           {onglet === "audiences" ? <OngletAudiences dossier={dossier} roles={roles} /> : null}
           {onglet === "deliberes" ? <OngletDeliberes dossier={dossier} roles={roles} /> : null}
           {onglet === "alarmes" ? <OngletAlarmes dossier={dossier} roles={roles} /> : null}
+          {onglet === "decisions" ? <OngletDecisions dossier={dossier} roles={roles} /> : null}
           {onglet === "historique" ? <OngletHistorique historique={dossier.historique ?? []} /> : null}
           {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} roles={roles} /> : null}
           {onglet === "publications" && peut(roles, "consulterPublications") ? (

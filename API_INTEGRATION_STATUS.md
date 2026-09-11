@@ -1,11 +1,12 @@
 # API_INTEGRATION_STATUS
 
-> Les **73 endpoints HTTP** exposés par le backend (67 d'origine, plus six ajouts de M16 : Q-74,
-> Q-76, Q-77, les deux de Q-78 et le détail d'une demande de frais, Q-82) et leur état de
-> consommation par le frontend.
+> Les **74 endpoints HTTP** exposés par le backend (67 d'origine, plus sept ajouts de M16 : Q-74,
+> Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
+> dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-11 (jalon F12 — **58 endpoints consommés sur 73**, plus #45 en partie ;
-> publications et constitutions s'appuient sur Q-86/Q-87).
+> Dernière mise à jour : 2026-09-11 (jalon F13 — **64 endpoints consommés sur 74**, plus #45 en partie ;
+> décisions et jurisprudence s'appuient sur Q-88/Q-89).
+> Précédente : 2026-09-11 (jalon F12 — 58 sur 73, publications et constitutions s'appuient sur Q-86/Q-87).
 > Précédente : 2026-09-11 (jalon F11 — 49 sur 73, le circuit des frais s'appuie sur Q-82/Q-83).
 > Précédente : 2026-09-11 (jalon F10 — 43 sur 72, la file des suppressions et le rapport journalier
 > s'appuient sur Q-79/Q-80).
@@ -280,11 +281,12 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 51 | POST | `/dossiers/{id}/adjudications` | JURISTE | 14 | F13 | ❌ |
-| 52 | POST | `/dossiers/{id}/condamnations` | JURISTE | 14 | F13 | ❌ |
-| 53 | PATCH | `/condamnations/{id}/statut` | JURISTE | 14 | F13 | ❌ |
-| 54 | POST | `/jurisprudences` *(multipart)* | JURISTE | 38 | F13 | ❌ |
-| 55 | GET | `/jurisprudences?motCle&natureDecision&juridiction&page&size` | CONS | 38 | F13 | ❌ |
+| 51 | POST | `/dossiers/{id}/adjudications` | JURISTE | 14 | F13 | ✅ |
+| 52 | POST | `/dossiers/{id}/condamnations` | JURISTE | 14 | F13 | ✅ |
+| 53 | PATCH | `/condamnations/{id}/statut` | JURISTE | 14 | F13 | ✅ |
+| 54 | POST | `/jurisprudences` *(multipart)* | JURISTE | 14, 38 | F13 | ✅ |
+| 55 | GET | `/jurisprudences?motCle&natureDecision&juridiction&dossierId&page&size` | CONS | 14, 38 | F13 | ✅ (partielle, insensible à la casse, par dossier — Q-89) |
+| — | GET | `/dossiers/{id}/decisions` | CONS | 14 | F13 | ✅ (ajouté par Q-88, ferme QF-03) |
 
 - **#51** — étape `CLOTURE` requise (RG-DEF-01). `reliquat ≥ 0`.
 - **#52** — **aucune précondition d'étape** (asymétrie assumée, Q-59).
@@ -385,7 +387,7 @@ subsiste qu'en repli, le temps que tous les environnements portent ce backend.
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **73** (66 numérotés + 7 non numérotés, dont 6 de M16) | **58** (plus #45 en partie) |
+| **Total HTTP exposé par le backend** | **74** (66 numérotés + 8 non numérotés, dont 7 de M16) | **64** (plus #45 en partie) |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |

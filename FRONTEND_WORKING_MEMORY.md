@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F11** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7 ; backend PR #22) |
-| Jalon livré, **en attente de validation** | **F12** — publications, constitutions, répertoire (`feat/f12-publications`, depuis `origin/dev` 590baa1) ; backend sur `feat/publications-detail` (Q-86, Q-87). Rien de commité. |
-| Jalon suivant | **F13** — décisions définitives et jurisprudence (évolution backend QF-03) |
+| Jalons validés | **F0** à **F12** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8 ; backend PR #22, #23) |
+| Jalon livré, **en attente de validation** | **F13** — décisions définitives et jurisprudence (`feat/f13-decisions` depuis `origin/dev` b53096d) ; backend sur `feat/decisions-lecture` (Q-88, Q-89 ; Q-90 laissée ouverte). Rien de commité. |
+| Jalon suivant | **F14** — alertes, notifications, configurations |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **33 écrans sur 42** · **58 endpoints consommés sur 73** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
+| Décompte | **35 écrans sur 42** · **64 endpoints consommés sur 74** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
