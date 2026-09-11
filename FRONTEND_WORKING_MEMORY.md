@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F10** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 fusionné dans `dev` — PR #6) |
-| Jalon livré, **en attente de validation** | **F11** — frais d'avocats (`feat/f11-frais`) ; backend sur `feat/frais-detail` (Q-82 à Q-85). Rien de commité. |
-| Jalon suivant | **F12** — publications, constitutions, répertoire (rappeler QF-20) |
+| Jalons validés | **F0** à **F11** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7 ; backend PR #22) |
+| Jalon livré, **en attente de validation** | **F12** — publications, constitutions, répertoire (`feat/f12-publications`, depuis `origin/dev` 590baa1) ; backend sur `feat/publications-detail` (Q-86, Q-87). Rien de commité. |
+| Jalon suivant | **F13** — décisions définitives et jurisprudence (évolution backend QF-03) |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **28 écrans sur 42** · **49 endpoints consommés sur 73** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
+| Décompte | **33 écrans sur 42** · **58 endpoints consommés sur 73** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
@@ -158,6 +158,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - **Ne jamais rediriger vers une route non encore livrée.** Le routeur App échoue *en silence* :
   l'URL ne change même pas, et le bouton semble cassé alors que le backend a répondu 201. Découvert
   en renvoyant vers `/dossiers/{id}`, écran livré seulement en F7 (QF-22).
+- **`filter({ hasText: "…" })` compare une sous-chaîne sans tenir compte de la casse** (F12) : une
+  ligne « Active » dont un bouton dit « Marquer traitée » passe le filtre « Traitée ». Pour un
+  statut, viser la cellule exacte : `filter({ has: page.getByRole("cell", { name, exact: true }) })`.
+  Et `allInnerTexts()` n'attend rien : attendre d'abord qu'une ligne soit visible.
 - **Un `<dialog>` fermé reste dans le DOM.** Deux conséquences, corrigées dans `components/ui/dialog.tsx`
   en F7 : (1) un identifiant de titre **fixe** donnait à toutes les modales montées le nom de la
   première — d'où `useId` ; (2) le navigateur émet `close` **aussi** quand le programme ferme :

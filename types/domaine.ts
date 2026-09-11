@@ -9,12 +9,16 @@ import type {
   StatutExpedition,
   StatutAudience,
   StatutCircuitFrais,
+  StatutConstitution,
   StatutPaiementFrais,
+  StatutPublication,
   SeuilOrigine,
   StatutCycleVie,
   StatutValidation,
+  TypeAutrePublication,
   TypeEtape,
   TypeIntervenant,
+  TypePublication,
 } from "@/types/enums";
 
 /**
@@ -496,4 +500,89 @@ export interface DemandeFrais {
   validations: ValidationFrais[];
   createdAt: string;
   updatedAt: string | null;
+}
+
+// ─────────────────────────────── Publications ───────────────────────────────
+
+/** Commentaire d'un juriste (#33) : destiné au DJ et à la DJA, jamais à l'avocat (RG-INT-07). */
+export interface CommentairePublication {
+  id: number;
+  publicationId: number;
+  auteurId: number | null;
+  auteurNom: string | null;
+  contenu: string;
+  createdAt: string;
+}
+
+/** Correspondance unique du DJ/DJA à l'avocat (#34). */
+export interface CorrespondanceAvocat {
+  id: number;
+  publicationId: number;
+  auteurId: number | null;
+  auteurNom: string | null;
+  contenu: string;
+  createdAt: string;
+}
+
+/**
+ * Publication d'un avocat (#32, #59) : compte rendu d'audience (`contenu`, `audienceDate`) ou autre
+ * publication (`typeDocument`, `nomFichier`). Depuis Q-86 backend, elle est nommée ;
+ * `urlTelechargement` (10 minutes), `commentaires` et `correspondance` n'existent que sur le détail.
+ */
+export interface Publication {
+  id: number;
+  type: TypePublication;
+  dossierId: number;
+  avocatId: number;
+  dateDepot: string;
+  statutValidation: StatutPublication;
+  motifRejet: string | null;
+  restrictionAccesId: number | null;
+  audienceId: number | null;
+  contenu: string | null;
+  typeDocument: TypeAutrePublication | null;
+  referenceDossier: string;
+  avocatNom: string;
+  audienceDate: string | null;
+  restrictionAccesNom: string | null;
+  nomFichier: string | null;
+  urlTelechargement: string | null;
+  commentaires: CommentairePublication[] | null;
+  correspondance: CorrespondanceAvocat | null;
+}
+
+// ─────────────────────────────── Constitutions et répertoire ───────────────────────────────
+
+/** Demande de constitution d'un prestataire (#35, #36, #60), nommée depuis Q-86 backend. */
+export interface DemandeConstitution {
+  id: number;
+  dossierId: number;
+  prestataireId: number;
+  demandeurId: number;
+  motif: string;
+  statut: StatutConstitution;
+  valideParId: number | null;
+  motifRejet: string | null;
+  /** Lettre générée à la signature du SH, déposée dans la GED du dossier. */
+  lettreDocumentId: number | null;
+  dateDemande: string;
+  dateDecision: string | null;
+  referenceDossier: string;
+  prestataireNom: string;
+  prestataireType: TypeIntervenant;
+  demandeurNom: string | null;
+  valideParNom: string | null;
+}
+
+/**
+ * Avocat du répertoire (#37), trié par charge croissante. `indicateurCharge` : dossiers actifs ;
+ * `indicateurPerformance` : part des délibérés favorables, entre 0 et 1 (0 sans délibéré).
+ */
+export interface AvocatRepertoire {
+  id: number;
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+  indicateurCharge: number;
+  indicateurPerformance: number;
 }

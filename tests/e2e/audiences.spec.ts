@@ -30,6 +30,15 @@ function dansJours(jours: number) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * La ligne dont la **cellule de statut** vaut exactement `statut`. Un `filter({ hasText })` ne suffit
+ * pas : il compare une sous-chaîne sans tenir compte de la casse, et le bouton « Marquer traitée »
+ * d'une alarme active suffisait à la compter parmi les « Traitée ».
+ */
+function ligneAuStatut(page: Page, statut: string) {
+  return page.getByRole("row").filter({ has: page.getByRole("cell", { name: statut, exact: true }) });
+}
+
 /** Crée un dossier et fait passer son instance « En cours » : la condition d'une audience. */
 async function dossierEnCours(page: Page) {
   const reference = `DOS-AUD-${suffixe()}`;
@@ -148,7 +157,7 @@ test("marquer une alarme traitée la clôt sans la remplacer (QF-29)", async ({ 
   await confirmation.getByRole("button", { name: "Marquer traitée" }).click();
 
   // Une seule ligne, close — contrairement à la reprogrammation, aucune remplaçante.
-  await expect(page.getByRole("row").filter({ hasText: "Traitée" })).toHaveCount(1);
+  await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
   await expect(page.getByRole("row").filter({ hasText: "Appeler l’huissier" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Reprogrammer — Appeler l’huissier" })).toHaveCount(0);
 });
@@ -172,8 +181,8 @@ test("créer puis reprogrammer une alarme : l'ancienne est close, la nouvelle la
   await expect(page.getByText("Alarme reprogrammée.")).toBeVisible();
 
   // Deux lignes : l'ancienne « Traitée », la nouvelle « Active » qui la cite.
-  await expect(page.getByRole("row").filter({ hasText: "Traitée" })).toHaveCount(1);
-  await expect(page.getByRole("row").filter({ hasText: "Active" })).toContainText("Reprend une alarme précédente");
+  await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
+  await expect(ligneAuStatut(page, "Active")).toContainText("Reprend une alarme précédente");
 });
 
 test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel", async ({ page }) => {

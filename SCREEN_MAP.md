@@ -1,7 +1,8 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
+> Dernière mise à jour : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
+> Précédente : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
 > Précédente : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
@@ -53,7 +54,7 @@
 | 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes`, `GET /deliberes/{id}/prorogations` | F9 | ✅ (état de chaque délibéré, historique des prorogations — Q-78) |
 | 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes`, `PATCH /alarmes/{id}/traiter` | F8 | ✅ (« Marquer traitée » — QF-29) |
 | 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
-| 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ❌ |
+| 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ✅ (Assistante : tout ; autres : validées) |
 | 14 | Fiche — Décisions définitives | onglet | JUR | `POST .../adjudications`, `POST .../condamnations` — **aucune lecture, cf. QF-03** | F13 | ❌ |
 | 15 | Fiche — Historique | onglet | CONS | inclus dans `GET /dossiers/{id}` (`historique[]`) | F7 | ✅ (libellés en français, QF-24) |
 | 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ✅ |
@@ -136,11 +137,11 @@ ses propres demandes pour un avocat · les deux accords sont requis, un seul ref
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 31 | File des publications | `/publications` | AST, JUR, DJ, DJA | `GET /publications?dossierId&statut&page&size` | F12 | ❌ |
-| 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ❌ |
+| 31 | File des publications | `/publications` | AST, JUR, DJ, DJA | `GET /publications?dossierId&statut&page&size` | F12 | ✅ (Assistante : à valider, validées, rejetées ; autres : validées) |
+| 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ✅ (fichier consultable, accès restreint en écran dédié, correspondance unique — Q-86) |
 | 33 | Dépôt de compte rendu / pièce | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (texte), `POST /publications/autres` (fichier) — ⚠ **QF-20** : pas de compte rendu en pièce jointe | **F16** | ❌ |
-| 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ❌ |
-| 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ❌ |
+| 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ✅ (trié par charge croissante, recherche par nom) |
+| 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR, modale de la fiche 07), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ✅ (lettre consultable depuis la ligne, nommée — Q-86) |
 
 **Règles** : `statut=DEPOSE` alimente la file de l'assistante · `GET /publications/{id}` renvoie 403
 `ERR-009` si `restrictionAcces` désigne un autre utilisateur — traiter comme un écran « accès

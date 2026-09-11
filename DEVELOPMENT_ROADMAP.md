@@ -488,7 +488,7 @@ seule exécution, après Q-81). Backend : 293 tests, `BUILD SUCCESS`, V10 appliq
 
 ---
 
-## F11 — Frais d'avocats (profils internes) 🔵 *(livré, en attente de validation manuelle)*
+## F11 — Frais d'avocats (profils internes) ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **28**, **29**. Endpoints **#24-28**, plus le détail `GET /frais/demandes/{id}` (Q-82).
 **#23 (dépôt avocat) reporté à F16.** **Livré le 2026-09-11** sur `feat/f11-frais`, branchée sur
@@ -537,10 +537,49 @@ désormais son identifiant en base.
 
 ---
 
-## F12 — Publications, constitutions, répertoire ⏳
+## F12 — Publications, constitutions, répertoire 🔵 *(livré, en attente de validation manuelle)*
 
 Écrans **13**, **31**, **32**, **34**, **35**. Endpoints **#30**, **#32-37**, **#59-60**.
-**#29 et #31 (dépôts avocat) reportés à F16.**
+**#29 et #31 (dépôts avocat) reportés à F16.** **Livré le 2026-09-11** sur `feat/f12-publications`,
+branchée sur `origin/dev` (F11 fusionné).
+
+**L'audit a trouvé des manques backend, corrigés sur décision du porteur du projet (M16)** :
+- **Q-86 / QF-39** — le fichier d'une pièce déposée n'était exposé nulle part ; l'Assistante ne
+  pouvait pas ouvrir une publication à valider ; les commentaires des juristes n'étaient lisibles
+  par personne ; publications et constitutions ne portaient que des identifiants ; aucun juriste
+  n'était prévenu d'une publication validée. Tout est corrigé.
+- **Q-87** — un avocat constitué n'était jamais notifié : le prestataire, chargé à la demande, était
+  un proxy qu'`instanceof Avocat` ne reconnaissait pas.
+- **Reporté à F16** : l'observation du DJ/DJA de sa propre initiative (UC-INT-08 étapes 8 à 12), la
+  lecture de ses correspondances par l'avocat, et QF-20 (compte rendu déposé en fichier).
+
+- `publicationService` (#30, #32-34, #59), `constitutionService` (#35-37, #60), `usePublications`,
+  `useConstitutions`, `lib/publications.ts` (vues par profil), capacité `solliciterConstitution`,
+  trois entrées de menu.
+- **Écran 31** : l'Assistante ouvre sur « à valider » (ordre d'arrivée), puis validées, rejetées ;
+  les autres profils ne voient que les publications validées.
+- **Écran 32** : pièce consultable et téléchargeable, compte rendu lisible ; validation confirmée,
+  rejet à motif obligatoire ; commentaire du juriste « pour le DJ/DJA, jamais pour l'avocat » ;
+  correspondance unique du DJ/DJA, confirmée ; accès restreint et publication non validée en écrans
+  dédiés, pas en erreurs.
+- **Écran 13** : onglet « Publications » de la fiche (masqué au SH, qui ne lit pas les publications).
+- **Écran 34** : répertoire trié par charge croissante, recherche par nom, performance en pourcentage.
+- **Écran 35** : file du SH (« à signer ») et historique ; signature confirmée, rejet motivé ; lettre
+  de constitution consultable depuis la ligne. Sollicitation depuis la fiche (07), motif obligatoire.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **226 tests unitaires** ✅ ·
+`build` ✅ · **Playwright contre le backend réel et MinIO** (build de production) : suite complète
+**78 sur 79**, le 79ᵉ étant un défaut du test F8 décrit ci-dessous — corrigé, son fichier rejoué
+**8 sur 8** (la suite complète n'a pas été relancée après ce correctif). Dont 6 parcours pour F12 : pièce invisible avant validation puis consultable ; rejet à motif obligatoire ;
+commentaire du juriste lu par le DJ, correspondance unique (second envoi refusé en 409) ; accès
+restreint en écran dédié ; constitution sans motif refusée, signée par le SH, lettre dans la GED ;
+répertoire trié par charge croissante, SH sans publications ni répertoire. Backend : 315 tests,
+`BUILD SUCCESS`.
+
+> **Point à retenir :** la suite complète a révélé un défaut **d'un test F8**, pas de l'application :
+> `filter({ hasText: "Traitée" })` compare une sous-chaîne sans tenir compte de la casse, et le
+> bouton « Marquer traitée » d'une alarme active suffisait à la compter. Il passait jusqu'ici par
+> chance de synchronisation. Corrigé en visant la cellule de statut exacte.
 
 **Vérifications** : publication non validée invisible ; restriction d'accès → écran dédié, pas une
 erreur technique ; commentaire de juriste transmis au DJ/DJA et **jamais directement à l'avocat** ;
@@ -624,8 +663,8 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | 🔵 | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | 🔵 | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**11 jalons validés sur 18 (F0 à F10) · F11 livré en attente de validation · 28 écrans sur 42 ·
-49 endpoints consommés sur 73** (plus #45 en partie ; 73 depuis les ajouts de M16) —
+**12 jalons validés sur 18 (F0 à F11) · F12 livré en attente de validation · 33 écrans sur 42 ·
+58 endpoints consommés sur 73** (plus #45 en partie ; 73 depuis les ajouts de M16) —
 mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.

@@ -237,6 +237,20 @@ juriste (audiences, étapes, délibérés, alarmes…) ne leur propose d'action.
 `ROLE_JURISTE` aux composites des deux rôles, ou élargir endpoint par endpoint. Non bloquant pour
 F10.
 
+### ✅ QF-39 — Publications et constitutions illisibles pour qui devait les instruire *(résolue : Q-86, Q-87 backend)*
+
+**Constat de l'audit F12, vérifié dans le code et les sources.** Le fichier d'une pièce déposée par
+l'avocat n'était exposé nulle part ; l'Assistante ne pouvait pas ouvrir une publication à valider
+(404 tant qu'elle n'est pas validée) ; les commentaires des juristes, destinés au DJ et à la DJA,
+n'étaient lisibles par personne ; publications et constitutions ne portaient que des identifiants ;
+aucun juriste n'était prévenu d'une publication validée. À la lecture, un défaut de plus : un avocat
+constitué n'était jamais notifié (prestataire chargé en proxy, Q-87).
+
+**Décision du porteur du projet (2026-09-11)** : corriger les cinq points (Q-86) et le défaut de
+notification (Q-87). **Reporté à F16** avec le portail avocat : l'observation du DJ/DJA de sa propre
+initiative, sans publication (UC-INT-08 étapes 8 à 12), et la lecture de ses correspondances par
+l'avocat — ainsi que QF-20 (compte rendu déposé en fichier).
+
 ### ✅ QF-37 — Une demande de frais ne se lisait ni seule, ni avec ses décisions *(résolue : Q-82, Q-83 backend)*
 
 **Constat de l'audit F11, vérifié dans le code et les sources.** Aucun `GET /frais/demandes/{id}` :
