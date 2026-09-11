@@ -8,10 +8,13 @@ import type {
   StatutAlarme,
   StatutExpedition,
   StatutAudience,
+  SensCondamnation,
   StatutCircuitFrais,
   StatutConstitution,
+  StatutPaiementCondamnation,
   StatutPaiementFrais,
   StatutPublication,
+  TypeArchiveJurisprudence,
   SeuilOrigine,
   StatutCycleVie,
   StatutValidation,
@@ -585,4 +588,85 @@ export interface AvocatRepertoire {
   telephone: string | null;
   indicateurCharge: number;
   indicateurPerformance: number;
+}
+
+// ─────────────────────────────── Décisions définitives et jurisprudence ───────────────────────────────
+
+/** Adjudication (#51) : décision définitive favorable à la Banque, sur une étape clôturée (RG-DEF-01/02). */
+export interface Adjudication {
+  id: number;
+  dossierId: number;
+  etapeId: number;
+  beneficiaire: string;
+  statutComptabilisation: string | null;
+  repriseProvision: boolean;
+  restitutionSoulte: boolean;
+  mutation: boolean;
+  reliquat: number;
+  dateDecision: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Condamnation pécuniaire (#52, #53) : seul son statut de paiement évolue (RG-DEF-03/04). */
+export interface Condamnation {
+  id: number;
+  dossierId: number;
+  etapeId: number | null;
+  sens: SensCondamnation;
+  naturePaiement: string;
+  statutPaiement: StatutPaiementCondamnation;
+  dateDecision: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Décisions d'un dossier (Q-88 backend), chaque liste de la plus récente à la plus ancienne. */
+export interface DecisionsDossier {
+  adjudications: Adjudication[];
+  condamnations: Condamnation[];
+}
+
+export interface CreerAdjudication {
+  /** Étape `CLOTURE` du dossier (400 sinon, RG-DEF-01). */
+  etapeId: number;
+  beneficiaire: string;
+  statutComptabilisation: string;
+  repriseProvision: boolean;
+  restitutionSoulte: boolean;
+  mutation: boolean;
+  /** ≥ 0 (400 sinon). */
+  reliquat: number;
+  dateDecision: string;
+}
+
+/** Aucune précondition d'étape (Q-59) ; le statut de paiement commence toujours `EN_ATTENTE` (QF-40). */
+export interface CreerCondamnation {
+  etapeId?: number;
+  sens: SensCondamnation;
+  naturePaiement: string;
+  dateDecision: string;
+}
+
+/** Jurisprudence (#54, #55) ; `urlTelechargement` pré-signée, valable 10 minutes. */
+export interface Jurisprudence {
+  id: number;
+  dossierId: number | null;
+  typeArchive: TypeArchiveJurisprudence;
+  motsCles: string[];
+  natureDecision: string;
+  juridiction: string;
+  dateDecision: string;
+  urlTelechargement: string | null;
+  createdAt: string;
+}
+
+/** Indexation obligatoire (RG-DEF-05) ; fichier PDF de 10 Mo au plus ; dossier facultatif. */
+export interface ArchiverJurisprudence {
+  dossierId?: number;
+  typeArchive: TypeArchiveJurisprudence;
+  motsCles: string[];
+  natureDecision: string;
+  juridiction: string;
+  dateDecision: string;
 }

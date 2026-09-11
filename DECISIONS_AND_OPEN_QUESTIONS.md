@@ -60,7 +60,23 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 
 ## QUESTIONS OUVERTES
 
-### 🔴 QF-03 — Aucune lecture des décisions définitives
+### 🟡 QF-40 — Une condamnation se crée toujours « En attente »
+
+**Constat de F13, vérifié dans le code.** US 8.2 fait saisir le statut de paiement dès la création
+(« statutPaiement (EN_ATTENTE, PAYE, RECOUVREMENT_FORCE) via POST /dossiers/{id}/condamnations ») ;
+`CreerCondamnationRequest` ne le reçoit pas, et le backend part toujours de `EN_ATTENTE`.
+**Choix de F13 (sans contournement)** : l'écran crée la condamnation « En attente » et le dit ; le
+statut se change ensuite sur sa ligne (#53), comme le prévoit UC-DEF-02 étape 8. **Recommandation
+(backend, non bloquante)** : accepter un `statutPaiement` facultatif à la création. **Statut :
+ouvert**, rattaché à Q-90 backend avec la question de la mise à jour d'une adjudication.
+
+### ✅ QF-03 — Aucune lecture des décisions définitives *(résolue : Q-88, Q-89 backend)*
+
+**Décision du porteur du projet à l'ouverture de F13 (2026-09-11)** : option A retenue, avec deux
+compléments issus de l'audit — `GET /dossiers/{id}/decisions` (Q-88) ; recherche jurisprudentielle
+partielle et insensible à la casse, filtrable par dossier (Q-89). La mise à jour d'une adjudication
+n'est **pas** ajoutée (les sources ne la prévoient que pour la condamnation) : question ouverte pour
+la Direction Juridique (Q-90 backend). Constat d'origine ci-dessous.
 
 **Constat.** Le backend expose `POST /dossiers/{id}/adjudications`, `POST /dossiers/{id}/
 condamnations` et `PATCH /condamnations/{id}/statut`, mais **aucun `GET`**. Vérifié endpoint par
@@ -84,7 +100,7 @@ en dehors, vraisemblablement par omission.
 foulée de la création. (C) Reporter tout le volet décisions.
 
 **Recommandation : A.** L'ajout est mécaniquement identique à trois endpoints déjà livrés en M15 et
-sans règle métier nouvelle. **Statut : ouvert, bloque F13 en lecture.**
+sans règle métier nouvelle.
 
 ### 🔴 QF-20 — L'avocat ne peut pas déposer son compte rendu sous forme de document
 

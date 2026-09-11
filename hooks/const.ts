@@ -26,6 +26,8 @@ export const CLES = {
   publication: "publication",
   constitutions: "constitutions",
   repertoire: "repertoire",
+  decisionsDossier: "decisions-dossier",
+  jurisprudences: "jurisprudences",
   intervenants: "intervenants",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",

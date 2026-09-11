@@ -537,7 +537,7 @@ désormais son identifiant en base.
 
 ---
 
-## F12 — Publications, constitutions, répertoire 🔵 *(livré, en attente de validation manuelle)*
+## F12 — Publications, constitutions, répertoire ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **13**, **31**, **32**, **34**, **35**. Endpoints **#30**, **#32-37**, **#59-60**.
 **#29 et #31 (dépôts avocat) reportés à F16.** **Livré le 2026-09-11** sur `feat/f12-publications`,
@@ -589,15 +589,36 @@ lettre consultable dans la GED ; répertoire trié par charge croissante.
 
 ---
 
-## F13 — Décisions définitives et jurisprudence ⏳ *(inclut une évolution backend)*
+## F13 — Décisions définitives et jurisprudence 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **14**, **38**. Endpoints **#51-55**.
+Écrans **14**, **38**. Endpoints **#51-55**, plus `GET /dossiers/{id}/decisions` (Q-88).
+**Livré le 2026-09-11** sur `feat/f13-decisions`, branchée sur `origin/dev` (F12 fusionné).
 
-🔧 **Comprend une évolution backend (QF-03)** : aucun `GET` n'existe sur les adjudications ni les
-condamnations, l'onglet 14 serait sinon en écriture seule. Ajout attendu :
-`GET /dossiers/{id}/decisions`, symétrique de #56/#57/#58 livrés en M15, sans règle métier nouvelle.
-**À décider et à réaliser au début de ce jalon**, dans le dépôt backend. La base jurisprudentielle
-(**38**) est livrable sans cette évolution.
+**Évolution backend décidée par le porteur du projet à l'ouverture du jalon (M16)** :
+- **Q-88 / QF-03** — `GET /dossiers/{id}/decisions` : l'onglet 14 n'est plus en écriture seule, et le
+  statut d'une condamnation se met à jour même après un rechargement.
+- **Q-89** — la recherche jurisprudentielle était exacte, casse comprise ; elle est partielle et
+  insensible à la casse, et filtrable par dossier (les décisions archivées d'une fiche).
+- **Laissé ouvert (Q-90 backend, QF-40)** : la mise à jour d'une adjudication (les sources ne la
+  prévoient que pour la condamnation) et le statut initial d'une condamnation, toujours « En
+  attente » — l'écran le dit et le statut se change ensuite sur la ligne.
+
+- `decisionService` (#51-55, Q-88), `hooks/useDecisions.ts`, entrée de menu « Jurisprudence ».
+- **Écran 14** (onglet « Décisions » de la fiche) : adjudications (proposées seulement sur une étape
+  clôturée, l'écran dit pourquoi sinon ; reliquat négatif refusé) ; condamnations (statut de paiement
+  modifiable sur la ligne, lecture seule hors juriste) ; décisions archivées du dossier.
+- **Écran 38** (`/jurisprudences`) : recherche par mot-clé, nature et juridiction, filtres dans
+  l'URL ; archivage d'un PDF indexé (indexation incomplète refusée) ; aperçu et téléchargement avec
+  une URL redemandée à l'ouverture (elle ne vit que 10 minutes).
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **233 tests unitaires** ✅ ·
+`build` ✅ · **83 parcours Playwright sur 83 contre le backend réel et MinIO** ✅ (build de
+production), dont 4 pour F13 : adjudication refusée hors étape clôturée (400) et à reliquat négatif
+(400, et refusée à l'écran), puis enregistrée sur une étape clôturée ; condamnation suivie, statut
+passé à « Payée » et relu après rechargement, lecture seule pour l'Assistante ; indexation incomplète
+refusée, archivage PDF, recherche par fragment de mot-clé et de juridiction en minuscules, aperçu et
+téléchargement ; décision archivée depuis la fiche listée dans son onglet. Backend : 319 tests,
+`BUILD SUCCESS`.
 
 **Vérifications** : adjudication refusée hors étape `CLOTURE` ; reliquat négatif refusé ; indexation
 jurisprudentielle incomplète refusée ; recherche par mots-clés, nature et juridiction ;
@@ -663,8 +684,8 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | 🔵 | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**12 jalons validés sur 18 (F0 à F11) · F12 livré en attente de validation · 33 écrans sur 42 ·
-58 endpoints consommés sur 73** (plus #45 en partie ; 73 depuis les ajouts de M16) —
+**13 jalons validés sur 18 (F0 à F12) · F13 livré en attente de validation · 35 écrans sur 42 ·
+64 endpoints consommés sur 74** (plus #45 en partie ; 74 depuis les ajouts de M16) —
 mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.
