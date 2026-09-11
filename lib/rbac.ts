@@ -82,12 +82,14 @@ export const CAPACITES = {
   gererDeliberes: ["ROLE_JURISTE"],
 
   // ── Frais ─────────────────────────────────────────────────────────────────
-  /** `GET /frais/demandes` — AVOCAT, ASSISTANTE, DJA, DJ */
+  /** `GET /frais/demandes`, `GET /frais/demandes/{id}` (Q-82) — AVOCAT, ASSISTANTE, DJA, DJ */
   consulterFrais: ["ROLE_AVOCAT", "ROLE_ASSISTANTE", "ROLE_DJA", "ROLE_DJ"],
   /** `POST /frais/demandes` — AVOCAT */
   deposerFrais: ["ROLE_AVOCAT"],
-  /** `PUT .../conformite`, `PATCH .../paiement` — ASSISTANTE */
+  /** `PUT .../conformite` — ASSISTANTE */
   controlerConformiteFrais: ["ROLE_ASSISTANTE"],
+  /** `PATCH .../paiement` — ASSISTANTE */
+  enregistrerPaiementFrais: ["ROLE_ASSISTANTE"],
   /** `PUT .../opportunite` — DJA */
   controlerOpportuniteFrais: ["ROLE_DJA"],
   /** `POST .../validation-conjointe` — DJ et DJA */

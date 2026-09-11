@@ -1,7 +1,8 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
+> Dernière mise à jour : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
+> Précédente : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -118,8 +119,8 @@ est strictement consultatif (Q-19) · `statutExpedition ∈ {A_LEVER, LEVEE}`.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 28 | File des demandes | `/frais` | AVO, AST, DJA, DJ | `GET /frais/demandes?statut&page&size` | F11 | ❌ |
-| 29 | Détail et action de circuit | `/frais/[id]` | selon l'étape | `PUT .../conformite` (AST), `PUT .../opportunite` (DJA), `POST .../validation-conjointe` (DJ+DJA), `PATCH .../paiement` (AST) | F11 | ❌ |
+| 28 | File des demandes | `/frais` | AVO, AST, DJA, DJ | `GET /frais/demandes?statut&page&size` | F11 | ✅ (vue par défaut selon le profil, vue dans l'URL) |
+| 29 | Détail et action de circuit | `/frais/[id]` | selon l'étape | `GET /frais/demandes/{id}` (Q-82), `PUT .../conformite` (AST), `PUT .../opportunite` (DJA), `POST .../validation-conjointe` (DJ+DJA), `PATCH .../paiement` (AST) | F11 | ✅ (règle RG-INT-03 expliquée, décisions nommées, une seule action par profil et par étape) |
 | 30 | Déposer une demande | `/frais/nouvelle` | AVO | `POST /frais/demandes` | **F16** | ❌ |
 
 **Circuit** : `DEPOSEE → CONFORMITE → [OPPORTUNITE] → VALIDEE → PAYEE`, avec `REJETEE` terminal

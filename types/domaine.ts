@@ -1,11 +1,15 @@
 import type {
   CategorieDossier,
+  DecisionValidationFrais,
+  EtapeValidationFrais,
   EtatDelibere,
   FormatDocument,
   ResultatDelibere,
   StatutAlarme,
   StatutExpedition,
   StatutAudience,
+  StatutCircuitFrais,
+  StatutPaiementFrais,
   SeuilOrigine,
   StatutCycleVie,
   StatutValidation,
@@ -452,4 +456,44 @@ export interface CreerIntervenant {
   telephone?: string;
   compteKeycloak?: string;
   notification?: boolean;
+}
+
+// ─────────────────────────────── Frais d'avocats ───────────────────────────────
+
+/** Une décision du circuit (Q-82 backend) : qui, à quelle étape, quoi, pourquoi, quand. */
+export interface ValidationFrais {
+  etape: EtapeValidationFrais;
+  decision: DecisionValidationFrais;
+  motif: string | null;
+  utilisateurId: number | null;
+  utilisateurNom: string | null;
+  dateValidation: string | null;
+}
+
+/**
+ * Demande de frais (#23 à #28 et son détail, Q-82 backend). Elle se lit sans autre appel : dossier
+ * et avocat nommés, décisions du circuit dans l'ordre. `validationConjointeRequise` applique la
+ * règle RG-INT-03 (dossier sensible **ou** montant > `seuilApplicable`) — pour une demande qui n'a
+ * pas encore atteint l'opportunité, c'est ce qui l'attend.
+ *
+ * `piecesJustificatives` : des **noms** déclarés par l'avocat, pas des fichiers (QF-26).
+ */
+export interface DemandeFrais {
+  id: number;
+  dossierId: number;
+  referenceDossier: string;
+  avocatId: number;
+  avocatNom: string;
+  montant: number;
+  piecesJustificatives: string[];
+  statutCircuit: StatutCircuitFrais;
+  motifRejet: string | null;
+  statutPaiement: StatutPaiementFrais;
+  referenceFacture: string;
+  dossierSensible: boolean | null;
+  seuilApplicable: number;
+  validationConjointeRequise: boolean;
+  validations: ValidationFrais[];
+  createdAt: string;
+  updatedAt: string | null;
 }

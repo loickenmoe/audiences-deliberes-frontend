@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F9** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`) |
-| Jalon livré, **en attente de validation** | **F10** — GED (`feat/f10-ged`) ; backend corrigé sur `fix/ged-suppressions` (Q-79, Q-80). Rien de commité. |
-| Jalon suivant | **F11** — frais d'avocats (profils internes) |
+| Jalons validés | **F0** à **F10** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 fusionné dans `dev` — PR #6) |
+| Jalon livré, **en attente de validation** | **F11** — frais d'avocats (`feat/f11-frais`) ; backend sur `feat/frais-detail` (Q-82 à Q-85). Rien de commité. |
+| Jalon suivant | **F12** — publications, constitutions, répertoire (rappeler QF-20) |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **26 écrans sur 42** · **43 endpoints consommés sur 72** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
+| Décompte | **28 écrans sur 42** · **49 endpoints consommés sur 73** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
