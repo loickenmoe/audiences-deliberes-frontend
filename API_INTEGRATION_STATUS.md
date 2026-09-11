@@ -4,8 +4,9 @@
 > Q-76, Q-77, les deux de Q-78 et le détail d'une demande de frais, Q-82) et leur état de
 > consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-11 (jalon F11 — **49 endpoints consommés sur 73**, plus #45 en partie ;
-> le circuit des frais s'appuie sur Q-82/Q-83).
+> Dernière mise à jour : 2026-09-11 (jalon F12 — **58 endpoints consommés sur 73**, plus #45 en partie ;
+> publications et constitutions s'appuient sur Q-86/Q-87).
+> Précédente : 2026-09-11 (jalon F11 — 49 sur 73, le circuit des frais s'appuie sur Q-82/Q-83).
 > Précédente : 2026-09-11 (jalon F10 — 43 sur 72, la file des suppressions et le rapport journalier
 > s'appuient sur Q-79/Q-80).
 > Précédente : 2026-09-11 (jalon F9 — 40 sur 72, cycle du délibéré aligné sur les sources, QF-33/Q-78).
@@ -184,37 +185,45 @@ nuls tant que la décision n'est pas rendue.
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 29 | POST | `/publications/cr-audience` | AVOCAT | 33 | **F16** | ❌ |
-| 30 | PUT | `/publications/{id}/validation` | ASSISTANTE | 32 | F12 | ❌ |
+| 30 | PUT | `/publications/{id}/validation` | ASSISTANTE | 32 | F12 | ✅ |
 | 31 | POST | `/publications/autres` *(multipart)* | AVOCAT | 33 | **F16** | ❌ |
-| 32 | GET | `/publications/{id}` | CONS | 32 | F12 | ❌ |
-| 33 | POST | `/publications/{id}/commentaires` | JURISTE | 32 | F12 | ❌ |
-| 34 | POST | `/publications/{id}/correspondance` | DJ, DJA | 32 | F12 | ❌ |
-| 59 | GET | `/publications?dossierId&statut&page&size` | AST, JUR, DJ, DJA | 13, 31 | F12 | ❌ |
+| 32 | GET | `/publications/{id}` | CONS | 32 | F12 | ✅ (fichier, commentaires, correspondance — Q-86) |
+| 33 | POST | `/publications/{id}/commentaires` | JURISTE | 32 | F12 | ✅ |
+| 34 | POST | `/publications/{id}/correspondance` | DJ, DJA | 32 | F12 | ✅ |
+| 59 | GET | `/publications?dossierId&statut&page&size` | AST, JUR, DJ, DJA | 13, 31 | F12 | ✅ (vue selon le profil) |
 
 - **#29** — l'audience doit être **rattachée au dossier** (404 sinon).
 - **#30** — chemin **généralisé aux deux sous-types** (Q-55). Motif obligatoire au rejet.
 - **#31** — multipart : `dossierId`, `typeDocument ∈ {PIECE, DECISION, CONCLUSION}`,
   `restrictionAcces` (optionnel) en `@RequestParam` ; `file` en `@RequestPart`.
-- **#32** — consultable seulement si `VALIDE`. `restrictionAcces` désignant un autre utilisateur →
-  **403 `ERR-009`** : écran « accès restreint », pas une erreur technique. `DEPOSE`/`REJETE` → 404.
+- **#32** — consultable seulement si `VALIDE`, **sauf par l'Assistante** qui doit la lire pour la
+  valider (Q-86). `restrictionAcces` désignant un autre utilisateur → **403 `ERR-009`** : écran
+  « accès restreint », pas une erreur technique ; elle ne s'oppose ni à l'Assistante ni au DJ/DJA
+  (Q-86). `DEPOSE`/`REJETE` → 404 pour les autres. Le détail porte `urlTelechargement` (10 min),
+  `commentaires` et `correspondance` ; publications et listes sont nommées (Q-86).
 - **#33** — le juriste **ne commente jamais directement l'avocat** : le commentaire va au DJ/DJA.
 - **#34** — correspondance **unique** → 409 si déjà transmise.
 - **#59** — n'applique **pas** la restriction d'accès individuelle (métadonnées seulement).
+  `statut=DEPOSE` en ordre d'arrivée, sinon la plus récente d'abord (Q-86). L'écran 31 ouvre
+  l'Assistante sur « à valider » ; les autres profils ne voient que les publications validées.
+- **Validation (#30)** — notifie désormais les juristes du dossier, ou le seul destinataire désigné
+  (Q-86, UC-INT-08 étape 1).
 
 ## 7. Constitutions et répertoire
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 35 | POST | `/constitutions/prestataires` | JURISTE | 35 | F12 | ❌ |
-| 36 | PUT | `/constitutions/prestataires/{id}/validation` | SH | 35 | F12 | ❌ |
-| 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ❌ |
-| 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ❌ |
+| 35 | POST | `/constitutions/prestataires` | JURISTE | 07 (modale) | F12 | ✅ |
+| 36 | PUT | `/constitutions/prestataires/{id}/validation` | SH | 35 | F12 | ✅ |
+| 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ✅ |
+| 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ✅ (nommée — Q-86) |
 | 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
 | 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |
 
 - **#35** — `dossierId`, `prestataireId`, **motif obligatoire**. Notifie les SH.
 - **#36** — l'approbation **génère la lettre de constitution** (PDF) et l'attache comme document
-  GED. Rejet → motif obligatoire. 409 si la décision est déjà prise.
+  GED. Rejet → motif obligatoire. 409 si la décision est déjà prise. Depuis Q-87, l'avocat constitué
+  est réellement notifié (le prestataire chargé à la demande n'était jamais reconnu comme avocat).
 - **#37** — `indicateurCharge` (dossiers actifs) et `indicateurPerformance` (taux de succès),
   calculés à la demande, **triés par charge croissante**.
 - **#61** — un `AVOCAT` exige un `compteKeycloak` **unique** (400 s'il manque, 409 s'il est pris) et
@@ -376,7 +385,7 @@ subsiste qu'en repli, le temps que tous les environnements portent ce backend.
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **73** (66 numérotés + 7 non numérotés, dont 6 de M16) | **49** (plus #45 en partie) |
+| **Total HTTP exposé par le backend** | **73** (66 numérotés + 7 non numérotés, dont 6 de M16) | **58** (plus #45 en partie) |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |

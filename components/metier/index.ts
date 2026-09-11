@@ -5,4 +5,4 @@ export { MenuExport } from "./menu-export";
 export { Pagination } from "./pagination";
 export { TableDonnees } from "./table-donnees";
 export { Televersement } from "./televersement";
-export { DateHeureValeur, DateValeur, MontantFcfa, PoidsFichier } from "./valeurs";
+export { DateHeureValeur, DateValeur, MontantFcfa, PoidsFichier, Pourcentage } from "./valeurs";

@@ -108,8 +108,10 @@ export const CAPACITES = {
   deposerPublication: ["ROLE_AVOCAT"],
   /** `GET /repertoire/avocats` — JURISTE, ASSISTANTE (ni DJ ni DJA) */
   consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
-  /** `GET /constitutions/prestataires`, `POST` — SH, JURISTE */
+  /** `GET /constitutions/prestataires` — SH, JURISTE */
   consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE"],
+  /** `POST /constitutions/prestataires` — JURISTE */
+  solliciterConstitution: ["ROLE_JURISTE"],
   /** `PUT /constitutions/prestataires/{id}/validation` — SH */
   signerConstitution: ["ROLE_SH"],
 
