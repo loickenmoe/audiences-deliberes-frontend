@@ -113,7 +113,7 @@ test("le DJ crée un avocat, indispensable à toute création de dossier", async
 
   await page.getByRole("button", { name: "Nouvel intervenant" }).click();
   await page.getByLabel("Nom", { exact: true }).fill(nom);
-  await page.getByLabel("Compte applicatif", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
+  await page.getByLabel("Identifiant de connexion", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
   await expect(page.getByRole("cell", { name: nom })).toBeVisible({ timeout: 30_000 });
@@ -126,11 +126,11 @@ test("le formulaire s'adapte au type d'intervenant", async ({ page }) => {
   await page.getByRole("button", { name: "Nouvel intervenant" }).click();
 
   // Un avocat exige un compte applicatif (RG-INT-01).
-  await expect(page.getByLabel("Compte applicatif", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Identifiant de connexion", { exact: true })).toBeVisible();
 
   // Un autre prestataire n'en a pas : il est notifié par courriel (RG-INT-02).
   await page.getByLabel("Type", { exact: true }).selectOption("AUTRE_PRESTATAIRE");
-  await expect(page.getByLabel("Compte applicatif", { exact: true })).toBeHidden();
+  await expect(page.getByLabel("Identifiant de connexion", { exact: true })).toBeHidden();
   await expect(page.getByLabel("Notifier par courriel")).toBeVisible();
 });
 

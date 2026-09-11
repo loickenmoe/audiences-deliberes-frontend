@@ -446,7 +446,7 @@ complète à 62/64, puis les 2 parcours corrigés — sélecteurs ambigus — re
 
 ---
 
-## F10 — Gestion documentaire 🔵 *(livré, en attente de validation manuelle)*
+## F10 — Gestion documentaire ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **12**, **36**, **37**. Endpoints **#38-43**, **#63**. **Livré le 2026-09-11** sur
 `feat/f10-ged`, branchée sur `origin/dev` (F9 fusionné).
@@ -488,14 +488,51 @@ seule exécution, après Q-81). Backend : 293 tests, `BUILD SUCCESS`, V10 appliq
 
 ---
 
-## F11 — Frais d'avocats (profils internes) ⏳
+## F11 — Frais d'avocats (profils internes) 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **28**, **29**. Endpoints **#24-28**. **#23 (dépôt avocat) reporté à F16.**
+Écrans **28**, **29**. Endpoints **#24-28**, plus le détail `GET /frais/demandes/{id}` (Q-82).
+**#23 (dépôt avocat) reporté à F16.** **Livré le 2026-09-11** sur `feat/f11-frais`, branchée sur
+`origin/dev` (F10 fusionné).
 
-**Vérifications** : le circuit complet parcouru avec quatre comptes différents ; cas non sensible
-sous seuil validé par le seul DJA ; cas sensible exigeant les deux accords ; double vote du même
-profil refusé ; un seul refus rejette ; paiement refusé sur demande non validée ; motif obligatoire
-à chaque rejet ; la file est bien filtrée par profil.
+**L'audit a trouvé des manques backend, corrigés sur décision du porteur du projet (M16)** :
+- **Q-82 / QF-37** — aucun détail d'une demande, décisions du circuit invisibles (le DJ ne voyait pas
+  l'accord de la DJA ; l'écran aurait proposé un vote refusé ensuite), réponse faite d'identifiants,
+  file sans ordre stable. Ajout de `GET /frais/demandes/{id}`, réponse enrichie, tri.
+- **Q-83** — la relance CONF04 (validation conjointe sans suite après 5 jours) n'existait pas :
+  `FraisRelanceScheduler`, migration V11.
+- **QF-26** — pièces affichées par leur nom ; le choix GED ou multipart est reporté à F16.
+- **Q-84 / QF-38**, constaté en préparant les parcours — le backend reconnaissait l'avocat par le
+  `sub` Keycloak (un UUID), pas par l'identifiant de connexion que saisit le DJ : aucun avocat créé
+  par l'interface ne pouvait déposer. Corrigé avant la clôture : identifiant de connexion d'abord,
+  `sub` en second ; formulaire des intervenants relibellé « Identifiant de connexion ».
+- **Q-85** — deux créations concurrentes du même avocat rendaient 500 : une violation d'unicité
+  rend désormais 409.
+
+- `fraisService`, `hooks/useFrais.ts`, `lib/frais.ts` (vues par profil, accord conjoint du profil),
+  entrée de menu « Frais d'avocats » (Assistante, DJA, DJ, avocat).
+- **Écran 28** : vue par défaut selon le profil (Assistante : à contrôler, à payer ; DJA :
+  opportunité, validation conjointe ; DJ : validation conjointe ; « toutes » pour chacun), vue
+  dans l'URL, mention « validation conjointe » et « votre accord est enregistré ».
+- **Écran 29** : dossier, avocat, montant, pièces déclarées ; règle RG-INT-03 expliquée (dossier
+  sensible ou seuil applicable) ; circuit avec chaque décision nommée et datée ; une seule action
+  par profil et par étape, confirmée ; rejet à motif obligatoire ; la DJA prévenue avant de valider
+  qu'une validation conjointe suivra (UC-INT-02 alt. 4-a) ; un second vote jamais proposé.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **213 tests unitaires** ✅ ·
+`build` ✅ · **73 parcours Playwright contre le backend réel** ✅ (build de production), dont 4 pour
+F11 : circuit simple (Assistante, DJA seule, paiement) ; montant au-delà du seuil (validation
+conjointe, second vote de la DJA refusé en 409, accord du DJ qui valide) ; rejet à motif
+obligatoire ; paiement refusé en 400 avant validation, vue par défaut du DJ et de l'Assistante,
+juriste sans accès. Backend : 300 tests, `BUILD SUCCESS`, V11 appliquée.
+**Après Q-84/Q-85** (même jour, avant clôture) : backend **310 tests**, `BUILD SUCCESS`, V12 appliquée ;
+frontend `typecheck` ✅ · `lint` ✅ · 213 tests unitaires ✅ · `build` ✅ · **73 parcours Playwright** ✅,
+l'avocat de test rattaché par son identifiant de connexion `avocat.test` ; chaque compte porte
+désormais son identifiant en base.
+
+> **Point à retenir :** deux parcours parallèles créant le même avocat ont obtenu un **500** et non
+> un 409 : le contrôle d'unicité du service précède l'insertion, la contrainte de la base répond la
+> première quand deux créations se croisent. Corrigé par Q-85 avant la clôture du jalon.
+
 **Dépend de** : F7.
 
 ---
@@ -587,8 +624,8 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | 🔵 | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | 🔵 | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**10 jalons validés sur 18 (F0 à F9) · F10 livré en attente de validation · 26 écrans sur 42 ·
-43 endpoints consommés sur 72** (plus #45 en partie ; 72 depuis les ajouts de M16) —
+**11 jalons validés sur 18 (F0 à F10) · F11 livré en attente de validation · 28 écrans sur 42 ·
+49 endpoints consommés sur 73** (plus #45 en partie ; 73 depuis les ajouts de M16) —
 mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.

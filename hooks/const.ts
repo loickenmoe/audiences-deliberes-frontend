@@ -20,6 +20,8 @@ export const CLES = {
   deliberesDossier: "deliberes-dossier",
   prorogations: "prorogations",
   recours: "recours",
+  demandesFrais: "demandes-frais",
+  demandeFrais: "demande-frais",
   intervenants: "intervenants",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",

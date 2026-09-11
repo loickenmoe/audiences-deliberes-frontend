@@ -1,10 +1,13 @@
 # API_INTEGRATION_STATUS
 
-> Les **72 endpoints HTTP** exposés par le backend (67 d'origine, plus cinq ajouts de M16 : Q-74,
-> Q-76, Q-77 et les deux de Q-78) et leur état de consommation par le frontend.
+> Les **73 endpoints HTTP** exposés par le backend (67 d'origine, plus six ajouts de M16 : Q-74,
+> Q-76, Q-77, les deux de Q-78 et le détail d'une demande de frais, Q-82) et leur état de
+> consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-11 (jalon F10 — **43 endpoints consommés sur 72**, plus #45 en partie ;
-> la file des suppressions et le rapport journalier s'appuient sur Q-79/Q-80).
+> Dernière mise à jour : 2026-09-11 (jalon F11 — **49 endpoints consommés sur 73**, plus #45 en partie ;
+> le circuit des frais s'appuie sur Q-82/Q-83).
+> Précédente : 2026-09-11 (jalon F10 — 43 sur 72, la file des suppressions et le rapport journalier
+> s'appuient sur Q-79/Q-80).
 > Précédente : 2026-09-11 (jalon F9 — 40 sur 72, cycle du délibéré aligné sur les sources, QF-33/Q-78).
 > Précédente : 2026-09-10 (jalon F8 — 32 sur 70, après l'annulation d'audience et le traitement d'alarme ;
 > décompte mesuré sur ce tableau. Le « 22 » annoncé en fin de F7 était faux : c'était 23, #64 et #65
@@ -153,11 +156,12 @@ nuls tant que la décision n'est pas rendue.
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 23 | POST | `/frais/demandes` | AVOCAT | 30 | **F16** | ❌ |
-| 24 | PUT | `/frais/demandes/{id}/conformite` | ASSISTANTE | 29 | F11 | ❌ |
-| 25 | PUT | `/frais/demandes/{id}/opportunite` | DJA | 29 | F11 | ❌ |
-| 26 | POST | `/frais/demandes/{id}/validation-conjointe` | DJ **et** DJA | 29 | F11 | ❌ |
-| 27 | PATCH | `/frais/demandes/{id}/paiement` | ASSISTANTE | 29 | F11 | ❌ |
-| 28 | GET | `/frais/demandes?statut&page&size` | AVOCAT, AST, DJA, DJ | 28 | F11 | ❌ |
+| 24 | PUT | `/frais/demandes/{id}/conformite` | ASSISTANTE | 29 | F11 | ✅ |
+| 25 | PUT | `/frais/demandes/{id}/opportunite` | DJA | 29 | F11 | ✅ |
+| 26 | POST | `/frais/demandes/{id}/validation-conjointe` | DJ **et** DJA | 29 | F11 | ✅ |
+| 27 | PATCH | `/frais/demandes/{id}/paiement` | ASSISTANTE | 29 | F11 | ✅ |
+| 28 | GET | `/frais/demandes?statut&page&size` | AVOCAT, AST, DJA, DJ | 28 | F11 | ✅ (vue selon le profil) |
+| — | GET | `/frais/demandes/{id}` | AVOCAT (les siennes), AST, DJA, DJ | 29 | F11 | ✅ (ajouté par Q-82) |
 
 - **#23** — avocat affecté au dossier requis. `piecesJustificatives` non vide. `referenceFacture`
   **unique tous statuts confondus, y compris `REJETEE`** → 409 `ERR-006`.
@@ -166,7 +170,14 @@ nuls tant que la décision n'est pas rendue.
   profil ne peut pas voter deux fois.
 - **#27** — statut `VALIDEE` requis (400 sinon).
 - **#28** — filtré automatiquement sur ses propres demandes pour `ROLE_AVOCAT`, transverse pour les
-  profils internes.
+  profils internes. Plus récente d'abord depuis Q-82. **L'écran choisit les statuts selon le
+  profil** (`lib/frais.ts`) : l'Assistante ouvre sur `DEPOSEE` puis `VALIDEE`, la DJA sur
+  `CONFORMITE` puis `OPPORTUNITE`, le DJ sur `OPPORTUNITE` ; « toutes » pour chacun.
+- **Réponse (Q-82)** — dossier et avocat nommés, `dossierSensible`, `seuilApplicable`,
+  `validationConjointeRequise` et `validations` (étape, décision, motif, auteur nommé, date) : le DJ
+  voit l'accord de la DJA, et l'écran ne propose jamais un second vote au même profil.
+- **Relance CONF04 (Q-83)** — côté backend seulement : alerte `VALIDATION_CONJOINTE_REQUISE` au DJ
+  et/ou à la DJA qui n'ont pas voté après `DELAI_VALIDATION_CONJOINTE` jours. Aucun endpoint.
 
 ## 6. Publications
 
@@ -365,7 +376,7 @@ subsiste qu'en repli, le temps que tous les environnements portent ce backend.
 
 | | Endpoints | Consommés |
 |---|---|---|
-| **Total HTTP exposé par le backend** | **68** (66 numérotés + 2 non numérotés) | **22** |
+| **Total HTTP exposé par le backend** | **73** (66 numérotés + 7 non numérotés, dont 6 de M16) | **49** (plus #45 en partie) |
 | Accessibles aux profils internes | 64 | 0 |
 | Accessibles au profil avocat | 6 | 0 |
 | — dont accessibles **aux deux** | 3 (`#28`, `#45`, `#46`) | 0 |

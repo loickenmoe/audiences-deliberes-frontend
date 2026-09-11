@@ -237,6 +237,39 @@ juriste (audiences, étapes, délibérés, alarmes…) ne leur propose d'action.
 `ROLE_JURISTE` aux composites des deux rôles, ou élargir endpoint par endpoint. Non bloquant pour
 F10.
 
+### ✅ QF-37 — Une demande de frais ne se lisait ni seule, ni avec ses décisions *(résolue : Q-82, Q-83 backend)*
+
+**Constat de l'audit F11, vérifié dans le code et les sources.** Aucun `GET /frais/demandes/{id}` :
+l'écran 29 aurait dû fouiller la file paginée. Les décisions du circuit, tracées en base, n'étaient
+exposées nulle part : le DJ ne pouvait pas voir l'accord de la DJA (US 4.5), et l'écran aurait
+proposé un second vote refusé ensuite (409). La réponse ne portait que des identifiants — ni
+dossier, ni avocat, ni ce qui déclenche la validation conjointe — et la file n'avait pas d'ordre
+stable. La relance CONF04 (5 jours) n'existait pas.
+
+**Décision du porteur du projet (2026-09-11)** : détail, réponse enrichie et tri (Q-82) ; relance
+CONF04 par le backend (Q-83). L'écran 29 s'appuie sur les décisions pour n'offrir qu'une action par
+profil et par étape.
+
+### ✅ QF-38 — Le compte d'un avocat devait être son identifiant Keycloak interne, pas son identifiant de connexion *(résolue : Q-84 backend)*
+
+**Décision du porteur du projet (2026-09-11), avant la clôture de F11** : le backend reconnaît
+désormais l'avocat par son **identifiant de connexion** (`preferred_username`, enregistré sur
+l'utilisateur à sa connexion suivante) ; le `sub` reste accepté en second pour les comptes déjà
+rattachés ainsi. Le formulaire des intervenants demande l'« Identifiant de connexion », avec un
+exemple. En base locale, l'avocat de test « Me Claire Avocat » a été rattaché à `avocat.test`.
+Au passage (Q-85) : une violation d'unicité due à deux créations concurrentes rend 409, plus 500.
+Constat d'origine ci-dessous.
+
+**Constat de F11, vérifié en base et dans le code.** Le backend reconnaît l'avocat connecté en
+comparant `avocat.compte_keycloak` au `sub` du jeton (`FraisService`, `PublicationService`), un
+UUID. Or le formulaire des intervenants (F5) demande un « compte applicatif », et tous les avocats
+de la base locale en portent un identifiant de connexion (`avocat.socle.e2e`, `avocat.11fepl`…).
+Aucun n'est donc reconnu : `avocat.test` ne peut déposer aucune demande de frais, ni publication.
+Le parcours e2e F11 contourne en créant, par l'API, un avocat rattaché au `sub` d'`avocat.test`.
+
+**Recommandation (backend).** Reconnaître l'avocat par l'identifiant de connexion
+(`preferred_username`), que le DJ connaît, ou lui proposer la liste des comptes Keycloak.
+
 ### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
 
 **Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige
@@ -246,7 +279,10 @@ contrôle la conformité ne peut rien ouvrir.
 
 **Recommandation.** À trancher à l'ouverture de F11 : soit les pièces passent par la GED (dépôt
 préalable, la demande référence des identifiants de documents), soit la demande accepte des
-fichiers en multipart. **Statut : ouvert, impacte F11 et F16.**
+fichiers en multipart. **Statut : ouvert, impacte F16.**
+
+**Décision du porteur du projet à l'ouverture de F11 (2026-09-11)** : en F11, l'écran 29 affiche
+les noms déclarés, sans plus ; le choix GED ou multipart se fera avec le dépôt avocat, en F16.
 
 ### 🟡 QF-27 — Aucun endpoint ne donne l'identifiant de l'utilisateur connecté
 
