@@ -1,7 +1,7 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-08 (jalon F2 — écrans 01 et 04 livrés, 02 en socle).
+> Dernière mise à jour : 2026-09-11 (jalon F9 — écrans 10, 26 et 27 livrés, cycle du délibéré Q-78).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -44,20 +44,20 @@
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 05 | Liste des dossiers | `/dossiers` | CONS | `GET /dossiers?nature&categorie&juridiction&page&size` | F6 | ❌ |
-| 06 | Création de dossier | `/dossiers/nouveau` | SAI | `POST /dossiers` + 4 référentiels (voir ci-dessous) | F6 | ❌ |
-| 07 | Fiche — Synthèse | `/dossiers/[id]` | CONS | `GET /dossiers/{id}` | F7 | ❌ |
-| 08 | Fiche — Étapes | onglet | JUR | `PATCH /dossiers/{id}/etapes/{etapeId}/statut`, `POST /dossiers/{id}/etapes` | F7 | ❌ |
-| 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences` | F8 | ❌ |
-| 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes` | F9 | ❌ |
-| 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes` | F8 | ❌ |
-| 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F10 | ❌ |
+| 05 | Liste des dossiers | `/dossiers` | CONS | `GET /dossiers?reference&clientId&mesDossiers&nature&categorie&juridiction&page&size` | F6 | ✅ |
+| 06 | Création de dossier | `/dossiers/nouveau` | SAI | `POST /dossiers` + 4 référentiels (voir ci-dessous) | F6 | ✅ |
+| 07 | Fiche — Synthèse | `/dossiers/[id]` | CONS | `GET /dossiers/{id}` | F7 | ✅ |
+| 08 | Fiche — Étapes | onglet | JUR | `PATCH /dossiers/{id}/etapes/{etapeId}/statut`, `POST /dossiers/{id}/etapes` | F7 | ✅ |
+| 09 | Fiche — Audiences | onglet | CONS / JUR | `GET /dossiers/{id}/audiences`, `POST /dossiers/{id}/audiences`, `PATCH /audiences/{id}/annulation` | F8 | ✅ (annulation motivée — QF-30) |
+| 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes`, `GET /deliberes/{id}/prorogations` | F9 | ✅ (état de chaque délibéré, historique des prorogations — Q-78) |
+| 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes`, `PATCH /alarmes/{id}/traiter` | F8 | ✅ (« Marquer traitée » — QF-29) |
+| 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
 | 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ❌ |
 | 14 | Fiche — Décisions définitives | onglet | JUR | `POST .../adjudications`, `POST .../condamnations` — **aucune lecture, cf. QF-03** | F13 | ❌ |
-| 15 | Fiche — Historique | onglet | CONS | inclus dans `GET /dossiers/{id}` (`historique[]`) | F7 | ❌ |
-| 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ❌ |
-| 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ❌ |
-| 18 | Validation de sensibilité | modale | DJ, DJA | `POST /dossiers/{id}/sensibilite/validation` | F7 | ❌ |
+| 15 | Fiche — Historique | onglet | CONS | inclus dans `GET /dossiers/{id}` (`historique[]`) | F7 | ✅ (libellés en français, QF-24) |
+| 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ✅ |
+| 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ✅ (arbitrage débloqué par Q-74) |
+| 18 | Validation de sensibilité | modale | DJ, DJA | `POST /dossiers/{id}/sensibilite/validation` | F7 | ✅ |
 
 **Référentiels du formulaire 06** : `GET /referentiels/natures-dossier?categorie=`,
 `GET /referentiels/types-client-sensible`, `GET /utilisateurs?profil=JURISTE`,
@@ -80,9 +80,9 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ❌ |
-| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ❌ |
-| 21 | Création client | modale | SAI | `POST /clients` | F5 | ❌ |
+| 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ✅ |
+| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ✅ |
+| 21 | Création client | modale (écran 19) | SAI | `POST /clients` | F5 | ✅ |
 
 > **20** : la réponse regroupe les dossiers en `{recouvrement[], exploitationLitiges[]}` et est
 > **indépendante de l'affectation du juriste**. Structure vide (200) si aucun dossier.
@@ -91,10 +91,10 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 22 | Calendrier des audiences | `/audiences/calendrier` | JUR, DJ | `GET /audiences/calendrier?periode&dateDebut&format` | F8 | ❌ |
-| 23 | Planifier une audience | modale (fiche 09) | JUR | `POST /dossiers/{id}/audiences[?forcer=true]` | F8 | ❌ |
-| 24 | Saisie du compte rendu | modale | JUR | `PUT /audiences/{id}/compte-rendu` | F8 | ❌ |
-| 25 | Créer / reprogrammer une alarme | modale (fiche 11) | JUR | `POST /dossiers/{id}/alarmes`, `PUT /alarmes/{id}/reprogrammer` | F8 | ❌ |
+| 22 | Calendrier des audiences | `/audiences/calendrier` | JUR, DJ | `GET /audiences/calendrier?periode&dateDebut&format` | F8 | ✅ (agenda par jour, exports PDF et Excel) |
+| 23 | Planifier une audience | modale (fiche 09) | JUR | `POST /dossiers/{id}/audiences[?forcer=true]` | F8 | ✅ (doublon confirmable, ERR-005) |
+| 24 | Saisie du compte rendu | modale | JUR | `PUT /audiences/{id}/compte-rendu` | F8 | ✅ (proposé à partir du jour de l'audience) |
+| 25 | Créer / reprogrammer une alarme | modale (fiche 11) | JUR | `POST /dossiers/{id}/alarmes`, `PUT /alarmes/{id}/reprogrammer` | F8 | ✅ |
 
 **Règles à porter dans l'UI** : étape au statut `EN_COURS` requise pour planifier · date future
 obligatoire · doublon (même étape + même date) → 409 `ERR-005` confirmable · compte rendu refusé sur
@@ -105,8 +105,8 @@ une audience future, non vide obligatoire · vues `HEBDOMADAIRE`/`MENSUELLE`/`TR
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 26 | Enregistrer / proroger / rabattre / expédition | modales (fiche 10) | JUR | `POST /dossiers/{id}/deliberes`, `POST /deliberes/{id}/prorogations`, `POST /deliberes/{id}/rabattement`, `PUT /deliberes/{id}/expedition` | F9 | ❌ |
-| 27 | Suivi du délai de recours | panneau (fiche 10) | JUR | `GET /deliberes/{id}/recours` | F9 | ❌ |
+| 26 | Enregistrer / proroger / rabattre / expédition | modales (fiche 10) | JUR | `POST /dossiers/{id}/deliberes`, `PUT /deliberes/{id}/resultat`, `POST /deliberes/{id}/prorogations`, `POST /deliberes/{id}/rabattement`, `PUT /deliberes/{id}/expedition` | F9 | ✅ (mise en délibéré, décision, prorogation — seuil en avertissement —, rabattement) |
+| 27 | Suivi du délai de recours | panneau (fiche 10) | JUR | `GET /deliberes/{id}/recours` | F9 | ✅ |
 
 **Règles** : étape `EN_DELIBERE` requise · `dateEcheanceRecours` **obligatoire et postérieure** si
 `resultat ∈ {DEFAVORABLE, MIXTE}`, **absente sinon** (Q-42) · prorogation **toujours 201**, corps
@@ -205,7 +205,7 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}`, `PUT /alertes/seuils` | F14 | ❌ |
-| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ❌ |
+| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.

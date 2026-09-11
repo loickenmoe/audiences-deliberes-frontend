@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { CodeErreur, ErreurApi, messageErreur, normaliserErreur } from "@/lib/api/errors";
 
 /**
@@ -90,5 +91,106 @@ describe("messageErreur", () => {
     expect(
       messageErreur({ response: { status: 403, data: { code: "ERR-FORBIDDEN", message: "Nope" } } }),
     ).toBe("Nope");
+  });
+});
+
+/**
+ * Corps relevés le 2026-09-09 sur l'instance locale, en provoquant les doublons pour de vrai :
+ * une seconde création de client renvoie `409 ERR-CONFLICT`, **pas** `ERR-002` — ce dernier est
+ * réservé aux références de dossier (`DossierService`). La distinction n'est pas cosmétique : c'est
+ * elle qui décide si le message atterrit sur un champ ou dans un bandeau.
+ */
+describe("appliquerErreurApi", () => {
+  function espion() {
+    const appels: { champ: string; message?: string }[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const setError = ((champ: string, options: { message?: string }) => {
+      appels.push({ champ, message: options.message });
+    }) as any;
+    return { appels, setError };
+  }
+
+  it("résout les codes numérotés du contrat sans aide de l'appelant", () => {
+    const { appels, setError } = espion();
+    const place = appliquerErreurApi(
+      new ErreurApi({ code: "ERR-002", message: "Référence déjà utilisée" }),
+      setError,
+      ["reference", "nom"],
+    );
+
+    expect(place).toBe(true);
+    expect(appels).toEqual([{ champ: "reference", message: "Référence déjà utilisée" }]);
+  });
+
+  it("suit le champ nommé par le backend, sans que le formulaire ait rien à déclarer", () => {
+    const { appels, setError } = espion();
+    const place = appliquerErreurApi(
+      new ErreurApi({
+        code: "ERR-CONFLICT",
+        message: "La référence client est déjà utilisée",
+        champ: "reference",
+      }),
+      setError,
+      ["reference", "nom"],
+    );
+
+    expect(place).toBe(true);
+    expect(appels).toEqual([{ champ: "reference", message: "La référence client est déjà utilisée" }]);
+  });
+
+  it("laisse `ERR-CONFLICT` au formulaire tant que personne n'a dit quel champ il vise", () => {
+    const { appels, setError } = espion();
+    const place = appliquerErreurApi(
+      new ErreurApi({ code: "ERR-CONFLICT", message: "La référence client est déjà utilisée" }),
+      setError,
+      ["reference", "nom"],
+    );
+
+    // Le code couvre dix conflits différents : le deviner surlignerait le mauvais champ ailleurs.
+    expect(place).toBe(false);
+    expect(appels).toEqual([]);
+  });
+
+  it("place `ERR-CONFLICT` sur le champ que le formulaire déclare, si le backend se tait", () => {
+    const { appels, setError } = espion();
+    const place = appliquerErreurApi(
+      new ErreurApi({ code: "ERR-CONFLICT", message: "Compte déjà rattaché" }),
+      setError,
+      ["nom", "compteKeycloak"],
+      { "ERR-CONFLICT": "compteKeycloak" },
+    );
+
+    expect(place).toBe(true);
+    expect(appels).toEqual([{ champ: "compteKeycloak", message: "Compte déjà rattaché" }]);
+  });
+
+  it("refuse un champ absent du formulaire plutôt que d'échouer en silence", () => {
+    const { appels, setError } = espion();
+    const place = appliquerErreurApi(
+      new ErreurApi({ code: "ERR-006", message: "Facture en double" }),
+      setError,
+      ["reference"],
+    );
+
+    expect(place).toBe(false);
+    expect(appels).toEqual([]);
+  });
+
+  it("préfère le champ du backend à la déclaration du formulaire", () => {
+    const { appels, setError } = espion();
+    appliquerErreurApi(
+      new ErreurApi({ code: "ERR-CONFLICT", message: "Compte déjà rattaché", champ: "compteKeycloak" }),
+      setError,
+      ["reference", "compteKeycloak"],
+      // Déclaration périmée : le backend, lui, sait de quel champ il parle.
+      { "ERR-CONFLICT": "reference" },
+    );
+
+    expect(appels).toEqual([{ champ: "compteKeycloak", message: "Compte déjà rattaché" }]);
+  });
+
+  it("ignore ce qui n'est pas une erreur d'API", () => {
+    const { setError } = espion();
+    expect(appliquerErreurApi(new Error("réseau"), setError, ["reference"])).toBe(false);
   });
 });

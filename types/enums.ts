@@ -62,6 +62,10 @@ export type ResultatDelibere = (typeof ResultatDelibere)[number];
 export const StatutExpedition = ["A_LEVER", "LEVEE"] as const;
 export type StatutExpedition = (typeof StatutExpedition)[number];
 
+/** Dérivé par le backend (Q-78), jamais stocké : en attente de décision, vidé, ou rabattu. */
+export const EtatDelibere = ["EN_ATTENTE", "VIDE", "RABATTU"] as const;
+export type EtatDelibere = (typeof EtatDelibere)[number];
+
 // ─────────────────────────────── Frais ───────────────────────────────
 
 export const StatutCircuitFrais = [
@@ -214,6 +218,7 @@ export const ENUMERATIONS_TRADUITES = {
   FormatExport,
   ResultatDelibere,
   StatutExpedition,
+  EtatDelibere,
   StatutCircuitFrais,
   StatutPaiementFrais,
   TypePublication,

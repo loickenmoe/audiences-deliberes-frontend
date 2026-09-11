@@ -51,9 +51,11 @@ test("les messages d'erreur de connexion sont traduits", async ({ page }) => {
   await page.getByLabel("Password", { exact: true }).fill("mauvais-mot-de-passe");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Incorrect username or password.",
-  );
+  // Attente explicite : le refus vient d'un vrai Keycloak, et le rendu du message traverse une
+  // action serveur. Les 5 s par défaut ne couvrent pas ce trajet (cf. `authentification.spec.ts`).
+  const alerte = page.getByRole("main").getByRole("alert");
+  await expect(alerte).toBeVisible({ timeout: 20_000 });
+  await expect(alerte).toHaveText("Incorrect username or password.");
 });
 
 test("un juriste connecté en anglais voit son profil traduit", async ({ page }) => {

@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-09 (**F0 à F3b validés**, **F4 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-11 (**F0 à F8 validés**, **F9 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -185,7 +185,7 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 
 ---
 
-## F4 — Composants métier réutilisables 🔵 *(livré, en attente de validation manuelle)*
+## F4 — Composants métier réutilisables ✅
 
 **Objectif** : ne plus jamais réécrire une table, un filtre ou un formulaire.
 
@@ -200,8 +200,8 @@ Ouvert en cours de F3 sur décision utilisateur, révisant QF-09.
 - `CycleEtape` — frise d'états avec boucles prorogation et rabattement.
 - `StatutChip`, `MontantFcfa`, `DateFr`, hook `useLibelles()` (résolution des identifiants).
 
-**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **119 tests** ✅ (21 dédiés
-aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans régression · `smoke` ✅.
+**Validé le 2026-09-09** (commit `c4548bb`). Vérifications : `typecheck` ✅ · `lint` ✅ ·
+**119 tests** ✅ · `build` ✅ · **20 parcours Playwright** ✅ sans régression · `smoke` ✅.
 **Dépend de** : F3.
 
 > **Décisions et pièges du jalon :**
@@ -223,7 +223,7 @@ aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans r�
 
 ---
 
-## F5 — Référentiels, clients, intervenants ⏳
+## F5 — Référentiels, clients, intervenants 🔵 *(livré, en attente de validation manuelle)*
 
 **Objectif** : disposer des données sans lesquelles aucun dossier n'est créable.
 
@@ -231,56 +231,218 @@ aux composants métier) · `build` ✅ · **20 parcours Playwright** ✅ sans r�
 des intervenants.
 Endpoints **#9-12**, **#61-62**, **#64-66**. Mise en place des caches longs de résolution des noms.
 
-**Vérifications** : créer un client puis un avocat ; les sélecteurs du futur formulaire de dossier
-se peuplent ; un avocat sans compte Keycloak est refusé (400), un compte déjà pris aussi (409).
+**Livré le 2026-09-09** sur la branche `feat/f5-referentiels-clients`, première fonctionnalité
+suivant la convention « un écran = une branche ».
+
+**Premier jalon consommant l'API métier** — 7 endpoints branchés, 2 prêts (référentiels de
+formulaire, dont les écrans arrivent en F6).
+
+- `services/` : `clientService`, `intervenantService`, `referentielService` — miroir 1:1 des
+  endpoints, sans logique métier.
+- `hooks/` : clés de cache centralisées, `useClients`, `useIntervenants`, `useReferentiels`,
+  et **`useLibelles`** qui résout les identifiants numériques en noms.
+- `types/domaine.ts` : formes de données relevées dans les DTO du backend.
+- Écrans **19** recherche clients, **20** vue consolidée, **21** création client (modale),
+  **42** référentiel des intervenants.
+
+**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **132 tests** ✅ (8 sur les
+services via MSW, 5 sur le rattachement des erreurs aux champs) · `build` ✅ · **28 parcours
+Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅.
 **Dépend de** : F4.
 
----
-
-## F6 — Dossiers : liste et création ⏳
-
-Écrans **05**, **06**. Endpoints **#1-2**, plus les référentiels de F5.
-Formulaire adaptatif par catégorie (Q-11), section affectation obligatoire, case « dossier sensible ».
-
-**Vérifications** : création nominale ; référence en doublon → `ERR-002` sur le bon champ ; champs
-conditionnels exigés selon la catégorie ; affectation vide refusée ; pagination et filtres corrects.
-**Dépend de** : F5. **Note** : QF-07 conditionne l'étendue de la recherche.
-
----
-
-## F7 — Fiche dossier ⏳
-
-Écrans **07**, **08**, **15**, **16**, **17**, **18**. Endpoints **#3-8**, **#43**.
-Onglets synthèse, étapes (avec `CycleEtape`), historique ; modales affectation, dérogation de seuil,
-validation de sensibilité.
-
-**Vérifications** : transition interdite → `ERR-004` avec états permis ; doublon d'affectation →
-dialogue puis `?forcer=true` ; création directe de `RECOURS_2` créant les étapes intermédiaires ;
-historique chronologique complet ; **le champ `documents` n'est pas consommé**.
-**Dépend de** : F6. **Note** : QF-08 conditionne les files DJ/DJA.
-
----
-
-## F8 — Audiences, alarmes, calendrier ⏳
-
-Écrans **09**, **11**, **22**, **23**, **24**, **25**. Endpoints **#13-17**, **#56-57**.
-
-**Vérifications** : planification refusée sur étape non `EN_COURS` et sur date passée ; doublon
-confirmable ; compte rendu refusé sur audience future ; calendrier dans les trois vues ; exports PDF
-et Excel téléchargés et ouvrables ; reprogrammation d'alarme chaînée.
-**Dépend de** : F7.
+> **Points à retenir :**
+> - **Les référentiels sont mis en cache 30 minutes** : ils changent au rythme d'une décision
+>   d'administration, pas d'une session. Ils ne sont pas paginés côté backend (RF-05).
+> - **`useLibelles` existe parce que le backend ne renvoie jamais de nom** — un dossier expose
+>   `juristesAffectes: [3, 7]`. Un juriste jamais connecté n'y figure pas (QF-16) : la résolution
+>   retombe sur `#id` plutôt que sur un blanc trompeur.
+> - **Le formulaire d'intervenant s'adapte au type** : un avocat exige un compte applicatif et
+>   refuse `notification` ; un autre prestataire refuse tout compte. Afficher les deux champs en
+>   permanence produirait des refus incompréhensibles.
+> - **Le doublon de référence client remonte en `ERR-CONFLICT`, pas en `ERR-002`** — vérifié en
+>   provoquant le cas sur le backend. `ERR-002` ne concerne que les dossiers, et `ERR-CONFLICT` sert
+>   à neuf conflits différents sans jamais nommer de champ. C'est donc le formulaire, seul à savoir
+>   quel endpoint il appelle, qui déclare le champ visé (QF-21). Un parcours e2e vérifie
+>   l'`aria-invalid` sur `reference`, un autre sur `compteKeycloak`.
+> - **Rien de décoratif dans un `<label>`** : l'astérisque des champs obligatoires y rendait le nom
+>   accessible « Nom\* ». Cinq parcours e2e échouaient, et un lecteur d'écran annonçait « Nom
+>   étoile ». Elle vit désormais à côté de l'étiquette, `aria-hidden`.
+> - **Keycloak refuse plus lentement un compte inexistant** qu'un mot de passe faux : c'est sa
+>   protection contre l'énumération de comptes. Les assertions e2e sur ce cas exigent une attente
+>   explicite.
+> - Les filtres passent par l'URL, écrits **au `blur`** et non à la frappe : sinon une requête et une
+>   entrée d'historique par caractère.
+> - Délai de démarrage Playwright porté à **300 s** : après un `rm -rf .next`, la compilation à
+>   froid dépasse largement 120 s sur ce poste. Budget **par test** porté à 180 s : mesuré serveur
+>   chaud, une navigation douce du routeur App demande ~5 s en développement — l'URL ne change qu'à
+>   l'arrivée de la charge RSC. La suite gagnerait à tourner contre un build de production ; à
+>   trancher en **F17**.
 
 ---
 
-## F9 — Délibérés ⏳
+## F6 — Dossiers : liste et création 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **10**, **26**, **27**. Endpoints **#18-22**, **#58**.
+Écrans **05** liste des dossiers, **06** création. Endpoints **#1**, **#2**, plus les référentiels
+de F5. **Livré le 2026-09-09** sur la branche `feat/f6-dossiers`.
 
-**Vérifications** : délibéré refusé hors `EN_DELIBERE` ; échéance de recours exigée pour
-`DEFAVORABLE`/`MIXTE` et refusée sinon ; **prorogation au-delà du seuil affichée comme un
-avertissement, pas comme une erreur** ; rabattement refusé hors `DELIBERE_VIDE` et motif obligatoire ;
-suivi du recours cohérent avec l'état de l'étape.
+- `services/dossierService.ts`, `hooks/useDossiers.ts`, types `CreerDossier` et `FiltresDossiers`.
+- Formulaire adaptatif : la **catégorie est dérivée de la nature**, jamais demandée — le backend la
+  déduit (RG-DOS-02) et refuse une valeur divergente.
+- Sections identification, parties, pièces conditionnelles, affectation, sensibilité.
+
+**Trois blocages backend levés au passage** (jalon **M16** du dépôt backend, sur autorisation
+explicite de l'utilisateur) : voir Q-71, Q-72, Q-73 côté backend, QF-07 côté frontend.
+
+**Vérifications exécutées le 2026-09-09** : `typecheck` ✅ · `lint` ✅ · **141 tests unitaires** ✅ ·
+`build` ✅ · **37 parcours Playwright contre le backend réel** ✅ · `smoke` 17/17 ✅ ·
+**265 tests backend** ✅.
+**Dépend de** : F5.
+
+> **Points à retenir :**
+> - **`nature` s'envoie par son libellé**, pas par son code ni son identifiant : le backend le résout
+>   par `findByLibelleIgnoreCase`. Trois libellés de la taxonomie dépassaient la largeur de
+>   `dossier.nature` et rendaient ces natures inutilisables — corrigé par la migration V7 (Q-71).
+> - **La catégorie ne se demande pas, elle se déduit.** La demander créerait une contradiction
+>   possible avec la nature, pour aucun gain. Elle est affichée en lecture seule.
+> - **Les champs conditionnels sont exigés en ET, pas en OU** (Q-11) : recouvrement → dossier de
+>   crédit **et** PV de transfert ; litige → incident de compte **et** éléments justificatifs.
+>   N'afficher que la paire concernée évite de laisser croire que les quatre sont exigés.
+> - **`typeClientSensible` s'envoie par son code**, désormais validé contre le référentiel (Q-73).
+> - **Ne jamais rediriger vers une route non livrée.** La création renvoyait vers `/dossiers/{id}`,
+>   écran 07 livré en F7 : le routeur App échoue *en silence*, l'URL ne change même pas et le bouton
+>   semble cassé alors que le backend a répondu 201. Redirection vers la liste filtrée, et référence
+>   affichée sans lien, jusqu'à F7 (QF-22).
+> - **La suite e2e tourne désormais contre un build de production.** En développement, la
+>   compilation à la demande produisait quatre échecs *tournants* par exécution, sur des tests
+>   valides, pour 17 minutes. Contre `next build && next start` : 37/37 en 7,8 minutes, build
+>   compris. Relever les délais n'avait fait que déplacer le problème.
+
+---
+
+## F7 — Fiche dossier 🔵 *(livré, en attente de validation manuelle)*
+
+Écrans **07** synthèse, **08** étapes, **15** historique, **16** affectation, **18** sensibilité,
+plus un onglet documents (#43, lecture), et **17** dérogation de seuil — demande et arbitrage, ce
+dernier débloqué par l'ajout de `GET /dossiers/{id}/seuil-derogation` au backend (Q-74, QF-23). **Livré le 2026-09-10** sur `feat/f7-fiche-dossier`, branchée sur F6.
+
+- `services/dossierService.ts` étendu (#3 à #8, positionnement direct), `services/gedService.ts`
+  (#43), hooks de mutation qui rafraîchissent la fiche **et** les listes.
+- `lib/transitions.ts` : miroir exact du validateur de transitions du backend — seules les
+  transitions permises sont proposées.
+- Fiche à onglets accessible (motif WAI-ARIA, navigation aux flèches), trois modales.
+- QF-22 levée : la liste mène à la fiche, la création y redirige.
+- **Pièces jointes** (demandées à la recette de F7) : pièces facultatives dès la création, lisibles
+  avant l'envoi ; onglet Documents complet — dépôt, aperçu, téléchargement, suppression (écran 12
+  avancé depuis F10). Endpoints #38, #39, #40. QF-06 tranchée.
+
+**Vérifications exécutées le 2026-09-10** : `typecheck` ✅ · `lint` ✅ · **174 tests unitaires** ✅ ·
+`build` ✅ · **52 parcours Playwright contre le backend réel et MinIO** ✅ · `smoke` 17/17 ✅.
+**Dépend de** : F6. **Note** : QF-08 (files transverses DJ/DJA) reste ouverte ; QF-23 levée (Q-74).
+
+> **Points à retenir :**
+> - **Un endpoint peut exister et rester inatteignable.** #7 exige l'`auditId` d'une demande de
+>   dérogation, que rien n'expose (ni `GET`, ni champ du dossier, ni historique) — vérifié sur
+>   `/v3/api-docs`. Pour chaque endpoint qui prend un identifiant : d'où l'interface le tiendra-t-elle ?
+> - **Annoncer les effets de bord du backend avant confirmation** : exercer un recours ouvre
+>   l'étape suivante ; positionner au second recours crée le premier. Tous deux passent par un
+>   dialogue qui les nomme.
+> - **`PUT /affectation` remplace, n'ajoute pas** : les sélections partent de l'affectation
+>   actuelle. Conserver quelqu'un déclenche `ERR-003`, traité comme une demande de confirmation.
+> - **Deux défauts de `Dialog`, révélés par les parcours de F7 et corrigés à la racine** : titres
+>   à identifiant fixe (toutes les modales s'appelaient comme la première) et relais de la fermeture
+>   programmatique (masquer une modale refermait tout le parcours). Ils touchaient toute
+>   l'application.
+> - **Les parcours e2e préparent leur socle** (`tests/e2e/preparation.ts`) : une base recréée à
+>   neuf avait fait tomber 10 parcours sur 11 sans qu'aucune ligne de l'application soit en cause.
+> - L'historique est rédigé en français par le serveur (QF-24) : l'interface anglaise le dit.
+> - **Les pièces partent après le dossier, jamais avec lui** : le dépôt en GED exige son identifiant
+>   (et le module dossier ne dépend pas de la GED, Q-67). Un dépôt qui échoue n'annule pas le
+>   dossier : la fiche s'ouvre sur ses documents en nommant les pièces à redéposer.
+> - **axios 1.x convertit un `FormData` en JSON** sous notre type par défaut `application/json` :
+>   l'envoi déclare `multipart/form-data`, et son test tourne sous Node — sous jsdom, MSW ne relit
+>   jamais le corps et le test expire sans rien prouver.
+> - **Une URL pré-signée se lit sans `Authorization`** et au clic (10 minutes de vie). Le CORS de
+>   MinIO autorise l'application : aperçu en `blob:`, téléchargement sous le nom d'origine.
+
+---
+
+## F8 — Audiences, alarmes, calendrier 🔵 *(livré, en attente de validation manuelle)*
+
+Écrans **09**, **11**, **22**, **23**, **24**, **25**. Endpoints **#13-17**, **#56-57**. **Livré le
+2026-09-10** sur `feat/f8-audiences`, branchée sur F7.
+
+- `services/audienceService.ts`, `hooks/useAudiences.ts` : mutations qui rafraîchissent les listes
+  du dossier, la fiche **et** le calendrier.
+- Fiche : onglets **Audiences** (planification, doublon `ERR-005` confirmable, compte rendu proposé
+  seulement à partir du jour de l'audience) et **Alarmes** (création, reprogrammation chaînée,
+  alarme échue signalée).
+- `/audiences/calendrier` : agenda par jour, semaine / mois / trimestre alignés sur des bornes
+  naturelles, exports PDF et Excel nommés par période.
+- `lib/calendrier.ts` : dates locales, jamais `toISOString` (QF-28 corrigée : les dates seules
+  s'affichaient la veille à l'ouest de Greenwich).
+- Client HTTP : une erreur arrivée en binaire (export) est relue dans l'intercepteur, pour que le
+  message du backend atteigne l'utilisateur.
+
+**Vérifications exécutées le 2026-09-10** : `typecheck` ✅ · `lint` ✅ · **188 tests unitaires** ✅ ·
+`build` ✅ · **58 parcours Playwright contre le backend réel, Keycloak et MinIO** ✅ (build de
+production) · `smoke` ✅. *Piège relevé* : `reuseExistingServer` réutilise un `next dev` resté
+ouvert sur le port 3000 — la suite tourne alors, sans le dire, contre le serveur de développement.
+
+**Complément du 2026-09-10 (décision du porteur du projet)** : QF-29 et QF-30 levées par deux
+endpoints ajoutés au backend (M16, Q-76, Q-77). Annulation motivée d'une audience planifiée — elle
+quitte calendrier, exports et rappels, et ne compte plus comme doublon ; « Marquer traitée » sur une
+alarme active. **Revérifié** : **190 tests unitaires** ✅ · **60 parcours Playwright** contre le
+backend réel (build de production) ✅, dont l'annulation suivie d'une replanification à la même date
+sans demande de confirmation. Backend : 277 tests, `BUILD SUCCESS`, V8 appliquée.
+
+**Dépend de** : F7. **Non bloquants** : QF-31, QF-32.
+
+> **Points à retenir :**
+> - **Une confirmation rejoue la demande refusée, pas le formulaire.** Relire le formulaire au
+>   moment de confirmer un doublon envoyait une date vide : un `useEffect` de réinitialisation
+>   dépendait d'un tableau recréé à chaque rendu. Même défaut corrigé dans la création d'alarme.
+> - **Un test qui attend un message peut lire celui d'avant.** Le toast de la première
+>   planification masquait l'échec de la seconde : attendre l'effet (la ligne ajoutée).
+> - **next-intl** : un argument `{debut}` n'accepte qu'un texte ; une fonction n'y affiche rien.
+> - **Le compte rendu ne peut pas être joué en e2e** : le backend n'accepte qu'une audience future,
+>   et son compte rendu qu'à partir de sa date. Le parcours vérifie qu'il n'est pas proposé trop
+>   tôt ; la saisie est couverte par les tests du backend et par la recette manuelle.
+
+---
+
+## F9 — Délibérés 🔵 *(livré, en attente de validation manuelle)*
+
+Écrans **10**, **26**, **27**. Endpoints **#18-22**, **#58**, plus deux ajouts du backend (Q-78).
+**Livré le 2026-09-11** sur `feat/f9-deliberes`, branchée sur `dev` (F8 fusionné).
+
+**L'audit a changé le jalon.** Le backend plaçait prorogation et rabattement **après** la décision ;
+toutes les sources les placent pendant « En délibéré » (QF-33). Sur décision du porteur du projet,
+le backend a été aligné (M16, Q-78) avant l'écran : mise en délibéré sans résultat, prorogation et
+rabattement pendant l'attente, décision qui vide le délibéré, historique des prorogations. Le
+critère « rabattement refusé hors `DELIBERE_VIDE` » de ce jalon, écrit d'après l'ancien backend,
+devient « rabattement refusé une fois la décision rendue ».
+
+- `services/delibereService.ts` (8 endpoints), `hooks/useDeliberes.ts`, énumération `EtatDelibere`.
+- Onglet **Délibérés** de la fiche : mettre en délibéré (ou enregistrer une décision déjà rendue),
+  proroger — **au-delà du seuil, un avertissement, pas une erreur** —, historique des prorogations,
+  rabattre, enregistrer la décision (échéance exigée si défavorable ou mixte), expédition, suivi du
+  délai de recours. Seules les actions recevables à chaque état sont proposées.
+- L'onglet Étapes renvoie vers l'onglet Délibérés pour une étape en délibéré.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **196 tests unitaires** ✅ ·
+`build` ✅ · **64 parcours Playwright contre le backend réel** ✅ (build de production ; suite
+complète à 62/64, puis les 2 parcours corrigés — sélecteurs ambigus — rejoués à 4/4). Backend :
+287 tests, `BUILD SUCCESS`, V9 appliquée.
 **Dépend de** : F8.
+
+> **Points à retenir :**
+> - **Auditer contre les sources, pas seulement contre l'API.** L'API « marchait » (Q-44 l'avait
+>   rendue appelable) ; elle ne faisait pas ce que la procédure fait. Seules les US, les UC et le
+>   diagramme d'états, lus dans les `.docx`, l'ont montré.
+> - **Une modale fermée reste dans la page.** Ses `<option>` portent les mêmes libellés que les
+>   pastilles : un `getByText("Favorable")` sur toute la page est ambigu. Cibler la carte.
+> - **`next build` a dépassé les 300 s** de `webServer` sur un poste chargé (894 s) : construire à
+>   la main, démarrer `next start`, laisser Playwright le réutiliser.
 
 ---
 
@@ -391,10 +553,12 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F0 | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | ⏳ | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ⏳ | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | 🔵 | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
 
-**5 jalons validés sur 18 · F4 livré en attente de validation · 3 écrans transverses sur 42 · 1 endpoint consommé sur 67.**
+**9 jalons validés sur 18 (F0 à F8) · F9 livré en attente de validation · 24 écrans sur 42 ·
+40 endpoints consommés sur 72** (plus #45 en partie ; 72 depuis les ajouts de M16, dont Q-78) —
+mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.

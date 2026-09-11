@@ -3,7 +3,8 @@
  *
  * Le backend renvoie **systématiquement** `{code, message, details}` — vérifié en conditions réelles
  * le 2026-09-08 (401 `ERR-UNAUTHENTICATED`, 403 `ERR-FORBIDDEN`, `details: null` quand il n'y a rien
- * à préciser). Cette forme est stable et fait contrat : elle remplace intégralement la normalisation
+ * à préciser) — et depuis le 2026-09-09 un `champ` optionnel, présent uniquement lorsque l'erreur
+ * vise un champ précis de la requête (QF-21). Cette forme est stable et fait contrat : elle remplace intégralement la normalisation
  * du projet de référence, qui attendait une structure `{messages: {...}}` sans rapport.
  */
 
@@ -36,11 +37,18 @@ export type CodeErreur = (typeof CodeErreur)[keyof typeof CodeErreur];
  * Ne jamais la présenter comme une erreur.
  */
 
-/** Corps d'erreur tel que renvoyé par le backend. */
+/**
+ * Corps d'erreur tel que renvoyé par le backend.
+ *
+ * `champ` nomme le champ de la requête à corriger, quand le backend le connaît — un doublon de
+ * référence, de compte ou de facture. Il est **absent** du JSON pour toutes les erreurs qui ne
+ * visent aucun champ (conflit d'état, droits insuffisants, erreur interne).
+ */
 export interface CorpsErreurApi {
   code: string;
   message: string;
   details: string | null;
+  champ?: string | null;
 }
 
 /** Erreur d'API normalisée, seule forme propagée aux hooks et aux écrans. */
@@ -49,11 +57,24 @@ export class ErreurApi extends Error {
   readonly statut: number | undefined;
   readonly details: string | null;
 
-  constructor(params: { code: string; message: string; details?: string | null; statut?: number }) {
+  /**
+   * Champ de la requête que le backend désigne comme fautif, ou `null`. Distinct de `details`, qui
+   * porte du texte destiné à un humain et non un identifiant exploitable.
+   */
+  readonly champ: string | null;
+
+  constructor(params: {
+    code: string;
+    message: string;
+    details?: string | null;
+    champ?: string | null;
+    statut?: number;
+  }) {
     super(params.message);
     this.name = "ErreurApi";
     this.code = params.code;
     this.details = params.details ?? null;
+    this.champ = params.champ ?? null;
     this.statut = params.statut;
   }
 
@@ -115,6 +136,7 @@ export function normaliserErreur(erreur: unknown): ErreurApi {
       code: corps.code,
       message: corps.message || MESSAGES_PAR_DEFAUT[corps.code] || "Une erreur est survenue.",
       details: corps.details ?? null,
+      champ: corps.champ ?? null,
       statut: candidat.response?.status,
     });
   }
