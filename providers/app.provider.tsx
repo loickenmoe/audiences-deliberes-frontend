@@ -1,5 +1,6 @@
 import { Toaster } from "sonner";
 
+import { AlertesProvider } from "@/providers/alertes.provider";
 import { AuthProvider } from "@/providers/session.provider";
 import { QueryProvider } from "@/providers/query.provider";
 
@@ -13,7 +14,9 @@ export function AppProvider({ children }: Readonly<{ children: React.ReactNode }
   return (
     <>
       <AuthProvider>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <AlertesProvider>{children}</AlertesProvider>
+        </QueryProvider>
       </AuthProvider>
       <Toaster position="bottom-right" richColors closeButton />
     </>

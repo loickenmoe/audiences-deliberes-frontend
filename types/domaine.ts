@@ -5,7 +5,9 @@ import type {
   EtatDelibere,
   FormatDocument,
   ResultatDelibere,
+  CanalAlerte,
   StatutAlarme,
+  StatutAlerte,
   StatutExpedition,
   StatutAudience,
   SensCondamnation,
@@ -19,9 +21,11 @@ import type {
   StatutCycleVie,
   StatutValidation,
   TypeAutrePublication,
+  TypeAlerte,
   TypeEtape,
   TypeIntervenant,
   TypePublication,
+  TypeValeurConfiguration,
 } from "@/types/enums";
 
 /**
@@ -669,4 +673,42 @@ export interface ArchiverJurisprudence {
   natureDecision: string;
   juridiction: string;
   dateDecision: string;
+}
+
+// ─────────────────────────────── Alertes et configurations ───────────────────────────────
+
+/**
+ * Notification destinée à un utilisateur (#45, #46). Le backend l'enregistre **avant** de tenter
+ * la diffusion temps réel : une alerte n'est jamais perdue, seul le push peut manquer.
+ *
+ * `declencheur` est le texte métier, parfois préfixé d'un marqueur technique anti-doublon du type
+ * `[delibereId:12] ` — l'affichage le retire (`lib/alertes.ts`).
+ */
+export interface Alerte {
+  id: number;
+  dossierId: number | null;
+  destinataireId: number;
+  type: TypeAlerte;
+  declencheur: string;
+  canal: CanalAlerte;
+  statut: StatutAlerte;
+  dateDeclenchement: string;
+  dateTraitement: string | null;
+}
+
+/**
+ * Paramètre système (#47, #48). Les quatre derniers champs décrivent la **règle de saisie** de la
+ * clé (backend Q-91) : le formulaire d'administration s'y conforme au lieu de redéclarer les
+ * bornes, et le backend refuse de toute façon une valeur hors règle.
+ */
+export interface ConfigurationSysteme {
+  cle: string;
+  valeur: string;
+  description: string | null;
+  modifiablePar: string;
+  dateModification: string | null;
+  typeValeur: TypeValeurConfiguration | null;
+  valeurMinimale: number | null;
+  valeurMaximale: number | null;
+  valeursPossibles: string[];
 }

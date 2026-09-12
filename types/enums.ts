@@ -148,6 +148,18 @@ export const TypeAlerte = [
 ] as const;
 export type TypeAlerte = (typeof TypeAlerte)[number];
 
+// ─────────────────────────────── Configurations ───────────────────────────────
+
+/**
+ * Nature de la valeur attendue par une clé de configuration (backend Q-91). Le contrat décrit la
+ * saisie — bornes d'un entier, valeurs acceptées d'une liste — au lieu de la faire redéclarer ici.
+ *
+ * Absente d'`ENUMERATIONS_TRADUITES` : elle ne s'affiche jamais. C'est un descripteur de contrat,
+ * qui dit à l'écran 41 quel champ construire — pas un mot à montrer à l'utilisateur.
+ */
+export const TypeValeurConfiguration = ["ENTIER", "LISTE"] as const;
+export type TypeValeurConfiguration = (typeof TypeValeurConfiguration)[number];
+
 // ─────────────────────────────── Décisions définitives ───────────────────────────────
 
 /*

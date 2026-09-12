@@ -1020,5 +1020,58 @@
     "colonneRisque": "Risque",
     "exporterPdf": "Exporter en PDF",
     "exporterExcel": "Exporter en Excel"
+  },
+  "notifications": {
+    "titre": "Mes notifications",
+    "description": "Les alertes qui vous sont adressées. Elles restent consultables même si la connexion temps réel est interrompue.",
+    "badge": "Notifications",
+    "badgeCompteur": "{nombre, plural, =0 {aucune notification non lue} one {# notification non lue} other {# notifications non lues}}",
+    "nouvelle": "Nouvelle notification",
+    "tempsReelActif": "Temps réel actif",
+    "tempsReelInterrompu": "Temps réel interrompu — actualisation toutes les 30 secondes",
+    "vue": "Filtrer les notifications",
+    "vues": {
+      "aTraiter": "Non lues",
+      "traitees": "Traitées",
+      "toutes": "Toutes"
+    },
+    "colonneType": "Type",
+    "colonneObjet": "Objet",
+    "colonneDossier": "Dossier",
+    "colonneDate": "Reçue le",
+    "colonneStatut": "Statut",
+    "colonneAction": "Action",
+    "marquerTraitee": "Marquer traitée",
+    "traiteeLe": "Traitée le {date}",
+    "traiteeSucces": "Notification marquée comme traitée.",
+    "horsDossier": "Hors dossier",
+    "vide": "Aucune notification non lue",
+    "videTraitees": "Aucune notification traitée",
+    "videToutes": "Aucune notification",
+    "videTexte": "Les alertes déclenchées par vos dossiers apparaîtront ici, sans rechargement."
+  },
+  "configurations": {
+    "titre": "Paramètres système",
+    "description": "Les sept paramètres qui pilotent les seuils, les délais et les contrôles de l’application. Une modification prend effet immédiatement.",
+    "lectureSeule": "Consultation seule — seul le Directeur Juridique peut modifier ces paramètres.",
+    "valeur": "Valeur",
+    "valeurActuelle": "Valeur actuelle",
+    "modifiee": "Modifiée le {date}",
+    "jamaisModifiee": "Valeur initiale",
+    "enregistrer": "Enregistrer",
+    "annuler": "Annuler",
+    "succes": "Paramètre {cle} enregistré.",
+    "bornes": "Entier entre {min} et {max}",
+    "valeursAcceptees": "Valeurs acceptées",
+    "octets": "soit {taille}",
+    "refus": {
+      "obligatoire": "Une valeur est obligatoire.",
+      "entier": "Un nombre entier est attendu, sans espace ni séparateur.",
+      "bornes": "La valeur doit être comprise entre {min} et {max}.",
+      "inconnue": "Cette valeur ne fait pas partie des valeurs acceptées.",
+      "vide": "La liste comporte un élément vide."
+    },
+    "vide": "Aucun paramètre",
+    "videTexte": "Les paramètres système sont créés à l’installation de l’application."
   }
 }

@@ -4,8 +4,9 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-11 (jalon F13 — **64 endpoints consommés sur 74**, plus #45 en partie ;
-> décisions et jurisprudence s'appuient sur Q-88/Q-89).
+> Dernière mise à jour : 2026-09-12 (jalon F14 — **69 endpoints consommés sur 74**, plus le canal
+> `/ws` ; alertes, notifications et paramètres système, QF-11 tranché, validation par clé Q-91).
+> Précédente : 2026-09-11 (jalon F13 — 64 sur 74, plus #45 en partie ; décisions et jurisprudence, Q-88/Q-89).
 > Précédente : 2026-09-11 (jalon F12 — 58 sur 73, publications et constitutions s'appuient sur Q-86/Q-87).
 > Précédente : 2026-09-11 (jalon F11 — 49 sur 73, le circuit des frais s'appuie sur Q-82/Q-83).
 > Précédente : 2026-09-11 (jalon F10 — 43 sur 72, la file des suppressions et le rapport journalier
@@ -260,16 +261,29 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 44 | PUT | `/alertes/seuils` | DJ | 41 | F14 | ❌ |
-| 45 | GET | `/alertes/mes-notifications?statut&page&size` | authentifié | 03, **amorçage de session** | F14 | 🟡 **consommé en F2** pour l'amorçage (QF-16) ; l'écran 03 reste à faire |
-| 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ❌ |
-| 47 | GET | `/configurations` | CONS | 41 | F14 | ❌ |
-| 48 | PUT | `/configurations/{cle}` | DJ | 41 | F14 | ❌ |
+| 44 | PUT | `/alertes/seuils` | DJ | 41 | F14 | ✅ |
+| 45 | GET | `/alertes/mes-notifications?statut&page&size` | authentifié | 03, **amorçage de session**, badge | F14 | ✅ |
+| 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ✅ |
+| 47 | GET | `/configurations` | CONS | 41 | F14 | ✅ |
+| 48 | PUT | `/configurations/{cle}` | DJ | 41 | F14 | ✅ |
 | 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ❌ |
 | 50 | GET | `/tableau-de-bord` | **DJ** | 39 | F15 | ❌ |
-| — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03 | F14 | ❌ |
+| — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
-- **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif.
+- **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la
+  voie **désignée par le contrat** pour ce seuil : l'écran 41 l'emprunte pour cette clé et passe par
+  #48 pour les six autres. Les deux aboutissent à la même ligne et à la même validation.
+- **#47/#48** — chaque clé publie sa **règle de saisie** (`typeValeur`, `valeurMinimale`,
+  `valeurMaximale`, `valeursPossibles`, Q-91) : l'écran 41 en déduit le champ, le frontend ne
+  redéclare aucune borne. #48 refuse en 400 une valeur qui casserait les frais, les délibérés ou la
+  GED, et renvoie la valeur **normalisée**.
+- **Tri des listes (Q-92, Q-93)** — `/alertes/mes-notifications`, `/clients` et `/dossiers` ne
+  triaient rien : au-delà d'une page, une ligne pouvait apparaître deux fois ou disparaître, et un
+  client fraîchement créé n'était plus visible par son auteur. Les trois renvoient désormais du plus
+  récent au plus ancien, comme les frais, les publications et les jurisprudences.
+- **#45** — **plus récente d'abord depuis Q-92.** Le tri n'existait pas : l'ordre était laissé à
+  PostgreSQL, une notification pouvait atterrir sur n'importe quelle page. Sans `statut`, les deux
+  statuts sont confondus.
 - **#46** — seul le **destinataire** peut traiter (403 sinon) — vérifié en service, pas par rôle.
 - **#49** — **204 si aucune donnée** sur la période : état vide, pas erreur.
   `format ∈ {JSON, PDF, EXCEL, CSV}` ; les trois derniers reviennent en binaire.

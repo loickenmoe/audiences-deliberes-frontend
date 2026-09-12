@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { SelecteurLangue } from "@/components/global";
+import { ClocheNotifications } from "@/components/layout/cloche-notifications";
 import { UserNav } from "@/components/layout/user-nav";
 
 export async function Navbar({
@@ -22,6 +23,7 @@ export async function Navbar({
         {t("application")}
       </p>
       <div className="flex items-center gap-5">
+        <ClocheNotifications />
         <SelecteurLangue />
         <UserNav nom={nom} prenom={prenom} email={email} roles={roles} />
       </div>

@@ -41,12 +41,12 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F12** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8 ; backend PR #22, #23) |
-| Jalon livré, **en attente de validation** | **F13** — décisions définitives et jurisprudence (`feat/f13-decisions` depuis `origin/dev` b53096d) ; backend sur `feat/decisions-lecture` (Q-88, Q-89 ; Q-90 laissée ouverte). Rien de commité. |
-| Jalon suivant | **F14** — alertes, notifications, configurations |
+| Jalons validés | **F0** à **F13** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9 ; backend PR #22, #23, #24) |
+| Jalon livré, **en attente de validation** | **F14** — alertes, notifications, paramètres système (`feat/f14-alertes` depuis `origin/dev` fb21c41 ; backend `feat/configurations-validation` depuis `origin/dev` 416b735) — écrans 03 et 41, QF-11 tranché (temps réel + repli), Q-91 backend |
+| Jalon suivant | **F15** — rapports et tableau de bord (rappeler QF-04) |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **35 écrans sur 42** · **64 endpoints consommés sur 74** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
+| Décompte | **37 écrans sur 42** · **69 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
@@ -120,7 +120,13 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   Se référer à `lib/rbac.ts`, dérivé des `@PreAuthorize`.
 - Le jeton ne contient **pas** l'`utilisateur.id` numérique (QF-02).
 - Push temps réel : STOMP sur SockJS, endpoint `/ws`, destination `/user/queue/alertes`, jeton dans
-  la trame `CONNECT`. Repli garanti : `GET /alertes/mes-notifications`.
+  la trame `CONNECT`. Repli garanti : `GET /alertes/mes-notifications`. **Branché en F14** —
+  `lib/temps-reel.ts` + `providers/alertes.provider.tsx`. L'endpoint n'est exposé **qu'en SockJS**
+  (`withSockJS()`), une WebSocket native ne négocie rien ; le jeton se relit à chaque connexion
+  (`beforeConnect`), sans quoi la reconnexion après rotation repartirait avec un jeton périmé.
+- **Les paramètres système publient leur règle de saisie** (backend Q-91) : `typeValeur`,
+  `valeurMinimale`, `valeurMaximale`, `valeursPossibles`. L'écran 41 construit son champ à partir de
+  là — ne jamais recopier ces bornes dans le frontend.
 
 ### Pièges d'implémentation rencontrés (à ne pas refaire)
 
@@ -272,7 +278,8 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-08** | Aucune file « sensibilité à valider » ni « dérogations en attente » pour DJ/DJA | F7 |
 | QF-02 | Pas d'endpoint « moi » → contournement par rapprochement d'email | F2 |
 | QF-06 | CORS MinIO / affichage inline des documents | F10 |
-| QF-11 | Temps réel STOMP ou rafraîchissement périodique | F14 |
+| **QF-41** | `GET /clients/{id}/dossiers` n'est pas paginé : 310 dossiers = 267 Ko et 11 à 19 s par appel, jusqu'à 70 s sous charge. L'écran 13 traîne, et l'appel fait échouer des requêtes parallèles sans rapport. **Mesuré, non corrigé, à arbitrer.** | — |
+| ~~QF-11~~ | ✅ **Tranchée** (2026-09-12) : **temps réel STOMP sur SockJS, avec repli HTTP garanti** — 30 s canal coupé, 5 min canal ouvert. Le push est un accélérateur, jamais la source de vérité. | F14 |
 
 Détail complet et recommandations : `DECISIONS_AND_OPEN_QUESTIONS.md`.
 

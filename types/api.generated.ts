@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deliberes/{id}/resultat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["viderDelibere"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deliberes/{id}/expedition": {
         parameters: {
             query?: never;
@@ -363,7 +379,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["listerDerogationsSeuil"];
         put?: never;
         post: operations["demanderDerogationSeuil"];
         delete?: never;
@@ -507,7 +523,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["listerProrogations"];
         put?: never;
         post: operations["proroger"];
         delete?: never;
@@ -523,7 +539,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_5"];
+        get: operations["lister_6"];
         put?: never;
         post: operations["creerDemande"];
         delete?: never;
@@ -596,6 +612,22 @@ export interface paths {
         patch: operations["modifierStatutCondamnation"];
         trace?: never;
     };
+    "/api/v1/audiences/{id}/annulation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["annulerAudience"];
+        trace?: never;
+    };
     "/api/v1/alertes/{id}/traiter": {
         parameters: {
             query?: never;
@@ -610,6 +642,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["traiter"];
+        trace?: never;
+    };
+    "/api/v1/alarmes/{id}/traiter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["traiterAlarme"];
         trace?: never;
     };
     "/api/v1/utilisateurs": {
@@ -788,6 +836,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/frais/demandes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consulter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dossiers/{id}": {
         parameters: {
             query?: never;
@@ -820,6 +884,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dossiers/{id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["lister_5"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deliberes/{id}/recours": {
         parameters: {
             query?: never;
@@ -843,7 +923,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_6"];
+        get: operations["lister_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -925,6 +1005,30 @@ export interface components {
             statut: "DEPOSE" | "VALIDE" | "REJETE";
             motifRejet?: string;
         };
+        CommentaireResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            publicationId?: number;
+            /** Format: int64 */
+            auteurId?: number;
+            auteurNom?: string;
+            contenu?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        CorrespondanceResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            publicationId?: number;
+            /** Format: int64 */
+            auteurId?: number;
+            auteurNom?: string;
+            contenu?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
         PublicationResponse: {
             /** Format: int64 */
             id?: number;
@@ -946,6 +1050,15 @@ export interface components {
             contenu?: string;
             /** @enum {string} */
             typeDocument?: "PIECE" | "DECISION" | "CONCLUSION";
+            referenceDossier?: string;
+            avocatNom?: string;
+            /** Format: date */
+            audienceDate?: string;
+            restrictionAccesNom?: string;
+            nomFichier?: string;
+            urlTelechargement?: string;
+            commentaires?: components["schemas"]["CommentaireResponse"][];
+            correspondance?: components["schemas"]["CorrespondanceResponse"];
         };
         ApprobationSuppressionRequest: {
             /** @enum {string} */
@@ -957,6 +1070,11 @@ export interface components {
             id?: number;
             /** Format: int64 */
             documentId?: number;
+            documentNom?: string;
+            typeDocument?: string;
+            /** Format: int64 */
+            dossierId?: number;
+            referenceDossier?: string;
             /** Format: int64 */
             demandeurId?: number;
             motif?: string;
@@ -981,8 +1099,10 @@ export interface components {
             id?: number;
             /** Format: int64 */
             dossierId?: number;
+            referenceDossier?: string;
             /** Format: int64 */
             avocatId?: number;
+            avocatNom?: string;
             /** Format: double */
             montant?: number;
             piecesJustificatives?: string[];
@@ -992,10 +1112,27 @@ export interface components {
             /** @enum {string} */
             statutPaiement?: "EN_ATTENTE" | "PAYEE";
             referenceFacture?: string;
+            dossierSensible?: boolean;
+            /** Format: double */
+            seuilApplicable?: number;
+            validationConjointeRequise?: boolean;
+            validations?: components["schemas"]["ValidationFraisResponse"][];
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        ValidationFraisResponse: {
+            /** @enum {string} */
+            etape?: "CONFORMITE" | "OPPORTUNITE" | "CONJOINTE_DJ" | "CONJOINTE_DJA";
+            /** @enum {string} */
+            decision?: "ACCORD" | "REJET";
+            motif?: string;
+            /** Format: int64 */
+            utilisateurId?: number;
+            utilisateurNom?: string;
+            /** Format: date-time */
+            dateValidation?: string;
         };
         ControleConformiteRequest: {
             conforme: boolean;
@@ -1026,8 +1163,8 @@ export interface components {
             dateAction?: string;
         };
         ModifierAffectationRequest: {
-            juristesAffectes?: number[];
-            avocatsAffectes?: number[];
+            juristesAffectes: number[];
+            avocatsAffectes: number[];
         };
         DossierResponse: {
             /** Format: int64 */
@@ -1097,9 +1234,11 @@ export interface components {
             demandeur?: string;
             defendeur?: string;
         };
-        ExpeditionRequest: {
+        ViderDelibereRequest: {
             /** @enum {string} */
-            statutExpedition: "A_LEVER" | "LEVEE";
+            resultat: "FAVORABLE" | "DEFAVORABLE" | "MIXTE";
+            /** Format: date-time */
+            dateEcheanceRecours?: string;
         };
         DelibereResponse: {
             /** Format: int64 */
@@ -1111,13 +1250,24 @@ export interface components {
             /** Format: date */
             dateDeliberee?: string;
             /** @enum {string} */
+            etat?: "EN_ATTENTE" | "VIDE" | "RABATTU";
+            /** @enum {string} */
             resultat?: "FAVORABLE" | "DEFAVORABLE" | "MIXTE";
             /** @enum {string} */
             statutExpedition?: "A_LEVER" | "LEVEE";
             /** Format: date-time */
             dateEcheanceRecours?: string;
+            /** Format: int64 */
+            nombreProrogations?: number;
+            /** Format: date */
+            dateRabattement?: string;
+            motifRabattement?: string;
             /** Format: date-time */
             createdAt?: string;
+        };
+        ExpeditionRequest: {
+            /** @enum {string} */
+            statutExpedition: "A_LEVER" | "LEVEE";
         };
         ValiderConstitutionRequest: {
             /** @enum {string} */
@@ -1145,6 +1295,12 @@ export interface components {
             dateDemande?: string;
             /** Format: date-time */
             dateDecision?: string;
+            referenceDossier?: string;
+            prestataireNom?: string;
+            /** @enum {string} */
+            prestataireType?: "AVOCAT" | "AUTRE_PRESTATAIRE";
+            demandeurNom?: string;
+            valideParNom?: string;
         };
         ModifierConfigurationRequest: {
             valeur: string;
@@ -1156,6 +1312,13 @@ export interface components {
             modifiablePar?: string;
             /** Format: date-time */
             dateModification?: string;
+            /** @enum {string} */
+            typeValeur?: "ENTIER" | "LISTE";
+            /** Format: int64 */
+            valeurMinimale?: number;
+            /** Format: int64 */
+            valeurMaximale?: number;
+            valeursPossibles?: string[];
         };
         EnregistrerCompteRenduRequest: {
             compteRendu: string;
@@ -1176,6 +1339,9 @@ export interface components {
             statut?: "PLANIFIEE" | "TENUE" | "ANNULEE";
             /** Format: date-time */
             createdAt?: string;
+            motifAnnulation?: string;
+            /** Format: date-time */
+            dateAnnulation?: string;
         };
         ModifierSeuilRequest: {
             /** @enum {string} */
@@ -1212,30 +1378,8 @@ export interface components {
         CorrespondanceRequest: {
             contenu: string;
         };
-        CorrespondanceResponse: {
-            /** Format: int64 */
-            id?: number;
-            /** Format: int64 */
-            publicationId?: number;
-            /** Format: int64 */
-            auteurId?: number;
-            contenu?: string;
-            /** Format: date-time */
-            createdAt?: string;
-        };
         CommentaireRequest: {
             contenu: string;
-        };
-        CommentaireResponse: {
-            /** Format: int64 */
-            id?: number;
-            /** Format: int64 */
-            publicationId?: number;
-            /** Format: int64 */
-            auteurId?: number;
-            contenu?: string;
-            /** Format: date-time */
-            createdAt?: string;
         };
         DeposerCompteRenduRequest: {
             /** Format: int64 */
@@ -1364,7 +1508,7 @@ export interface components {
             /** Format: date */
             dateDeliberee: string;
             /** @enum {string} */
-            resultat: "FAVORABLE" | "DEFAVORABLE" | "MIXTE";
+            resultat?: "FAVORABLE" | "DEFAVORABLE" | "MIXTE";
             /** Format: date-time */
             dateEcheanceRecours?: string;
         };
@@ -1500,6 +1644,9 @@ export interface components {
             /** @enum {string} */
             statutPaiement: "EN_ATTENTE" | "PAYE" | "RECOUVREMENT_FORCE";
         };
+        AnnulerAudienceRequest: {
+            motif: string;
+        };
         AlerteResponse: {
             /** Format: int64 */
             id?: number;
@@ -1612,6 +1759,10 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+        };
+        DecisionsDossierResponse: {
+            adjudications?: components["schemas"]["AdjudicationResponse"][];
+            condamnations?: components["schemas"]["CondamnationResponse"][];
         };
         RecoursResponse: {
             /** Format: int64 */
@@ -1807,6 +1958,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DossierResponse"];
+                };
+            };
+        };
+    };
+    viderDelibere: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ViderDelibereRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DelibereResponse"];
                 };
             };
         };
@@ -2078,6 +2255,7 @@ export interface operations {
                 motCle?: string;
                 natureDecision?: string;
                 juridiction?: string;
+                dossierId?: number;
                 page?: number;
                 size?: number;
             };
@@ -2288,6 +2466,9 @@ export interface operations {
                 nature?: string;
                 categorie?: "RECOUVREMENT" | "EXPLOITATION_LITIGES";
                 juridiction?: string;
+                reference?: string;
+                clientId?: number;
+                mesDossiers?: boolean;
                 page?: number;
                 size?: number;
             };
@@ -2328,6 +2509,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DossierResponse"];
+                };
+            };
+        };
+    };
+    listerDerogationsSeuil: {
+        parameters: {
+            query?: {
+                statut?: "EN_ATTENTE" | "VALIDEE" | "REJETEE";
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuditSeuilResponse"][];
                 };
             };
         };
@@ -2634,6 +2839,28 @@ export interface operations {
             };
         };
     };
+    listerProrogations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProrogationResponse"][];
+                };
+            };
+        };
+    };
     proroger: {
         parameters: {
             query?: never;
@@ -2660,7 +2887,7 @@ export interface operations {
             };
         };
     };
-    lister_5: {
+    lister_6: {
         parameters: {
             query?: {
                 statut?: "EN_ATTENTE" | "VALIDEE" | "REJETEE";
@@ -2830,6 +3057,32 @@ export interface operations {
             };
         };
     };
+    annulerAudience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnulerAudienceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AudienceResponse"];
+                };
+            };
+        };
+    };
     traiter: {
         parameters: {
             query?: never;
@@ -2848,6 +3101,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AlerteResponse"];
+                };
+            };
+        };
+    };
+    traiterAlarme: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AlarmeResponse"];
                 };
             };
         };
@@ -3119,6 +3394,28 @@ export interface operations {
             };
         };
     };
+    consulter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DemandeFraisResponse"];
+                };
+            };
+        };
+    };
     consulterDossier: {
         parameters: {
             query?: never;
@@ -3163,6 +3460,28 @@ export interface operations {
             };
         };
     };
+    lister_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DecisionsDossierResponse"];
+                };
+            };
+        };
+    };
     consulterRecours: {
         parameters: {
             query?: never;
@@ -3185,7 +3504,7 @@ export interface operations {
             };
         };
     };
-    lister_6: {
+    lister_7: {
         parameters: {
             query?: never;
             header?: never;
