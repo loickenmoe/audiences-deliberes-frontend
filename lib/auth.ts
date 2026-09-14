@@ -2,7 +2,7 @@ import NextAuth, { CredentialsSignin, type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 import { getEnvServeur } from "@/lib/env.server";
-import { ERREUR_RAFRAICHISSEMENT, doitRafraichir } from "@/lib/rotation-jeton";
+import { ERREUR_RAFRAICHISSEMENT, doitRafraichir, prochainRafraichissement } from "@/lib/rotation-jeton";
 
 /**
  * Authentification par formulaire intégré, adossée à Keycloak.
@@ -217,6 +217,15 @@ export const authConfig: NextAuthConfig = {
       session.accessToken = token.accessToken;
       session.roles = token.roles ?? [];
       session.erreur = token.erreur;
+      /*
+       * QF-42 : le navigateur garde le jeton en mémoire jusqu'à cette échéance au lieu de relire la
+       * session à chaque requête. La fenêtre est calculée ici, par la même fonction que la rotation
+       * — dupliquer la règle côté client rouvrirait RF-02.
+       */
+      session.rafraichirApres =
+        token.expiresAt && token.refreshExpiresAt
+          ? prochainRafraichissement(token.expiresAt, token.refreshExpiresAt)
+          : undefined;
       if (session.user) {
         session.user.keycloakId = token.keycloakId;
         session.user.nom = token.nom ?? null;
