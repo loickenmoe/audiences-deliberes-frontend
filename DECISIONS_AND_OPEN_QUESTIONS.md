@@ -55,6 +55,8 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | **Navigation rattachée à des capacités, pas à des listes de rôles.** `lib/navigation.ts` référence une capacité de `lib/rbac.ts` ; la correspondance rôle → capacité reste au seul endroit dérivé des `@PreAuthorize`. | F2 |
 | 2026-09-08 | — | **Amorçage de session appelant `GET /alertes/mes-notifications`** : auto-provisionne l'utilisateur (QF-16) et alimente le badge de notifications. Un appel, deux usages. | F2 |
 | 2026-09-12 | **QF-11** | **Notifications en temps réel (STOMP sur SockJS), avec repli HTTP garanti.** Le canal est ouvert une fois pour toute la session, dans la coquille authentifiée : une alerte atteint le badge quelle que soit la page. Il reste un **accélérateur** — le backend enregistre l'alerte avant de tenter de la pousser, et la liste se rafraîchit toutes les 30 s canal coupé, toutes les 5 min canal ouvert. L'écran 03 affiche lequel des deux régimes s'applique. | F14 |
+| 2026-09-14 | **Q-94** (backend) | **La vue consolidée d'un client interrogeait la base dossier par dossier** — 930 requêtes et 11 à 19 s pour 310 dossiers (QF-41). Trois requêtes pour la liste entière, contrat inchangé : **0,12 s** mesuré sur 355 dossiers. Ma première recommandation — alléger la réponse — était fausse : le contrat inclut `etapes` et l'écran 13 s'en sert. | F14 |
+| 2026-09-14 | **Q-91 bis** (backend) | **Les plafonds des compteurs sont ramenés à ce que les sources permettent.** Le tableau CONF01-07 (US §11.2) fixe des valeurs par défaut, jamais des maxima, et la story 7.1 n'exige qu'un « entier positif ». Mes plafonds de 1 000 et 365 n'avaient pas d'assise ; restent les deux bornes justifiées — 10 Mo pour la GED (CONF06) et douze chiffres pour le seuil de montant. | F14 |
 | 2026-09-12 | **Q-92 / Q-93** (backend) | **Trois listes paginaient sans ordre défini** — notifications, clients, dossiers. Trouvé en construisant l'écran 03, puis démontré en usage : passé vingt clients, celui qu'un juriste venait de créer basculait en page 2, **invisible pour son auteur**. Tri du plus récent au plus ancien, départagé par `id`. Les trois autres listes paginées (frais, publications, jurisprudences) l'étaient déjà. | F14 |
 | 2026-09-12 | **Q-91** (backend) | **Les paramètres système sont validés par clé** et publient leur règle de saisie. Évolution backend décidée en ouverture de F14 : sans elle, une saisie erronée du DJ (« 50 000 000 ») ressortait en **erreur 500** dans les frais, les délibérés ou la GED — loin de l'écran fautif. L'écran 41 construit son champ à partir du contrat au lieu d'en redéclarer une copie. | F14 |
 | 2026-09-08 | — | **Flux de branches en deux phases.** (1) Tant que le socle F1→F4 n'est pas prêt : travail **direct sur `main`**, aucune branche. (2) Ensuite **un écran = une branche** ; une fois l'écran testé et approuvé, **l'utilisateur pousse la branche puis la merge dans `dev`**, qui rassemble les écrans fonctionnels. Je crée et j'alimente la branche locale ; **je ne pousse ni ne merge jamais.** | tous |
@@ -661,25 +663,21 @@ colonne `langue` sur la table `utilisateur` et un endpoint pour la lire et l'éc
 lorsqu'une évolution backend sera de toute façon nécessaire (QF-03 ou QF-16) : un seul point de
 lecture serait à changer.
 
-### 🟡 QF-41 — `GET /clients/{id}/dossiers` n'est pas paginé et s'effondre en volume
+### ✅ QF-41 — `GET /clients/{id}/dossiers` s'effondrait en volume — corrigé (backend Q-94)
 
-**Mesuré le 2026-09-12**, en marge de F14, contre la base de développement. Le client de socle des
-parcours porte **310 dossiers** ; la vue consolidée les renvoie **tous**, chacun avec ses étapes
-imbriquées — 267 Ko, **11 à 19 secondes** par appel, jusqu'à **70 s** sous charge. L'écran 13 reste
-donc en chargement bien au-delà du raisonnable, et l'appel monopolise assez longtemps une connexion
-de la réserve pour faire échouer, en parallèle, des requêtes sans rapport (le calendrier, notamment).
+**Mesuré le 2026-09-12** : le client de socle portait 310 dossiers, la vue consolidée mettait **11 à
+19 secondes**, jusqu'à 70 s sous charge. L'écran 13 restait en chargement, et l'appel occupait assez
+longtemps une connexion pour faire expirer des requêtes voisines dans la suite de bout en bout.
 
-Ce n'est pas un défaut du frontend et ce n'est pas apparu avec F14 : c'est le volume de la base de
-développement qui a fini par franchir le seuil. Les parcours qui traversent cet écran passent en
-exécution seule et échouent par intermittence avec quatre travailleurs en parallèle — l'appel occupe
-assez longtemps une connexion pour faire expirer ses voisines. **À ne pas confondre avec Q-93** :
-les échecs reproductibles des parcours clients venaient de l'absence de tri, corrigée ; celui-ci
-reste une question de volume, non corrigée.
+**Ma première recommandation était fausse** : je proposais d'alléger la réponse, en supposant que
+l'écran n'affichait ni les étapes ni les parties. Le contrat d'API inclut bien `etapes` dans le
+schéma `Dossier`, et `vue-client.tsx` s'en sert (`dossier.etapes.at(-1)`) pour afficher l'étape
+courante. Paginer ne convenait pas davantage : le contrat décrit « toutes les procédures d'un client,
+par catégorie », sans pagination.
 
-**Options** : (a) paginer la vue consolidée côté backend, par catégorie ; (b) alléger la réponse —
-l'écran 13 n'affiche ni les étapes ni les parties ; (c) ne rien changer et l'assumer comme une limite
-connue de NF-PERF-01. **Recommandation** : (b) puis (a) — le gros de la charge est la sérialisation
-d'étapes que personne ne lit sur cet écran. **À arbitrer ; aucune modification faite.**
+**Cause réelle** : un N+1 côté backend — trois requêtes par dossier, soit 930 pour 310 dossiers.
+**Corrigé** (Q-94, arbitrage du 2026-09-14) : trois requêtes pour la liste entière, contrat inchangé.
+**Mesuré après correction**, client entre-temps passé à 355 dossiers : **0,12 s** pour 306 Ko.
 
 ### ✅ QF-10 — Thème sombre — tranché en F3
 

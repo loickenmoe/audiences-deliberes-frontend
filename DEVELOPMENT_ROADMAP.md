@@ -633,18 +633,23 @@ téléchargement du PDF.
 Badge de notifications, marquage traité, configurations CONF01-07, seuil `CHARGE_MAX_AVOCAT`.
 
 **Vérifications exécutées le 2026-09-12** : `typecheck` ✅ · `lint` ✅ · **252 tests unitaires** ✅ ·
-`build` ✅ (24 routes) · **`npm run smoke`** ✅ · **parcours Playwright contre le backend réel** — les
-6 nouveaux au vert · backend **347 tests** ✅.
+`build` ✅ (24 routes) · **`npm run smoke`** ✅ · **89 parcours Playwright sur 89** contre le backend
+réel, en 5 min 42 · backend **351 tests** ✅.
 
 > **Deux défauts antérieurs mis au jour par la suite de bout en bout, tous deux sans rapport avec
-> le périmètre annoncé :**
-> - **Corrigé (Q-93)** : `GET /clients` et `GET /dossiers` paginaient sans ordre défini. Passé vingt
->   clients — seuil franchi ce jour-là — celui qu'un juriste venait de créer basculait en page 2,
->   invisible pour son auteur. Deux parcours le démontraient, en parallèle **et** en exécution seule.
-> - **Signalé, non corrigé (QF-41)** : `GET /clients/{id}/dossiers` n'est pas paginé — 310 dossiers
->   sur le client de socle, 267 Ko, 11 à 19 s par appel, jusqu'à 70 s sous charge. L'écran 13 traîne,
->   et l'appel occupe assez longtemps une connexion pour faire expirer des requêtes voisines. Arbitrage
->   attendu.
+> le périmètre annoncé, tous deux corrigés sur arbitrage :**
+> - **Q-93** : `GET /clients` et `GET /dossiers` paginaient sans ordre défini. Passé vingt clients —
+>   seuil franchi ce jour-là — celui qu'un juriste venait de créer basculait en page 2, invisible
+>   pour son auteur. Deux parcours le démontraient, en parallèle **et** en exécution seule.
+> - **Q-94 (QF-41)** : `GET /clients/{id}/dossiers` interrogeait la base trois fois **par dossier** —
+>   930 requêtes, 11 à 19 s pour 310 dossiers, jusqu'à 70 s sous charge. Ma première piste, alléger
+>   la réponse, était fausse : le contrat inclut `etapes` et l'écran 13 s'en sert. Trois requêtes pour
+>   la liste entière, contrat inchangé — **0,12 s** mesuré ensuite sur 355 dossiers.
+>
+> Cette seconde correction a réglé l'instabilité de la suite de bout en bout : **89 parcours sur 89
+> en 5 min 42**, contre 18 à 25 minutes et des échecs tournants auparavant. Les « flakinesses »
+> attribuées à la charge venaient de cet appel, qui retenait une connexion assez longtemps pour faire
+> expirer ses voisines.
 **Dépend de** : F2. **Décision rendue** : **QF-11 ✅ — temps réel avec repli HTTP garanti**.
 
 > **Évolution backend décidée en début de jalon (Q-91)** — `PUT /configurations/{cle}` acceptait
