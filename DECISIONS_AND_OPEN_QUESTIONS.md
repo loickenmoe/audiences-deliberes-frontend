@@ -1,7 +1,11 @@
 # DECISIONS_AND_OPEN_QUESTIONS
 
 > Arbitrages rendus, questions ouvertes, risques. Mis à jour en continu.
-> Dernière mise à jour : 2026-09-09 (jalon F4).
+> Dernière mise à jour : 2026-09-14 (revue de clôture — QF-42 corrigé ; RF-01, RF-02 et RF-04 closes,
+> elles étaient traitées depuis longtemps mais restées étiquetées comme ouvertes).
+>
+> **État à la clôture** : une seule question **bloquante** reste ouverte, **QF-16** — elle appelle un
+> arbitrage métier, pas du code. Sept points `🟡` sont documentés et assumés.
 
 **Légende** : `✅` tranché · `🟡` ouvert, non bloquant · `🔴` ouvert, bloquant · `⛔` bloqué par un tiers
 
@@ -838,7 +842,7 @@ restante à chaque fois ; le raisonnement seul a désigné trois fois la mauvais
 
 ## RISQUES
 
-### 🔴 RF-02 — Le refresh token expire AVANT l'access token
+### ✅ RF-02 — Le refresh token expire AVANT l'access token — traité en F2
 
 **Mesuré le 2026-09-08 sur le Keycloak réel** (et non supposé) :
 
@@ -856,20 +860,30 @@ dossier qui compte une vingtaine de champs.
 **Conception à retenir en F2** : piloter le rafraîchissement sur **`refresh_expires_in`**, pas sur
 `expires_in` — se rafraîchir vers **25 minutes**, ce qui fait tourner le refresh token et prolonge
 la fenêtre. Prévoir une déconnexion propre si le rafraîchissement échoue, plutôt qu'une boucle de
-401. **À traiter en F2, pas après.**
+401.
+
+**Appliqué (F2)** : `lib/rotation-jeton.ts` retient `min(expiresAt, refreshExpiresAt) - 5 min`, et un
+échec définitif marque la session (`ERREUR_RAFRAICHISSEMENT`) plutôt que de boucler sur des 401. La
+règle est couverte par des tests unitaires et n'est **pas** dupliquée côté navigateur : depuis
+QF-42, la session publie la fenêtre calculée ici (`rafraichirApres`).
 
 > Ces durées sont celles du realm de développement. À revérifier si le realm de production diffère.
 
-### 🟡 RF-01 — CORS et affichage des documents MinIO
+### ✅ RF-01 — CORS et affichage des documents MinIO — vérifié en F7
 
-Voir QF-06. **À vérifier en F10.**
+Tranché et **mesuré en réel** : MinIO répond `Access-Control-Allow-Origin: http://localhost:3000`,
+préflight compris ; le contenu est lu par `fetch` puis affiché depuis une URL `blob:` locale (QF-06).
+Couvert par les parcours de bout en bout — aperçu d'une image stockée, téléchargement d'un PDF.
+
+⚠ **Réserve de mise en production** : l'URL publique de MinIO et sa politique CORS devront être
+reconfigurées pour l'origine réelle de l'application. `MINIO_API_URL` vaut aujourd'hui `localhost`.
 
 ### 🟡 RF-03 — Documentation d'API exposée côté backend
 
 `/v3/api-docs` et `/swagger-ui` sont accessibles sans authentification (R-08 backend, à fermer avant
 production). Le frontend est conçu pour ne pas en dépendre (QF-12). **Aucune action frontend.**
 
-### 🔴 RF-04 — `.gitignore` absent sur un dépôt déjà publié
+### ✅ RF-04 — `.gitignore` absent sur un dépôt déjà publié — clos en F1
 
 **Résolu partiellement le 2026-09-08** : le dépôt est initialisé et poussé
 (`git@github.com:loickenmoe/audiences-deliberes-frontend.git`, branche `main`, commit `39de75d`).
@@ -890,6 +904,9 @@ reproduire.**
 dépendance.** Couvrir au minimum `node_modules/`, `.next/`, `out/`, `build/`, `coverage/`,
 `playwright-report/`, `test-results/`, `.env*` (avec exception explicite pour `env.template`),
 `*.tsbuildinfo`, `.DS_Store`.
+
+**Fait le 2026-09-08, avant le premier `npm install`.** Le fichier couvre les entrées ci-dessus ;
+aucun `.env.local` n'a jamais été versionné. **Clos.**
 
 ### 🟡 RF-05 — Annuaires non paginés
 
