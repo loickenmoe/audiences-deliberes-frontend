@@ -15,7 +15,8 @@ autres ne s'ouvrent que si le sujet l'exige.
 
 | Fichier | Contenu |
 |---|---|
-| `FRONTEND_WORKING_MEMORY.md` | **Point d'entrée.** État courant, décisions, conventions, contraintes |
+| `GUIDE_UTILISATEUR.md` | **Pour les utilisateurs**, pas pour les développeurs : se connecter, chaque métier écran par écran, questions fréquentes |
+| `FRONTEND_WORKING_MEMORY.md` | **Point d'entrée développeur.** État courant, décisions, conventions, contraintes |
 | `FRONTEND_ARCHITECTURE.md` | Pile, arborescence, authentification, droits, couche API, design system |
 | `SCREEN_MAP.md` | Les 42 écrans : routes, rôles, endpoints, règles métier |
 | `API_INTEGRATION_STATUS.md` | Les 67 endpoints du backend et leur état de consommation |

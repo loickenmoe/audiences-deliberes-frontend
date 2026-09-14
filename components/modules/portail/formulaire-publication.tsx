@@ -164,7 +164,7 @@ export function FormulairePublication() {
             </Champ>
 
             {/* Le composant porte lui-même son libellé et ses contrôles de format et de poids. */}
-            <Televersement nom="fichier" onChangement={setFichier} />
+            <Televersement nom="fichier" label={t("fichier")} onChangement={setFichier} />
           </>
         )}
 

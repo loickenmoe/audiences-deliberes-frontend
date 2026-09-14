@@ -23,8 +23,13 @@ export async function UserNav({
   const identite = [prenom, nom].filter(Boolean).join(" ") || email || "—";
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="text-right leading-tight">
+    <div className="flex items-center gap-2 sm:gap-4">
+      {/*
+        Identité masquée en dessous de `sm` (F17) : l'en-tête débordait de la fenêtre sur un mobile
+        de 375 px. Le nom reste accessible — il est répété sur l'accueil, et le bouton de déconnexion
+        porte son propre libellé.
+      */}
+      <div className="hidden text-right leading-tight sm:block">
         <p className="text-[length:var(--taille-sm)] font-medium">{identite}</p>
         <p className="text-[length:var(--taille-xs)] text-texte-secondaire">
           {profil ? tr(profil) : tc("profilInconnu")}

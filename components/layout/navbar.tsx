@@ -18,11 +18,11 @@ export async function Navbar({
   const t = await getTranslations("commun");
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-bordure bg-surface px-6">
-      <p className="text-[length:var(--taille-lg)] font-semibold tracking-tight">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-bordure bg-surface px-4 sm:px-6">
+      <p className="truncate text-[length:var(--taille-lg)] font-semibold tracking-tight">
         {t("application")}
       </p>
-      <div className="flex items-center gap-5">
+      <div className="flex shrink-0 items-center gap-3 sm:gap-5">
         <ClocheNotifications />
         <SelecteurLangue />
         <UserNav nom={nom} prenom={prenom} email={email} roles={roles} />

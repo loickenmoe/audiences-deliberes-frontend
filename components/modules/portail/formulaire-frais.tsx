@@ -162,7 +162,11 @@ export function FormulaireFrais() {
           ) : null}
 
           {/* Le composant porte ses propres contrôles de format et de poids (RG-GED-08). */}
-          <Televersement nom="piece-justificative" onChangement={(fichier) => void ajouterPiece(fichier)} />
+          <Televersement
+            nom="piece-justificative"
+            label={t("pieces")}
+            onChangement={(fichier) => void ajouterPiece(fichier)}
+          />
           {envoiPiece ? (
             <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("envoiPiece")}</p>
           ) : null}

@@ -63,8 +63,25 @@
     "sessionActive": "Votre session est active. Les modules métier apparaîtront au fil des jalons.",
     "rolesTitre": "Rôles de votre compte",
     "rolesDescription": "Un compte porte plusieurs rôles simultanément : son profil métier et les rôles transverses.",
-    "droitsTitre": "Droits accordés",
-    "droitsDescription": "{accordees} sur {total} capacités, dérivées des autorisations du backend."
+    "filesTitre": "Ce qui vous attend",
+    "filesDescription": "Les files dont vous avez la charge, à l’instant.",
+    "filesDescriptionSansProfil": "Votre compte n’est rattaché à aucun profil métier ; seules vos notifications s’affichent.",
+    "fraisTitre": {
+      "DEPOSEE": "Frais à contrôler",
+      "CONFORMITE": "Frais à arbitrer",
+      "OPPORTUNITE": "Frais à valider conjointement"
+    },
+    "fraisAide": "Demandes en attente de votre décision.",
+    "publicationsTitre": "Publications à valider",
+    "publicationsAide": "Comptes rendus et pièces déposés par les avocats.",
+    "constitutionsTitre": "Constitutions à signer",
+    "constitutionsAide": "Demandes en attente de votre signature.",
+    "suppressionsTitre": "Suppressions à arbitrer",
+    "suppressionsAide": "Demandes de suppression de document en attente.",
+    "dossiersTitre": "Mes dossiers",
+    "dossiersAide": "Dossiers auxquels vous êtes affecté.",
+    "notificationsTitre": "Notifications non lues",
+    "notificationsAide": "Alertes qui vous sont adressées."
   },
   "erreurs": {
     "titreGenerique": "Le chargement a échoué",
