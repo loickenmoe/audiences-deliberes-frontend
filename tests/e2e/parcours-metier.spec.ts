@@ -147,7 +147,11 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   await expect(avocat.locator("#publication-audience")).toBeEnabled({ timeout: 30_000 });
   await avocat.locator("#publication-audience").selectOption({ index: 1 });
   await avocat.locator("#publication-contenu").fill(`Audience renvoyée — ${marque}`);
-  await avocat.getByRole("button", { name: "Déposer", exact: true }).click();
+  // Q-98 : le plumitif accompagne le récit, en un seul dépôt.
+  await avocat
+    .locator('input[name="piece-jointe"]')
+    .setInputFiles({ name: `plumitif-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
+  await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
   await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
     timeout: 30_000,
   });
@@ -158,6 +162,14 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   await assistante.goto("/publications");
   const ligne = assistante.getByRole("row", { name: new RegExp(`DOS-${marque}`) }).first();
   await expect(ligne).toBeVisible({ timeout: 30_000 });
+
+  // Q-98 : la pièce du compte rendu s'ouvre depuis la publication elle-même — c'est ce qui
+  // manquait quand le plumitif partait en dépôt séparé, sans lien avec l'audience.
+  await ligne.getByRole("link", { name: /Compte rendu/ }).click();
+  await assistante.waitForURL(/\/publications\/\d+$/, { timeout: 60_000 });
+  await expect(assistante.getByRole("heading", { name: "Pièce jointe" })).toBeVisible({ timeout: 30_000 });
+  // `exact` : le dialogue d'aperçu porte le même nom, précédé de « Aperçu — ».
+  await expect(assistante.getByText(`plumitif-${marque}.pdf`, { exact: true })).toBeVisible();
   await assistante.context().close();
 
   expect(url).toMatch(/\/dossiers\/\d+$/);

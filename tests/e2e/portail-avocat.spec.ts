@@ -155,6 +155,11 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
   await avocat.goto("/publications/nouvelle");
   await expect(avocat.getByRole("heading", { name: "Déposer une publication", level: 1 })).toBeVisible();
 
+  // Les deux natures de dépôt sont décrites côte à côte, pas cachées derrière des onglets.
+  // `exact` : le chapô de l'écran reprend les deux expressions dans sa phrase d'introduction.
+  await expect(avocat.getByText("Compte rendu d’audience", { exact: true })).toBeVisible();
+  await expect(avocat.getByText("Document du dossier", { exact: true })).toBeVisible();
+
   // Tant qu'aucun dossier n'est choisi, l'audience ne peut pas l'être : elle lui appartient.
   await expect(avocat.locator("#publication-audience")).toBeDisabled();
 
@@ -166,7 +171,8 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
   if ((await audiences.locator("option").count()) > 1) {
     await audiences.selectOption({ index: 1 });
     await avocat.locator("#publication-contenu").fill(marque);
-    await avocat.getByRole("button", { name: "Déposer" }).click();
+    // Q-98 : la pièce est **facultative** — ce dépôt-ci n'en porte pas, et doit aboutir.
+    await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
     await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
       timeout: 30_000,
     });
@@ -177,6 +183,38 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
     await expect(avocat.getByText("Aucune audience n’est encore planifiée sur ce dossier.")).toBeVisible();
   }
 
+  await avocat.context().close();
+});
+
+/**
+ * Q-98 : le récit **et** sa pièce partent en un seul dépôt, rattachés à la même audience. Le volet
+ * lecture — l'Assistante qui ouvre la pièce depuis la publication — est vérifié par P2
+ * (`parcours-metier.spec.ts`), sur un dossier créé pour l'occasion : ici le dossier est choisi par
+ * position, et rien ne garantirait qu'on relise bien ce dépôt-ci.
+ */
+test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser }) => {
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/publications/nouvelle");
+  await avocat.locator("#publication-dossier").selectOption({ index: 1 });
+  const audiences = avocat.locator("#publication-audience");
+  await expect(audiences).toBeEnabled({ timeout: 30_000 });
+
+  if ((await audiences.locator("option").count()) <= 1) return; // dossier sans audience : rien à joindre
+
+  const marque = suffixe();
+  await audiences.selectOption({ index: 1 });
+  await avocat.locator("#publication-contenu").fill(`Renvoi avec plumitif ${marque}`);
+  await avocat
+    .locator('input[name="piece-jointe"]')
+    .setInputFiles({ name: `plumitif-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
+  await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
+  await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Le dépôt apparaît dans son espace, où il relit ce qu'il a transmis.
+  await avocat.goto("/portail");
+  await expect(avocat.getByRole("heading", { name: "Mon espace", level: 1 })).toBeVisible({ timeout: 30_000 });
   await avocat.context().close();
 });
 

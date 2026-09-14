@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-09 (jalon **F4** livré — composants métier, en attente de validation).
+> Dernière mise à jour : 2026-09-14 (**Q-98** — pièce facultative sur le compte rendu, écran 33 refondu).
 
 ---
 
@@ -41,14 +41,15 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F16** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11, F15 — PR #12, F16 — PR #13 ; backend PR #22 à #28) |
-| Jalon livré, **en attente de validation** | **F17** — durcissement (`feat/f17-qualite` depuis `origin/dev` 97dd5cd) : accueil achevé, accessibilité AA, responsive, performance, parcours P1-P9, guide utilisateur, revue de sécurité. **Aucune évolution backend.** |
+| Jalons validés | **F0** à **F17** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11, F15 — PR #12, F16 — PR #13, F17 — PR #14 ; backend PR #22 à #28) |
+| Jalon livré, **en attente de validation** | **Q-98** — pièce jointe facultative sur le compte rendu d'audience (`feat/cr-piece-jointe` depuis `origin/dev` 4022d82 ; backend même nom depuis b13978d). Écran 33 refondu en formulaire continu, « Pièce, décision, conclusion » renommé **« Document du dossier »**. **Évolution backend autorisée** (V13, endpoint #29 en multipart). |
+| Jalon précédent | **F17** — durcissement (PR #14) : accueil achevé, accessibilité AA, responsive, performance, parcours P1-P9, guide utilisateur, revue de sécurité |
 | Jalon suivant | **aucun** — les 18 jalons sont livrés. Reste la recette finale et la soutenance |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
 | Décompte | **42 écrans sur 42** · **74 endpoints consommés sur 74** — tout le contrat est consommé — plus les cinq endpoints du portail Avocat et le canal `/ws`. Mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
-| Suite de bout en bout | **131 parcours sur 131** en 9 min 12 (2026-09-14, un seul travailleur). Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
+| Suite de bout en bout | **130 sur 132** en 10 min 54 (2026-09-14, un seul travailleur). Les 2 échecs sont **un seul défaut**, QF-42 (déconnexion immédiate), reproduit 4 fois sur 5 et indépendant de Q-98. Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)

@@ -4,7 +4,9 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-14 (jalon F16 — **74 endpoints consommés sur 74**, plus les cinq
+> Dernière mise à jour : 2026-09-14 (Q-98 — **#29 passe en multipart** avec une pièce facultative ;
+> QF-20 rouverte puis tranchée. Le décompte est inchangé : **74 sur 74**).
+> Précédente : 2026-09-14 (jalon F16 — **74 endpoints consommés sur 74**, plus les cinq
 > endpoints du portail Avocat (Q-96, Q-97) et le canal `/ws` ; QF-01, QF-20 et QF-26 closes).
 > Précédente : 2026-09-14 (jalon F15 — 71 sur 74, plus le canal `/ws` ; rapports et tableau de bord,
 > QF-04 close, tableau de bord ouvert à la DJA par Q-95).
@@ -190,7 +192,7 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 29 | POST | `/publications/cr-audience` | AVOCAT | 33 | **F16** | ✅ |
+| 29 | POST | `/publications/cr-audience` (multipart, pièce facultative — Q-98) | AVOCAT | 33 | **F16**, revu Q-98 | ✅ |
 | 30 | PUT | `/publications/{id}/validation` | ASSISTANTE | 32 | F12 | ✅ |
 | 31 | POST | `/publications/autres` *(multipart)* | AVOCAT | 33 | **F16** | ✅ |
 | 32 | GET | `/publications/{id}` | CONS | 32 | F12 | ✅ (fichier, commentaires, correspondance — Q-86) |
@@ -344,7 +346,7 @@ nuls tant que la décision n'est pas rendue.
 |---|---|---|
 | 23 | `POST /frais/demandes` | Déposer une demande de frais |
 | 28 | `GET /frais/demandes` | Ses propres demandes |
-| 29 | `POST /publications/cr-audience` | Déposer un compte rendu |
+| 29 | `POST /publications/cr-audience` | Déposer un compte rendu, avec sa pièce facultative |
 | 31 | `POST /publications/autres` | Déposer une pièce |
 | 45 | `GET /alertes/mes-notifications` | Ses notifications |
 | 46 | `PATCH /alertes/{id}/traiter` | Traiter une notification |

@@ -774,6 +774,9 @@ export interface DeposerFrais {
 /**
  * Dépôt d'un compte rendu d'audience (#29, écran 33, US 5.1). L'audience doit appartenir au
  * dossier, sans quoi le backend répond 404.
+ *
+ * Le **récit** est obligatoire ; la pièce qui l'étaye est facultative (backend Q-98) et se passe
+ * à part, en multipart.
  */
 export interface DeposerCompteRendu {
   dossierId: number;

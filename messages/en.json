@@ -741,6 +741,7 @@
     "restrictionTous": "All in-house lawyers",
     "contenu": "Report",
     "fichier": "File",
+    "pieceJointe": "Attachment",
     "consulter": "View",
     "telecharger": "Download",
     "rejeteeBandeau": "Filing rejected. Reason: {motif}",
@@ -1163,12 +1164,7 @@
     "ajouterPiece": "Add an item",
     "fraisDeposes": "Fee claim filed.",
     "publicationTitre": "Submit a publication",
-    "publicationDescription": "A hearing report is attached to a hearing; a document, ruling or pleading is uploaded as a file.",
-    "typeDepot": "Kind of submission",
-    "onglets": {
-      "compteRendu": "Hearing report",
-      "autre": "Document, ruling, pleading"
-    },
+    "publicationDescription": "A hearing report recounts a hearing, with a supporting document if needed. A case file document is transmitted on its own.",
     "audience": "Hearing",
     "audienceAide": "Choose a case file first.",
     "choisirAudience": "Choose a hearing",
@@ -1180,6 +1176,21 @@
     "deposer": "Submit",
     "envoiEnCours": "Sending…",
     "annuler": "Cancel",
-    "envoiPiece": "Uploading the document…"
+    "envoiPiece": "Uploading the document…",
+    "natureDepot": "What would you like to submit?",
+    "natures": {
+      "compteRendu": {
+        "titre": "Hearing report",
+        "aide": "Recount what happened at a hearing on your case file. You may attach the court record or a note.",
+        "action": "Submit the report"
+      },
+      "document": {
+        "titre": "Case file document",
+        "aide": "Transmit a document, ruling or pleading, with no hearing report.",
+        "action": "Submit the document"
+      }
+    },
+    "pieceJointe": "Attachment (optional)",
+    "pieceJointeAide": "The document supporting your report: court record, hearing note. The report stands without it."
   }
 }

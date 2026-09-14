@@ -121,9 +121,19 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
               <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("contenu")}</h3>
               <p className="whitespace-pre-wrap text-[length:var(--taille-sm)]">{publication.contenu}</p>
             </div>
-          ) : (
+          ) : null}
+
+          {/*
+            Q-98 : le fichier n'appartient plus au seul sous-type « autre publication ». Un compte
+            rendu peut porter sa pièce — et n'en porte pas toujours : le bloc disparaît alors, au
+            lieu d'afficher un « — » et deux boutons qui échoueraient. Une autre publication a
+            toujours son fichier, et garde donc son bloc quoi qu'il arrive.
+          */}
+          {publication.type !== "CR_AUDIENCE" || publication.nomFichier ? (
             <div className="flex flex-col gap-2">
-              <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("fichier")}</h3>
+              <h3 className="text-[length:var(--taille-sm)] font-semibold">
+                {publication.type === "CR_AUDIENCE" ? t("pieceJointe") : t("fichier")}
+              </h3>
               <div className="flex flex-wrap items-center gap-2 text-[length:var(--taille-sm)]">
                 <span className="font-medium">{publication.nomFichier ?? "—"}</span>
                 <Button variante="secondaire" taille="sm" onClick={() => setApercu(true)}>
@@ -137,7 +147,7 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
               </div>
               {erreurFichier ? <p role="alert" className="text-[length:var(--taille-sm)] text-danger">{erreurFichier}</p> : null}
             </div>
-          )}
+          ) : null}
         </section>
 
         <div className="flex flex-col gap-5">
