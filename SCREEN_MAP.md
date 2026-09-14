@@ -1,7 +1,9 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; **39 écrans sur 42**).
+> Dernière mise à jour : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ;
+> **41 écrans sur 42**). Ne reste que l'écran 02, à enrichir.
+> Précédente : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; 39 écrans sur 42).
 > Précédente : 2026-09-12 (jalon F14 — écrans 03 et 41 livrés ; 37 écrans sur 42).
 > Précédente : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
 > Précédente : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
@@ -125,7 +127,7 @@ est strictement consultatif (Q-19) · `statutExpedition ∈ {A_LEVER, LEVEE}`.
 |---|---|---|---|---|---|---|
 | 28 | File des demandes | `/frais` | AVO, AST, DJA, DJ | `GET /frais/demandes?statut&page&size` | F11 | ✅ (vue par défaut selon le profil, vue dans l'URL) |
 | 29 | Détail et action de circuit | `/frais/[id]` | selon l'étape | `GET /frais/demandes/{id}` (Q-82), `PUT .../conformite` (AST), `PUT .../opportunite` (DJA), `POST .../validation-conjointe` (DJ+DJA), `PATCH .../paiement` (AST) | F11 | ✅ (règle RG-INT-03 expliquée, décisions nommées, une seule action par profil et par étape) |
-| 30 | Déposer une demande | `/frais/nouvelle` | AVO | `POST /frais/demandes` | **F16** | ❌ |
+| 30 | Déposer une demande | `/frais/nouvelle` | AVO | `POST /frais/demandes`, `GET /avocat/mes-dossiers` | **F16** | ✅ |
 
 **Circuit** : `DEPOSEE → CONFORMITE → [OPPORTUNITE] → VALIDEE → PAYEE`, avec `REJETEE` terminal
 depuis n'importe quelle étape. La validation conjointe DJ **et** DJA n'est requise que si
@@ -142,7 +144,7 @@ ses propres demandes pour un avocat · les deux accords sont requis, un seul ref
 |---|---|---|---|---|---|---|
 | 31 | File des publications | `/publications` | AST, JUR, DJ, DJA | `GET /publications?dossierId&statut&page&size` | F12 | ✅ (Assistante : à valider, validées, rejetées ; autres : validées) |
 | 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ✅ (fichier consultable, accès restreint en écran dédié, correspondance unique — Q-86) |
-| 33 | Dépôt de compte rendu / pièce | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (texte), `POST /publications/autres` (fichier) — ⚠ **QF-20** : pas de compte rendu en pièce jointe | **F16** | ❌ |
+| 33 | Dépôt de compte rendu / pièce | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (texte), `POST /publications/autres` (fichier), `GET /avocat/mes-dossiers{/id/audiences}` — QF-20 close : la story 5.1 décrit bien un texte | **F16** | ✅ |
 | 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ✅ (trié par charge croissante, recherche par nom) |
 | 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR, modale de la fiche 07), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ✅ (lettre consultable depuis la ligne, nommée — Q-86) |
 

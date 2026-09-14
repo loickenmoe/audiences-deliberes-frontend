@@ -41,14 +41,14 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F14** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11 ; backend PR #22 à #26) |
-| Jalon livré, **en attente de validation** | **F15** — rapports et tableau de bord (`feat/f15-rapports` depuis `origin/dev` 9d3d84b ; backend `feat/tableau-de-bord-dja` depuis `origin/dev` 99cce60) — écrans 39 et 40, QF-04 close, Q-95 backend |
-| Jalon suivant | **F16** — portail Avocat 🔧 (évolution backend actée, QF-01) : derniers écrans 30 et 33, derniers endpoints #23, #29, #31 |
+| Jalons validés | **F0** à **F15** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11, F15 — PR #12 ; backend PR #22 à #27) |
+| Jalon livré, **en attente de validation** | **F16** — portail Avocat (`feat/f16-portail-avocat` depuis `origin/dev` 92ab589 ; backend `feat/portail-avocat` depuis `origin/dev` ef8d200) — écrans 30, 33 et l'espace de l'avocat ; QF-01, QF-20 et QF-26 closes, Q-96 et Q-97 backend |
+| Jalon suivant | **F17** — qualité, performance et recette finale. Il ne reste aucun endpoint ni écran métier : seul l'accueil (écran 02) est à enrichir |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **39 écrans sur 42** · **71 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
+| Décompte | **41 écrans sur 42** · **74 endpoints consommés sur 74** — tout le contrat est consommé — plus les cinq endpoints du portail Avocat et le canal `/ws`. Mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
-| Suite de bout en bout | **96 parcours sur 96** en 5 min 54 (2026-09-14). Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
+| Suite de bout en bout | **103 parcours sur 103** en 6 min 42 (2026-09-14, un seul travailleur). Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)
@@ -114,7 +114,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   `GET /dossiers/{id}/documents`.
 - **Multipart** : métadonnées en `@RequestParam`, seul `file` en `@RequestPart`.
 - **`ROLE_SAISIE` est composite** : porté automatiquement par JURISTE, DJ, DJA, ASSISTANTE, SH.
-- **`AVOCAT` n'a PAS `ROLE_CONSULTATION`** → il n'atteint que 6 endpoints. Cause de QF-01.
+- **`AVOCAT` n'a PAS `ROLE_CONSULTATION`** → il n'atteignait que 6 endpoints (cause de QF-01). Depuis
+  Q-96 (F16), il dispose en plus de quatre lectures sous `/avocat`, cadrées sur lui **dans la
+  requête**. Ne jamais élargir un endpoint interne à `ROLE_AVOCAT` : la confidentialité reposerait
+  alors sur un filtre qu'on peut oublier.
 - **`ROLE_DJ` et `ROLE_DJA` portent aussi `ROLE_JURISTE`** depuis Q-81 (F12). Conséquence rarement
   anticipée : la direction atteint tout ce qui est ouvert au juriste — rapports, calendrier,
   répertoire des avocats. Ne pas raisonner sur l'intention d'une user story, mais sur le jeton réel.
@@ -128,6 +131,9 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   `lib/temps-reel.ts` + `providers/alertes.provider.tsx`. L'endpoint n'est exposé **qu'en SockJS**
   (`withSockJS()`), une WebSocket native ne négocie rien ; le jeton se relit à chaque connexion
   (`beforeConnect`), sans quoi la reconnexion après rotation repartirait avec un jeton périmé.
+  **S'abonner AVANT d'annoncer le canal ouvert** : un courtier STOMP ne conserve rien pour une
+  destination sans abonné, et l'ordre inverse perdait définitivement toute alerte poussée dans
+  l'intervalle (corrigé le 2026-09-14).
 - **Les paramètres système publient leur règle de saisie** (backend Q-91) : `typeValeur`,
   `valeurMinimale`, `valeurMaximale`, `valeursPossibles`. L'écran 41 construit son champ à partir de
   là — ne jamais recopier ces bornes dans le frontend.

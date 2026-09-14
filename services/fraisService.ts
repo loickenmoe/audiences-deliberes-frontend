@@ -1,5 +1,5 @@
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { DemandeFrais } from "@/types/domaine";
+import type { DemandeFrais, DeposerFrais } from "@/types/domaine";
 import type { StatutCircuitFrais } from "@/types/enums";
 
 /** Un accord, ou un refus — toujours motivé (RG-INT-03). */
@@ -61,6 +61,18 @@ export const fraisService = {
       accord: decision.accord,
       ...corps(decision),
     });
+    return data;
+  },
+
+  /**
+   * #23 — **l'avocat dépose sa demande** (US 4.1, écran 30). `referenceFacture` doit être unique :
+   * un doublon revient en 409 `ERR-006`, sur le champ `referenceFacture`.
+   *
+   * ⚠ `piecesJustificatives` est une liste de **noms**, pas de fichiers (QF-26) : le backend ne
+   * reçoit ici aucun document. L'écran le dit à l'avocat plutôt que de laisser croire à un dépôt.
+   */
+  deposer: async (demande: DeposerFrais): Promise<DemandeFrais> => {
+    const { data } = await apiClient.post<DemandeFrais>("/frais/demandes", demande);
     return data;
   },
 

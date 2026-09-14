@@ -137,9 +137,14 @@ test("une alerte déclenchée sur le backend apparaît sans rechargement, et se 
 
   const reference = await deposerDemandeDeFrais();
 
-  // Aucun `reload()` : la ligne arrive par le canal.
+  /*
+   * Aucun `reload()` : la ligne arrive d'elle-même. La fenêtre dépasse volontairement la période du
+   * repli (30 s) — ce que le jalon garantit, c'est « poussée temps réel **ou** repli », pas que la
+   * poussée gagne à tous les coups. Avec exactement 30 s, une poussée perdue faisait échouer le test
+   * à l'instant précis où le repli allait jouer : c'était le test qui mentait, pas l'application.
+   */
   const ligne = page.getByRole("row", { name: new RegExp(reference) });
-  await expect(ligne).toBeVisible({ timeout: 30_000 });
+  await expect(ligne).toBeVisible({ timeout: 75_000 });
   await expect(ligne).toContainText("Nouvelle demande de frais");
   await expect(page.getByTestId("compteur-notifications")).toBeVisible();
 

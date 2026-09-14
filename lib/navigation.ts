@@ -38,6 +38,11 @@ export interface EntreeNavigation {
 
 export const NAVIGATION: EntreeNavigation[] = [
   { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
+  // Portail Avocat (F16) : ces trois entrées sont les seules que voit un prestataire externe, qui ne
+  // porte que `ROLE_AVOCAT`. Elles restent invisibles aux profils internes, sans capacité de dépôt.
+  { cle: "monEspace", href: "/portail", icone: Briefcase, capacite: "deposerPublication", livre: true },
+  { cle: "deposerFrais", href: "/frais/nouvelle", icone: Receipt, capacite: "deposerFrais", livre: true },
+  { cle: "deposerPublication", href: "/publications/nouvelle", icone: FileSignature, capacite: "deposerPublication", livre: true },
   { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: true },
   { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: true },
   { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: true },

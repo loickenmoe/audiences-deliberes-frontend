@@ -671,7 +671,7 @@ réel, en 5 min 42 · backend **351 tests** ✅.
 
 ---
 
-## F15 — Rapports et tableau de bord 🔵 *(livré, en attente de validation manuelle)*
+## F15 — Rapports et tableau de bord ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **39**, **40**. Endpoints **#49-50**.
 
@@ -703,19 +703,52 @@ réel, en 5 min 54 (dont les 7 de ce jalon) · backend **351 tests** + parcours 
 
 ---
 
-## F16 — Portail Avocat ⏳ *(inclut une évolution backend)*
+## F16 — Portail Avocat 🔵 *(livré, en attente de validation manuelle)*
 
-Écrans **30**, **33**. Endpoints **#23**, **#29**, **#31**, **#45-46**, **#28**.
+Écrans **30**, **33**, plus l'espace de l'avocat. Endpoints **#23**, **#29**, **#31**, les quatre
+lectures du portail (backend **Q-96**) et le téléversement des pièces justificatives (**Q-97**).
 
-🔧 **Comprend une évolution backend** (décision QF-01 actée) : l'avocat doit pouvoir découvrir ses
-dossiers et les audiences associées, relire ses publications et consulter ses lettres de
-constitution. Quatre lectures cadrées sur l'avocat connecté suffiraient — **sans** lui accorder
-`ROLE_CONSULTATION`, qui lui ouvrirait tous les dossiers, clients et employés.
-**À spécifier et à réaliser au début de ce jalon**, dans le dépôt backend.
+**Vérifications exécutées le 2026-09-14** : `typecheck` ✅ · `lint` ✅ · **269 tests unitaires** ✅ ·
+`build` ✅ (29 routes) · **`npm run smoke`** ✅ · **270 tests unitaires** ✅ · **103 parcours
+Playwright sur 103** contre le backend réel · backend **356 tests** ✅.
+**Dépend de** : F11, F12. **Décisions rendues** : **QF-01 ✅** (périmètre complet) · **QF-20 ✅**
+close sans modification · **QF-26 ✅** corrigée par Q-97.
 
-**Vérifications** : un avocat ne voit **que** ses dossiers, ses demandes et ses publications ; il ne
-peut énumérer ni le personnel interne, ni les clients, ni les autres dossiers.
-**Dépend de** : F11, F12 + jalon backend.
+> **L'évolution backend (Q-96), et pourquoi elle était inévitable.** L'avocat ne porte pas
+> `ROLE_CONSULTATION` : US 4.1 le faisait soumettre un `dossierId` et US 5.1 lui demandait de déposer
+> « en choisissant le dossier et l'audience », alors que rien ne lui permettait de les découvrir.
+> L'exigence était **inapplicable**, pas seulement inconfortable.
+>
+> **Points à retenir :**
+> - **Une surface distincte sous `/avocat`, plutôt que l'élargissement des endpoints internes.**
+>   Ouvrir `GET /dossiers` à `ROLE_AVOCAT` aurait fait reposer la confidentialité sur un filtre à
+>   l'intérieur d'un service partagé — un oubli, et le portefeuille de la banque passait à un tiers.
+> - **Un dossier réduit à son identification** : ni client, ni risque, ni sensibilité. Un test
+>   d'intégration vérifie l'**absence** de ces champs, pas seulement la présence des autres.
+> - **QF-20 n'était pas une lacune** : la story 5.1 décrit bien un compte rendu textuel, et la story
+>   5.3 prévoit le dépôt de fichier. L'écran 33 expose les deux voies plutôt que d'en inventer une.
+>
+> **QF-26 : je m'étais trompé, le porteur du projet m'a corrigé.** J'avais clos la question comme
+> « conforme à la lettre », au motif que la story 4.1 n'exige que « ≥ 1 » entrée. Les sources disent
+> l'inverse, et sans ambiguïté : UC-INT-01 étape 4 — « l'avocat **charge** les pièces justificatives » ;
+> UC-INT-02 étape 3 — l'instructeur « affiche la demande, **ses pièces justificatives** et le résultat
+> du contrôle de conformité » ; dictionnaire des données — `pieces_justificatives TEXT[]`, « **chemins
+> ou références** des pièces ». Contrôler la conformité d'une liste de noms n'a aucun sens. Corrigé
+> par le backend **Q-97** : téléversement en deux temps, URL pré-signées sur le détail. Vérifié en
+> réel de bout en bout — l'Assistante télécharge effectivement le PDF déposé par l'avocat.
+>
+> **Défaut de F14 trouvé par la suite de ce jalon — le canal temps réel s'annonçait ouvert trop
+> tôt.** `lib/temps-reel.ts` signalait « Temps réel actif » **avant** de poser l'abonnement STOMP.
+> Un courtier ne conserve rien pour une destination sans abonné : une alerte poussée dans cet
+> intervalle était **perdue définitivement**, et comme l'écran se croyait connecté, le repli restait
+> en veille. Corrigé en s'abonnant d'abord ; et la cadence de rafraîchissement canal ouvert passe de
+> 5 minutes à 1, parce qu'un transport SockJS peut se figer sans se fermer et que le jalon F14
+> garantit qu'aucune notification n'est perdue. **Ma première hypothèse — un test trop impatient —
+> était fausse** : la fenêtre élargie à 75 s n'a rien changé, c'est la seconde exécution qui a
+> imposé de chercher la vraie cause. Vérifié : spec des alertes jouée deux fois, 12 passages sur 12,
+> puis 103 parcours sur 103.
+> - `Champ` affiche le message d'erreur, mais c'est `Input` qui porte `aria-invalid`, via `enErreur` :
+>   les deux vont ensemble, la bordure rouge seule ne dit rien à un lecteur d'écran.
 
 ---
 
@@ -737,9 +770,9 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ |
 
-**15 jalons validés sur 18 (F0 à F14) · F15 livré en attente de validation · 39 écrans sur 42 ·
-71 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et
-`API_INTEGRATION_STATUS.md` le 2026-09-14. Ne restent que le portail Avocat (#23, #29, #31 ;
-écrans 30 et 33, jalon F16) et l'enrichissement de l'accueil (écran 02).
+**16 jalons validés sur 18 (F0 à F15) · F16 livré en attente de validation · 41 écrans sur 42 ·
+74 endpoints consommés sur 74**, plus les quatre lectures du portail Avocat et le canal `/ws` —
+mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-14. **Tout le contrat d'API est
+consommé.** Ne reste que l'écran 02, l'accueil, à enrichir — et le jalon F17.
