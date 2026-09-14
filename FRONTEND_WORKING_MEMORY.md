@@ -41,14 +41,14 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F13** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9 ; backend PR #22, #23, #24) |
-| Jalon livré, **en attente de validation** | **F14** — alertes, notifications, paramètres système (`feat/f14-alertes` depuis `origin/dev` fb21c41 ; backend `feat/configurations-validation` depuis `origin/dev` 416b735) — écrans 03 et 41, QF-11 tranché (temps réel + repli), Q-91 backend |
-| Jalon suivant | **F15** — rapports et tableau de bord (rappeler QF-04) |
+| Jalons validés | **F0** à **F14** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11 ; backend PR #22 à #26) |
+| Jalon livré, **en attente de validation** | **F15** — rapports et tableau de bord (`feat/f15-rapports` depuis `origin/dev` 9d3d84b ; backend `feat/tableau-de-bord-dja` depuis `origin/dev` 99cce60) — écrans 39 et 40, QF-04 close, Q-95 backend |
+| Jalon suivant | **F16** — portail Avocat 🔧 (évolution backend actée, QF-01) : derniers écrans 30 et 33, derniers endpoints #23, #29, #31 |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **37 écrans sur 42** · **69 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
+| Décompte | **39 écrans sur 42** · **71 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
-| Suite de bout en bout | **89 parcours sur 89** en 5 min 42 (2026-09-14). Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
+| Suite de bout en bout | **96 parcours sur 96** en 5 min 54 (2026-09-14). Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)
@@ -115,6 +115,9 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - **Multipart** : métadonnées en `@RequestParam`, seul `file` en `@RequestPart`.
 - **`ROLE_SAISIE` est composite** : porté automatiquement par JURISTE, DJ, DJA, ASSISTANTE, SH.
 - **`AVOCAT` n'a PAS `ROLE_CONSULTATION`** → il n'atteint que 6 endpoints. Cause de QF-01.
+- **`ROLE_DJ` et `ROLE_DJA` portent aussi `ROLE_JURISTE`** depuis Q-81 (F12). Conséquence rarement
+  anticipée : la direction atteint tout ce qui est ouvert au juriste — rapports, calendrier,
+  répertoire des avocats. Ne pas raisonner sur l'intention d'une user story, mais sur le jeton réel.
 - **Les cinq profils internes sont tous des « juristes augmentés »** : chacun porte `ROLE_SAISIE` et
   `ROLE_CONSULTATION` en plus de son profil. Ne pas se fier aux descriptions fonctionnelles du
   backend (« le SH signe les constitutions ») pour en déduire ses droits — il en a **11 sur 36**.

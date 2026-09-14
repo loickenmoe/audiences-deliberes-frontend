@@ -55,6 +55,7 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | **Navigation rattachée à des capacités, pas à des listes de rôles.** `lib/navigation.ts` référence une capacité de `lib/rbac.ts` ; la correspondance rôle → capacité reste au seul endroit dérivé des `@PreAuthorize`. | F2 |
 | 2026-09-08 | — | **Amorçage de session appelant `GET /alertes/mes-notifications`** : auto-provisionne l'utilisateur (QF-16) et alimente le badge de notifications. Un appel, deux usages. | F2 |
 | 2026-09-12 | **QF-11** | **Notifications en temps réel (STOMP sur SockJS), avec repli HTTP garanti.** Le canal est ouvert une fois pour toute la session, dans la coquille authentifiée : une alerte atteint le badge quelle que soit la page. Il reste un **accélérateur** — le backend enregistre l'alerte avant de tenter de la pousser, et la liste se rafraîchit toutes les 30 s canal coupé, toutes les 5 min canal ouvert. L'écran 03 affiche lequel des deux régimes s'applique. | F14 |
+| 2026-09-14 | **QF-04 / Q-95** | **Le tableau de bord s'ouvre à la DJA** et QF-04 est close. Sa prémisse était caduque : depuis Q-81 (F12) le DJ porte `ROLE_JURISTE` et atteint les rapports, ce qui rend le parcours P9 jouable. Restait la DJA, privée du tableau de bord — `hasAnyRole('DJ','DJA')` désormais. US 8.5 ne nommait que le DJ, les spécifications fonctionnelles parlent du tableau consolidé « à travers le DJ/DJA » (STK-06). | F15 |
 | 2026-09-14 | **Q-94** (backend) | **La vue consolidée d'un client interrogeait la base dossier par dossier** — 930 requêtes et 11 à 19 s pour 310 dossiers (QF-41). Trois requêtes pour la liste entière, contrat inchangé : **0,12 s** mesuré sur 355 dossiers. Ma première recommandation — alléger la réponse — était fausse : le contrat inclut `etapes` et l'écran 13 s'en sert. | F14 |
 | 2026-09-14 | **Q-91 bis** (backend) | **Les plafonds des compteurs sont ramenés à ce que les sources permettent.** Le tableau CONF01-07 (US §11.2) fixe des valeurs par défaut, jamais des maxima, et la story 7.1 n'exige qu'un « entier positif ». Mes plafonds de 1 000 et 365 n'avaient pas d'assise ; restent les deux bornes justifiées — 10 Mo pour la GED (CONF06) et douze chiffres pour le seuil de montant. | F14 |
 | 2026-09-12 | **Q-92 / Q-93** (backend) | **Trois listes paginaient sans ordre défini** — notifications, clients, dossiers. Trouvé en construisant l'écran 03, puis démontré en usage : passé vingt clients, celui qu'un juriste venait de créer basculait en page 2, **invisible pour son auteur**. Tri du plus récent au plus ancien, départagé par `id`. Les trois autres listes paginées (frais, publications, jurisprudences) l'étaient déjà. | F14 |
@@ -465,23 +466,28 @@ tourner un backend d'avant cette date.
 **Vérifié en réel le 2026-09-09** contre le backend démarré, sur les quatre cas ci-dessus, plus
 257 tests backend et un test d'intégration qui contrôle la présence **et l'absence** de la clé.
 
-### 🟡 QF-04 — Qui produit les rapports d'activité ?
+### ✅ QF-04 — Qui produit les rapports d'activité ? — close en F15
 
-**Constat.** `GET /rapports` est réservé à `ROLE_JURISTE` et `GET /tableau-de-bord` à `ROLE_DJ`. Le
-DJ ne portant pas `ROLE_JURISTE`, **il ne peut pas générer de rapport** ; le juriste, lui, ne voit
-pas le tableau de bord.
+**Constat initial (2026-09-08).** `GET /rapports` était réservé à `ROLE_JURISTE` et
+`GET /tableau-de-bord` à `ROLE_DJ`. Le DJ ne portant pas `ROLE_JURISTE`, il ne pouvait pas générer
+de rapport — ce qui rendait le parcours de pilotage P9 (« tableau de bord → rapports → vue client →
+seuils ») injouable par un seul utilisateur.
 
-**Contradiction.** Le parcours P9 de `FUNCTIONAL_MAP.md` décrit : « le DJ consulte le tableau de
-bord temps réel → **génère des rapports** → consulte la vue consolidée d'un client → ajuste les
-seuils ». Les rôles implémentés rendent ce parcours impossible pour un seul utilisateur.
+**Ce qui a changé entre-temps.** Q-81, au jalon F12, a rendu `ROLE_DJ` et `ROLE_DJA` composites :
+ils portent désormais `ROLE_JURISTE`. Relevé sur le Keycloak en service le 2026-09-14 —
+`dj.test → ROLE_CONSULTATION, ROLE_DJ, ROLE_JURISTE, ROLE_SAISIE`. **La moitié de la question
+s'était donc résolue d'elle-même**, sans que personne le note : le DJ et la DJA atteignent les
+rapports, le calendrier et le répertoire des avocats depuis ce jalon.
 
-**Analyse.** L'attribution vient des user stories (US 8.4 au juriste, US 8.5 au DJ) et
-`API_IMPLEMENTATION_STATUS.md` la documente comme conforme. Ce n'est donc pas un défaut
-d'implémentation, mais une divergence entre les user stories et le parcours de pilotage.
+**Tranché (2026-09-14).** Restait le revers : la DJA n'avait pas le tableau de bord. Décision du
+porteur du projet — `GET /tableau-de-bord` passe à `hasAnyRole('DJ','DJA')` (backend **Q-95**). Les
+sources sont en tension et l'arbitrage suit la seconde : US 8.5 énonce « *Given que je suis le DJ
+(ROLE_DJ)* », mais les spécifications fonctionnelles décrivent le tableau consolidé comme obtenu
+« **à travers le DJ/DJA** » (partie prenante STK-06). La DJA instruit les mêmes dossiers et valide
+conjointement les frais sensibles ; lui refuser les indicateurs l'aurait privée du contexte de ses
+propres décisions.
 
-**Recommandation.** Faire confirmer le comportement attendu par la Direction Juridique. Je
-construirai les écrans selon les droits réellement en vigueur — mais découvrir l'écart en recette
-serait coûteux. **Statut : ouvert, à trancher avant F15.**
+Que le juriste n'ait pas le tableau de bord reste voulu par US 8.5 : ce n'est pas une contradiction.
 
 ### ✅ QF-07 — Recherche de dossiers limitée *(résolue le 2026-09-09)*
 

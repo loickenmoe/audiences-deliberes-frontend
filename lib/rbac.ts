@@ -134,9 +134,9 @@ export const CAPACITES = {
   consulterJurisprudence: ["ROLE_CONSULTATION"],
 
   // ── Pilotage et administration ────────────────────────────────────────────
-  /** `GET /tableau-de-bord` — DJ **seul** (cf. QF-04, arbitrage en attente) */
-  consulterTableauDeBord: ["ROLE_DJ"],
-  /** `GET /rapports` — JURISTE **seul** (cf. QF-04, arbitrage en attente) */
+  /** `GET /tableau-de-bord` — DJ et **DJA** (backend Q-95 ; US 8.5 ne nommait que le DJ) */
+  consulterTableauDeBord: ["ROLE_DJ", "ROLE_DJA"],
+  /** `GET /rapports` — JURISTE ; le DJ l'atteint par son `ROLE_JURISTE` composite (Q-81, QF-04) */
   genererRapport: ["ROLE_JURISTE"],
   /** `GET /configurations` — CONSULTATION */
   consulterConfigurations: ["ROLE_CONSULTATION"],
