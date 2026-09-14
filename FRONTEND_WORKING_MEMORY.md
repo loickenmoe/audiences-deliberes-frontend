@@ -48,6 +48,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
 | Décompte | **37 écrans sur 42** · **69 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
+| Suite de bout en bout | **89 parcours sur 89** en 5 min 42 (2026-09-14). Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)
@@ -278,7 +279,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-08** | Aucune file « sensibilité à valider » ni « dérogations en attente » pour DJ/DJA | F7 |
 | QF-02 | Pas d'endpoint « moi » → contournement par rapprochement d'email | F2 |
 | QF-06 | CORS MinIO / affichage inline des documents | F10 |
-| **QF-41** | `GET /clients/{id}/dossiers` n'est pas paginé : 310 dossiers = 267 Ko et 11 à 19 s par appel, jusqu'à 70 s sous charge. L'écran 13 traîne, et l'appel fait échouer des requêtes parallèles sans rapport. **Mesuré, non corrigé, à arbitrer.** | — |
+| ~~QF-41~~ | ✅ **Corrigée** (2026-09-14, backend Q-94) : la vue consolidée d'un client faisait trois requêtes **par dossier** — 11 à 19 s pour 310 dossiers. Trois requêtes pour la liste entière ; mesuré à **0,12 s** sur 355 dossiers, contrat inchangé. | — |
 | ~~QF-11~~ | ✅ **Tranchée** (2026-09-12) : **temps réel STOMP sur SockJS, avec repli HTTP garanti** — 30 s canal coupé, 5 min canal ouvert. Le push est un accélérateur, jamais la source de vérité. | F14 |
 
 Détail complet et recommandations : `DECISIONS_AND_OPEN_QUESTIONS.md`.
