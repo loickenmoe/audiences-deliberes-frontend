@@ -1,7 +1,8 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
+> Dernière mise à jour : 2026-09-12 (jalon F14 — écrans 03 et 41 livrés ; **37 écrans sur 42**).
+> Précédente : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
 > Précédente : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
 > Précédente : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
 > Précédente : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
@@ -20,7 +21,7 @@
 |---|---|---|---|---|---|---|
 | 01 | Connexion | `/login` | — | flux OIDC Keycloak (Authorization Code) | F2 | ✅ |
 | 02 | Accueil contextualisé | `/` | tous | selon profil : `/tableau-de-bord` (DJ), files de travail (AST/DJA/SH), `/alertes/mes-notifications` | F2 puis enrichi | 🟡 socle posé (identité, rôles, droits) — cartes métier à venir |
-| 03 | Mes notifications | `/notifications` | authentifié | `GET /alertes/mes-notifications`, `PATCH /alertes/{id}/traiter`, canal `/ws` | F14 | ❌ |
+| 03 | Mes notifications | `/notifications` | authentifié | `GET /alertes/mes-notifications`, `PATCH /alertes/{id}/traiter`, canal `/ws` | F14 | ✅ |
 | 04 | Non autorisé | `/unauthorized` | tous | — | F2 | ✅ |
 | — | Introuvable | `not-found` | tous | — | F1 | ✅ |
 
@@ -207,7 +208,7 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}`, `PUT /alertes/seuils` | F14 | ❌ |
+| 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
 | 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,

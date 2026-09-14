@@ -37,7 +37,7 @@ export interface EntreeNavigation {
 
 export const NAVIGATION: EntreeNavigation[] = [
   { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
-  { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: false },
+  { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: true },
   { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: true },
   { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: true },
   { cle: "calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: true },
@@ -51,5 +51,5 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "demandesSuppression", href: "/ged/demandes-suppression", icone: Trash2, capacite: "arbitrerSuppressions", livre: true },
   { cle: "rapportJournalier", href: "/ged/rapport-journalier", icone: ClipboardList, capacite: "consulterRapportJournalier", livre: true },
   { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "consulterReferentiels", livre: true },
-  { cle: "configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: false },
+  { cle: "configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: true },
 ];

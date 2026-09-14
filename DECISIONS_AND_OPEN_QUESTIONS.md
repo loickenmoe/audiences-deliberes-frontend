@@ -54,6 +54,9 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | **Aucune redirection depuis la couche HTTP.** Le projet de référence renvoyait vers `/login` depuis l'intercepteur axios : cela rend les erreurs intestables et court-circuite la gestion d'état des écrans. Les redirections appartiennent aux gardes de route (`lib/serverAuth.ts`). | F2 |
 | 2026-09-08 | — | **Navigation rattachée à des capacités, pas à des listes de rôles.** `lib/navigation.ts` référence une capacité de `lib/rbac.ts` ; la correspondance rôle → capacité reste au seul endroit dérivé des `@PreAuthorize`. | F2 |
 | 2026-09-08 | — | **Amorçage de session appelant `GET /alertes/mes-notifications`** : auto-provisionne l'utilisateur (QF-16) et alimente le badge de notifications. Un appel, deux usages. | F2 |
+| 2026-09-12 | **QF-11** | **Notifications en temps réel (STOMP sur SockJS), avec repli HTTP garanti.** Le canal est ouvert une fois pour toute la session, dans la coquille authentifiée : une alerte atteint le badge quelle que soit la page. Il reste un **accélérateur** — le backend enregistre l'alerte avant de tenter de la pousser, et la liste se rafraîchit toutes les 30 s canal coupé, toutes les 5 min canal ouvert. L'écran 03 affiche lequel des deux régimes s'applique. | F14 |
+| 2026-09-12 | **Q-92 / Q-93** (backend) | **Trois listes paginaient sans ordre défini** — notifications, clients, dossiers. Trouvé en construisant l'écran 03, puis démontré en usage : passé vingt clients, celui qu'un juriste venait de créer basculait en page 2, **invisible pour son auteur**. Tri du plus récent au plus ancien, départagé par `id`. Les trois autres listes paginées (frais, publications, jurisprudences) l'étaient déjà. | F14 |
+| 2026-09-12 | **Q-91** (backend) | **Les paramètres système sont validés par clé** et publient leur règle de saisie. Évolution backend décidée en ouverture de F14 : sans elle, une saisie erronée du DJ (« 50 000 000 ») ressortait en **erreur 500** dans les frais, les délibérés ou la GED — loin de l'écran fautif. L'écran 41 construit son champ à partir du contrat au lieu d'en redéclarer une copie. | F14 |
 | 2026-09-08 | — | **Flux de branches en deux phases.** (1) Tant que le socle F1→F4 n'est pas prêt : travail **direct sur `main`**, aucune branche. (2) Ensuite **un écran = une branche** ; une fois l'écran testé et approuvé, **l'utilisateur pousse la branche puis la merge dans `dev`**, qui rassemble les écrans fonctionnels. Je crée et j'alimente la branche locale ; **je ne pousse ni ne merge jamais.** | tous |
 
 ---
@@ -658,15 +661,46 @@ colonne `langue` sur la table `utilisateur` et un endpoint pour la lire et l'éc
 lorsqu'une évolution backend sera de toute façon nécessaire (QF-03 ou QF-16) : un seul point de
 lecture serait à changer.
 
+### 🟡 QF-41 — `GET /clients/{id}/dossiers` n'est pas paginé et s'effondre en volume
+
+**Mesuré le 2026-09-12**, en marge de F14, contre la base de développement. Le client de socle des
+parcours porte **310 dossiers** ; la vue consolidée les renvoie **tous**, chacun avec ses étapes
+imbriquées — 267 Ko, **11 à 19 secondes** par appel, jusqu'à **70 s** sous charge. L'écran 13 reste
+donc en chargement bien au-delà du raisonnable, et l'appel monopolise assez longtemps une connexion
+de la réserve pour faire échouer, en parallèle, des requêtes sans rapport (le calendrier, notamment).
+
+Ce n'est pas un défaut du frontend et ce n'est pas apparu avec F14 : c'est le volume de la base de
+développement qui a fini par franchir le seuil. Les parcours qui traversent cet écran passent en
+exécution seule et échouent par intermittence avec quatre travailleurs en parallèle — l'appel occupe
+assez longtemps une connexion pour faire expirer ses voisines. **À ne pas confondre avec Q-93** :
+les échecs reproductibles des parcours clients venaient de l'absence de tri, corrigée ; celui-ci
+reste une question de volume, non corrigée.
+
+**Options** : (a) paginer la vue consolidée côté backend, par catégorie ; (b) alléger la réponse —
+l'écran 13 n'affiche ni les étapes ni les parties ; (c) ne rien changer et l'assumer comme une limite
+connue de NF-PERF-01. **Recommandation** : (b) puis (a) — le gros de la charge est la sérialisation
+d'étapes que personne ne lit sur cet écran. **À arbitrer ; aucune modification faite.**
+
 ### ✅ QF-10 — Thème sombre — tranché en F3
 
 Abandonné. `next-themes` désinstallé, `color-scheme: light` déclaré. Les jetons restent structurés
 pour qu'un thème sombre soit ajoutable sans refonte si le besoin apparaît.
 
-### 🟡 QF-11 — Temps réel ou rafraîchissement périodique
+### ✅ QF-11 — Temps réel ou rafraîchissement périodique — tranché en F14
 
-Le push d'alertes est en STOMP sur SockJS et exige `@stomp/stompjs` + `sockjs-client`. Le backend
-garantit un repli par `GET /alertes/mes-notifications`. **À trancher en F14.**
+**Décision utilisateur (2026-09-12) : temps réel, avec repli HTTP garanti.** `@stomp/stompjs` et
+`sockjs-client` sont installés ; l'endpoint `/ws` n'étant exposé qu'en SockJS
+(`registry.addEndpoint("/ws").withSockJS()`), une WebSocket native ne négocierait rien.
+
+L'authentification se fait sur la trame STOMP `CONNECT` — les transports de repli de SockJS ne
+permettent pas d'en-tête `Authorization` sur la poignée de main HTTP. Le jeton est relu à **chaque**
+connexion (`beforeConnect`), pour qu'une reconnexion après rotation reparte avec le jeton courant.
+
+Le canal reste un **accélérateur, jamais la source de vérité** : le backend enregistre l'alerte
+avant de tenter de la pousser. La liste se rafraîchit donc de toute façon — toutes les 30 s quand le
+canal est coupé, toutes les 5 min quand il est ouvert — et l'écran 03 affiche lequel des deux régimes
+s'applique. Vérifié de bout en bout : canal ouvert, une alerte déclenchée par l'API apparaît sans
+rechargement ; canal coupé au niveau réseau, la même alerte arrive par le repli.
 
 ### ✅ QF-12 — Dépendance au contrat d'API
 

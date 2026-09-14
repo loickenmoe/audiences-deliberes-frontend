@@ -28,6 +28,8 @@ export const CLES = {
   repertoire: "repertoire",
   decisionsDossier: "decisions-dossier",
   jurisprudences: "jurisprudences",
+  notifications: "notifications",
+  configurations: "configurations",
   intervenants: "intervenants",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",

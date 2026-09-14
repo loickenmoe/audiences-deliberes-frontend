@@ -1020,5 +1020,58 @@
     "colonneRisque": "Exposure",
     "exporterPdf": "Export as PDF",
     "exporterExcel": "Export as Excel"
+  },
+  "notifications": {
+    "titre": "My notifications",
+    "description": "Alerts addressed to you. They remain available even if the live connection drops.",
+    "badge": "Notifications",
+    "badgeCompteur": "{nombre, plural, =0 {no unread notification} one {# unread notification} other {# unread notifications}}",
+    "nouvelle": "New notification",
+    "tempsReelActif": "Live updates on",
+    "tempsReelInterrompu": "Live updates interrupted — refreshing every 30 seconds",
+    "vue": "Filter notifications",
+    "vues": {
+      "aTraiter": "Unread",
+      "traitees": "Handled",
+      "toutes": "All"
+    },
+    "colonneType": "Type",
+    "colonneObjet": "Subject",
+    "colonneDossier": "Case file",
+    "colonneDate": "Received",
+    "colonneStatut": "Status",
+    "colonneAction": "Action",
+    "marquerTraitee": "Mark as handled",
+    "traiteeLe": "Handled on {date}",
+    "traiteeSucces": "Notification marked as handled.",
+    "horsDossier": "No case file",
+    "vide": "No unread notification",
+    "videTraitees": "No handled notification",
+    "videToutes": "No notification",
+    "videTexte": "Alerts raised by your case files will appear here, without reloading."
+  },
+  "configurations": {
+    "titre": "System settings",
+    "description": "The seven settings driving the thresholds, deadlines and checks of the application. A change takes effect immediately.",
+    "lectureSeule": "Read only — only the Legal Director may change these settings.",
+    "valeur": "Value",
+    "valeurActuelle": "Current value",
+    "modifiee": "Changed on {date}",
+    "jamaisModifiee": "Initial value",
+    "enregistrer": "Save",
+    "annuler": "Cancel",
+    "succes": "Setting {cle} saved.",
+    "bornes": "Whole number between {min} and {max}",
+    "valeursAcceptees": "Accepted values",
+    "octets": "that is {taille}",
+    "refus": {
+      "obligatoire": "A value is required.",
+      "entier": "A whole number is expected, with no space or separator.",
+      "bornes": "The value must be between {min} and {max}.",
+      "inconnue": "This value is not one of the accepted values.",
+      "vide": "The list contains an empty item."
+    },
+    "vide": "No setting",
+    "videTexte": "System settings are created when the application is installed."
   }
 }

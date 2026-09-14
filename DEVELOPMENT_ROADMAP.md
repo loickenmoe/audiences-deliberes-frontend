@@ -589,7 +589,7 @@ lettre consultable dans la GED ; répertoire trié par charge croissante.
 
 ---
 
-## F13 — Décisions définitives et jurisprudence 🔵 *(livré, en attente de validation manuelle)*
+## F13 — Décisions définitives et jurisprudence ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **14**, **38**. Endpoints **#51-55**, plus `GET /dossiers/{id}/decisions` (Q-88).
 **Livré le 2026-09-11** sur `feat/f13-decisions`, branchée sur `origin/dev` (F12 fusionné).
@@ -627,15 +627,42 @@ téléchargement du PDF.
 
 ---
 
-## F14 — Alertes, notifications, configurations ⏳
+## F14 — Alertes, notifications, configurations 🔵 *(livré, en attente de validation manuelle)*
 
 Écrans **03**, **41**. Endpoints **#44-48**, canal `/ws`.
 Badge de notifications, marquage traité, configurations CONF01-07, seuil `CHARGE_MAX_AVOCAT`.
 
-**Vérifications** : une alerte déclenchée côté backend apparaît sans rechargement ; le repli HTTP
-fonctionne canal coupé ; un non-destinataire ne peut pas traiter une alerte (403) ; un seuil modifié
-par le DJ est pris en compte immédiatement.
-**Dépend de** : F2. **Décision attendue** : QF-11.
+**Vérifications exécutées le 2026-09-12** : `typecheck` ✅ · `lint` ✅ · **252 tests unitaires** ✅ ·
+`build` ✅ (24 routes) · **`npm run smoke`** ✅ · **parcours Playwright contre le backend réel** — les
+6 nouveaux au vert · backend **347 tests** ✅.
+
+> **Deux défauts antérieurs mis au jour par la suite de bout en bout, tous deux sans rapport avec
+> le périmètre annoncé :**
+> - **Corrigé (Q-93)** : `GET /clients` et `GET /dossiers` paginaient sans ordre défini. Passé vingt
+>   clients — seuil franchi ce jour-là — celui qu'un juriste venait de créer basculait en page 2,
+>   invisible pour son auteur. Deux parcours le démontraient, en parallèle **et** en exécution seule.
+> - **Signalé, non corrigé (QF-41)** : `GET /clients/{id}/dossiers` n'est pas paginé — 310 dossiers
+>   sur le client de socle, 267 Ko, 11 à 19 s par appel, jusqu'à 70 s sous charge. L'écran 13 traîne,
+>   et l'appel occupe assez longtemps une connexion pour faire expirer des requêtes voisines. Arbitrage
+>   attendu.
+**Dépend de** : F2. **Décision rendue** : **QF-11 ✅ — temps réel avec repli HTTP garanti**.
+
+> **Évolution backend décidée en début de jalon (Q-91)** — `PUT /configurations/{cle}` acceptait
+> n'importe quelle chaîne non vide, alors que cinq services reconvertissent ces valeurs : une faute
+> de frappe du DJ (« 50 000 000 ») se transformait en erreur 500 dans les frais, les délibérés ou la
+> GED, loin de l'écran fautif. Chaque clé publie désormais sa règle — type, bornes, valeurs
+> acceptées — refusée en 400 à la source et **exposée dans la réponse**, si bien que l'écran 41
+> construit son champ de saisie à partir du contrat plutôt que d'en redéclarer une copie.
+>
+> **Points à retenir :**
+> - Le canal `/ws` n'est exposé qu'en **SockJS** : une WebSocket native ne négocierait rien, d'où
+>   `sockjs-client` en plus de `@stomp/stompjs`.
+> - Le jeton est relu **à chaque connexion** (`beforeConnect`) : capturé une fois au montage, il
+>   aurait expiré à la première reconnexion après rotation.
+> - Le canal est ouvert **une seule fois**, dans la coquille authentifiée, pas dans l'écran 03 :
+>   une alerte doit atteindre le badge quelle que soit la page affichée.
+> - `#44` (`PUT /alertes/seuils`) est la voie désignée par le contrat pour `CHARGE_MAX_AVOCAT` :
+>   l'écran 41 l'emprunte pour cette clé et passe par `#48` pour les six autres.
 
 ---
 
@@ -684,8 +711,8 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | 🔧 | ⏳ |
 
-**13 jalons validés sur 18 (F0 à F12) · F13 livré en attente de validation · 35 écrans sur 42 ·
-64 endpoints consommés sur 74** (plus #45 en partie ; 74 depuis les ajouts de M16) —
-mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.
+**14 jalons validés sur 18 (F0 à F13) · F14 livré en attente de validation · 37 écrans sur 42 ·
+69 endpoints consommés sur 74**, plus le canal `/ws` (74 depuis les ajouts de M16) —
+mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-12.
