@@ -55,6 +55,8 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-08 | — | **Navigation rattachée à des capacités, pas à des listes de rôles.** `lib/navigation.ts` référence une capacité de `lib/rbac.ts` ; la correspondance rôle → capacité reste au seul endroit dérivé des `@PreAuthorize`. | F2 |
 | 2026-09-08 | — | **Amorçage de session appelant `GET /alertes/mes-notifications`** : auto-provisionne l'utilisateur (QF-16) et alimente le badge de notifications. Un appel, deux usages. | F2 |
 | 2026-09-12 | **QF-11** | **Notifications en temps réel (STOMP sur SockJS), avec repli HTTP garanti.** Le canal est ouvert une fois pour toute la session, dans la coquille authentifiée : une alerte atteint le badge quelle que soit la page. Il reste un **accélérateur** — le backend enregistre l'alerte avant de tenter de la pousser, et la liste se rafraîchit toutes les 30 s canal coupé, toutes les 5 min canal ouvert. L'écran 03 affiche lequel des deux régimes s'applique. | F14 |
+| 2026-09-14 | **QF-26 / Q-97** | **Les pièces justificatives sont de vrais fichiers.** Correction du porteur du projet : j'avais conclu à tort à une conformité assumée. Les sources sont sans ambiguïté — UC-INT-01 « l'avocat **charge** les pièces », UC-INT-02 l'instructeur les **affiche**, et le dictionnaire parle de « chemins ou références ». Téléversement en deux temps, URL pré-signées sur le détail. | F16 |
+| 2026-09-14 | **QF-01 / Q-96** | **Le portail Avocat est livré**, avec quatre lectures cadrées sur le prestataire connecté. Les deux premières — ses dossiers, les audiences d'un de ses dossiers — répondent à une exigence écrite : US 4.1 fait soumettre un `dossierId`, US 5.1 demande de déposer « en choisissant le dossier et l'audience ». Les deux autres — ses publications, ses constitutions — sont du **périmètre ajouté**, **à confirmer avec la Direction Juridique**. Un dossier ne lui montre que son identification : ni client, ni risque, ni sensibilité. | F16 |
 | 2026-09-14 | **QF-04 / Q-95** | **Le tableau de bord s'ouvre à la DJA** et QF-04 est close. Sa prémisse était caduque : depuis Q-81 (F12) le DJ porte `ROLE_JURISTE` et atteint les rapports, ce qui rend le parcours P9 jouable. Restait la DJA, privée du tableau de bord — `hasAnyRole('DJ','DJA')` désormais. US 8.5 ne nommait que le DJ, les spécifications fonctionnelles parlent du tableau consolidé « à travers le DJ/DJA » (STK-06). | F15 |
 | 2026-09-14 | **Q-94** (backend) | **La vue consolidée d'un client interrogeait la base dossier par dossier** — 930 requêtes et 11 à 19 s pour 310 dossiers (QF-41). Trois requêtes pour la liste entière, contrat inchangé : **0,12 s** mesuré sur 355 dossiers. Ma première recommandation — alléger la réponse — était fausse : le contrat inclut `etapes` et l'écran 13 s'en sert. | F14 |
 | 2026-09-14 | **Q-91 bis** (backend) | **Les plafonds des compteurs sont ramenés à ce que les sources permettent.** Le tableau CONF01-07 (US §11.2) fixe des valeurs par défaut, jamais des maxima, et la story 7.1 n'exige qu'un « entier positif ». Mes plafonds de 1 000 et 365 n'avaient pas d'assise ; restent les deux bornes justifiées — 10 Mo pour la GED (CONF06) et douze chiffres pour le seuil de montant. | F14 |
@@ -108,41 +110,18 @@ foulée de la création. (C) Reporter tout le volet décisions.
 **Recommandation : A.** L'ajout est mécaniquement identique à trois endpoints déjà livrés en M15 et
 sans règle métier nouvelle.
 
-### 🔴 QF-20 — L'avocat ne peut pas déposer son compte rendu sous forme de document
+### ✅ QF-20 — L'avocat ne peut pas déposer son compte rendu en fichier — close en F16, sans modification
 
-**Besoin exprimé par l'utilisateur le 2026-09-09** : l'avocat externe doit pouvoir envoyer un compte
-rendu d'audience **en pièce jointe**, pas seulement en texte saisi.
+**Constat initial.** `POST /publications/cr-audience` n'accepte qu'un `contenu` textuel, là où un
+avocat aurait pu vouloir joindre un document.
 
-**Constat, vérifié dans le code du backend.** Deux endpoints existent, aucun ne le permet :
+**Ce que disent les sources, relues en F16.** La story 5.1 décrit exactement ce contrat :
+« je soumets `dossierId`, `audienceId`, `contenu` (non vide) ». Et la story 5.3 prévoit l'autre
+voie — « déposer une autre publication (**pièce, décision, conclusion**) » par
+`POST /publications/autres`, en fichier. **Le backend est conforme : il n'y a pas de lacune.**
 
-| Endpoint | Charge utile | Rattaché à une audience |
-|---|---|---|
-| `POST /publications/cr-audience` | **JSON** — `contenu` est `@NotBlank String` | ✅ `audienceId` `@NotNull` |
-| `POST /publications/autres` | **multipart** — `file` | ❌ aucun `audienceId` |
-
-`TypeAutrePublication` n'admet que `PIECE`, `DECISION`, `CONCLUSION` : aucune valeur ne désigne un
-compte rendu.
-
-**Conséquence.** L'avocat doit choisir entre rattacher son compte rendu à l'audience (texte
-uniquement) ou déposer un fichier (sans lien avec l'audience, et mal étiqueté).
-
-**Contournement écarté.** Déposer le fichier en `PIECE` ferait perdre le lien à l'audience :
-l'Assistante qui valide (US 5.2) ne saurait pas de quelle audience il s'agit, et l'onglet
-« Publications » d'une fiche dossier ne pourrait pas le rattacher à la bonne ligne.
-
-**Recommandation.** Rendre `contenu` **optionnel** sur `POST /publications/cr-audience` et lui
-accepter un fichier en multipart. L'avocat enverrait alors un texte, un document, ou les deux — et le
-lien à l'audience est préservé dans tous les cas. Alternative moins bonne : ajouter `COMPTE_RENDU` à
-`TypeAutrePublication` **et** un `audienceId` optionnel à `POST /publications/autres`, ce qui
-dupliquerait la notion de compte rendu sur deux endpoints.
-
-**✅ Direction retenue par l'utilisateur le 2026-09-09** : la recommandation ci-dessus est validée
-dans son principe — `contenu` devient optionnel sur `POST /publications/cr-audience`, qui accepte un
-fichier. **Reste à réaliser le moment venu**, dans le dépôt backend.
-
-**Échéance** : à réaliser avant **F12** (l'écran de validation de l'Assistante doit savoir afficher
-un compte rendu documentaire) et impérativement avant **F16** (portail avocat). À rappeler à
-l'ouverture de F12.
+**Traité côté interface** : l'écran 33 expose les deux voies côte à côte, en nommant ce que chacune
+attend, plutôt que de laisser l'avocat chercher où déposer son document.
 
 ### ✅ QF-28 — Les dates seules s'affichaient la veille à l'ouest de Greenwich *(corrigée en F8)*
 
@@ -306,19 +285,29 @@ Le parcours e2e F11 contourne en créant, par l'API, un avocat rattaché au `sub
 **Recommandation (backend).** Reconnaître l'avocat par l'identifiant de connexion
 (`preferred_username`), que le DJ connaît, ou lui proposer la liste des comptes Keycloak.
 
-### 🟡 QF-26 — Les pièces justificatives des frais ne sont pas des fichiers
+### ✅ QF-26 — Les pièces justificatives des frais ne sont pas des fichiers — corrigée en F16 (backend Q-97)
 
-**Constat, vérifié dans le code le 2026-09-10.** `POST /frais/demandes` (#23) exige
-`piecesJustificatives: List<String>` non vide — une **liste de noms**, stockée en `TEXT[]`. Aucun
-fichier n'est reçu : l'avocat « déclare » ses pièces sans pouvoir les joindre, et l'Assistante qui
-contrôle la conformité ne peut rien ouvrir.
+**Constat initial.** `POST /frais/demandes` attend `piecesJustificatives: List<String>` et rien
+n'était téléversé. J'avais d'abord conclu à une conformité assumée, au motif que la story 4.1
+n'exige que « ≥ 1 » entrée — **c'était une lecture trop étroite**, corrigée par le porteur du projet
+le 2026-09-14 : ce sont bien des fichiers, PDF ou images.
 
-**Recommandation.** À trancher à l'ouverture de F11 : soit les pièces passent par la GED (dépôt
-préalable, la demande référence des identifiants de documents), soit la demande accepte des
-fichiers en multipart. **Statut : ouvert, impacte F16.**
+**Ce que disent les sources, relues à cette occasion :**
 
-**Décision du porteur du projet à l'ouverture de F11 (2026-09-11)** : en F11, l'écran 29 affiche
-les noms déclarés, sans plus ; le choix GED ou multipart se fera avec le dépôt avocat, en F16.
+| Source | Ce qu'elle dit |
+|---|---|
+| UC-INT-01, étape 4 | « L'avocat **charge** les pièces justificatives. » |
+| UC-INT-02, étape 3 | « Le système affiche la demande, **ses pièces justificatives** et le résultat du contrôle de conformité. » |
+| Dictionnaire des données | `pieces_justificatives TEXT[]` — « **Chemins ou références** des pièces (tableau). » |
+
+Le tableau de chaînes n'a jamais été prévu pour des libellés : il doit porter des **chemins** vers
+des fichiers stockés. Contrôler la conformité d'une liste de noms n'aurait d'ailleurs aucun sens.
+
+**Corrigé** (backend **Q-97**) en deux temps : `POST /avocat/pieces-justificatives` range le fichier
+et renvoie sa clé ; l'avocat reporte ces clés dans `piecesJustificatives`. Le contrat de #23 reste
+celui du document d'API (JSON, tableau de chaînes), et un envoi qui échoue ne fait pas reperdre les
+pièces déjà transmises. Le **détail** d'une demande expose des URL pré-signées, pour que l'Assistante
+et le DJA ouvrent réellement les pièces (UC-INT-02).
 
 ### 🟡 QF-27 — Aucun endpoint ne donne l'identifiant de l'utilisateur connecté
 

@@ -73,11 +73,18 @@ export async function ouvrirCanalAlertes(options: OptionsCanalAlertes): Promise<
       client.connectHeaders = jeton ? { Authorization: `Bearer ${jeton}` } : {};
     },
     onConnect: () => {
-      signalerEtat(true);
+      /*
+       * S'abonner **avant** d'annoncer le canal ouvert. Un courtier STOMP ne conserve rien pour une
+       * destination sans abonné : une alerte poussée entre la connexion et l'abonnement serait
+       * définitivement perdue, alors que l'écran afficherait déjà « temps réel actif » — et que le
+       * repli, justement désactivé dans cet état, ne la rattraperait qu'au bout de plusieurs minutes.
+       * L'ordre inverse faisait échouer un parcours de bout en bout de façon intermittente.
+       */
       client.subscribe(DESTINATION_ALERTES, (message) => {
         const alerte = lireAlerte(message.body);
         if (alerte) options.surAlerte(alerte);
       });
+      signalerEtat(true);
     },
     onDisconnect: () => signalerEtat(false),
     onWebSocketClose: () => signalerEtat(false),

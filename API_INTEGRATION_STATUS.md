@@ -4,8 +4,10 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-14 (jalon F15 — **71 endpoints consommés sur 74**, plus le canal
-> `/ws` ; rapports et tableau de bord, QF-04 close, tableau de bord ouvert à la DJA par Q-95).
+> Dernière mise à jour : 2026-09-14 (jalon F16 — **74 endpoints consommés sur 74**, plus les cinq
+> endpoints du portail Avocat (Q-96, Q-97) et le canal `/ws` ; QF-01, QF-20 et QF-26 closes).
+> Précédente : 2026-09-14 (jalon F15 — 71 sur 74, plus le canal `/ws` ; rapports et tableau de bord,
+> QF-04 close, tableau de bord ouvert à la DJA par Q-95).
 > Précédente : 2026-09-12 (jalon F14 — 69 sur 74, plus le canal `/ws` ; alertes, notifications et
 > paramètres système, QF-11 tranché, validation par clé Q-91).
 > Précédente : 2026-09-11 (jalon F13 — 64 sur 74, plus #45 en partie ; décisions et jurisprudence, Q-88/Q-89).
@@ -160,7 +162,7 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 23 | POST | `/frais/demandes` | AVOCAT | 30 | **F16** | ❌ |
+| 23 | POST | `/frais/demandes` | AVOCAT | 30 | **F16** | ✅ |
 | 24 | PUT | `/frais/demandes/{id}/conformite` | ASSISTANTE | 29 | F11 | ✅ |
 | 25 | PUT | `/frais/demandes/{id}/opportunite` | DJA | 29 | F11 | ✅ |
 | 26 | POST | `/frais/demandes/{id}/validation-conjointe` | DJ **et** DJA | 29 | F11 | ✅ |
@@ -188,9 +190,9 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 29 | POST | `/publications/cr-audience` | AVOCAT | 33 | **F16** | ❌ |
+| 29 | POST | `/publications/cr-audience` | AVOCAT | 33 | **F16** | ✅ |
 | 30 | PUT | `/publications/{id}/validation` | ASSISTANTE | 32 | F12 | ✅ |
-| 31 | POST | `/publications/autres` *(multipart)* | AVOCAT | 33 | **F16** | ❌ |
+| 31 | POST | `/publications/autres` *(multipart)* | AVOCAT | 33 | **F16** | ✅ |
 | 32 | GET | `/publications/{id}` | CONS | 32 | F12 | ✅ (fichier, commentaires, correspondance — Q-86) |
 | 33 | POST | `/publications/{id}/commentaires` | JURISTE | 32 | F12 | ✅ |
 | 34 | POST | `/publications/{id}/correspondance` | DJ, DJA | 32 | F12 | ✅ |
@@ -347,10 +349,24 @@ nuls tant que la décision n'est pas rendue.
 | 45 | `GET /alertes/mes-notifications` | Ses notifications |
 | 46 | `PATCH /alertes/{id}/traiter` | Traiter une notification |
 
-⚠ **QF-01** — Il ne peut découvrir **ni `dossierId` ni `audienceId`**, pourtant obligatoires dans
-les corps de #23 et #29. Il ne peut pas relire ses propres publications (#32 exige `CONSULTATION`)
-ni consulter ses lettres de constitution. **Décision actée : le portail Avocat est reporté au
-jalon F16**, précédé d'un ajout backend limité à quelques lectures cadrées sur l'avocat connecté.
+✅ **QF-01 close en F16.** Quatre lectures lui ont été ajoutées (backend **Q-96**), toutes
+restreintes au prestataire connecté **dans la requête** et non par un filtre appliqué après coup :
+
+| Endpoint | Objet |
+|---|---|
+| `GET /avocat/mes-dossiers` | Ses dossiers — **identification seule** : référence, nature, juridiction |
+| `GET /avocat/mes-dossiers/{id}/audiences` | Les audiences d'un de ses dossiers (403 sur un autre) |
+| `GET /avocat/mes-publications` | Ses dépôts, avec statut et motif de rejet |
+| `GET /avocat/mes-constitutions` | Les lettres de constitution qui le désignent |
+| `POST /avocat/pieces-justificatives` *(multipart)* | **Téléverse une pièce** et renvoie sa clé (Q-97) |
+
+Les deux premières répondent à une exigence écrite — US 4.1 fait soumettre un `dossierId` et US 5.1
+demande de déposer « **en choisissant le dossier et l'audience** ». Les deux dernières sont du
+**périmètre ajouté** sur arbitrage (2026-09-14), **à confirmer avec la Direction Juridique**.
+
+✅ **QF-20 close, sans modification.** Le compte rendu est un `contenu` textuel dans la story 5.1 ;
+un document se dépose par `POST /publications/autres` (story 5.3). Le backend est conforme — l'écran
+33 expose les deux voies côte à côte.
 
 ## 13. Codes d'erreur à traiter
 

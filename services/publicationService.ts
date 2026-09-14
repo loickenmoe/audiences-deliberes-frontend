@@ -1,14 +1,19 @@
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import { gedService } from "@/services/gedService";
-import type { CommentairePublication, CorrespondanceAvocat, Publication } from "@/types/domaine";
-import type { StatutPublication } from "@/types/enums";
+import type {
+  CommentairePublication,
+  CorrespondanceAvocat,
+  DeposerCompteRendu,
+  Publication,
+} from "@/types/domaine";
+import type { StatutPublication, TypeAutrePublication } from "@/types/enums";
 
 /** Validation, ou rejet toujours motivé (RG-INT-10). */
 export type DecisionPublication = { statut: "VALIDE" } | { statut: "REJETE"; motifRejet: string };
 
 /**
- * Publications des avocats, côté interne (#30, #32, #33, #34, #59). Les dépôts (#29, #31) arrivent
- * avec le portail avocat, en F16.
+ * Publications : l'instruction côté interne (#30, #32, #33, #34, #59) et les **dépôts de l'avocat**
+ * (#29, #31), livrés avec le portail en F16.
  */
 export const publicationService = {
   /**
@@ -57,6 +62,39 @@ export const publicationService = {
   /** #34 — DJ/DJA : correspondance **unique** à l'avocat (409 si déjà transmise). */
   transmettreCorrespondance: async (id: number, contenu: string): Promise<CorrespondanceAvocat> => {
     const { data } = await apiClient.post<CorrespondanceAvocat>(`/publications/${id}/correspondance`, { contenu });
+    return data;
+  },
+
+  /**
+   * #29 — **l'avocat dépose son compte rendu** (US 5.1, écran 33) : un texte, rattaché à une
+   * audience de son dossier. Le backend répond 404 si l'audience n'appartient pas au dossier.
+   *
+   * Le compte rendu n'accepte **pas** de fichier — ce n'est pas une lacune (QF-20 close) : la story
+   * 5.1 décrit un `contenu` textuel, et un document se dépose par `deposerAutre`.
+   */
+  deposerCompteRendu: async (depot: DeposerCompteRendu): Promise<Publication> => {
+    const { data } = await apiClient.post<Publication>("/publications/cr-audience", depot);
+    return data;
+  },
+
+  /**
+   * #31 — **l'avocat dépose une pièce, une décision ou une conclusion** (US 5.3, écran 33).
+   * Multipart : les métadonnées en paramètres de requête, le seul fichier en partie — et le type
+   * multipart doit être déclaré, sinon axios convertit le `FormData` en JSON et le fichier ne part
+   * jamais.
+   */
+  deposerAutre: async (
+    dossierId: number,
+    typeDocument: TypeAutrePublication,
+    fichier: File,
+    restrictionAcces?: number,
+  ): Promise<Publication> => {
+    const corps = new FormData();
+    corps.append("file", fichier);
+    const { data } = await apiClient.post<Publication>("/publications/autres", corps, {
+      params: { dossierId, typeDocument, ...(restrictionAcces ? { restrictionAcces } : {}) },
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return data;
   },
 

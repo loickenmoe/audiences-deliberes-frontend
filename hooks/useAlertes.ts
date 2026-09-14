@@ -11,11 +11,14 @@ import type { StatutAlerte } from "@/types/enums";
  * Repli HTTP du canal temps réel (QF-11).
  *
  * Canal ouvert, la liste n'a pas à interroger le backend : chaque alerte poussée invalide déjà
- * cette requête. Le rafraîchissement lent qui subsiste couvre le cas où le canal se croit ouvert
- * alors que plus rien ne passe. Canal fermé, la cadence se resserre — c'est le seul chemin
- * restant, et le backend a de toute façon enregistré l'alerte.
+ * cette requête. Le rafraîchissement qui subsiste couvre le cas où le canal **se croit** ouvert
+ * alors que plus rien ne passe — un transport SockJS peut se figer sans se fermer, et l'écran
+ * afficherait alors « temps réel actif » à tort. Ramené de cinq minutes à une (2026-09-14) : le
+ * jalon garantit qu'aucune notification n'est perdue, et cinq minutes d'aveuglement après une
+ * poussée manquée contredisaient cette promesse. Canal fermé, la cadence se resserre encore — c'est
+ * le seul chemin restant.
  */
-export const CADENCE_CANAL_OUVERT = 5 * 60 * 1000;
+export const CADENCE_CANAL_OUVERT = 60 * 1000;
 export const CADENCE_REPLI = 30 * 1000;
 
 export function cadenceRafraichissement(connecte: boolean): number {

@@ -750,3 +750,35 @@ export interface Rapport {
   tauxSuccesRecouvrement: number;
   provisionsReprises: number;
 }
+
+// ─────────────────────────────── Portail Avocat ───────────────────────────────
+
+/**
+ * Dépôt d'une demande de frais par l'avocat (#23, écran 30, US 4.1).
+ *
+ * `piecesJustificatives` porte les **chemins de stockage** renvoyés par
+ * `portailAvocatService.deposerPieceJustificative` (QF-26 corrigée par le backend Q-97) — c'est ce
+ * que le dictionnaire des données prévoit : « chemins ou références des pièces ». Les fichiers sont
+ * donc bien téléversés, en deux temps.
+ */
+export interface DeposerFrais {
+  dossierId: number;
+  /** > 0 (400 sinon). */
+  montant: number;
+  /** Au moins une pièce (400 sinon) : les clés renvoyées par le téléversement. */
+  piecesJustificatives: string[];
+  /** Unique — un doublon revient en 409 `ERR-006` sur ce champ. */
+  referenceFacture: string;
+}
+
+/**
+ * Dépôt d'un compte rendu d'audience (#29, écran 33, US 5.1). L'audience doit appartenir au
+ * dossier, sans quoi le backend répond 404.
+ */
+export interface DeposerCompteRendu {
+  dossierId: number;
+  audienceId: number;
+  contenu: string;
+  /** Identifiant du seul lecteur autorisé ; omis, la publication suit les droits ordinaires. */
+  restrictionAcces?: number;
+}
