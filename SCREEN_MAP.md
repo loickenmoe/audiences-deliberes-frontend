@@ -1,8 +1,8 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ;
-> **41 écrans sur 42**). Ne reste que l'écran 02, à enrichir.
+> Dernière mise à jour : 2026-09-14 (jalon F17 — accueil contextualisé achevé : **42 écrans sur 42**).
+> Précédente : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ; 41 sur 42).
 > Précédente : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; 39 écrans sur 42).
 > Précédente : 2026-09-12 (jalon F14 — écrans 03 et 41 livrés ; 37 écrans sur 42).
 > Précédente : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
@@ -23,7 +23,7 @@
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 01 | Connexion | `/login` | — | flux OIDC Keycloak (Authorization Code) | F2 | ✅ |
-| 02 | Accueil contextualisé | `/` | tous | selon profil : `/tableau-de-bord` (DJ), files de travail (AST/DJA/SH), `/alertes/mes-notifications` | F2 puis enrichi | 🟡 socle posé (identité, rôles, droits) — cartes métier à venir |
+| 02 | Accueil contextualisé | `/` | tous | files de travail selon le profil : frais, publications, constitutions, suppressions, dossiers, notifications | F2, achevé en **F17** | ✅ |
 | 03 | Mes notifications | `/notifications` | authentifié | `GET /alertes/mes-notifications`, `PATCH /alertes/{id}/traiter`, canal `/ws` | F14 | ✅ |
 | 04 | Non autorisé | `/unauthorized` | tous | — | F2 | ✅ |
 | — | Introuvable | `not-found` | tous | — | F1 | ✅ |

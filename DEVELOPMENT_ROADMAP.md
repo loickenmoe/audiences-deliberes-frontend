@@ -703,7 +703,7 @@ réel, en 5 min 54 (dont les 7 de ce jalon) · backend **351 tests** + parcours 
 
 ---
 
-## F16 — Portail Avocat 🔵 *(livré, en attente de validation manuelle)*
+## F16 — Portail Avocat ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **30**, **33**, plus l'espace de l'avocat. Endpoints **#23**, **#29**, **#31**, les quatre
 lectures du portail (backend **Q-96**) et le téléversement des pièces justificatives (**Q-97**).
@@ -752,13 +752,47 @@ close sans modification · **QF-26 ✅** corrigée par Q-97.
 
 ---
 
-## F17 — Durcissement ⏳
+## F17 — Durcissement 🔵 *(livré, en attente de validation manuelle)*
 
 Accessibilité (audit AA complet), responsive sur les trois points de rupture, performance
-(< 2 s sur les vues courantes, conformément à NF-PERF-01), parcours e2e couvrant P1 à P9,
-documentation utilisateur, revue de sécurité frontend.
+(NF-PERF-01), parcours e2e couvrant P1 à P9, documentation utilisateur, revue de sécurité frontend —
+**plus l'achèvement de l'écran 02**, dernier écran incomplet du projet.
 
-**Dépend de** : tous.
+**Vérifications exécutées le 2026-09-14** : `typecheck` ✅ · `lint` ✅ · **270 tests unitaires** ✅ ·
+`build` ✅ (29 routes) · **`npm run smoke`** ✅ · **131 parcours Playwright sur 131** contre le backend
+réel, en 9 min 12 — dont **28 nouveaux** pour ce jalon (7 accessibilité, 5 responsive, 4 performance,
+5 parcours métier, 7 sécurité).
+**Dépend de** : tous. **Aucune décision en attente, aucune évolution backend.**
+
+> **L'écran 02 affichait la liste des identifiants de capacités en police à chasse fixe** —
+> `consulterDossiers`, `deposerFrais`, `arbitrerSuppressions`… Une vue de mise au point, utile
+> pendant la construction du socle, sans valeur pour un juriste. Il présente désormais les **files de
+> travail** de chaque profil : le compte, le libellé, le lien direct. Une carte par **capacité**,
+> jamais par rôle — le DJ portant `ROLE_JURISTE` depuis Q-81, raisonner par rôle afficherait des
+> files incohérentes.
+>
+> **Trois défauts réels trouvés par ce jalon, aucun supposé :**
+>
+> | Défaut | Mesure | Correction |
+> |---|---|---|
+> | Champ de fichier sans nom accessible (`Televersement`) | violation `label` d'axe, **impact critique** | `aria-label`, libellé propre à chaque usage |
+> | Barre latérale non responsive | **324 px** de débordement sur un mobile de 375 px | bande horizontale défilante en dessous de `lg` |
+> | En-tête trop large sur mobile | 68 px résiduels | identité masquée sous `sm`, titre tronqué, marges réduites |
+>
+> **Et aucun en-tête de sécurité n'était posé.** Cinq sont désormais émis sur toutes les réponses,
+> `X-Powered-By` supprimé. La CSP complète et `Strict-Transport-Security` ne le sont **pas** : la
+> première exige un `nonce` par requête, donc un middleware, et casserait l'hydratation si elle était
+> posée à l'aveugle ; la seconde n'a de sens que sous TLS. Les poser ici donnerait l'illusion d'une
+> protection sans l'apporter — c'est un point de mise en production, avec la DSI.
+>
+> **Points à retenir :**
+> - `tests/unit/contraste.test.ts` mesurait les **jetons** ; axe mesure le **rendu**. Les deux sont
+>   nécessaires : le premier empêche d'éclaircir une couleur, le second voit ce que le premier ignore.
+> - Les parcours P1 à P9 ne rejouent que **cinq** journées métier : P3, P4, P5 et P7 sont déjà tenus
+>   de bout en bout par leur suite de module, et les redoubler n'aurait rien prouvé de neuf. Le
+>   tableau de correspondance est dans l'en-tête de `parcours-metier.spec.ts`.
+> - Une audience ne se planifie que sur une étape **en cours** : c'est exactement l'enchaînement
+>   qu'une suite par module tient pour acquis, et que ces parcours ont mis au jour.
 
 ---
 
@@ -770,9 +804,9 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 |
 
-**16 jalons validés sur 18 (F0 à F15) · F16 livré en attente de validation · 41 écrans sur 42 ·
-74 endpoints consommés sur 74**, plus les quatre lectures du portail Avocat et le canal `/ws` —
-mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-14. **Tout le contrat d'API est
-consommé.** Ne reste que l'écran 02, l'accueil, à enrichir — et le jalon F17.
+**17 jalons validés sur 18 (F0 à F16) · F17 livré en attente de validation · 42 écrans sur 42 ·
+74 endpoints consommés sur 74**, plus les cinq endpoints du portail Avocat et le canal `/ws` —
+mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-14.
+**Tout le contrat d'API est consommé, et tous les écrans sont livrés.**

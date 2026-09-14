@@ -12,7 +12,7 @@ export default async function LayoutProtege({
   const session = await exigerSession();
 
   return (
-    <div className="flex min-h-svh">
+    <div className="flex min-h-svh flex-col lg:flex-row">
       <AppSidebar roles={session.roles} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Navbar

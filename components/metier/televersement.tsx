@@ -22,12 +22,20 @@ import { cn } from "@/lib/utils";
  */
 export function Televersement({
   nom,
+  label,
   formatsAcceptes,
   tailleMax,
   onChangement,
   className,
 }: {
   nom: string;
+  /**
+   * Nom accessible du champ de fichier. Celui-ci est masqué visuellement (`sr-only`) et déclenché
+   * par un bouton : sans nom, un lecteur d'écran l'annonce « champ de fichier » et rien d'autre —
+   * violation `label` d'axe, d'impact critique, relevée à l'audit AA de F17. Un libellé propre à
+   * l'usage vaut mieux que le texte du bouton, quand plusieurs téléversements coexistent.
+   */
+  label?: string;
   /** Extensions admises, sans point. Défaut : les formats de la GED (RG-GED-08). */
   formatsAcceptes?: readonly string[];
   /** Plafond en octets. Défaut : 10 Mo, valeur de `TAILLE_MAX_GED`. */
@@ -94,6 +102,7 @@ export function Televersement({
         type="file"
         accept={formats.map((f) => `.${f}`).join(",")}
         onChange={(evenement) => selectionner(evenement.target.files?.[0] ?? null)}
+        aria-label={label ?? t("choisirFichier")}
         aria-invalid={erreur ? true : undefined}
         aria-describedby={erreur ? `${id}-erreur` : `${id}-contraintes`}
         className="sr-only"
