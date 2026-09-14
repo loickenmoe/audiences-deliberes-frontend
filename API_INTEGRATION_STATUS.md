@@ -4,8 +4,10 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-12 (jalon F14 — **69 endpoints consommés sur 74**, plus le canal
-> `/ws` ; alertes, notifications et paramètres système, QF-11 tranché, validation par clé Q-91).
+> Dernière mise à jour : 2026-09-14 (jalon F15 — **71 endpoints consommés sur 74**, plus le canal
+> `/ws` ; rapports et tableau de bord, QF-04 close, tableau de bord ouvert à la DJA par Q-95).
+> Précédente : 2026-09-12 (jalon F14 — 69 sur 74, plus le canal `/ws` ; alertes, notifications et
+> paramètres système, QF-11 tranché, validation par clé Q-91).
 > Précédente : 2026-09-11 (jalon F13 — 64 sur 74, plus #45 en partie ; décisions et jurisprudence, Q-88/Q-89).
 > Précédente : 2026-09-11 (jalon F12 — 58 sur 73, publications et constitutions s'appuient sur Q-86/Q-87).
 > Précédente : 2026-09-11 (jalon F11 — 49 sur 73, le circuit des frais s'appuie sur Q-82/Q-83).
@@ -266,8 +268,8 @@ nuls tant que la décision n'est pas rendue.
 | 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ✅ |
 | 47 | GET | `/configurations` | CONS | 41 | F14 | ✅ |
 | 48 | PUT | `/configurations/{cle}` | DJ | 41 | F14 | ✅ |
-| 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ❌ |
-| 50 | GET | `/tableau-de-bord` | **DJ** | 39 | F15 | ❌ |
+| 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ✅ |
+| 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la
@@ -289,7 +291,12 @@ nuls tant que la décision n'est pas rendue.
   `format ∈ {JSON, PDF, EXCEL, CSV}` ; les trois derniers reviennent en binaire.
 - **WS** — jeton dans l'en-tête `Authorization` de la trame STOMP `CONNECT`, **pas** dans la requête
   de négociation SockJS. Push best-effort : **#45 est le repli garanti**.
-- ⚠ **QF-04** — #49 est réservé au juriste et #50 au DJ, ce qui contredit le parcours P9 du backend.
+- ✅ **QF-04 close en F15.** #49 reste `hasRole('JURISTE')` et #50 passe à `hasAnyRole('DJ','DJA')`
+  (Q-95). Le DJ et la DJA portant `ROLE_JURISTE` depuis Q-81, ils atteignent les deux : le parcours
+  de pilotage P9 est jouable d'un bout à l'autre. Le juriste, lui, n'a pas le tableau de bord — c'est
+  voulu par US 8.5.
+- **#50** — six indicateurs **temps réel, tous dossiers confondus** : ni période, ni filtre sur le
+  portefeuille de l'appelant. `tauxSuccesRecouvrement` est un **ratio de 0 à 1**.
 
 ## 10. Décisions définitives
 

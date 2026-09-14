@@ -23,6 +23,7 @@ import type {
   TypeAutrePublication,
   TypeAlerte,
   TypeEtape,
+  TypeRapport,
   TypeIntervenant,
   TypePublication,
   TypeValeurConfiguration,
@@ -711,4 +712,41 @@ export interface ConfigurationSysteme {
   valeurMinimale: number | null;
   valeurMaximale: number | null;
   valeursPossibles: string[];
+}
+
+// ─────────────────────────────── Reporting ───────────────────────────────
+
+/**
+ * Tableau de bord exécutif (#50, écran 39). Six indicateurs **temps réel, tous dossiers
+ * confondus** : le backend ne les restreint ni à une période ni au portefeuille de l'appelant.
+ *
+ * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage — `Pourcentage` le met en
+ * forme.
+ */
+export interface TableauDeBord {
+  nbDossiersActifs: number;
+  nbAudiencesPlanifiees: number;
+  nbDemandesFraisEnAttente: number;
+  nbProrogationsAlerte: number;
+  tauxSuccesRecouvrement: number;
+  provisionsReprises: number;
+}
+
+/**
+ * Rapport d'activité sur une période (#49, écran 40). `type` n'est qu'une **étiquette** : ce sont
+ * `dateDebut` et `dateFin` qui bornent le calcul (backend Q-63).
+ *
+ * Le backend répond **204 quand les quatre compteurs sont nuls** : c'est un état vide, pas une
+ * erreur — le service le rend comme `null`.
+ */
+export interface Rapport {
+  type: TypeRapport;
+  dateDebut: string;
+  dateFin: string;
+  nbNouveauxDossiers: number;
+  nbAudiencesTenues: number;
+  nbDemandesFraisDeposees: number;
+  nbDeliberesEnregistres: number;
+  tauxSuccesRecouvrement: number;
+  provisionsReprises: number;
 }

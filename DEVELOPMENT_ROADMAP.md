@@ -627,7 +627,7 @@ téléchargement du PDF.
 
 ---
 
-## F14 — Alertes, notifications, configurations 🔵 *(livré, en attente de validation manuelle)*
+## F14 — Alertes, notifications, configurations ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **03**, **41**. Endpoints **#44-48**, canal `/ws`.
 Badge de notifications, marquage traité, configurations CONF01-07, seuil `CHARGE_MAX_AVOCAT`.
@@ -671,14 +671,35 @@ réel, en 5 min 42 · backend **351 tests** ✅.
 
 ---
 
-## F15 — Rapports et tableau de bord ⏳
+## F15 — Rapports et tableau de bord 🔵 *(livré, en attente de validation manuelle)*
 
 Écrans **39**, **40**. Endpoints **#49-50**.
 
-**Vérifications** : les 6 indicateurs cohérents avec les données des jalons précédents ; **204 sur
-période vide affiché comme état vide** ; les 4 formats d'export téléchargés et ouvrables ; les
-restrictions de rôle respectées.
-**Dépend de** : F6→F13. **Décision attendue** : QF-04.
+**Vérifications exécutées le 2026-09-14** : `typecheck` ✅ · `lint` ✅ · **262 tests unitaires** ✅ ·
+`build` ✅ (26 routes) · **`npm run smoke`** ✅ · **96 parcours Playwright sur 96** contre le backend
+réel, en 5 min 54 (dont les 7 de ce jalon) · backend **351 tests** + parcours P9 étendu ✅.
+**Dépend de** : F6→F13. **Décision rendue** : **QF-04 close**.
+
+> **QF-04 close, et pour une raison qui n'était plus celle du constat initial.** La question disait
+> que le DJ ne pouvait pas générer de rapport, faute de `ROLE_JURISTE`. Ce n'est plus vrai depuis
+> Q-81 (jalon F12) : relevé sur le Keycloak en service, son jeton porte
+> `ROLE_CONSULTATION, ROLE_DJ, ROLE_JURISTE, ROLE_SAISIE`. Le parcours de pilotage P9 est donc
+> jouable d'un bout à l'autre sans rien changer. Restait le revers — la DJA n'avait pas le tableau
+> de bord — tranché par le porteur du projet en **Q-95** : `GET /tableau-de-bord` passe à
+> `hasAnyRole('DJ','DJA')`. US 8.5 ne nommait que le DJ, mais les spécifications fonctionnelles
+> décrivent ce tableau comme obtenu « à travers le DJ/DJA » (partie prenante STK-06).
+>
+> **Points à retenir :**
+> - **Le 204 est un état vide, pas une erreur** (RG-REP-02). Le service le rend en `null` plutôt que
+>   de laisser chaque écran réinterpréter un statut, et l'export le refuse au lieu de produire un
+>   fichier creux.
+> - Le rapport est une **mutation**, pas une requête : une requête se relancerait à chaque
+>   changement de borne, alors que rien ne doit partir avant le clic.
+> - `type` n'est qu'une **étiquette** côté backend (Q-63) ; c'est l'écran qui en déduit des bornes
+>   cohérentes, que l'utilisateur reste libre d'ajuster.
+> - **Les jeux de rôles de `tests/unit/rbac.test.ts` dataient du 2026-09-08** et ignoraient les
+>   composites de Q-81. Relevé refait sur le Keycloak réel : deux attentes décrivaient une réalité
+>   périmée — la DJA accède au calendrier et la direction au répertoire des avocats depuis F12.
 
 ---
 
@@ -716,8 +737,9 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 | 🔧 | ⏳ |
 
-**14 jalons validés sur 18 (F0 à F13) · F14 livré en attente de validation · 37 écrans sur 42 ·
-69 endpoints consommés sur 74**, plus le canal `/ws` (74 depuis les ajouts de M16) —
-mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-12.
+**15 jalons validés sur 18 (F0 à F14) · F15 livré en attente de validation · 39 écrans sur 42 ·
+71 endpoints consommés sur 74**, plus le canal `/ws` — mesurés sur `SCREEN_MAP.md` et
+`API_INTEGRATION_STATUS.md` le 2026-09-14. Ne restent que le portail Avocat (#23, #29, #31 ;
+écrans 30 et 33, jalon F16) et l'enrichissement de l'accueil (écran 02).

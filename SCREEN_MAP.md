@@ -1,7 +1,8 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-12 (jalon F14 — écrans 03 et 41 livrés ; **37 écrans sur 42**).
+> Dernière mise à jour : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; **39 écrans sur 42**).
+> Précédente : 2026-09-12 (jalon F14 — écrans 03 et 41 livrés ; 37 écrans sur 42).
 > Précédente : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
 > Précédente : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
 > Précédente : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
@@ -193,8 +194,8 @@ transition reste manuelle via l'endpoint générique d'étape.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ seul** | `GET /tableau-de-bord` | F15 | ❌ |
-| 40 | Générer un rapport d'activité | `/rapports` | **JUR seul** | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ❌ |
+| 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ et DJA** (Q-95) | `GET /tableau-de-bord` | F15 | ✅ |
+| 40 | Générer un rapport d'activité | `/rapports` | **JUR**, et la direction par son composite (Q-81) | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ✅ |
 
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
