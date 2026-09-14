@@ -1,7 +1,6 @@
-import { LogOut } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import { Button } from "@/components/ui/button";
+import { BoutonDeconnexion } from "@/components/layout/bouton-deconnexion";
 import { profilPrincipal } from "@/lib/rbac";
 
 export async function UserNav({
@@ -36,13 +35,8 @@ export async function UserNav({
         </p>
       </div>
       {/* POST vers un gestionnaire de route : révoque aussi le jeton côté Keycloak.
-          Voir app/api/deconnexion/route.ts pour la raison du choix. */}
-      <form action="/api/deconnexion" method="post">
-        <Button type="submit" variante="secondaire" taille="sm">
-          <LogOut size={14} aria-hidden />
-          {t("deconnexion")}
-        </Button>
-      </form>
+          Voir app/api/deconnexion/route.ts pour la raison du choix, et QF-42 pour le verrou. */}
+      <BoutonDeconnexion libelle={t("deconnexion")} />
     </div>
   );
 }

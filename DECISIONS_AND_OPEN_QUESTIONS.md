@@ -756,7 +756,7 @@ surfaces, pas seulement sur blanc.
 Vide par construction (Q-67 backend, tranché en M15 : « ne pas le consommer côté frontend »).
 Utiliser `GET /dossiers/{id}/documents` (#43). **Contrainte connue, pas une question.**
 
-### 🔴 QF-42 — Une déconnexion immédiate ne ferme pas la session — ouvert
+### ✅ QF-42 — Une déconnexion immédiate ne fermait pas la session — corrigé
 
 **Constaté le 2026-09-14**, en vérifiant Q-98 contre le backend réel : les deux tests de déconnexion
 (`authentification.spec.ts:150` et `securite.spec.ts:100`) échouent. **Mesuré : 4 échecs sur 5** en
@@ -774,11 +774,19 @@ ATTENTE=0    | cookies restants=authjs.session-token.0,.1 | url=/dossiers
 ATTENTE=3000 | cookies restants=aucun                     | url=/login
 ```
 
-`providers/session.provider.tsx` branche le client HTTP sur `getSession()` — **chaque appel API**
-interroge donc `/api/auth/session`, qui réémet le cookie de session à chaque lecture. L'accueil
-lançant une rafale de requêtes (une par file, depuis F17), une réponse de session partie **avant**
-la déconnexion revient **après** elle et **réécrit** le cookie que la déconnexion venait d'effacer.
-Six réponses `/api/auth/session` ont été observées dans la seconde qui suit l'arrivée sur l'accueil.
+**Ce qui réécrit le cookie, lu dans les en-têtes** : *toute* réponse de `/api/auth/session` repose
+`authjs.session-token.0/.1`. C'est le comportement de NextAuth, qui réémet le jeton à chaque lecture
+de session. Une réponse partie **avant** la déconnexion revient **après** elle et réécrit donc le
+cookie qu'elle venait d'effacer — une seule suffit, les suivantes le maintiennent.
+
+**Trois sources de lectures, découvertes l'une après l'autre.** (1) `providers/session.provider.tsx`
+branchait le client HTTP sur `getSession()` : **chaque appel API** interrogeait la session, et
+l'accueil en lance huit. (2) `SessionProvider`, monté sans session initiale, interroge lui-même
+`/api/auth/session` au montage de **chaque page** — y compris `/login`, où quatre lectures ont été
+observées **après** la déconnexion. (3) `getSession()` **fait écho chez NextAuth**, qui relance une
+lecture de son propre chef : une réponse est arrivée **1 ms après** la déconnexion, hors de portée de
+tout aménagement côté navigateur. Aucune de ces trois n'a été trouvée par le raisonnement : chacune
+est apparue dans la trace des en-têtes, après une mesure qui démentait l'étape précédente.
 
 **Pourquoi c'est sérieux.** Sur un poste partagé, le geste qui protège — se déconnecter puis laisser
 la place — ne protège pas quand il est fait vite. C'est précisément le cas d'usage que §1 du guide
@@ -787,14 +795,44 @@ utilisateur promet.
 **Indépendant de Q-98** : le diff de la branche `feat/cr-piece-jointe` ne touche ni
 `lib/auth.ts`, ni `providers/`, ni le middleware, ni l'accueil.
 
-**Options.** (A) Ne plus faire dépendre chaque appel API d'un `getSession()` : mémoriser le jeton
-dans le fournisseur et ne le rafraîchir qu'à l'approche de l'expiration — supprime la rafale, donc
-la course, et allège chaque requête. (B) Poser un marqueur de déconnexion que le garde de route
-regarde en priorité sur le cookie de session — referme la fenêtre sans traiter la cause. (C) Ne rien
-faire et documenter le délai.
+**Corrigé (2026-09-14)**, sur demande du porteur du projet, en tarissant les deux sources :
 
-**Recommandation : A.** C'est la cause, pas le symptôme ; le bénéfice est aussi une requête de moins
-par appel API. **À arbitrer : c'est un chantier propre, hors du périmètre de Q-98.**
+1. **`lib/cache-jeton.ts`** — le jeton d'accès vit en mémoire jusqu'à la fenêtre de rotation, que la
+   session publie désormais (`rafraichirApres`, calculé par `prochainRafraichissement` : la règle
+   RF-02 n'est pas dupliquée côté client). Une rafale de vingt requêtes ne produit **qu'une** lecture
+   de session, partagée. Un verrou, posé au clic de déconnexion, interdit toute lecture ultérieure et
+   jette le résultat d'une lecture revenue après lui.
+2. **Session fournie par le rendu serveur** — `app/layout.tsx` lit la session et la passe à
+   `SessionProvider`, qui n'a donc plus rien à aller chercher au montage ; `refetchOnWindowFocus` est
+   coupé pour la même raison. L'interface ne déclenche plus aucune lecture de session.
+
+3. **La déconnexion attend la lecture en vol.** `BoutonDeconnexion` retient l'envoi du formulaire le
+   temps que la lecture déjà partie soit retombée. Nécessaire, mais **pas suffisant** : `getSession()`
+   fait écho chez NextAuth, qui relance de lui-même une lecture — observée **1 ms après** la
+   déconnexion, donc hors de portée de tout aménagement côté navigateur.
+4. **Un marqueur de déconnexion, lu par le serveur** (`lib/marqueur-deconnexion.ts`,
+   `middleware.ts`). C'est le geste qui ferme réellement la fenêtre, et le seul qui le pouvait : le
+   client ne décide pas de l'ordre d'arrivée des réponses. Tant que le marqueur est là (30 s), toute
+   requête de page portant encore un cookie de session est renvoyée vers `/login`, **cookie effacé**.
+   Une session ressuscitée ne survit donc pas à la requête suivante — et la requête suivante, c'est
+   le chargement de `/login`. La connexion lève le marqueur, sans quoi se reconnecter aussitôt
+   deviendrait impossible.
+
+Le POST vers `/api/deconnexion` est inchangé pour le reste : c'est toujours lui qui révoque le jeton
+chez Keycloak puis efface le cookie.
+
+**Pourquoi un middleware alors que les gardes sont dans les composants serveur.** Il ne les remplace
+pas : `exigerSession`/`exigerCapacite` restent en place, et le backend reste l'arbitre. Le middleware
+traite le seul cas qu'un composant serveur ne **peut pas** traiter — effacer un cookie. C'est aussi
+pourquoi les routes d'API sont hors de son champ : rediriger un `fetch` vers `/login` masquerait
+l'erreur au lieu de la dire.
+
+**Ce que la mesure a corrigé dans mon raisonnement.** Chaque étape a été mesurée sur 10 déconnexions,
+et j'ai eu tort trois fois avant d'avoir raison : **8 échecs sur 10** à l'origine, **6 sur 10** après
+le cache seul, **3 sur 10** après la session fournie par le serveur, **4 sur 10** après l'attente de
+la lecture en vol — soit aucun progrès —, puis **0 sur 20** (deux passages) avec le marqueur. C'est
+l'instrumentation des en-têtes `Set-Cookie`, relancée à chaque étape, qui a désigné la source
+restante à chaque fois ; le raisonnement seul a désigné trois fois la mauvaise.
 
 ---
 

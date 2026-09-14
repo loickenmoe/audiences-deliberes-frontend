@@ -1,9 +1,11 @@
 "use server";
 
 import { AuthError } from "next-auth";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { signIn } from "@/lib/auth";
+import { MARQUEUR_DECONNEXION } from "@/lib/marqueur-deconnexion";
 
 /**
  * L'action renvoie une **clé de message**, jamais un texte traduit : la traduction appartient au
@@ -47,6 +49,13 @@ export async function connexion(
     }
     throw erreur;
   }
+
+  /*
+   * La connexion lève le marqueur de déconnexion (QF-42) : sans cela, la session qui vient d'être
+   * ouverte serait effacée par le middleware, et se reconnecter aussitôt après s'être déconnecté
+   * deviendrait impossible.
+   */
+  (await cookies()).delete(MARQUEUR_DECONNEXION);
 
   /**
    * Hors du `try` : `redirect()` fonctionne en levant une exception interne à Next, qui ne doit
