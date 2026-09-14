@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { SelecteurDossier } from "@/components/modules/portail/selecteur-dossier";
 import { Televersement } from "@/components/metier";
+import { SelecteurDossier } from "@/components/modules/portail/selecteur-dossier";
 import { Button } from "@/components/ui/button";
 import { Champ, Select, Textarea } from "@/components/ui/champ";
 import { useAudiencesDeMonDossier, useDeposerAutrePublication, useDeposerCompteRendu } from "@/hooks/usePortailAvocat";
@@ -14,32 +14,44 @@ import { messageErreur } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { TypeAutrePublication } from "@/types/enums";
 
-type Onglet = "compteRendu" | "autre";
+type Nature = "compteRendu" | "document";
+
+const NATURES: Nature[] = ["compteRendu", "document"];
 
 /**
- * Écran 33 — dépôt d'un compte rendu d'audience (#29) ou d'une autre publication (#31).
+ * Écran 33 — dépôt d'une publication par l'avocat (#29, #31).
  *
- * **Deux dépôts, deux formes, et ce n'est pas une lacune** : la story 5.1 décrit un compte rendu
- * comme un `contenu` textuel rattaché à une audience, la story 5.3 une pièce, décision ou conclusion
- * déposée en fichier. QF-20 supposait qu'il manquait le fichier au compte rendu ; les sources disent
- * le contraire. L'écran expose donc les deux voies côte à côte, en nommant ce que chacune attend.
+ * **Un seul formulaire, deux natures de dépôt.** Les deux onglets d'origine donnaient l'impression
+ * de changer de page alors que le dossier restait le même en dessous ; et leurs libellés reprenaient
+ * le défaut de l'écran 02 en miniature — « Pièce, décision, conclusion » énumérait les valeurs du
+ * champ `typeDocument` affiché juste en dessous. Les deux natures sont désormais présentées côte à
+ * côte, chacune avec la phrase qui la distingue, dans un formulaire continu.
  *
- * Le sélecteur d'audience ne se remplit qu'une fois le dossier choisi : les audiences sont lues
- * dossier par dossier, et le backend refuse en 403 un dossier qui n'est pas le sien.
+ * **Ce qui les sépare n'est plus le format mais l'objet du dépôt.** Depuis Q-98 le compte rendu
+ * accepte lui aussi une pièce : ce n'est donc plus « du texte ou un fichier », c'est « je **relate**
+ * une audience » contre « je **transmets** un document ». Le premier se rattache à une audience et
+ * se valide comme un récit, le second au dossier.
+ *
+ * **Pourquoi deux objets et non un seul.** Un formulaire unique où le système devinerait la nature
+ * — une audience choisie vaudrait compte rendu — remplacerait un choix explicite par une règle
+ * cachée, et laisserait sans réponse trois des six combinaisons de champs que le modèle n'accepte
+ * pas (un fichier seul rattaché à une audience, un texte seul sans audience, une audience avec un
+ * type de document). La distinction existe côté métier ; l'écran la montre au lieu de la faire
+ * deviner.
  */
 export function FormulairePublication() {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
   const router = useRouter();
 
-  const [onglet, setOnglet] = useState<Onglet>("compteRendu");
+  const [nature, setNature] = useState<Nature>("compteRendu");
   const [dossierId, setDossierId] = useState<number | null>(null);
   const [audienceId, setAudienceId] = useState<number | null>(null);
   const [contenu, setContenu] = useState("");
   const [typeDocument, setTypeDocument] = useState<(typeof TypeAutrePublication)[number]>("PIECE");
   const [fichier, setFichier] = useState<File | null>(null);
 
-  const audiences = useAudiencesDeMonDossier(onglet === "compteRendu" ? dossierId : null);
+  const audiences = useAudiencesDeMonDossier(nature === "compteRendu" ? dossierId : null);
   const deposerCompteRendu = useDeposerCompteRendu();
   const deposerAutre = useDeposerAutrePublication();
   const enCours = deposerCompteRendu.isPending || deposerAutre.isPending;
@@ -50,9 +62,20 @@ export function FormulairePublication() {
     setAudienceId(null);
   }
 
+  /*
+   * Chaque nature a son propre `Televersement`, avec son état interne : garder le fichier en
+   * changeant de nature laisserait le bouton actif alors que le champ affiché est vide. On repart
+   * donc d'un fichier nul — ce que le nouveau champ montre déjà.
+   */
+  function changerNature(nouvelle: Nature) {
+    setNature(nouvelle);
+    setFichier(null);
+  }
+
+  /** Le récit exige une audience et un texte ; le document, un fichier. La pièce du récit est libre. */
   const complet =
     dossierId !== null &&
-    (onglet === "compteRendu" ? audienceId !== null && contenu.trim() !== "" : fichier !== null);
+    (nature === "compteRendu" ? audienceId !== null && contenu.trim() !== "" : fichier !== null);
 
   function soumettre() {
     if (!complet || dossierId === null) return;
@@ -64,8 +87,8 @@ export function FormulairePublication() {
       onError: (erreur: unknown) => toast.error(messageErreur(erreur)),
     };
 
-    if (onglet === "compteRendu" && audienceId !== null) {
-      deposerCompteRendu.mutate({ dossierId, audienceId, contenu: contenu.trim() }, apres);
+    if (nature === "compteRendu" && audienceId !== null) {
+      deposerCompteRendu.mutate({ dossierId, audienceId, contenu: contenu.trim(), fichier }, apres);
     } else if (fichier) {
       deposerAutre.mutate({ dossierId, typeDocument, fichier }, apres);
     }
@@ -80,27 +103,53 @@ export function FormulairePublication() {
         <p className="max-w-prose text-texte-secondaire">{t("publicationDescription")}</p>
       </header>
 
-      <div role="group" aria-label={t("typeDepot")} className="flex w-fit rounded border border-bordure-forte">
-        {(["compteRendu", "autre"] as const).map((cle) => (
-          <button
-            key={cle}
-            type="button"
-            aria-pressed={cle === onglet}
-            onClick={() => setOnglet(cle)}
-            className={cn(
-              "px-3 py-1.5 text-[length:var(--taille-sm)] transition-colors first:rounded-l last:rounded-r",
-              cle === onglet ? "bg-anthracite text-white" : "hover:bg-surface-attenuee",
-            )}
-          >
-            {t(`onglets.${cle}` as never)}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex max-w-2xl flex-col gap-4 rounded-lg border border-bordure bg-surface p-4">
+      <div className="flex max-w-2xl flex-col gap-5 rounded-lg border border-bordure bg-surface p-4">
         <SelecteurDossier valeur={dossierId} onChangement={changerDossier} id="publication-dossier" />
 
-        {onglet === "compteRendu" ? (
+        {/*
+          Deux choix décrits, et non deux onglets : l'avocat lit ce qui les sépare avant de choisir,
+          au lieu de le découvrir en basculant. `fieldset`/`legend` nomment le groupe, et chaque
+          description est reliée à son option par `aria-describedby`.
+        */}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-[length:var(--taille-sm)] font-medium">{t("natureDepot")}</legend>
+          <div className="flex flex-col gap-2">
+            {NATURES.map((valeur) => (
+              <label
+                key={valeur}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded border p-3 transition-colors",
+                  valeur === nature
+                    ? "border-anthracite bg-surface-attenuee"
+                    : "border-bordure hover:bg-surface-attenuee",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="nature-depot"
+                  value={valeur}
+                  checked={valeur === nature}
+                  onChange={() => changerNature(valeur)}
+                  aria-describedby={`nature-${valeur}-aide`}
+                  className="mt-0.5 size-4 accent-[color:var(--afb-anthracite)]"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[length:var(--taille-sm)] font-medium">
+                    {t(`natures.${valeur}.titre` as never)}
+                  </span>
+                  <span
+                    id={`nature-${valeur}-aide`}
+                    className="text-[length:var(--taille-xs)] text-texte-tertiaire"
+                  >
+                    {t(`natures.${valeur}.aide` as never)}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        {nature === "compteRendu" ? (
           <>
             <Champ
               id="publication-audience"
@@ -143,6 +192,15 @@ export function FormulairePublication() {
                 onChange={(evenement) => setContenu(evenement.target.value)}
               />
             </Champ>
+
+            {/* Q-98 : la pièce qui étaye le récit. Facultative — le compte rendu reste un texte. */}
+            <div className="flex flex-col gap-1">
+              <p className="text-[length:var(--taille-sm)] font-medium">{t("pieceJointe")}</p>
+              <p className="max-w-prose text-[length:var(--taille-xs)] text-texte-tertiaire">
+                {t("pieceJointeAide")}
+              </p>
+              <Televersement nom="piece-jointe" label={t("pieceJointe")} onChangement={setFichier} />
+            </div>
           </>
         ) : (
           <>
@@ -163,14 +221,13 @@ export function FormulairePublication() {
               </Select>
             </Champ>
 
-            {/* Le composant porte lui-même son libellé et ses contrôles de format et de poids. */}
             <Televersement nom="fichier" label={t("fichier")} onChangement={setFichier} />
           </>
         )}
 
         <div className="flex items-center gap-2">
           <Button onClick={soumettre} disabled={!complet || enCours}>
-            {enCours ? t("envoiEnCours") : t("deposer")}
+            {enCours ? t("envoiEnCours") : t(`natures.${nature}.action` as never)}
           </Button>
           <Button variante="discrete" onClick={() => router.back()}>
             {t("annuler")}

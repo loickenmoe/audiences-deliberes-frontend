@@ -111,13 +111,23 @@ porte sur les documents, pas sur leurs noms.
 
 ## 7. Publications et constitutions
 
-**Pour l'avocat.** *Déposer une publication* propose deux voies :
+**Pour l'avocat.** *Déposer une publication* pose une seule question : que déposez-vous ?
 
-- un **compte rendu d'audience**, qui est un texte rattaché à une audience de votre dossier ;
-- une **pièce, décision ou conclusion**, qui se dépose en fichier.
+- un **compte rendu d'audience** — vous **relatez** une audience de votre dossier. Le récit est
+  obligatoire, et vous pouvez y **joindre une pièce** (le plumitif, une note d'audience) : elle
+  reste rattachée à la même audience, sans second dépôt ;
+- un **document du dossier** — vous **transmettez** une pièce, une décision ou une conclusion. Le
+  fichier est alors obligatoire, et vous en précisez la nature.
+
+Les deux choix sont sur la même page, décrits l'un sous l'autre : le bouton d'envoi dit à chaque
+fois ce qu'il fait. Les formats admis et le poids maximal sont les mêmes que pour la GED (§8).
 
 Toute publication passe par la validation de l'Assistante avant d'être visible des juristes. En cas
 de rejet, le motif s'affiche dans *Mon espace*, avec le dépôt concerné.
+
+**Pour l'Assistante et les juristes.** La fiche d'une publication montre le récit et, s'il y en a
+une, la **pièce jointe** — consultable à l'écran ou téléchargeable, sans quitter la page. Un compte
+rendu sans pièce n'affiche simplement pas ce bloc.
 
 **Correspondance.** Un juriste commente une publication ; le DJ ou la DJA consolide ces commentaires
 en une correspondance unique adressée à l'avocat. C'est la seule voie officielle d'échange.
@@ -177,7 +187,8 @@ L'avocat est un utilisateur **externe** : il ne voit que ce qui le concerne. Tro
 - **Mon espace** — ses dépôts, avec leur statut et le motif d'un éventuel rejet, et les lettres de
   constitution qui le désignent ;
 - **Déposer une demande** — une demande de frais ;
-- **Déposer une publication** — un compte rendu ou un document.
+- **Déposer une publication** — un compte rendu d'audience (avec sa pièce, si besoin) ou un
+  document du dossier.
 
 Il ne voit que les dossiers auxquels il est affecté, et seulement leur référence, leur nature et leur
 juridiction. Ni client, ni montant en jeu, ni sensibilité.

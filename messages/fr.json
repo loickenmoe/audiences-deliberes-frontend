@@ -741,6 +741,7 @@
     "restrictionTous": "Tous les juristes",
     "contenu": "Compte rendu",
     "fichier": "Fichier",
+    "pieceJointe": "Pièce jointe",
     "consulter": "Consulter",
     "telecharger": "Télécharger",
     "rejeteeBandeau": "Publication rejetée. Motif : {motif}",
@@ -1163,12 +1164,7 @@
     "ajouterPiece": "Ajouter une pièce",
     "fraisDeposes": "Demande de frais déposée.",
     "publicationTitre": "Déposer une publication",
-    "publicationDescription": "Un compte rendu se rattache à une audience ; une pièce, une décision ou une conclusion se dépose en fichier.",
-    "typeDepot": "Nature du dépôt",
-    "onglets": {
-      "compteRendu": "Compte rendu d’audience",
-      "autre": "Pièce, décision, conclusion"
-    },
+    "publicationDescription": "Le compte rendu relate une audience, avec une pièce à l’appui si nécessaire. Un document du dossier se transmet seul.",
     "audience": "Audience",
     "audienceAide": "Choisissez d’abord un dossier.",
     "choisirAudience": "Choisir une audience",
@@ -1180,6 +1176,21 @@
     "deposer": "Déposer",
     "envoiEnCours": "Envoi en cours…",
     "annuler": "Annuler",
-    "envoiPiece": "Envoi de la pièce en cours…"
+    "envoiPiece": "Envoi de la pièce en cours…",
+    "natureDepot": "Que souhaitez-vous déposer ?",
+    "natures": {
+      "compteRendu": {
+        "titre": "Compte rendu d’audience",
+        "aide": "Relatez ce qui s’est passé à une audience de votre dossier. Vous pouvez y joindre le plumitif ou une note.",
+        "action": "Déposer le compte rendu"
+      },
+      "document": {
+        "titre": "Document du dossier",
+        "aide": "Transmettez une pièce, une décision ou une conclusion, sans récit d’audience.",
+        "action": "Déposer le document"
+      }
+    },
+    "pieceJointe": "Pièce jointe (facultative)",
+    "pieceJointeAide": "Le document qui étaye votre compte rendu : plumitif du greffe, note d’audience. Le compte rendu reste valable sans."
   }
 }

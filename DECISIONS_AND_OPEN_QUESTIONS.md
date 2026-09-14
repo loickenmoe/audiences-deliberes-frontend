@@ -110,7 +110,7 @@ foulée de la création. (C) Reporter tout le volet décisions.
 **Recommandation : A.** L'ajout est mécaniquement identique à trois endpoints déjà livrés en M15 et
 sans règle métier nouvelle.
 
-### ✅ QF-20 — L'avocat ne peut pas déposer son compte rendu en fichier — close en F16, sans modification
+### ✅ QF-20 — Le compte rendu d'audience ne pouvait pas porter sa pièce — rouverte puis tranchée (Q-98)
 
 **Constat initial.** `POST /publications/cr-audience` n'accepte qu'un `contenu` textuel, là où un
 avocat aurait pu vouloir joindre un document.
@@ -118,10 +118,38 @@ avocat aurait pu vouloir joindre un document.
 **Ce que disent les sources, relues en F16.** La story 5.1 décrit exactement ce contrat :
 « je soumets `dossierId`, `audienceId`, `contenu` (non vide) ». Et la story 5.3 prévoit l'autre
 voie — « déposer une autre publication (**pièce, décision, conclusion**) » par
-`POST /publications/autres`, en fichier. **Le backend est conforme : il n'y a pas de lacune.**
+`POST /publications/autres`, en fichier. Le backend était donc **conforme à la lettre**, et la
+question avait été close sur ce seul constat.
 
-**Traité côté interface** : l'écran 33 expose les deux voies côte à côte, en nommant ce que chacune
-attend, plutôt que de laisser l'avocat chercher où déposer son document.
+**Rouverte le 2026-09-14 par le porteur du projet**, après F17 : la conformité au contrat ne dit
+rien de l'usage. L'avocat qui relate une audience dispose du **plumitif** ; l'envoyer par l'autre
+voie lui faisait perdre son rattachement à l'audience, et laissait l'instructeur rapprocher à la
+main deux dépôts du même moment. Ce n'était pas une lacune de contrat mais un **arbitrage métier**,
+qui n'appartenait ni au contrat ni à moi.
+
+**Tranché** (« Applique ta recommandation ») → **Q-98 côté backend**. La pièce devient **facultative**
+sur le compte rendu ; le récit reste obligatoire. Ce qui sépare les deux voies n'est donc plus le
+format mais l'**objet** du dépôt : **relater** une audience contre **transmettre** un document du
+dossier.
+
+**Côté écran (33).** Les deux onglets deviennent un **formulaire continu** à deux choix décrits. Les
+onglets suggéraient un changement de contexte alors que le dossier restait le même en dessous, et
+leurs libellés reprenaient le défaut de l'écran 02 en miniature — « Pièce, décision, conclusion »
+énumérait les valeurs du champ `typeDocument` affiché juste dessous. Renommé **« Document du
+dossier »**, chaque choix porte la phrase qui le distingue, et l'intitulé du bouton dit ce qu'il
+fait (« Déposer le compte rendu » / « Déposer le document »).
+
+**Pourquoi pas un formulaire unique sans choix.** Deviner la nature à partir des champs remplis —
+une audience choisie vaudrait compte rendu — remplacerait un choix explicite par une règle cachée,
+et laisserait sans réponse trois des six combinaisons que le modèle refuse (fichier seul rattaché à
+une audience, texte seul sans audience, audience avec un type de document).
+
+**Défaut trouvé en chemin, sur l'écran 32.** Le bloc « Fichier » n'était rendu que pour une *autre*
+publication. Le backend renvoyait désormais `nomFichier` et `urlTelechargement` pour le compte rendu,
+mais l'Assistante n'aurait jamais pu **ouvrir** la pièce — soit exactement l'usage qui motivait
+Q-98. Le bloc est désormais rendu dès qu'il y a un fichier, titré « Pièce jointe » pour un compte
+rendu ; il disparaît quand le récit se suffit, plutôt que d'afficher un « — » et deux boutons qui
+échoueraient.
 
 ### ✅ QF-28 — Les dates seules s'affichaient la veille à l'ouest de Greenwich *(corrigée en F8)*
 
@@ -250,7 +278,7 @@ constitué n'était jamais notifié (prestataire chargé en proxy, Q-87).
 **Décision du porteur du projet (2026-09-11)** : corriger les cinq points (Q-86) et le défaut de
 notification (Q-87). **Reporté à F16** avec le portail avocat : l'observation du DJ/DJA de sa propre
 initiative, sans publication (UC-INT-08 étapes 8 à 12), et la lecture de ses correspondances par
-l'avocat — ainsi que QF-20 (compte rendu déposé en fichier).
+l'avocat — ainsi que QF-20 (compte rendu déposé en fichier ; rouverte ensuite, cf. Q-98).
 
 ### ✅ QF-37 — Une demande de frais ne se lisait ni seule, ni avec ses décisions *(résolue : Q-82, Q-83 backend)*
 
@@ -727,6 +755,46 @@ surfaces, pas seulement sur blanc.
 
 Vide par construction (Q-67 backend, tranché en M15 : « ne pas le consommer côté frontend »).
 Utiliser `GET /dossiers/{id}/documents` (#43). **Contrainte connue, pas une question.**
+
+### 🔴 QF-42 — Une déconnexion immédiate ne ferme pas la session — ouvert
+
+**Constaté le 2026-09-14**, en vérifiant Q-98 contre le backend réel : les deux tests de déconnexion
+(`authentification.spec.ts:150` et `securite.spec.ts:100`) échouent. **Mesuré : 4 échecs sur 5** en
+rejeu isolé — ce n'est pas de l'instabilité, c'est un défaut reproductible.
+
+**Le symptôme.** L'utilisateur clique « Se déconnecter », arrive bien sur `/login`… et une URL
+protégée saisie ensuite **s'ouvre normalement**. Les cookies `authjs.session-token.0/.1` sont
+toujours là après la redirection.
+
+**La cause, isolée par expérience.** Le même parcours avec **3 secondes d'attente** avant le clic
+réussit, cookies effacés et `/dossiers` renvoyé vers `/login` ; sans attente, il échoue :
+
+```
+ATTENTE=0    | cookies restants=authjs.session-token.0,.1 | url=/dossiers
+ATTENTE=3000 | cookies restants=aucun                     | url=/login
+```
+
+`providers/session.provider.tsx` branche le client HTTP sur `getSession()` — **chaque appel API**
+interroge donc `/api/auth/session`, qui réémet le cookie de session à chaque lecture. L'accueil
+lançant une rafale de requêtes (une par file, depuis F17), une réponse de session partie **avant**
+la déconnexion revient **après** elle et **réécrit** le cookie que la déconnexion venait d'effacer.
+Six réponses `/api/auth/session` ont été observées dans la seconde qui suit l'arrivée sur l'accueil.
+
+**Pourquoi c'est sérieux.** Sur un poste partagé, le geste qui protège — se déconnecter puis laisser
+la place — ne protège pas quand il est fait vite. C'est précisément le cas d'usage que §1 du guide
+utilisateur promet.
+
+**Indépendant de Q-98** : le diff de la branche `feat/cr-piece-jointe` ne touche ni
+`lib/auth.ts`, ni `providers/`, ni le middleware, ni l'accueil.
+
+**Options.** (A) Ne plus faire dépendre chaque appel API d'un `getSession()` : mémoriser le jeton
+dans le fournisseur et ne le rafraîchir qu'à l'approche de l'expiration — supprime la rafale, donc
+la course, et allège chaque requête. (B) Poser un marqueur de déconnexion que le garde de route
+regarde en priorité sur le cookie de session — referme la fenêtre sans traiter la cause. (C) Ne rien
+faire et documenter le délai.
+
+**Recommandation : A.** C'est la cause, pas le symptôme ; le bénéfice est aussi une requête de moins
+par appel API. **À arbitrer : c'est un chantier propre, hors du périmètre de Q-98.**
 
 ---
 

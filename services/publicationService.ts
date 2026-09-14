@@ -66,14 +66,26 @@ export const publicationService = {
   },
 
   /**
-   * #29 — **l'avocat dépose son compte rendu** (US 5.1, écran 33) : un texte, rattaché à une
-   * audience de son dossier. Le backend répond 404 si l'audience n'appartient pas au dossier.
+   * #29 — **l'avocat dépose son compte rendu** (US 5.1, écran 33) : un récit rattaché à une audience
+   * de son dossier, accompagné d'une **pièce facultative** depuis Q-98 — le plumitif du greffe, une
+   * note d'audience. Le backend répond 404 si l'audience n'appartient pas au dossier.
    *
-   * Le compte rendu n'accepte **pas** de fichier — ce n'est pas une lacune (QF-20 close) : la story
-   * 5.1 décrit un `contenu` textuel, et un document se dépose par `deposerAutre`.
+   * Multipart dans les deux cas : le texte est obligatoire, le fichier ne l'est pas. Envoyer
+   * systématiquement la même forme évite deux chemins d'appel pour un seul geste métier.
    */
-  deposerCompteRendu: async (depot: DeposerCompteRendu): Promise<Publication> => {
-    const { data } = await apiClient.post<Publication>("/publications/cr-audience", depot);
+  deposerCompteRendu: async (depot: DeposerCompteRendu, fichier?: File | null): Promise<Publication> => {
+    const corps = new FormData();
+    if (fichier) corps.append("file", fichier);
+    const { data } = await apiClient.post<Publication>("/publications/cr-audience", corps, {
+      params: {
+        dossierId: depot.dossierId,
+        audienceId: depot.audienceId,
+        contenu: depot.contenu,
+        ...(depot.restrictionAcces ? { restrictionAcces: depot.restrictionAcces } : {}),
+      },
+      // Sans ce type déclaré, axios sérialise le FormData en JSON et la partie disparaît.
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return data;
   },
 

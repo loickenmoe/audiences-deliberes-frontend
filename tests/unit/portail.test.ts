@@ -130,11 +130,29 @@ describe("dépôt d'une demande de frais (#23, US 4.1)", () => {
 });
 
 describe("dépôts de publication (#29, #31)", () => {
-  it("envoie le compte rendu en JSON, rattaché à une audience", async () => {
+  /**
+   * Depuis Q-98, le compte rendu part en multipart : les métadonnées en paramètres, la pièce
+   * facultative en partie. Sans pièce, aucune partie n'est envoyée — le récit se suffit.
+   */
+  it("envoie le compte rendu en multipart, rattaché à une audience, sans pièce", async () => {
     await publicationService.deposerCompteRendu({ dossierId: 4, audienceId: 9, contenu: "Renvoi au 12." });
 
     expect(derniere?.url.pathname).toBe("/api/v1/publications/cr-audience");
-    expect(derniere?.corps).toEqual({ dossierId: 4, audienceId: 9, contenu: "Renvoi au 12." });
+    const params = derniere!.url.searchParams;
+    expect(params.get("dossierId")).toBe("4");
+    expect(params.get("audienceId")).toBe("9");
+    expect(params.get("contenu")).toBe("Renvoi au 12.");
+    expect(params.has("restrictionAcces")).toBe(false);
+    expect(derniere?.formulaire?.get("file")).toBeNull();
+  });
+
+  it("joint la pièce au compte rendu quand elle est fournie", async () => {
+    const plumitif = new File(["x"], "plumitif.pdf", { type: "application/pdf" });
+
+    await publicationService.deposerCompteRendu({ dossierId: 4, audienceId: 9, contenu: "Renvoi" }, plumitif);
+
+    expect((derniere?.formulaire?.get("file") as File)?.name).toBe("plumitif.pdf");
+    expect(derniere?.url.searchParams.get("contenu")).toBe("Renvoi");
   });
 
   it("envoie une autre publication en multipart : métadonnées en paramètres, fichier en partie", async () => {

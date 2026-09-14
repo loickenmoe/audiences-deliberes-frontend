@@ -56,11 +56,12 @@ export function useDeposerFrais() {
   });
 }
 
-/** #29 — dépôt d'un compte rendu d'audience. */
+/** #29 — dépôt d'un compte rendu d'audience, avec sa pièce facultative (Q-98). */
 export function useDeposerCompteRendu() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (depot: DeposerCompteRendu) => publicationService.deposerCompteRendu(depot),
+    mutationFn: (depot: DeposerCompteRendu & { fichier?: File | null }) =>
+      publicationService.deposerCompteRendu(depot, depot.fichier),
     onSuccess: () => client.invalidateQueries({ queryKey: [CLES.mesPublications] }),
   });
 }
