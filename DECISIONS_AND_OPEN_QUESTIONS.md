@@ -4,8 +4,9 @@
 > Dernière mise à jour : 2026-09-14 (revue de clôture — QF-42 corrigé ; RF-01, RF-02 et RF-04 closes,
 > elles étaient traitées depuis longtemps mais restées étiquetées comme ouvertes).
 >
-> **État à la clôture** : une seule question **bloquante** reste ouverte, **QF-16** — elle appelle un
-> arbitrage métier, pas du code. Sept points `🟡` sont documentés et assumés.
+> **État à la clôture** : **aucune question bloquante**. QF-16 et QF-08 ont été tranchées le
+> 2026-09-15 après relecture des sources — la première comme limite assumée, la seconde comme
+> non-lacune. Sept points `🟡` sont documentés et assumés.
 
 **Légende** : `✅` tranché · `🟡` ouvert, non bloquant · `🔴` ouvert, bloquant · `⛔` bloqué par un tiers
 
@@ -534,19 +535,38 @@ dupliqué les lignes et faussé le total de la pagination.
 **Vérifié en réel le 2026-09-09** : `reference=DOS-F6` → 1, `reference=ZZZZ` → 0, `clientId=1` → 1,
 `clientId=2` → 0, `mesDossiers` → 1 pour le juriste affecté et 0 pour l'assistante.
 
-### 🟡 QF-08 — Files d'attente absentes pour le DJ/DJA
+### ✅ QF-08 — Files d'attente pour le DJ/DJA — close : ce n'est pas une lacune
 
-**Constat.** Aucun endpoint ne liste les dossiers en attente de validation de sensibilité, ni les
-dérogations de seuil en attente d'arbitrage. `GET /dossiers` expose bien `sensibiliteStatut`, mais
-sans filtre serveur.
+**Constat d'origine.** Aucun endpoint ne liste les dossiers en attente de validation de sensibilité,
+ni les dérogations de seuil en attente d'arbitrage. `GET /dossiers` expose bien `sensibiliteStatut`,
+mais sans filtre serveur. J'en avais conclu que le DJ et la DJA devraient parcourir les dossiers page
+par page.
 
-**Conséquence.** Le DJ et le DJA devraient parcourir les dossiers page par page pour trouver ceux
-qui requièrent leur intervention — alors que ces deux validations leur sont exclusivement réservées.
+**Ma justification était fausse.** J'avais écrit « même raisonnement que les trois files ajoutées en
+M15 ». Relecture des sources (2026-09-15) : ces trois files-là sont **nommément décrites** dans le
+document d'analyse, et elles seules —
 
-**Recommandation.** Un paramètre `?sensibiliteStatut=EN_ATTENTE` sur #2 et une file des dérogations
-suffiraient. Même raisonnement que les trois files ajoutées en M15. **Statut : ouvert, impacte F7.**
+- « Le système affiche la **liste des demandes validées en attente de paiement** » (frais) ;
+- « Aucune demande **en attente de validation** » (constitutions) ;
+- « Aucun compte rendu **en attente de validation** » (publications).
 
-### 🔴 QF-16 — Provisionnement paresseux : un juriste jamais connecté est inaffectable
+Pour la sensibilité et la dérogation de seuil, **aucun pas de cas d'utilisation ne décrit de liste**.
+Le mécanisme prévu est ailleurs, et il est explicite : story 1.8 — « le système crée une demande […],
+**notifie le DJ et le DJA** » — et §1458 des spécifications fait de la notification applicative *« le
+canal principal, avec une persistance des alertes en base »*, consultable au menu « Mes
+notifications ».
+
+**Ce mécanisme est implémenté et actionnable** : chaque ligne de l'écran 03 porte un lien direct vers
+le dossier concerné. Il n'y a donc rien à corriger.
+
+**Réserve d'exploitation, consignée comme candidate V2.** Une notification est un **événement**, pas
+un état : un DJ qui la marque traitée, ou qui l'a manquée pendant une absence, n'a aucun moyen de
+retrouver ce qui l'attend encore — là où les trois autres circuits ont leur file. Le risque est réel
+mais faible à l'échelle de la Direction Juridique, et **il n'est pas ce que les sources demandent**.
+S'il devenait gênant à l'usage, un paramètre `?sensibiliteStatut=EN_ATTENTE` sur #2 et une file des
+dérogations suffiraient.
+
+### 🟡 QF-16 — Provisionnement paresseux : un juriste jamais connecté est inaffectable — limite acceptée pour la V1
 
 **Constat, vérifié en conditions réelles le 2026-09-08** (backend démarré, base fraîche). La table
 `utilisateur` est alimentée **paresseusement** : un compte n'y apparaît qu'au premier appel d'un
@@ -574,15 +594,36 @@ GET /utilisateurs                 → [{id:1, nom:"Juriste", profil:"JURISTE", a
 appel qui auto-provisionne l'utilisateur *et* alimente le badge de notifications dont toutes les
 pages ont besoin. C'est une contrainte de conception, pas un contournement caché.
 
-**Reste à arbitrer : le point 1.** Est-il acceptable qu'un juriste doive s'être connecté au moins
-une fois pour être affectable ? En pratique la Direction Juridique compte peu d'utilisateurs et
-tous se connecteront, mais un dossier urgent confié à un collègue absent resterait bloqué.
+**Ce que disent les sources, relues le 2026-09-15.** UC-DOS-01 étape 6 : « Le juriste **sélectionne**
+un ou plusieurs juristes et avocats à affecter au dossier » — une liste du personnel, sans réserve.
+Et §157 des spécifications confie la gestion des profils à Keycloak, par la DSI et la DRH : aucune
+fonction de création d'utilisateur n'existe dans l'application, la recherche dans les quatre
+documents ne rend rien. **Au sens des sources, l'application est censée lire un annuaire que Keycloak
+détient déjà** : le provisionnement paresseux est une commodité d'implémentation, écrite nulle part,
+et il contredit UC-DOS-01 étape 6 dans le cas limite.
 
-**Recommandation.** Accepter la limite pour la V1 et la documenter dans la doc utilisateur (« chaque
-utilisateur doit se connecter une fois pour apparaître dans les listes d'affectation »). Si elle est
-jugée inacceptable, un pré-provisionnement backend depuis Keycloak serait nécessaire — évolution non
-triviale, à ne décider qu'en connaissance de cause. **Statut : ouvert, impacte F2 (traitement) et
-F6 (arbitrage).**
+**Trois faits réduisent pourtant la portée réelle du défaut.**
+
+1. **Il est unilatéral.** Les **avocats** ne sont pas concernés : ils sont créés au répertoire par un
+   juriste (UC-INT-01) avec `compteKeycloak` obligatoire (RG-INT-01), donc affectables avant toute
+   connexion. Seuls les utilisateurs **internes** sont provisionnés paresseusement.
+2. **Les points 2 et 3 ci-dessus sont résolus.** Le juriste qui crée un dossier est, par construction,
+   connecté — l'amorçage de session le provisionne. Il figure dans sa propre liste et peut s'affecter :
+   ni la base neuve, ni le premier dossier ne sont bloqués.
+3. **Il reste donc un seul cas**, contournable en trente secondes : s'affecter soi-même, puis
+   réaffecter au collègue par UC-DOS-02 dès sa première connexion — geste tracé dans l'historique.
+
+**Tranché (2026-09-15) : limite acceptée pour la V1, documentée.** Le pré-provisionnement supposerait
+l'API d'administration de Keycloak, un compte de service avec droits `realm-admin` et une politique de
+synchronisation (fréquence, comptes désactivés, départs). Ce n'est pas une tâche de développement mais
+**une décision de sécurité appartenant à la DSI**, sur un périmètre que le document de conception place
+explicitement hors projet (§98 « hors Keycloak », §100 « entièrement déléguées à Keycloak »). Ouvrir
+cette intégration pour un cas contournable, dans une direction de quelques dizaines d'utilisateurs,
+serait disproportionné.
+
+**Écrit dans le guide utilisateur** (§1) et au §5.1 du rapport de recette. **Reclassé 🔴 → 🟡** : la
+limite n'est plus une question en suspens, c'est un choix assumé. Si elle devenait gênante, la V2
+consiste à cadrer avec la DSI un pré-provisionnement depuis Keycloak.
 
 ### 🟡 QF-02 — Pas d'endpoint « moi »
 

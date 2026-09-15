@@ -18,6 +18,16 @@ En cas de refus, le message ne précise jamais si le compte existe : c'est volon
 protège vos comptes. Si vous avez oublié votre mot de passe, adressez-vous à la DSI ; cette
 application ne le réinitialise pas.
 
+**Votre première connexion vous rend visible des autres.** Un collègue n'apparaît dans les listes
+d'affectation d'un dossier qu'**après avoir ouvert l'application au moins une fois**. C'est une
+conséquence du fait que les comptes vivent dans Keycloak, administrés par la DSI : l'application ne
+les connaît qu'à partir du moment où ils s'y présentent.
+
+En pratique : si vous voulez confier un dossier à quelqu'un qui n'a encore jamais ouvert
+l'application, affectez-le-vous d'abord, puis modifiez l'affectation dès sa première connexion — le
+changement est tracé dans l'historique du dossier. Les **avocats** ne sont pas concernés : ils sont
+affectables dès leur inscription au répertoire, sans attendre qu'ils se connectent.
+
 **Changer de langue.** Les deux boutons `FR` / `EN` en haut à droite basculent toute l'interface. Le
 choix est propre au navigateur, pas au compte : sur un autre poste, il faudra le refaire.
 

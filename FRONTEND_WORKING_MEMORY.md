@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-14 (**revue de clôture** — `RAPPORT_DE_RECETTE.md` établi, étiquettes périmées corrigées).
+> Dernière mise à jour : 2026-09-15 (QF-16 et QF-08 tranchées sur les sources — plus aucun point 🔴).
 
 ---
 
@@ -46,7 +46,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | Jalon livré, **en attente de validation** | **QF-42** — la déconnexion ne fermait pas la session quand elle suivait de près une lecture de session. Cache du jeton, session fournie par le rendu serveur, marqueur de déconnexion lu par un middleware. **Premier `middleware.ts` du projet**, cantonné à ce seul rôle |
 | Jalon précédent | **F17** — durcissement (PR #14) : accueil achevé, accessibilité AA, responsive, performance, parcours P1-P9, guide utilisateur, revue de sécurité |
 | Jalon suivant | **aucun** — les 18 jalons sont livrés, la revue de clôture est faite (`RAPPORT_DE_RECETTE.md`). Reste la recette du porteur du projet et la soutenance |
-| Seule question bloquante | **QF-16** — un utilisateur jamais connecté n'est pas affectable. **Arbitrage métier, pas du code** : accepter la limite et la documenter, ou demander un pré-provisionnement backend depuis Keycloak |
+| Questions bloquantes | **aucune.** QF-16 tranchée le 2026-09-15 — limite acceptée pour la V1, écrite au §1 du guide : un utilisateur interne n'est affectable qu'après sa première connexion (les avocats, eux, le sont dès le répertoire). QF-08 close : ce n'était pas une lacune, les sources traitent le cas par la notification |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
 | Décompte | **42 écrans sur 42** · **74 endpoints consommés sur 74** — tout le contrat est consommé — plus les cinq endpoints du portail Avocat et le canal `/ws`. Mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
