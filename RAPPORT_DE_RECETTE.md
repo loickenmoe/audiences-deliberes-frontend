@@ -3,7 +3,8 @@
 Plateforme de digitalisation des **audiences et délibérés** — Direction Juridique, Afriland First
 Bank Cameroun.
 
-> Établi le 2026-09-14, à la clôture du développement. **Tous les chiffres de ce rapport ont été
+> Établi le 2026-09-14, à la clôture du développement ; §5 révisé le 2026-09-15 après relecture des
+> documents sources (QF-16 et QF-08 tranchées). **Tous les chiffres de ce rapport ont été
 > mesurés le jour de sa rédaction**, sur la pile complète démarrée (PostgreSQL, Keycloak, MinIO,
 > backend Spring Boot, frontend Next.js en build de production) — aucun n'est recopié d'un rapport
 > antérieur.
@@ -97,24 +98,50 @@ s'ouvrait normalement. Sur un poste partagé, le geste qui protège ne protégea
 Aucune n'est un défaut caché : toutes sont consignées, avec leur raison, dans
 `DECISIONS_AND_OPEN_QUESTIONS.md`.
 
-### 5.1 Une question reste ouverte et appelle un arbitrage métier
+### 5.1 Une limite assumée, tranchée après relecture des sources
 
-**QF-16 — un utilisateur jamais connecté n'est pas affectable.** Le backend crée la ligne
+**QF-16 — un utilisateur interne jamais connecté n'est pas affectable.** Le backend crée la ligne
 `utilisateur` au premier appel qui résout l'utilisateur courant. Un juriste qui ne s'est jamais
-connecté **n'apparaît pas** dans le sélecteur d'affectation : un dossier urgent ne peut donc pas lui
-être confié en son absence.
+connecté **n'apparaît pas** dans le sélecteur d'affectation.
 
-Le frontend traite déjà l'amorçage — il appelle `GET /alertes/mes-notifications` juste après la
-connexion, ce qui provisionne le compte et alimente le compteur de notifications en un seul appel.
-Reste la question de fond : **accepter que chaque utilisateur doive se connecter une fois**, et
-l'écrire dans le guide, ou demander au backend un pré-provisionnement depuis Keycloak — évolution non
-triviale, à décider en connaissance de cause.
+**Ce que disent les sources.** UC-DOS-01 étape 6 pose une liste du personnel — « le juriste
+sélectionne un ou plusieurs juristes et avocats » — sans réserve, et le §157 des spécifications
+fonctionnelles confie la gestion des profils à **Keycloak, administré par la DSI et la DRH**.
+L'application n'a, de fait, aucune fonction de création d'utilisateur. Le provisionnement paresseux
+est donc une commodité d'implémentation qui contredit le cas d'utilisation dans un cas limite.
+
+**Portée réelle, mesurée sur trois points.** La limite est **unilatérale** : les avocats, créés au
+répertoire avec leur compte Keycloak (RG-INT-01), sont affectables sans s'être jamais connectés.
+L'amorçage sur base neuve n'est **pas** bloqué : le juriste qui crée un dossier est par construction
+connecté, figure dans sa propre liste et peut s'affecter. Il reste donc un seul cas — confier un
+dossier à un collègue qui n'a jamais ouvert l'application — contournable en s'affectant soi-même puis
+en réaffectant, geste tracé dans l'historique.
+
+**Tranché : limite acceptée pour la V1.** Un pré-provisionnement supposerait l'API d'administration
+de Keycloak, un compte de service `realm-admin` et une politique de synchronisation (fréquence,
+comptes désactivés, départs) : **une décision de sécurité appartenant à la DSI**, sur un périmètre
+que le document de conception place explicitement hors projet (§98, §100). La limite est écrite au
+§1 du guide utilisateur, avec son contournement.
+
+### 5.1 bis — Une lacune supposée qui n'en était pas
+
+**QF-08 — files d'attente du DJ et de la DJA.** J'avais signalé l'absence de liste des dossiers en
+attente de validation de sensibilité et des dérogations de seuil, en la justifiant par analogie avec
+les trois files ajoutées au jalon backend M15. **La justification était fausse** : ces trois files
+sont nommément décrites dans le document d'analyse — demandes en attente de paiement, constitutions
+à signer, comptes rendus à valider — et elles seules. Pour la sensibilité et la dérogation, aucun pas
+de cas d'utilisation ne décrit de liste : le mécanisme prévu est la **notification** (story 1.8, et
+§1458 qui en fait « le canal principal »). Il est implémenté, et chaque notification porte un lien
+direct vers le dossier concerné.
+
+Réserve consignée : une notification est un événement, pas un état. Un DJ qui la marque traitée ou
+qui l'a manquée n'a pas de liste de rattrapage, là où les trois autres circuits en ont une. Faible
+à cette échelle, et hors de ce que les sources demandent — candidate V2.
 
 ### 5.2 Points documentés, non bloquants
 
 | Réf. | Limite |
 |---|---|
-| QF-08 | Aucun filtre serveur pour les dossiers en attente de validation de sensibilité ni pour les dérogations de seuil : le DJ et la DJA parcourent les pages |
 | QF-40 | Une condamnation se crée toujours « En attente » — le statut de paiement n'est pas accepté à la création |
 | QF-31 | Le calendrier compte le premier jour de la période suivante |
 | QF-32 | Une audience est dite « tenue » le jour où l'on saisit son compte rendu, non le jour où elle s'est tenue |
@@ -159,9 +186,10 @@ Trois principes en découlent, visibles dans les documents :
 ## 7. Conclusion
 
 Le périmètre fonctionnel est **couvert intégralement** : 42 écrans, 74 endpoints du contrat, six
-profils, deux langues. Les vérifications automatiques passent en totalité contre la pile réelle. Une
-seule question reste ouverte, **QF-16**, et elle relève d'une décision de la Direction Juridique, non
-du code.
+profils, deux langues. Les vérifications automatiques passent en totalité contre la pile réelle.
+**Aucune question bloquante ne reste ouverte** : les deux dernières ont été tranchées le 2026-09-15
+après relecture des documents sources — QF-16 comme limite assumée et documentée, QF-08 comme
+lacune supposée qui n'en était pas.
 
 Les réserves de mise en production listées au §5.3 sont des tâches d'exploitation, à traiter avec la
 DSI avant tout déploiement hors poste de développement.
