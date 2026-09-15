@@ -985,6 +985,49 @@ le premier relève une référence en page 1, passe en page 2 et vérifie qu'ell
 Le second vérifie que le choix « 50 lignes » survit à un rechargement, donc qu'un lien partagé rouvre
 la liste telle que son auteur la voyait.
 
+### ✅ QF-45 — Un avocat non inscrit au répertoire lisait « Le chargement a échoué » — corrigé
+
+**Signalé par le porteur du projet le 2026-09-15**, connecté en avocat sur une base de développement
+réinitialisée : *Mon espace* et *Frais d'avocats* affichaient deux blocs d'échec portant le message
+brut du serveur.
+
+**Ce n'était pas une panne, et c'est tout le problème.** Deux choses distinctes portent le mot
+« avocat » : le **compte de connexion**, qui vit dans Keycloak et provisionne la ligne `utilisateur`
+à la volée, et l'**avocat du référentiel**, fiche métier créée par le DJ ou la DJA avec l'identifiant
+de connexion (RG-INT-01, UC-INT-01). Le portail ne travaille que sur la seconde. Tant qu'elle n'existe
+pas, il n'y a rien à montrer — **et l'avocat n'y peut rien lui-même**.
+
+L'interface présentait donc un **état d'inscription** comme un **échec technique** : message sans
+action possible, sans interlocuteur. Le cas n'est pas rare : il se produit à chaque mise en service,
+et pour chaque nouvel avocat tant que la Direction Juridique ne l'a pas inscrit.
+
+**Corrigé** : le backend lève désormais un code dédié (`ERR-AVOCAT-NON-RATTACHE`, Q-107) sur les
+quatre points concernés, et `CompteAvocatNonRattache` l'affiche comme un état — ce qui manque, que ce
+n'est pas de son fait, et à qui s'adresser. Posé sur les quatre écrans que l'avocat peut atteindre :
+*Mon espace*, la file des frais, et le sélecteur de dossier des deux formulaires de dépôt.
+
+**Le code dédié n'est pas un détail de mise en œuvre.** `ERR-FORBIDDEN` couvre aussi les **vrais**
+refus de droits : s'en contenter aurait fait dire « votre compte n'est pas rattaché » à un avocat qui
+force une URL interdite. Et reconnaître le cas à son message se briserait à la première reformulation
+ou traduction. Même parti que `ERR-009`, déjà traité comme un état et non comme une erreur.
+
+**Symétrique de QF-16**, vu depuis l'autre bout : là un juriste jamais connecté reste inaffectable,
+ici un avocat jamais inscrit ne voit rien. Dans les deux cas le système a raison ; c'est son
+explication qui manquait.
+
+**Une fragilité du socle de tests, révélée par la même base vierge.** `tests/e2e/preparation.ts`
+garantissait « au moins un avocat », créé sous le compte `avocat.socle.e2e`. Or les parcours du
+portail se connectent en **`avocat.test`** : sur une base neuve, ce compte n'était rattaché à aucune
+fiche, et cinq parcours échouaient — sans qu'aucune ligne de l'application soit en cause. C'est
+précisément le défaut que ce fichier avait été écrit pour prévenir, et son en-tête le dit :
+« une suite qui dépend de l'état laissé par l'exécution précédente ne teste pas l'application, elle
+teste l'historique de la base ». Le socle rattache désormais explicitement `avocat.test`.
+
+**Vérifié en réel** : sur la base vierge, les quatre endpoints du portail et des frais renvoient
+`ERR-AVOCAT-NON-RATTACHE`, tandis qu'un vrai refus (`GET /dossiers` pour un avocat) reste
+`ERR-FORBIDDEN` — la distinction tient. Et les quatre écrans concernés affichent l'explication, aucun
+n'affiche plus « Le chargement a échoué ».
+
 ---
 
 ## RISQUES

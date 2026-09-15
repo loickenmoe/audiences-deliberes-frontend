@@ -10,6 +10,8 @@ import { DateHeureValeur, MontantFcfa, TableDonnees } from "@/components/metier"
 import { useDemandesFrais } from "@/hooks/useFrais";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { TON_STATUT_FRAIS, aDonneSonAccord, vuesFrais, type CleVueFrais } from "@/lib/frais";
+import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
+import { estCompteAvocatNonRattache } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { DemandeFrais } from "@/types/domaine";
@@ -39,6 +41,7 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
   const requete = useDemandesFrais(vue.statut, page, taille);
   // L'avocat ne consulte pas les dossiers (`ROLE_CONSULTATION`) : la référence reste un texte.
   const lienDossier = peut(roles, "consulterDossiers");
+
 
   const colonnes = useMemo<ColumnDef<DemandeFrais, unknown>[]>(
     () => [
@@ -98,6 +101,13 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
     ],
     [t, td, lienDossier, roles],
   );
+
+  /*
+   * Q-107 : un avocat dont le compte n'est pas rattaché au référentiel n'a pas de demandes, et n'en
+   * aura pas tant qu'il n'y est pas inscrit. Ce n'est pas un échec de chargement. Le test vient
+   * **après** les hooks : un retour anticipé placé avant en changerait l'ordre d'un rendu à l'autre.
+   */
+  if (estCompteAvocatNonRattache(requete.error)) return <CompteAvocatNonRattache />;
 
   return (
     <div className="flex flex-col gap-5">

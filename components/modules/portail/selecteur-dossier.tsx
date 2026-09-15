@@ -3,7 +3,9 @@
 import { useTranslations } from "next-intl";
 
 import { Champ, Select } from "@/components/ui/champ";
+import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
 import { useMesDossiers } from "@/hooks/usePortailAvocat";
+import { estCompteAvocatNonRattache } from "@/lib/api/errors";
 
 /**
  * Choix d'un dossier parmi ceux auxquels l'avocat est affecté.
@@ -27,6 +29,10 @@ export function SelecteurDossier({
   const t = useTranslations("portail");
   const requete = useMesDossiers();
   const dossiers = requete.data?.content ?? [];
+
+  // Q-107 : distinguer « pas encore inscrit au répertoire » de « aucun dossier affecté ». Les deux
+  // sont des états légitimes, mais ils n'appellent pas la même action de l'avocat.
+  if (estCompteAvocatNonRattache(requete.error)) return <CompteAvocatNonRattache />;
 
   if (!requete.isLoading && dossiers.length === 0) {
     return (

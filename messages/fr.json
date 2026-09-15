@@ -1203,6 +1203,8 @@
       }
     },
     "pieceJointe": "Pièce jointe (facultative)",
-    "pieceJointeAide": "Le document qui étaye votre compte rendu : plumitif du greffe, note d’audience. Le compte rendu reste valable sans."
+    "pieceJointeAide": "Le document qui étaye votre compte rendu : plumitif du greffe, note d’audience. Le compte rendu reste valable sans.",
+    "compteNonRattacheTitre": "Votre compte n’est pas encore rattaché au répertoire",
+    "compteNonRattacheTexte": "Un avocat doit être inscrit au répertoire des intervenants par la Direction Juridique, avec son identifiant de connexion, avant de pouvoir utiliser le portail. Ce n’est pas une erreur de votre part : contactez la Direction Juridique pour qu’elle procède à votre inscription."
   }
 }

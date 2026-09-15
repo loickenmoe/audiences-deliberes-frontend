@@ -279,12 +279,16 @@ test("un tableau montre dix lignes, et la suite est sur la page suivante", async
   if (await suivant.isDisabled()) return; // une seule page : rien à comparer
 
   await suivant.click();
-  await expect(page.getByRole("main").getByRole("row").nth(1)).toBeVisible({ timeout: 30_000 });
-  const referencePage2 = await page.getByRole("main").getByRole("row").nth(1).innerText();
-
-  // C'est le cœur de l'exigence : la page suivante montre autre chose, rien n'est perdu.
-  expect(referencePage2).not.toBe(referencesPage1);
   await expect(page).toHaveURL(/page=1/);
+
+  /*
+   * `not.toHaveText` **réessaie** jusqu'à ce que la ligne change. Lire le texte juste après le clic
+   * attrapait encore l'ancienne page : le test échouait sur sa propre course, pas sur un défaut.
+   * C'est le cœur de l'exigence — la page suivante montre autre chose, rien n'est perdu.
+   */
+  await expect(page.getByRole("main").getByRole("row").nth(1)).not.toHaveText(referencesPage1, {
+    timeout: 30_000,
+  });
 });
 
 /** Le sélecteur de taille : dix pour lire, cinquante pour balayer. */

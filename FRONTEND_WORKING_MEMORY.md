@@ -52,7 +52,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
 | Décompte | **42 écrans sur 42** · **74 endpoints consommés sur 74** — tout le contrat est consommé — plus les cinq endpoints du portail Avocat et le canal `/ws`. Mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
-| Suite de bout en bout | **138 sur 138** (2026-09-15, un seul travailleur), après QF-44 — +6 tests : pagination, sélecteur de taille, garde de saisie. Auparavant 132 sur 132 après correction de QF-42 — les deux tests de déconnexion sont passés 20 fois sur 20 en rejeu. Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
+| Suite de bout en bout | **139 sur 139** (2026-09-15, un seul travailleur), après QF-45 puis QF-44 — +6 tests : pagination, sélecteur de taille, garde de saisie. Auparavant 132 sur 132 après correction de QF-42 — les deux tests de déconnexion sont passés 20 fois sur 20 en rejeu. Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)
