@@ -185,3 +185,71 @@ test("les écrans dossiers sont traduits", async ({ page }) => {
   });
   await expect(page.getByLabel("Case nature", { exact: true })).toBeVisible();
 });
+
+/**
+ * Garde contre la perte d'une saisie (piste 2 du recensement).
+ *
+ * Ce que ce test protège n'est pas le dialogue lui-même, c'est la **saisie** : on vérifie qu'après
+ * avoir renoncé à partir, les champs sont toujours là. Un test qui s'arrêterait à l'apparition du
+ * dialogue passerait encore si la garde laissait filer le formulaire derrière elle.
+ */
+test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  const reference = `DOS-GARDE-${suffixe()}`;
+  await page.getByLabel("Référence", { exact: true }).fill(reference);
+
+  // Un clic sur la navigation : la garde doit s'interposer.
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  const dialogue = page.getByRole("dialog", { name: "Quitter sans enregistrer ?" });
+  await expect(dialogue).toBeVisible({ timeout: 10_000 });
+
+  // Renoncer : on reste sur le formulaire, et la saisie est intacte.
+  await dialogue.getByRole("button", { name: "Annuler" }).click();
+  await expect(page).toHaveURL(/\/dossiers\/nouveau/);
+  await expect(page.getByLabel("Référence", { exact: true })).toHaveValue(reference);
+
+  // Confirmer : on part pour de bon.
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Quitter sans enregistrer" }).click();
+  await page.waitForURL(/\/clients/, { timeout: 30_000 });
+});
+
+/** L'« Annuler » du formulaire exprime une intention explicite : il ne doit pas être doublé. */
+test("l'Annuler du formulaire n'est pas intercepté par la garde", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+  await page.getByLabel("Référence", { exact: true }).fill(`DOS-GARDE-${suffixe()}`);
+
+  await page.getByRole("link", { name: "Annuler" }).click();
+  await page.waitForURL(/\/dossiers$/, { timeout: 30_000 });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+/** Sans saisie, la garde reste muette : elle ne doit pas gêner une simple visite du formulaire. */
+test("un formulaire vierge se quitte sans confirmation", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  await page.waitForURL(/\/clients/, { timeout: 30_000 });
+});
+
+/**
+ * La bascule de langue n'est ni un lien ni un déchargement de page : c'est une action serveur qui
+ * pose un cookie et revalide la coquille. La garde ne l'intercepte donc pas, et `beforeunload` non
+ * plus — la saisie ne survit que parce que le rafraîchissement **réconcilie** l'arbre au lieu de le
+ * remonter. Rien ne garantit que cela reste vrai : un `redirect()` ajouté un jour à `changerLangue`
+ * viderait le formulaire en silence, sans qu'aucun autre test ne s'en aperçoive.
+ */
+test("changer de langue ne vide pas un formulaire en cours de saisie", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  const reference = `DOS-LANGUE-${suffixe()}`;
+  await page.getByLabel("Référence", { exact: true }).fill(reference);
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByLabel("Reference", { exact: true })).toHaveValue(reference, { timeout: 30_000 });
+});

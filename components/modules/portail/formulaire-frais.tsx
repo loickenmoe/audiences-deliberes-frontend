@@ -7,7 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { SelecteurDossier } from "@/components/modules/portail/selecteur-dossier";
-import { Televersement } from "@/components/metier";
+import { GardeSaisie, Televersement } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { useDeposerFrais } from "@/hooks/usePortailAvocat";
@@ -176,11 +176,19 @@ export function FormulaireFrais() {
           <Button onClick={soumettre} disabled={!complet || deposer.isPending}>
             {deposer.isPending ? t("envoiEnCours") : t("deposer")}
           </Button>
-          <Button variante="discrete" onClick={() => router.push("/frais")}>
+          <Button variante="discrete" data-garde-saisie="ignorer" onClick={() => router.push("/frais")}>
             {t("annuler")}
           </Button>
         </div>
       </div>
+
+      {/* Les pièces sont déjà téléversées : perdre l'écran perdrait le lien entre elles et la demande. */}
+      <GardeSaisie
+        actif={
+          !deposer.isPending &&
+          (dossierId !== null || montant !== "" || referenceFacture !== "" || pieces.length > 0)
+        }
+      />
     </div>
   );
 }

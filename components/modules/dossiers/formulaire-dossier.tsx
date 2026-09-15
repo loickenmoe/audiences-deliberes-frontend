@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
+import { GardeSaisie } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
@@ -153,7 +154,7 @@ export function FormulaireDossier() {
     handleSubmit,
     watch,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<z.input<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -602,7 +603,11 @@ export function FormulaireDossier() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Link href="/dossiers" className="self-center text-[length:var(--taille-sm)] underline underline-offset-4">
+          <Link
+            href="/dossiers"
+            data-garde-saisie="ignorer"
+            className="self-center text-[length:var(--taille-sm)] underline underline-offset-4"
+          >
             {tc("annuler")}
           </Link>
           <Button type="submit" disabled={isSubmitting || creer.isPending || envoiPieces}>
@@ -610,6 +615,9 @@ export function FormulaireDossier() {
           </Button>
         </div>
       </form>
+
+      {/* La saisie la plus longue de l'application : la perdre par un clic de menu coûte cher. */}
+      <GardeSaisie actif={isDirty && !isSubmitting} />
     </div>
   );
 }

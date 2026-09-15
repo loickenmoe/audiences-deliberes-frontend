@@ -354,7 +354,10 @@
     "fichierTropVolumineux": "This file exceeds the maximum size of {taille}.",
     "formatNonAccepte": "This format is not accepted. Allowed formats: {formats}.",
     "champObligatoire": "This field is required.",
-    "corrigezErreurs": "Correct the highlighted fields before submitting."
+    "corrigezErreurs": "Correct the highlighted fields before submitting.",
+    "gardeSaisieTitre": "Leave without saving?",
+    "gardeSaisieMessage": "Your entry has not been saved. Leaving this page will discard it.",
+    "gardeSaisieQuitter": "Leave without saving"
   },
   "clients": {
     "titre": "Clients",

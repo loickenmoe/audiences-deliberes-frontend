@@ -354,7 +354,10 @@
     "fichierTropVolumineux": "Ce fichier dépasse la taille maximale de {taille}.",
     "formatNonAccepte": "Ce format n’est pas accepté. Formats admis : {formats}.",
     "champObligatoire": "Ce champ est obligatoire.",
-    "corrigezErreurs": "Corrigez les champs signalés avant de valider."
+    "corrigezErreurs": "Corrigez les champs signalés avant de valider.",
+    "gardeSaisieTitre": "Quitter sans enregistrer ?",
+    "gardeSaisieMessage": "Votre saisie n’a pas été enregistrée. Si vous quittez cette page, elle sera perdue.",
+    "gardeSaisieQuitter": "Quitter sans enregistrer"
   },
   "clients": {
     "titre": "Clients",
