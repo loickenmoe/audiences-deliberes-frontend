@@ -11,6 +11,8 @@ import { Champ, Select } from "@/components/ui/champ";
 import { Table, TableWrapper, Tbody, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { messageErreur } from "@/lib/api/errors";
+import { Pagination } from "@/components/metier";
+import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { peut } from "@/lib/rbac";
 import { TypeIntervenant } from "@/types/enums";
 
@@ -27,9 +29,10 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("intervenants");
   const td = useTranslations("domaine");
   const [type, setType] = useState<TypeIntervenant | "">("");
+  const { page, taille, definirPage, definirTaille } = useFiltresUrl({});
   const [creationOuverte, setCreationOuverte] = useState(false);
 
-  const requete = useIntervenants(type || undefined);
+  const requete = useIntervenants({ type: type || undefined, page, size: taille });
   const peutCreer = peut(roles, "administrerIntervenants");
 
   return (
@@ -82,7 +85,7 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
             </button>
           }
         />
-      ) : (requete.data ?? []).length === 0 ? (
+      ) : (requete.data?.content ?? []).length === 0 ? (
         <EtatVide
           titre={t("aucunIntervenant")}
           description={t("aucunIntervenantTexte")}
@@ -108,7 +111,7 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
               </Tr>
             </Thead>
             <Tbody>
-              {(requete.data ?? []).map((intervenant) => (
+              {(requete.data?.content ?? []).map((intervenant) => (
                 <Tr key={intervenant.id} className="hover:bg-surface-attenuee">
                   <Td className="font-medium">{intervenant.nom}</Td>
                   <Td>
@@ -133,6 +136,17 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
           </Table>
         </TableWrapper>
       )}
+
+      {requete.data ? (
+        <Pagination
+          page={page}
+          totalPages={requete.data.totalPages}
+          totalElements={requete.data.totalElements}
+          onChangement={definirPage}
+          taille={taille}
+          onChangementTaille={definirTaille}
+        />
+      ) : null}
 
       {peutCreer ? (
         <FormulaireIntervenant

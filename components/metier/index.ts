@@ -4,6 +4,7 @@ export { DialogueConfirmation } from "./dialogue-confirmation";
 export { GardeSaisie } from "./garde-saisie";
 export { MenuExport } from "./menu-export";
 export { Pagination } from "./pagination";
+export { SelecteurCherchable, type OptionCherchable } from "./selecteur-cherchable";
 export { TableDonnees } from "./table-donnees";
 export { Televersement } from "./televersement";
 export { DateHeureValeur, DateValeur, MontantFcfa, PoidsFichier, Pourcentage } from "./valeurs";

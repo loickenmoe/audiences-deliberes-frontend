@@ -87,7 +87,7 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
   if (requete.error) return <EtatErreur message={messageErreur(requete.error)} />;
 
   // Les documents supprimés restent dans la réponse, marqués : ils ne doivent pas s'afficher ici.
-  const documents = (requete.data ?? []).filter((document) => !document.estSupprime);
+  const documents = (requete.data?.content ?? []).filter((document) => !document.estSupprime);
 
   return (
     <div className="flex flex-col gap-5">

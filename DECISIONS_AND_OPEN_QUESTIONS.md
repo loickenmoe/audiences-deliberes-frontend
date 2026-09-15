@@ -924,6 +924,67 @@ de page : c'est une action serveur qui pose un cookie et revalide la coquille. N
 cela reste vrai — un `redirect()` ajouté un jour à `changerLangue` viderait le formulaire en silence.
 Un quatrième test garde donc cette propriété.
 
+### ✅ QF-44 — Dix lignes par tableau, filtres manquants et sélecteurs qui tronquent — traité
+
+**Demande du porteur du projet (2026-09-15)** : « des tableaux de dix lignes maximum ; à partir de la
+onzième, on clique sur *suivant* ». Et, pour les filtres, un objectif énoncé : « l'application doit
+être optimale, évolutive et maintenable, car elle est amenée à recevoir beaucoup de données ».
+
+**Son raisonnement sur les filtres, discuté puis retenu.** Il craignait qu'un filtrage dans le
+navigateur ne le ralentisse. **Cet argument-là est le plus faible** : un navigateur filtre dix mille
+lignes en quelques millisecondes. Deux autres le fondent en revanche solidement. Le **transfert** :
+filtrer côté navigateur suppose d'y faire descendre toute la table — une ligne `dossier` pèse
+**1 554 octets** (relevé dans un plan d'exécution), soit **15 Mo** à dix mille dossiers, à chaque
+ouverture d'écran. Et surtout l'**exactitude** : sur une liste paginée par le serveur, un filtre
+appliqué dans le navigateur ne filtre que la page affichée. L'écran annoncerait « 2 résultats » quand
+il y en a quarante. **Un filtre lent se remarque ; un filtre qui ment ne se remarque pas.**
+
+**La règle qui en découle**, et qui a guidé chaque arbitrage du jalon : *la liste peut-elle dépasser
+une page ?* Si oui, le filtre appartient au serveur. Si non — trois étapes au maximum par dossier —
+l'y mettre serait du contrat à maintenir pour toujours en échange de rien.
+
+**Sur les dix lignes, un revers assumé.** L'objectif « ne pas trop défiler » est atteint. L'objectif
+« ne pas perdre l'information » ne l'est **pas par la pagination** : chercher un dossier parmi
+soixante demande six pages là où un défilement suffisait. Ce sont les **filtres** qui protègent de la
+perte, et c'est pourquoi les deux demandes se tiennent l'une l'autre. Un **sélecteur 10/25/50** a été
+ajouté sur décision du porteur du projet : dix pour lire, cinquante pour balayer.
+
+**Livré côté interface** : `TAILLE_PAGE` centralisée (le `20` était recopié dans quatre services, et
+l'écran Clients n'envoyait **aucune** taille — il prenait donc le défaut du backend) ; taille portée
+par l'URL comme les filtres ; huit écrans et trois onglets branchés sur les réponses paginées ;
+filtres de **sensibilité** (rappel explicite du porteur du projet), de **type d'alerte**, et
+**sélecteur à recherche au fil de la frappe** pour l'affectation.
+
+**Trois pièges de « taille unique », dont deux signalés par le compilateur.** La règle des dix lignes
+vaut pour les **tableaux**, pas pour les requêtes techniques. `GET /intervenants` sert **trois**
+usages : le tableau de l'écran 42, les sélecteurs d'affectation, et la **table de correspondance**
+identifiant → nom de `useLibelles`. Le borner à dix aurait tronqué les deux autres en silence — un
+nom d'avocat se serait soudain affiché `#42`, sans message. De même, `mesDossiers` du portail garde
+`size=100` : c'est le sélecteur du formulaire de frais. Et les **compteurs** de l'accueil ne demandent
+plus qu'**une** ligne : quatre cartes en rapatriaient jusqu'à vingt complètes pour afficher un nombre.
+
+**Le sélecteur de recherche a dû gérer le choix multiple.** L'affectation retient plusieurs juristes
+et plusieurs avocats — c'est-à-dire exactement l'écran qui porte le plus d'options, donc celui où la
+recherche sert le plus. Ne le traiter qu'en choix unique aurait vidé la correction de sa substance.
+
+**Vérifié en réel** (2026-09-15), sur la pile complète démarrée :
+
+| Contrôle | Mesure |
+|---|---|
+| Pagination des dossiers | 5 pages de **10 lignes**, **50 reçues sur 50 annoncées**, **0 doublon** |
+| `estSensible=true` / `=false` | **2** et **48**, total **50** — le `false` n'est pas confondu avec « non renseigné » |
+| `sensibiliteStatut=EN_ATTENTE` | 49 dossiers, la file du DJ/DJA existe enfin |
+| Recherche `?nom=Me` / `?nom=IntrouvableXYZ` | 3 et **0** — le fragment cherche au milieu du nom |
+| Historique | fiche plafonnée à **10** entrées, endpoint dédié pour la suite |
+| Suite de bout en bout | **138 sur 138** |
+| `npm run smoke` | **17 sur 17** |
+
+**Deux tests de bout en bout gardent l'exigence**, et ils ne se contentent pas de compter dix lignes :
+le premier relève une référence en page 1, passe en page 2 et vérifie qu'elle en montre une **autre**
+— un tableau qui perdrait tout au-delà de la dixième ligne passerait un test qui compterait seulement.
+Le second vérifie que le choix « 50 lignes » survit à un rechargement, donc qu'un lien partagé rouvre
+la liste telle que son auteur la voyait.
+
 ---
 
 ## RISQUES

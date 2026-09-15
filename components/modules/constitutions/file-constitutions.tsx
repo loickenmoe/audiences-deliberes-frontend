@@ -62,7 +62,7 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
     }
   }
 
-  const demandes = requete.data ?? [];
+  const demandes = requete.data?.content ?? [];
 
   return (
     <div className="flex flex-col gap-5">

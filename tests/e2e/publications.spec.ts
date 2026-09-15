@@ -55,7 +55,12 @@ function suffixe() {
 async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
-    (await json<{ id: number; compteKeycloak: string | null }[]>("/intervenants?type=AVOCAT", juriste)).find(
+    (
+      await json<{ content: { id: number; compteKeycloak: string | null }[] }>(
+        "/intervenants?type=AVOCAT&size=200",
+        juriste,
+      )
+    ).content.find(
       (a) => a.compteKeycloak === "avocat.test",
     );
   const existant = await trouver();

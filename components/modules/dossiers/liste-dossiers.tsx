@@ -14,9 +14,17 @@ import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { useNaturesDossier } from "@/hooks/useReferentiels";
 import { peut } from "@/lib/rbac";
 import type { Dossier } from "@/types/domaine";
-import { CategorieDossier } from "@/types/enums";
+import { CategorieDossier, StatutValidation } from "@/types/enums";
 
-const DEFAUTS = { reference: "", juridiction: "", categorie: "", nature: "", mesDossiers: "" };
+const DEFAUTS = {
+  reference: "",
+  juridiction: "",
+  categorie: "",
+  nature: "",
+  mesDossiers: "",
+  estSensible: "",
+  sensibiliteStatut: "",
+};
 
 /**
  * Écran 05 — recherche de dossiers.
@@ -29,7 +37,7 @@ const DEFAUTS = { reference: "", juridiction: "", categorie: "", nature: "", mes
 export function ListeDossiers({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("dossiers");
   const td = useTranslations("domaine");
-  const { filtres, page, definirFiltre, definirPage, effacer, nbFiltresActifs } =
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
     useFiltresUrl(DEFAUTS);
   const natures = useNaturesDossier(
     filtres.categorie ? (filtres.categorie as CategorieDossier) : undefined,
@@ -41,6 +49,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
     categorie: filtres.categorie ? (filtres.categorie as CategorieDossier) : undefined,
     nature: filtres.nature || undefined,
     mesDossiers: filtres.mesDossiers === "1",
+    estSensible: filtres.estSensible === "1" ? true : undefined,
+    sensibiliteStatut: (filtres.sensibiliteStatut || undefined) as StatutValidation | undefined,
+    size: taille,
     page,
   });
 
@@ -167,6 +178,37 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           </Select>
         </Champ>
 
+        {/*
+          Q-101 — filtrer les dossiers sensibles, demandé par le porteur du projet. Le statut de
+          validation ne relève pas du confort : `EN_ATTENTE` donne au DJ et à la DJA la file des
+          sensibilités qui les attendent, que rien n'exposait jusqu'ici.
+        */}
+        <Champ id="filtre-sensibilite" label={t("filtreSensibiliteStatut")} className="w-52">
+          <Select
+            id="filtre-sensibilite"
+            value={filtres.sensibiliteStatut}
+            onChange={(evenement) => definirFiltre("sensibiliteStatut", evenement.target.value || undefined)}
+          >
+            <option value="">{t("filtreTous")}</option>
+            {StatutValidation.map((valeur) => (
+              <option key={valeur} value={valeur}>
+                {td(`StatutValidation.${valeur}` as never)}
+              </option>
+            ))}
+          </Select>
+        </Champ>
+
+        <label className="flex items-center gap-2 self-end pb-2 text-[length:var(--taille-sm)]">
+          <input
+            type="checkbox"
+            checked={filtres.estSensible === "1"}
+            onChange={(evenement) =>
+              definirFiltre("estSensible", evenement.target.checked ? "1" : undefined)
+            }
+          />
+          {t("filtreSensiblesSeuls")}
+        </label>
+
         <label className="flex items-center gap-2 self-end pb-2 text-[length:var(--taille-sm)]">
           <input
             type="checkbox"
@@ -186,6 +228,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         erreur={requete.error}
         page={page}
         onChangementPage={definirPage}
+        taille={taille}
+        onChangementTaille={definirTaille}
         onReessayer={() => void requete.refetch()}
         titreVide={t("aucunDossier")}
         descriptionVide={t("aucunDossierTexte")}

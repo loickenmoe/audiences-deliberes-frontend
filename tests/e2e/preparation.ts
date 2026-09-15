@@ -75,7 +75,8 @@ export default async function preparation() {
     });
   }
 
-  const avocats = await appel<unknown[]>("/intervenants?type=AVOCAT", juriste);
+  // Q-100 : réponse paginée.
+  const avocats = (await appel<{ content: unknown[] }>("/intervenants?type=AVOCAT&size=200", juriste)).content;
   if (avocats && avocats.length === 0) {
     // La création d'un intervenant est réservée au DJ/DJA (#61).
     await appel("/intervenants", dj, {

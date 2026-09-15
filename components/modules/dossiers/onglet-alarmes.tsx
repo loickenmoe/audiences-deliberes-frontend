@@ -57,7 +57,7 @@ export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: rea
 
   if (requete.isLoading) return <EtatChargement lignes={4} />;
   if (requete.error) return <EtatErreur message={messageErreur(requete.error)} />;
-  const alarmes = requete.data ?? [];
+  const alarmes = requete.data?.content ?? [];
   const maintenant = new Date();
 
   return (

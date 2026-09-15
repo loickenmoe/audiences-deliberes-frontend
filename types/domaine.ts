@@ -300,6 +300,10 @@ export interface FiltresDossiers {
   reference?: string;
   clientId?: number;
   mesDossiers?: boolean;
+  /** Q-101 — `false` filtre les dossiers **non** sensibles ; `undefined` ne filtre pas. */
+  estSensible?: boolean;
+  /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
+  sensibiliteStatut?: StatutValidation;
   page?: number;
   size?: number;
 }

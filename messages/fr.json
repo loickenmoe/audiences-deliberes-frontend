@@ -357,7 +357,11 @@
     "corrigezErreurs": "Corrigez les champs signalés avant de valider.",
     "gardeSaisieTitre": "Quitter sans enregistrer ?",
     "gardeSaisieMessage": "Votre saisie n’a pas été enregistrée. Si vous quittez cette page, elle sera perdue.",
-    "gardeSaisieQuitter": "Quitter sans enregistrer"
+    "gardeSaisieQuitter": "Quitter sans enregistrer",
+    "lignesParPage": "Lignes par page",
+    "rechercherPlaceholder": "Taper pour rechercher…",
+    "rechercheEnCours": "Recherche…",
+    "retirer": "Retirer"
   },
   "clients": {
     "titre": "Clients",
@@ -463,7 +467,10 @@
     "choisirClient": "Choisissez un client",
     "choisirType": "Choisissez un type",
     "oui": "Oui",
-    "non": "Non"
+    "non": "Non",
+    "filtreSensibiliteStatut": "Sensibilité",
+    "filtreSensiblesSeuls": "Dossiers sensibles seulement",
+    "filtreTous": "Tous"
   },
   "fiche": {
     "retour": "Retour aux dossiers",
@@ -1072,7 +1079,9 @@
     "vide": "Aucune notification non lue",
     "videTraitees": "Aucune notification traitée",
     "videToutes": "Aucune notification",
-    "videTexte": "Les alertes déclenchées par vos dossiers apparaîtront ici, sans rechargement."
+    "videTexte": "Les alertes déclenchées par vos dossiers apparaîtront ici, sans rechargement.",
+    "filtreType": "Type",
+    "filtreTousTypes": "Tous les types"
   },
   "configurations": {
     "titre": "Paramètres système",

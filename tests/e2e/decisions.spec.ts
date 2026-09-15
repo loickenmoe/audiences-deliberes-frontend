@@ -59,7 +59,10 @@ function aujourdhui() {
 async function dossierCree(): Promise<{ id: number; reference: string; etapeId: number }> {
   const juriste = await jeton("juriste.test");
   const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
-  const avocats = await json<{ id: number }[]>("/intervenants?type=AVOCAT", juriste);
+  // Q-100 : réponse paginée ; `size` explicite parce qu'on cherche dans tout l'annuaire.
+  const avocats = (
+    await json<{ content: { id: number }[] }>("/intervenants?type=AVOCAT&size=200", juriste)
+  ).content;
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
   const reference = `DOS-DEF-${suffixe()}`;
   const { id } = await json<{ id: number }>("/dossiers", juriste, {

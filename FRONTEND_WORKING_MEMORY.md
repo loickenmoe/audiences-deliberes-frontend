@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-15 (QF-16 et QF-08 tranchées sur les sources — plus aucun point 🔴).
+> Dernière mise à jour : 2026-09-15 (QF-44 / backend M22 — pagination, filtres et recherche serveur).
 
 ---
 
@@ -43,7 +43,8 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 |---|---|
 | Jalons validés | **F0** à **F17** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11, F15 — PR #12, F16 — PR #13, F17 — PR #14 ; backend PR #22 à #28) |
 | Jalon livré, **en attente de validation** | **Q-98** — pièce jointe facultative sur le compte rendu d'audience (`feat/cr-piece-jointe` depuis `origin/dev` 4022d82 ; backend même nom depuis b13978d). Écran 33 refondu en formulaire continu, « Pièce, décision, conclusion » renommé **« Document du dossier »**. **Évolution backend autorisée** (V13, endpoint #29 en multipart). |
-| Jalon livré, **en attente de validation** | **QF-42** — la déconnexion ne fermait pas la session quand elle suivait de près une lecture de session. Cache du jeton, session fournie par le rendu serveur, marqueur de déconnexion lu par un middleware. **Premier `middleware.ts` du projet**, cantonné à ce seul rôle |
+| Jalon livré, **en attente de validation** | **QF-44 / M22** — dix lignes par tableau avec sélecteur 10/25/50, pagination généralisée à 8 endpoints, 10 filtres neufs (dont sensibilité), recherche au fil de la frappe. **Les deux dépôts doivent être fusionnés ensemble** : 8 réponses changent de forme (`List` → `PageResponse`) |
+| Jalon précédent | **QF-42** — la déconnexion ne fermait pas la session quand elle suivait de près une lecture de session. Cache du jeton, session fournie par le rendu serveur, marqueur de déconnexion lu par un middleware. **Premier `middleware.ts` du projet**, cantonné à ce seul rôle |
 | Jalon précédent | **F17** — durcissement (PR #14) : accueil achevé, accessibilité AA, responsive, performance, parcours P1-P9, guide utilisateur, revue de sécurité |
 | Jalon suivant | **aucun** — les 18 jalons sont livrés, la revue de clôture est faite (`RAPPORT_DE_RECETTE.md`). Reste la recette du porteur du projet et la soutenance |
 | Questions bloquantes | **aucune.** QF-16 tranchée le 2026-09-15 — limite acceptée pour la V1, écrite au §1 du guide : un utilisateur interne n'est affectable qu'après sa première connexion (les avocats, eux, le sont dès le répertoire). QF-08 close : ce n'était pas une lacune, les sources traitent le cas par la notification |
@@ -51,7 +52,7 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
 | Décompte | **42 écrans sur 42** · **74 endpoints consommés sur 74** — tout le contrat est consommé — plus les cinq endpoints du portail Avocat et le canal `/ws`. Mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
-| Suite de bout en bout | **132 sur 132** (2026-09-14, un seul travailleur), après correction de QF-42 — les deux tests de déconnexion sont passés 20 fois sur 20 en rejeu. Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
+| Suite de bout en bout | **138 sur 138** (2026-09-15, un seul travailleur), après QF-44 — +6 tests : pagination, sélecteur de taille, garde de saisie. Auparavant 132 sur 132 après correction de QF-42 — les deux tests de déconnexion sont passés 20 fois sur 20 en rejeu. Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)

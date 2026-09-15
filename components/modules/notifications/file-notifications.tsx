@@ -20,6 +20,7 @@ import {
 } from "@/lib/alertes";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
+import { TypeAlerte } from "@/types/enums";
 import { useCanalAlertes } from "@/providers/alertes.provider";
 import { cn } from "@/lib/utils";
 import type { Alerte } from "@/types/domaine";
@@ -46,9 +47,17 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("notifications");
   const td = useTranslations("domaine");
   const { connecte } = useCanalAlertes();
-  const { filtres, page, definirFiltre, definirPage } = useFiltresUrl({ vue: "aTraiter" });
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage } = useFiltresUrl({
+    vue: "aTraiter",
+    type: "",
+  });
   const vue = (VUES.find((cle) => cle === filtres.vue) ?? "aTraiter") as CleVueNotifications;
-  const requete = useMesNotifications(VUES_NOTIFICATIONS[vue], page);
+  const requete = useMesNotifications(
+    VUES_NOTIFICATIONS[vue],
+    page,
+    taille,
+    (filtres.type || undefined) as TypeAlerte | undefined,
+  );
   const traiter = useTraiterAlerte();
   // L'avocat n'accède pas aux dossiers : la référence resterait un lien mort.
   const lienDossier = peut(roles, "consulterDossiers");
@@ -162,6 +171,28 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
           ))}
         </div>
 
+        {/*
+          Q-102 — filtrer par type d'alerte. Dix-sept types existent, et les rappels d'audience se
+          déclenchent trois fois par audience (J-7, J-3, J-1) : sans ce filtre, une échéance de
+          recours se perd dans la masse. Le filtrage est **serveur** — le rejouer ici n'aurait
+          cherché que dans la page affichée.
+        */}
+        <label className="flex items-center gap-2 text-[length:var(--taille-sm)]">
+          {t("filtreType")}
+          <select
+            value={filtres.type}
+            onChange={(evenement) => definirFiltre("type", evenement.target.value || undefined)}
+            className="rounded border border-bordure bg-surface px-2 py-1 text-[length:var(--taille-sm)]"
+          >
+            <option value="">{t("filtreTousTypes")}</option>
+            {TypeAlerte.map((valeur) => (
+              <option key={valeur} value={valeur}>
+                {td(`TypeAlerte.${valeur}` as never)}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <p
           data-canal={connecte ? "ouvert" : "repli"}
           className="flex items-center gap-2 text-[length:var(--taille-xs)] text-texte-secondaire"
@@ -181,6 +212,8 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
         erreur={requete.error}
         page={page}
         onChangementPage={definirPage}
+        taille={taille}
+        onChangementTaille={definirTaille}
         onReessayer={() => void requete.refetch()}
         titreVide={t(VIDE[vue] as never)}
         descriptionVide={t("videTexte")}

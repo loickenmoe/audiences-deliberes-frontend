@@ -59,18 +59,23 @@ const serveur = setupServer(
 
   http.get(`${BASE}/intervenants`, ({ request }) => {
     derniereUrl = new URL(request.url);
-    return HttpResponse.json([
-      {
-        id: 4,
-        type: "AVOCAT",
-        nom: "Me Ngo Bassong",
-        email: "avocat@example.cm",
-        telephone: null,
-        compteKeycloak: "avocat.test",
-        notification: null,
-        createdAt: "2026-09-02T09:00:00",
-      },
-    ]);
+    // Paginé depuis Q-100 : le référentiel était renvoyé en entier.
+    return HttpResponse.json({
+      content: [
+        {
+          id: 4,
+          type: "AVOCAT",
+          nom: "Me Ngo Bassong",
+          email: "avocat@example.cm",
+          telephone: null,
+          compteKeycloak: "avocat.test",
+          notification: null,
+          createdAt: "2026-09-02T09:00:00",
+        },
+      ],
+      totalPages: 1,
+      totalElements: 1,
+    });
   }),
 
   http.get(`${BASE}/referentiels/natures-dossier`, ({ request }) => {
@@ -142,15 +147,37 @@ describe("clientService", () => {
 
 describe("intervenantService", () => {
   it("filtre par type quand il est fourni", async () => {
-    await intervenantService.lister("AVOCAT");
+    await intervenantService.lister({ type: "AVOCAT" });
     expect(derniereUrl?.searchParams.get("type")).toBe("AVOCAT");
   });
 
   it("n'envoie aucun filtre sans type", async () => {
-    const liste = await intervenantService.lister();
+    const page = await intervenantService.lister();
 
     expect(derniereUrl?.searchParams.has("type")).toBe(false);
-    expect(liste[0]?.compteKeycloak).toBe("avocat.test");
+    expect(page.content[0]?.compteKeycloak).toBe("avocat.test");
+  });
+
+  /**
+   * Q-105 — la recherche au fil de la frappe. Ce qui compte n'est pas que le paramètre parte, mais
+   * qu'il **ne parte pas** quand il est vide : un `nom=` vide ferait chercher la chaîne vide et
+   * renverrait tout, en donnant l'illusion d'un filtre appliqué.
+   */
+  it("transmet la recherche par nom, et l'omet quand elle est vide", async () => {
+    await intervenantService.lister({ nom: "Fotso" });
+    expect(derniereUrl?.searchParams.get("nom")).toBe("Fotso");
+
+    await intervenantService.lister({ nom: "" });
+    expect(derniereUrl?.searchParams.has("nom")).toBe(false);
+  });
+
+  /** Q-100 — la taille de page est toujours transmise : sans elle, le backend impose la sienne. */
+  it("transmet toujours une taille de page", async () => {
+    await intervenantService.lister();
+    expect(derniereUrl?.searchParams.get("size")).toBe("10");
+
+    await intervenantService.lister({ size: 50 });
+    expect(derniereUrl?.searchParams.get("size")).toBe("50");
   });
 });
 

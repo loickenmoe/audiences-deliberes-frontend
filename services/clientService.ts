@@ -1,3 +1,4 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { Client, CreerClient, VueClientDossiers } from "@/types/domaine";
 
@@ -17,7 +18,10 @@ export const clientService = {
     page?: number;
     size?: number;
   }): Promise<PageReponse<Client>> => {
-    const { data } = await apiClient.get<PageReponse<Client>>(BASE, { params });
+    // La taille n'était pas transmise : la page valait donc le défaut du backend, pas celui de l'écran.
+    const { data } = await apiClient.get<PageReponse<Client>>(BASE, {
+      params: { ...params, size: params.size ?? TAILLE_PAGE },
+    });
     return data;
   },
 

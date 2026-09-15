@@ -70,8 +70,11 @@ async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
     (
-      await json<{ id: number; compteKeycloak: string | null }[]>("/intervenants?type=AVOCAT", juriste)
-    ).find((a) => a.compteKeycloak === "avocat.test");
+      await json<{ content: { id: number; compteKeycloak: string | null }[] }>(
+        "/intervenants?type=AVOCAT&size=200",
+        juriste,
+      )
+    ).content.find((a) => a.compteKeycloak === "avocat.test");
   const existant = await trouver();
   if (existant) return existant.id;
   const creation = await appel("/intervenants", await jeton("dj.test"), {

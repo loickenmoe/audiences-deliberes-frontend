@@ -19,7 +19,7 @@ const DEFAUTS = { nom: "", reference: "" };
 
 export function ListeClients({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("clients");
-  const { filtres, page, definirFiltre, definirPage, effacer, nbFiltresActifs } =
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
     useFiltresUrl(DEFAUTS);
   const [creationOuverte, setCreationOuverte] = useState(false);
 
@@ -27,6 +27,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
     nom: filtres.nom || undefined,
     reference: filtres.reference || undefined,
     page,
+    size: taille,
   });
 
   const colonnes = useMemo<ColumnDef<Client, unknown>[]>(
@@ -111,6 +112,8 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
         erreur={requete.error}
         page={page}
         onChangementPage={definirPage}
+        taille={taille}
+        onChangementTaille={definirTaille}
         onReessayer={() => void requete.refetch()}
         titreVide={t("aucunClient")}
         descriptionVide={t("aucunClientTexte")}

@@ -2,15 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CLES } from "@/hooks/const";
+import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { gedService } from "@/services/gedService";
 import type { StatutSuppression } from "@/types/domaine";
 
 /** `null` : tout l'historique. */
-export function useDemandesSuppression(statut: StatutSuppression | null) {
+export function useDemandesSuppression(statut: StatutSuppression | null, page = 0, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.demandesSuppression, statut ?? "toutes"],
-    queryFn: () => gedService.listerDemandesSuppression(statut),
+    queryKey: [CLES.demandesSuppression, statut ?? "toutes", page, size],
+    queryFn: () => gedService.listerDemandesSuppression(statut, page, size),
   });
 }
 

@@ -1,4 +1,5 @@
-import { apiClient } from "@/lib/api/client";
+import { TAILLE_PAGE } from "@/hooks/const";
+import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
   Alarme,
   Audience,
@@ -17,8 +18,10 @@ import type { PeriodeCalendrier } from "@/types/enums";
  */
 export const audienceService = {
   /** #56 — audiences d'un dossier, la plus récente d'abord. */
-  listerAudiences: async (dossierId: number): Promise<Audience[]> => {
-    const { data } = await apiClient.get<Audience[]>(`/dossiers/${dossierId}/audiences`);
+  listerAudiences: async (dossierId: number, page = 0, size = TAILLE_PAGE): Promise<PageReponse<Audience>> => {
+    const { data } = await apiClient.get<PageReponse<Audience>>(`/dossiers/${dossierId}/audiences`, {
+      params: { page, size },
+    });
     return data;
   },
 
@@ -49,8 +52,10 @@ export const audienceService = {
   },
 
   /** #57 — alarmes d'un dossier, échéance la plus proche d'abord. */
-  listerAlarmes: async (dossierId: number): Promise<Alarme[]> => {
-    const { data } = await apiClient.get<Alarme[]>(`/dossiers/${dossierId}/alarmes`);
+  listerAlarmes: async (dossierId: number, page = 0, size = TAILLE_PAGE): Promise<PageReponse<Alarme>> => {
+    const { data } = await apiClient.get<PageReponse<Alarme>>(`/dossiers/${dossierId}/alarmes`, {
+      params: { page, size },
+    });
     return data;
   },
 

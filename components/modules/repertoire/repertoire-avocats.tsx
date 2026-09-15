@@ -20,7 +20,7 @@ export function RepertoireAvocats() {
   const t = useTranslations("repertoire");
   const { filtres, definirFiltre } = useFiltresUrl(DEFAUTS);
   const requete = useRepertoire(filtres.nom);
-  const avocats = requete.data ?? [];
+  const avocats = requete.data?.content ?? [];
 
   return (
     <div className="flex flex-col gap-5">

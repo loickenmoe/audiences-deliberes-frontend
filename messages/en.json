@@ -357,7 +357,11 @@
     "corrigezErreurs": "Correct the highlighted fields before submitting.",
     "gardeSaisieTitre": "Leave without saving?",
     "gardeSaisieMessage": "Your entry has not been saved. Leaving this page will discard it.",
-    "gardeSaisieQuitter": "Leave without saving"
+    "gardeSaisieQuitter": "Leave without saving",
+    "lignesParPage": "Rows per page",
+    "rechercherPlaceholder": "Type to search…",
+    "rechercheEnCours": "Searching…",
+    "retirer": "Remove"
   },
   "clients": {
     "titre": "Clients",
@@ -463,7 +467,10 @@
     "choisirClient": "Choose a client",
     "choisirType": "Choose a type",
     "oui": "Yes",
-    "non": "No"
+    "non": "No",
+    "filtreSensibiliteStatut": "Sensitivity",
+    "filtreSensiblesSeuls": "Sensitive case files only",
+    "filtreTous": "All"
   },
   "fiche": {
     "retour": "Back to cases",
@@ -1072,7 +1079,9 @@
     "vide": "No unread notification",
     "videTraitees": "No handled notification",
     "videToutes": "No notification",
-    "videTexte": "Alerts raised by your case files will appear here, without reloading."
+    "videTexte": "Alerts raised by your case files will appear here, without reloading.",
+    "filtreType": "Type",
+    "filtreTousTypes": "All types"
   },
   "configurations": {
     "titre": "System settings",

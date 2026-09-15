@@ -1,3 +1,4 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
 import type { StatutAudience } from "@/types/enums";
@@ -57,7 +58,7 @@ export const portailAvocatService = {
   },
 
   /** Ses propres dépôts, quel qu'en soit le statut — c'est là qu'il lit le motif d'un rejet. */
-  mesPublications: async (page = 0, size = 20): Promise<PageReponse<Publication>> => {
+  mesPublications: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<Publication>> => {
     const { data } = await apiClient.get<PageReponse<Publication>>("/avocat/mes-publications", {
       params: { page, size },
     });

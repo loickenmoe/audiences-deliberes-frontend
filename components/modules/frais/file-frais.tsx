@@ -34,9 +34,9 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesFrais(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0].cle as string }), [vues]);
-  const { filtres, page, definirFiltre, definirPage } = useFiltresUrl(defauts);
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage } = useFiltresUrl(defauts);
   const vue = vues.find((v) => v.cle === filtres.vue) ?? vues[0];
-  const requete = useDemandesFrais(vue.statut, page);
+  const requete = useDemandesFrais(vue.statut, page, taille);
   // L'avocat ne consulte pas les dossiers (`ROLE_CONSULTATION`) : la référence reste un texte.
   const lienDossier = peut(roles, "consulterDossiers");
 
@@ -132,6 +132,8 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
         erreur={requete.error}
         page={page}
         onChangementPage={definirPage}
+        taille={taille}
+        onChangementTaille={definirTaille}
         onReessayer={() => void requete.refetch()}
         titreVide={t(VIDE[vue.cle] as never)}
         descriptionVide={t("videTexte")}

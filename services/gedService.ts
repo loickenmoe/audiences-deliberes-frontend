@@ -1,4 +1,5 @@
-import { apiClient } from "@/lib/api/client";
+import { TAILLE_PAGE } from "@/hooks/const";
+import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
   DemandeSuppression,
   DocumentDossier,
@@ -19,8 +20,14 @@ export const gedService = {
    * (Q-67 backend). Les éléments de cette liste ne portent **pas** d'URL de téléchargement : on la
    * demande au moment de l'ouverture (#39), et c'est tant mieux, elle ne vit que 10 minutes.
    */
-  listerDocumentsDossier: async (dossierId: number): Promise<DocumentDossier[]> => {
-    const { data } = await apiClient.get<DocumentDossier[]>(`/dossiers/${dossierId}/documents`);
+  listerDocumentsDossier: async (
+    dossierId: number,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<DocumentDossier>> => {
+    const { data } = await apiClient.get<PageReponse<DocumentDossier>>(`/dossiers/${dossierId}/documents`, {
+      params: { page, size },
+    });
     return data;
   },
 
@@ -66,9 +73,13 @@ export const gedService = {
    * #63 — file du DJ/DJA. Avec `statut`, les demandes de ce statut, **la plus ancienne d'abord**
    * (l'ordre de traitement) ; sans, tout l'historique, la plus récente d'abord.
    */
-  listerDemandesSuppression: async (statut: StatutSuppression | null): Promise<DemandeSuppression[]> => {
-    const { data } = await apiClient.get<DemandeSuppression[]>("/ged/demandes-suppression", {
-      params: statut ? { statut } : {},
+  listerDemandesSuppression: async (
+    statut: StatutSuppression | null,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<DemandeSuppression>> => {
+    const { data } = await apiClient.get<PageReponse<DemandeSuppression>>("/ged/demandes-suppression", {
+      params: { ...(statut ? { statut } : {}), page, size },
     });
     return data;
   },

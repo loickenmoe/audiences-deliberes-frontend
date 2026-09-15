@@ -34,9 +34,9 @@ export function FilePublications({ roles }: { roles: readonly string[] }) {
   const libelle = useLibellePublication();
   const vues = useMemo(() => vuesPublications(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0].cle as string }), [vues]);
-  const { filtres, page, definirFiltre, definirPage } = useFiltresUrl(defauts);
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage } = useFiltresUrl(defauts);
   const vue = vues.find((v) => v.cle === filtres.vue) ?? vues[0];
-  const requete = usePublications({ statut: vue.statut, page });
+  const requete = usePublications({ statut: vue.statut, page, size: taille });
 
   const colonnes = useMemo<ColumnDef<Publication, unknown>[]>(
     () => [
@@ -117,6 +117,8 @@ export function FilePublications({ roles }: { roles: readonly string[] }) {
         erreur={requete.error}
         page={page}
         onChangementPage={definirPage}
+        taille={taille}
+        onChangementTaille={definirTaille}
         onReessayer={() => void requete.refetch()}
         titreVide={t(VIDE[vue.cle] as never)}
         descriptionVide={t("videTexte")}

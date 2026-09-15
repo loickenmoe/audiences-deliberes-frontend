@@ -1,3 +1,4 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
   Adjudication,
@@ -57,7 +58,7 @@ export const decisionService = {
         juridiction: filtres.juridiction || undefined,
         dossierId: filtres.dossierId ?? undefined,
         page: filtres.page ?? 0,
-        size: filtres.size ?? 20,
+        size: filtres.size ?? TAILLE_PAGE,
       },
     });
     return data;

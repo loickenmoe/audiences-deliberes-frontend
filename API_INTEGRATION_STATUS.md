@@ -4,7 +4,10 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-14 (Q-98 — **#29 passe en multipart** avec une pièce facultative ;
+> Dernière mise à jour : 2026-09-15 (M22 — **huit endpoints passent en `PageResponse`** et dix filtres
+> s'ajoutent ; `GET /dossiers/{id}/historique` créé. Le décompte reste **74 sur 74** : ce sont les
+> mêmes endpoints, sous une autre forme).
+> Précédente : 2026-09-14 (Q-98 — **#29 passe en multipart** avec une pièce facultative ;
 > QF-20 rouverte puis tranchée. Le décompte est inchangé : **74 sur 74**).
 > Précédente : 2026-09-14 (jalon F16 — **74 endpoints consommés sur 74**, plus les cinq
 > endpoints du portail Avocat (Q-96, Q-97) et le canal `/ws` ; QF-01, QF-20 et QF-26 closes).
