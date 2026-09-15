@@ -1,7 +1,8 @@
 # DECISIONS_AND_OPEN_QUESTIONS
 
 > Arbitrages rendus, questions ouvertes, risques. Mis à jour en continu.
-> Dernière mise à jour : 2026-09-14 (revue de clôture — QF-42 corrigé ; RF-01, RF-02 et RF-04 closes,
+> Dernière mise à jour : 2026-09-15 (pistes 1 et 2 du recensement appliquées — QF-43 et backend Q-99).
+> Précédente : 2026-09-14 (revue de clôture — QF-42 corrigé ; RF-01, RF-02 et RF-04 closes,
 > elles étaient traitées depuis longtemps mais restées étiquetées comme ouvertes).
 >
 > **État à la clôture** : une seule question **bloquante** reste ouverte, **QF-16** — elle appelle un
@@ -837,6 +838,50 @@ le cache seul, **3 sur 10** après la session fournie par le serveur, **4 sur 10
 la lecture en vol — soit aucun progrès —, puis **0 sur 20** (deux passages) avec le marqueur. C'est
 l'instrumentation des en-têtes `Set-Cookie`, relancée à chaque étape, qui a désigné la source
 restante à chaque fois ; le raisonnement seul a désigné trois fois la mauvaise.
+
+---
+
+### ✅ QF-43 — Une saisie en cours se perdait sans avertissement — corrigé
+
+**Constat du recensement du 2026-09-15.** `formulaire-dossier.tsx` porte la vingtaine de champs du
+§1189 des spécifications sur 615 lignes, et rien ne protégeait cette saisie : ni garde
+`beforeunload`, ni brouillon. Un clic sur « Clients » dans la barre latérale effaçait tout, sans un
+mot — sur le formulaire le plus long de l'application, décrit par le document d'analyse comme « le
+point d'entrée réel dans le système ».
+
+**Ce que les sources disent, et ce qu'elles ne disent pas.** UC-DOS-01 prévoit une annulation
+explicite (« 2-a Annulation : le juriste clique sur *Annuler* »). Il décrit donc l'annulation
+**voulue**, et reste muet sur l'annulation **subie** — la seule qui coûte. Même distinction qu'en
+QF-20 : le contrat était respecté, l'usage ne l'était pas.
+
+**Corrigé** : `components/metier/garde-saisie.tsx`, posé sur les trois formulaires longs — création
+de dossier (écran 06), demande de frais (30), dépôt d'une publication (33).
+
+- **Quitter le site** (fermer l'onglet, recharger) : `beforeunload`, seul mécanisme que le navigateur
+  accepte, avec son dialogue natif qu'aucune application ne peut styler.
+- **Naviguer dans l'application** : le clic sur un lien est intercepté **en phase de capture** — le
+  gestionnaire du routeur étant posé sur le lien, intercepter en bouillonnement arriverait trop tard
+  — et le dialogue de l'application prend le relais, traduit et cohérent.
+
+**Deux choix explicites.** L'« Annuler » du formulaire **n'est pas gardé** : il exprime une intention,
+et le doubler d'une confirmation transformerait un geste clair en friction. Il porte
+`data-garde-saisie="ignorer"`, faute de quoi le comportement aurait dépendu de son implémentation —
+un lien sur l'écran 06, un bouton sur les écrans 30 et 33 — et deux formulaires se seraient comportés
+différemment pour un même geste. Et **aucun brouillon n'est persisté** : conserver la saisie dans le
+navigateur y écrirait des données sensibles — parties, montants, type de client — sur un poste
+possiblement partagé, à rebours de la revue de sécurité de F17.
+
+**Vérifié** par quatre parcours de bout en bout, contre le backend réel : la saisie **survit** au
+renoncement (le test relit la valeur du champ, il ne s'arrête pas à l'apparition du dialogue), la
+navigation aboutit après confirmation, l'« Annuler » n'est pas intercepté, et un formulaire vierge se
+quitte sans rien demander.
+
+**Un trou possible, cherché puis écarté.** Le sélecteur de langue n'est ni un lien ni un déchargement
+de page : c'est une action serveur qui pose un cookie et revalide la coquille. Ni la garde ni
+`beforeunload` ne l'interceptent — la saisie ne survit que parce que le rafraîchissement
+**réconcilie** l'arbre React au lieu de le remonter. Mesuré : elle survit. Mais rien ne garantit que
+cela reste vrai — un `redirect()` ajouté un jour à `changerLangue` viderait le formulaire en silence.
+Un quatrième test garde donc cette propriété.
 
 ---
 

@@ -1,6 +1,7 @@
 export { BarreFiltres } from "./barre-filtres";
 export { CycleEtape } from "./cycle-etape";
 export { DialogueConfirmation } from "./dialogue-confirmation";
+export { GardeSaisie } from "./garde-saisie";
 export { MenuExport } from "./menu-export";
 export { Pagination } from "./pagination";
 export { TableDonnees } from "./table-donnees";

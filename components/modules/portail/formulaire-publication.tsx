@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Televersement } from "@/components/metier";
+import { GardeSaisie, Televersement } from "@/components/metier";
 import { SelecteurDossier } from "@/components/modules/portail/selecteur-dossier";
 import { Button } from "@/components/ui/button";
 import { Champ, Select, Textarea } from "@/components/ui/champ";
@@ -229,11 +229,16 @@ export function FormulairePublication() {
           <Button onClick={soumettre} disabled={!complet || enCours}>
             {enCours ? t("envoiEnCours") : t(`natures.${nature}.action` as never)}
           </Button>
-          <Button variante="discrete" onClick={() => router.back()}>
+          <Button variante="discrete" data-garde-saisie="ignorer" onClick={() => router.back()}>
             {t("annuler")}
           </Button>
         </div>
       </div>
+
+      {/* Un compte rendu d'audience est un récit : le reperdre, c'est le réécrire. */}
+      <GardeSaisie
+        actif={!enCours && (dossierId !== null || contenu.trim() !== "" || fichier !== null)}
+      />
     </div>
   );
 }
