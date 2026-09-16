@@ -270,11 +270,11 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 44 | PUT | `/alertes/seuils` | DJ | 41 | F14 | ✅ |
+| 44 | PUT | `/alertes/seuils` | **DJ + DJA** (Q-108) | 41 | F14 | ✅ |
 | 45 | GET | `/alertes/mes-notifications?statut&page&size` | authentifié | 03, **amorçage de session**, badge | F14 | ✅ |
 | 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ✅ |
 | 47 | GET | `/configurations` | CONS | 41 | F14 | ✅ |
-| 48 | PUT | `/configurations/{cle}` | DJ | 41 | F14 | ✅ |
+| 48 | PUT | `/configurations/{cle}` | **DJ + DJA** (Q-108) | 41 | F14 | ✅ |
 | 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ✅ |
 | 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |

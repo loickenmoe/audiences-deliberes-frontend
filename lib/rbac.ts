@@ -76,7 +76,11 @@ export const CAPACITES = {
   // ── Audiences et délibérés ────────────────────────────────────────────────
   /** `POST .../audiences`, `PUT /audiences/{id}/compte-rendu`, alarmes — JURISTE */
   gererAudiences: ["ROLE_JURISTE"],
-  /** `GET /audiences/calendrier` — JURISTE, DJ (ni DJA ni Assistante) */
+  /**
+   * `GET /audiences/calendrier` — JURISTE, DJ. **L'Assistante n'y a pas accès ; la DJA, si** — par
+   * son `ROLE_JURISTE` composite, comme le DJ. Le commentaire disait auparavant « ni DJA ni
+   * Assistante » : c'était faux, et vérifié faux en exécution. La liste ci-dessous n'a jamais changé.
+   */
   consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ"],
   /** `POST .../deliberes`, prorogations, rabattement, expédition, recours — JURISTE */
   gererDeliberes: ["ROLE_JURISTE"],
@@ -106,7 +110,11 @@ export const CAPACITES = {
   transmettreCorrespondance: ["ROLE_DJ", "ROLE_DJA"],
   /** `POST /publications/cr-audience`, `POST /publications/autres` — AVOCAT */
   deposerPublication: ["ROLE_AVOCAT"],
-  /** `GET /repertoire/avocats` — JURISTE, ASSISTANTE (ni DJ ni DJA) */
+  /**
+   * `GET /repertoire/avocats` — JURISTE, ASSISTANTE. **Le DJ et la DJA y accèdent aussi**, par leur
+   * `ROLE_JURISTE` composite : mesuré, l'endpoint leur répond 200. Le commentaire disait « ni DJ ni
+   * DJA » ; seuls le SH et l'avocat en sont écartés.
+   */
   consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
   /** `GET /constitutions/prestataires` — SH, JURISTE */
   consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE"],
@@ -140,8 +148,15 @@ export const CAPACITES = {
   genererRapport: ["ROLE_JURISTE"],
   /** `GET /configurations` — CONSULTATION */
   consulterConfigurations: ["ROLE_CONSULTATION"],
-  /** `PUT /configurations/{cle}`, `PUT /alertes/seuils` — DJ */
-  administrerConfigurations: ["ROLE_DJ"],
+  /**
+   * `PUT /configurations/{cle}`, `PUT /alertes/seuils` — DJ **et DJA** (backend Q-108).
+   *
+   * Ouvert à la DJA sur décision du porteur du projet, pour la **continuité de service** : le DJ
+   * absent, plus personne ne pouvait relever un seuil. L'ouverture est **à sens unique** — le
+   * contrôle d'opportunité reste réservé à la DJA, sans quoi RG-INT-03 perdrait la séparation de ses
+   * deux étapes.
+   */
+  administrerConfigurations: ["ROLE_DJ", "ROLE_DJA"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Capacite = keyof typeof CAPACITES;

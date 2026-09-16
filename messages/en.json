@@ -1088,7 +1088,7 @@
   "configurations": {
     "titre": "System settings",
     "description": "The seven settings driving the thresholds, deadlines and checks of the application. A change takes effect immediately.",
-    "lectureSeule": "Read only - only the Legal Director may change these settings.",
+    "lectureSeule": "Read only - only the Legal Director and Deputy Director may change these settings.",
     "valeur": "Value",
     "valeurActuelle": "Current value",
     "modifiee": "Changed on {date}",

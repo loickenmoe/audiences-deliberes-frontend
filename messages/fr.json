@@ -1088,7 +1088,7 @@
   "configurations": {
     "titre": "Paramètres système",
     "description": "Les sept paramètres qui pilotent les seuils, les délais et les contrôles de l’application. Une modification prend effet immédiatement.",
-    "lectureSeule": "Consultation seule - seul le Directeur Juridique peut modifier ces paramètres.",
+    "lectureSeule": "Consultation seule - seuls le Directeur Juridique et son Adjoint peuvent modifier ces paramètres.",
     "valeur": "Valeur",
     "valeurActuelle": "Valeur actuelle",
     "modifiee": "Modifiée le {date}",

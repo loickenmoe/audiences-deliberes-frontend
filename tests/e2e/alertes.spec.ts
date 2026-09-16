@@ -262,11 +262,42 @@ test("les formats de la GED se choisissent dans la liste publiée ; le juriste n
   await juriste.goto("/admin/configurations");
   await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
   await expect(
-    juriste.getByText("Consultation seule - seul le Directeur Juridique peut modifier ces paramètres."),
+    juriste.getByText(
+      "Consultation seule - seuls le Directeur Juridique et son Adjoint peuvent modifier ces paramètres.",
+    ),
   ).toBeVisible();
   await expect(juriste.getByRole("button", { name: "Enregistrer" })).toHaveCount(0);
   await expect(juriste.locator("#configuration-SEUIL_PROROGATIONS")).toBeDisabled();
   await juriste.context().close();
+});
+
+/**
+ * Backend Q-108 — la DJA administre les paramètres comme le DJ.
+ *
+ * Le motif est la **continuité de service** : le DJ absent, plus personne ne pouvait relever un
+ * seuil, alors qu'un Adjoint existe pour suppléer. Le parcours vérifie l'écriture de bout en bout —
+ * l'écran pouvait auparavant afficher le formulaire à un profil que le backend refusait ensuite.
+ */
+test("la DJA enregistre un paramètre système comme le DJ (Q-108)", async ({ browser }) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await dja.goto("/admin/configurations");
+  await expect(dja.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
+  await expect(dja.getByText(/Consultation seule/)).toHaveCount(0);
+
+  const article = dja.locator("article", { hasText: "SEUIL_PROROGATIONS" });
+  const champ = article.locator("#configuration-SEUIL_PROROGATIONS");
+  await expect(champ).toBeEnabled();
+  const initiale = (await champ.inputValue()).trim();
+
+  await champ.fill("11");
+  await article.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+
+  // Remise en état : ce seuil pilote les alertes de prorogation des autres parcours.
+  await champ.fill(initiale);
+  await article.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+  await dja.context().close();
 });
 
 test("le backend refuse une valeur qui casserait un autre module (Q-91)", async () => {

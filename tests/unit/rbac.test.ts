@@ -104,6 +104,44 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     expect(peut(DJA, "controlerOpportuniteFrais")).toBe(true);
     expect(peut(DJ, "controlerOpportuniteFrais")).toBe(false);
   });
+
+  /**
+   * Backend Q-108 — l'administration des paramètres est ouverte à la DJA, pour la continuité de
+   * service : le DJ absent, plus personne ne pouvait relever un seuil.
+   */
+  it("l'administration des paramètres est ouverte au DJ et à la DJA, à eux seuls", () => {
+    expect(peut(DJ, "administrerConfigurations")).toBe(true);
+    expect(peut(DJA, "administrerConfigurations")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "administrerConfigurations")).toBe(false);
+    }
+  });
+
+  /**
+   * Le pendant du test précédent. L'ouverture consentie à la DJA est **à sens unique** : le DJ ne
+   * rejoint pas la DJA sur le contrôle d'opportunité, sans quoi RG-INT-03 perdrait la séparation de
+   * ses deux étapes — le même profil préparerait l'avis puis voterait la validation conjointe.
+   */
+  it("DJ et DJA ne diffèrent plus que par le contrôle d'opportunité", () => {
+    const ecarts = (Object.keys(CAPACITES) as Capacite[]).filter(
+      (capacite) => peut(DJ, capacite) !== peut(DJA, capacite),
+    );
+    expect(ecarts).toEqual(["controlerOpportuniteFrais"]);
+  });
+
+  /**
+   * `ROLE_DJ` et `ROLE_DJA` sont **tous deux** composites de `ROLE_JURISTE` dans Keycloak. Deux
+   * commentaires de la table affirmaient le contraire — corrigés avec Q-108. Ces assertions
+   * empêchent que la confusion revienne.
+   */
+  it("le DJ et la DJA atteignent le calendrier et le répertoire par leur rôle juriste", () => {
+    for (const profil of [DJ, DJA]) {
+      expect(peut(profil, "consulterCalendrier")).toBe(true);
+      expect(peut(profil, "consulterRepertoire")).toBe(true);
+    }
+    expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
+    expect(peut(SH, "consulterRepertoire")).toBe(false);
+  });
 });
 
 describe("périmètre du profil avocat (QF-01)", () => {
