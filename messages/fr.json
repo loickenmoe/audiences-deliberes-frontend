@@ -31,7 +31,8 @@
     "serviceIndisponible": "Le service d’identité est momentanément injoignable. Réessayez dans un instant.",
     "sessionExpiree": "Votre session a expiré. Reconnectez-vous pour continuer.",
     "afficherMotDePasse": "Afficher le mot de passe",
-    "masquerMotDePasse": "Masquer le mot de passe"
+    "masquerMotDePasse": "Masquer le mot de passe",
+    "authIndisponible": "Le service d’authentification est momentanément indisponible. Réessayez dans quelques instants."
   },
   "navigation": {
     "principale": "Navigation principale",

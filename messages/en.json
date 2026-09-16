@@ -31,7 +31,8 @@
     "serviceIndisponible": "The identity service is temporarily unavailable. Please try again shortly.",
     "sessionExpiree": "Your session has expired. Sign in again to continue.",
     "afficherMotDePasse": "Show password",
-    "masquerMotDePasse": "Hide password"
+    "masquerMotDePasse": "Hide password",
+    "authIndisponible": "The authentication service is temporarily unavailable. Please try again shortly."
   },
   "navigation": {
     "principale": "Main navigation",

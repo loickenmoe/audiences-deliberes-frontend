@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 
 import { apiClient, definirFournisseurDeJeton } from "@/lib/api/client";
 import { definirLectureDeSession, jetonCourant } from "@/lib/cache-jeton";
-import { ERREUR_RAFRAICHISSEMENT } from "@/lib/rotation-jeton";
+import { ERREUR_AUTH_INDISPONIBLE, sessionInutilisable } from "@/lib/rotation-jeton";
 
 /**
  * Branche le jeton de session sur le client HTTP.
@@ -41,9 +41,16 @@ function AmorcageSession() {
   useEffect(() => {
     if (status !== "authenticated") return;
 
-    // Rotation définitivement échouée : déconnexion nette plutôt qu'une avalanche de 401.
-    if (session?.erreur === ERREUR_RAFRAICHISSEMENT) {
-      void signOut({ redirectTo: "/login?motif=session-expiree" });
+    /*
+     * Rotation définitivement échouée : déconnexion nette plutôt qu'une avalanche de 401. Le motif
+     * transmis dit **laquelle** des deux causes, parce que l'utilisateur n'a pas la même chose à
+     * faire : se reconnecter quand son jeton est expiré, patienter quand c'est le service qui est à
+     * terre — auquel cas se reconnecter est de toute façon impossible.
+     */
+    if (sessionInutilisable(session?.erreur)) {
+      const motif =
+        session?.erreur === ERREUR_AUTH_INDISPONIBLE ? "auth-indisponible" : "session-expiree";
+      void signOut({ redirectTo: `/login?motif=${motif}` });
       return;
     }
 

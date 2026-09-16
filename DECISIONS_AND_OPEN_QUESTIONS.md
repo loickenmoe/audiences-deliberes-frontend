@@ -1028,6 +1028,43 @@ teste l'historique de la base ». Le socle rattache désormais explicitement `av
 `ERR-FORBIDDEN` — la distinction tient. Et les quatre écrans concernés affichent l'explication, aucun
 n'affiche plus « Le chargement a échoué ».
 
+### ✅ QF-46 — « Votre session a expiré » s'affichait sans qu'aucune session n'ait expiré — corrigé
+
+**Signalé par le porteur du projet le 2026-09-16** : en démarrant l'application et en ouvrant son
+navigateur, il lisait ce message directement sur la page de connexion.
+
+**J'ai d'abord contesté l'observation, et la mesure m'a donné à moitié raison.** Le message ne peut
+**pas** apparaître dans un navigateur vierge : vérifié, la racine sans cookie redirige vers `/login`
+**sans motif**, et `/login` seul n'affiche rien. Il ne s'affiche que si l'adresse porte
+`?motif=session-expiree`. L'explication la plus probable était donc la **restauration d'onglets** du
+navigateur, qui rouvrait l'URL de la veille.
+
+**Mais l'observation désignait deux défauts réels**, que je n'aurais pas vus autrement.
+
+**1. Le message était un état d'URL, pas un événement.** Un tel message dit « ce qui vient de se
+passer » ; le loger dans l'adresse le rend **permanent**. Il survivait au rechargement, au retour
+arrière, au signet et à la restauration d'onglets — et pouvait donc annoncer une expiration à
+quelqu'un qui n'avait pas eu de session. Corrigé : `MotifConsomme` retire `motif` de l'adresse une
+fois le message affiché, par `replaceState` — corriger l'historique, pas naviguer, sans quoi un
+`router.replace` relancerait le rendu et effacerait le message qu'on vient de montrer.
+
+**2. Toute panne du rafraîchissement se présentait comme une expiration.** Le `catch` de la rotation
+attrapait **n'importe quelle** erreur — Keycloak arrêté, réseau coupé, 500 — et posait le même
+marqueur. L'utilisateur lisait « Votre session a expiré, reconnectez-vous » : un diagnostic faux, et
+une consigne **inapplicable**, puisque se reconnecter passe par le service précisément à terre. Il
+cherchait une faute de sa part là où rien ne dépendait de lui.
+
+Corrigé par un second marqueur, `ERREUR_AUTH_INDISPONIBLE`, et une qualification à la source :
+`rafraichir` distingue une **réponse 4xx** — Keycloak a examiné le jeton et l'a rejeté, la session est
+bien finie — d'une **absence de réponse ou d'un 5xx**, où la session n'est pas en cause. Les deux
+mènent au formulaire, car la session est inexploitable dans les deux cas ; ce qui change, c'est ce
+qu'on **dit** : se reconnecter, ou patienter.
+
+**Vérifié en réel** contre le Keycloak du poste : un jeton révoqué renvoie **401** (refus), un port
+fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué : le message s'affiche une
+fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
+gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
+
 ---
 
 ## RISQUES
