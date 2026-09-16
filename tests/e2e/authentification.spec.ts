@@ -134,7 +134,11 @@ test("la navigation est filtrée par les droits du profil", async ({ page }) => 
   await seConnecter(page, COMPTES.juriste.identifiant);
 
   const navigation = page.getByRole("navigation", { name: "Navigation principale" });
-  await expect(navigation.getByRole("link", { name: "Accueil" })).toBeVisible();
+  // `exact` depuis QF-49 : le logo de l'en-tête est lui aussi un lien vers l'accueil, à l'intérieur
+  // de ce repère, et son nom accessible — « Afriland First Bank, retour à l'accueil » — contient le
+  // mot. Les deux liens sont légitimes et distincts pour un lecteur d'écran ; c'est la recherche par
+  // sous-chaîne qui les confondait.
+  await expect(navigation.getByRole("link", { name: "Accueil", exact: true })).toBeVisible();
 });
 
 test("un profil sans droit sur un écran est renvoyé vers le refus d'accès", async ({ page }) => {

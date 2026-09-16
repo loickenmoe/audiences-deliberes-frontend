@@ -1085,6 +1085,27 @@
     "filtreType": "Type",
     "filtreTousTypes": "All types"
   },
+  "supervisionAlertes": {
+    "titre": "Alert supervision",
+    "description": "The in-app channel is the mandatory channel for alerts. This measure says whether it did its job over the chosen period.",
+    "du": "From",
+    "au": "To",
+    "actualiser": "Refresh",
+    "fenetreInversee": "The start date is later than the end date.",
+    "aucuneMesure": "No alert was raised over this period. There is nothing to measure, which is neither compliant nor at fault.",
+    "tauxDelivrance": "Delivery rate",
+    "tauxDelivranceAide": "Share of alerts the channel delivered, either immediately or waiting in the notification list. Only diffusion failures count against the system.",
+    "seuilRespecte": "Above the required 99 % threshold",
+    "seuilFranchi": "Below the required 99 % threshold",
+    "tauxTempsReel": "Real-time diffusion",
+    "tauxTempsReelAide": "Share of alerts delivered to someone connected at the time. A low figure describes usage, not an outage.",
+    "sansSeuil": "Usage indicator, no threshold applies",
+    "observees": "Measured",
+    "diffusees": "Real time",
+    "differees": "Pending",
+    "echecs": "Failures",
+    "nonTraitees": "{nombre} alert(s) from this period have not yet been opened by their recipient. This count feeds no rate: it says something other than delivery."
+  },
   "configurations": {
     "titre": "System settings",
     "description": "The seven settings driving the thresholds, deadlines and checks of the application. A change takes effect immediately.",

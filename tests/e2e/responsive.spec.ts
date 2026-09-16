@@ -208,6 +208,9 @@ test("sur mobile, le logo n'est pas affiché et l'accueil reste atteignable par 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("link", { name: /Afriland First Bank/ })).toHaveCount(0);
 
-  await page.getByRole("navigation").getByRole("link", { name: "Accueil" }).click();
+  // `exact` pour la même raison qu'en QF-49 : au-dessus de `lg`, le logo est un second lien vers
+  // l'accueil dans ce repère. Ici le logo est masqué, mais le sélecteur ne doit pas dépendre de la
+  // largeur d'écran pour rester non ambigu.
+  await page.getByRole("navigation").getByRole("link", { name: "Accueil", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/", { timeout: 30_000 });
 });

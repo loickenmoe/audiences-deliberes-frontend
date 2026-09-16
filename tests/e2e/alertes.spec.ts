@@ -325,3 +325,117 @@ test("le backend refuse une valeur qui casserait un autre module (Q-91)", async 
   const configurations = await json<{ cle: string; valeur: string }[]>("/configurations", dj);
   expect(configurations.find((c) => c.cle === "SEUIL_PROROGATIONS")?.valeur).toBe("10");
 });
+
+/**
+ * Q-109 — le taux de délivrance du canal applicatif, mesuré **en conditions réelles**.
+ *
+ * Ce parcours vérifie ce qu'aucun test unitaire ne peut établir : que l'issue enregistrée
+ * correspond à la présence réelle d'une session STOMP. C'est tout l'enjeu de la mesure —
+ * `convertAndSendToUser` réussit même quand personne n'écoute, si bien qu'un indicateur fondé sur
+ * l'absence d'exception afficherait 100 % en permanence, panne comprise.
+ */
+async function statistiques(dateDebut: string, dateFin: string) {
+  return json<{
+    observees: number;
+    diffusees: number;
+    differees: number;
+    echecs: number;
+    tauxDelivrance: number;
+    tauxDiffusionTempsReel: number;
+    seuilRespecte: boolean;
+  }>(`/alertes/statistiques-diffusion?dateDebut=${dateDebut}&dateFin=${dateFin}`, await jeton("dj.test"));
+}
+
+/** La fenêtre du jour : l'alerte qu'on va déclencher y tombe forcément. */
+function aujourdHui() {
+  const jour = new Date().toISOString().slice(0, 10);
+  return { debut: jour, fin: jour };
+}
+
+test("une alerte poussée à un destinataire connecté est comptée comme diffusée (Q-109)", async ({
+  browser,
+}) => {
+  const { debut, fin } = aujourdHui();
+  const page = await pageConnectee(browser, "assistante.test");
+  await page.goto("/notifications");
+  // Sans cette attente, le test mesurerait une différée et croirait à un défaut.
+  await expect(page.getByText("Temps réel actif")).toBeVisible({ timeout: 60_000 });
+
+  const avant = await statistiques(debut, fin);
+  const reference = await deposerDemandeDeFrais();
+  await expect(page.getByRole("row", { name: new RegExp(reference) })).toBeVisible({ timeout: 75_000 });
+
+  const apres = await statistiques(debut, fin);
+  expect(apres.observees).toBeGreaterThan(avant.observees);
+  expect(apres.diffusees).toBeGreaterThan(avant.diffusees);
+  expect(apres.echecs).toBe(avant.echecs);
+  // Le point central : une remise réussie ne fait pas bouger le taux de délivrance, qui ne compte
+  // que les échecs.
+  expect(apres.seuilRespecte).toBe(true);
+
+  await page.context().close();
+});
+
+/**
+ * Le pendant du précédent, et le plus important des deux : personne n'est connecté, l'alerte part
+ * quand même et **n'est pas comptée comme un échec**. Le canal applicatif comprend la liste des
+ * notifications, alimentée inconditionnellement — la remise est plus tardive, pas manquée.
+ */
+test("une alerte destinée à quelqu'un de déconnecté reste délivrée (Q-109)", async () => {
+  const { debut, fin } = aujourdHui();
+  const avant = await statistiques(debut, fin);
+
+  // Aucun navigateur ouvert pour l'Assistante : aucune session STOMP ne peut exister.
+  await deposerDemandeDeFrais();
+
+  await expect
+    .poll(async () => (await statistiques(debut, fin)).differees, { timeout: 30_000 })
+    .toBeGreaterThan(avant.differees);
+
+  const apres = await statistiques(debut, fin);
+  expect(apres.echecs).toBe(avant.echecs);
+  expect(apres.tauxDelivrance).toBe(100);
+  expect(apres.seuilRespecte).toBe(true);
+});
+
+test("la supervision s'affiche pour le DJ et la DJA, jamais pour un juriste (Q-109)", async ({
+  browser,
+}) => {
+  for (const profil of ["dj.test", "dja.test"]) {
+    const page = await pageConnectee(browser, profil);
+    await page.goto("/admin/configurations");
+    await expect(page.getByRole("heading", { name: "Supervision des alertes", level: 2 })).toBeVisible({
+      timeout: 60_000,
+    });
+    // Les deux taux sont montrés séparément : les réunir viderait la mesure de son sens.
+    await expect(page.getByText("Taux de délivrance")).toBeVisible();
+    await expect(page.getByText("Diffusion en temps réel")).toBeVisible();
+    await expect(page.getByText("Indicateur d’usage, sans seuil opposable")).toBeVisible();
+    await page.context().close();
+  }
+
+  // Les paramètres restent lisibles par un juriste ; le taux global, non.
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/admin/configurations");
+  await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
+  await expect(juriste.getByRole("heading", { name: "Supervision des alertes" })).toHaveCount(0);
+  await juriste.context().close();
+});
+
+test("une fenêtre inversée est expliquée à l'écran, pas renvoyée en erreur technique (Q-109)", async ({
+  browser,
+}) => {
+  const page = await pageConnectee(browser, "dj.test");
+  await page.goto("/admin/configurations");
+  await expect(page.getByRole("heading", { name: "Supervision des alertes", level: 2 })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  await page.locator("#supervision-debut").fill("2026-12-31");
+  // Le message est cherché **dans la section** : Next pose son propre `role="alert"` à la racine du
+  // document pour annoncer les changements de route, et un sélecteur global les confondrait.
+  const supervision = page.locator("section", { hasText: "Supervision des alertes" });
+  await expect(supervision.getByRole("alert")).toContainText("date de début est postérieure");
+  await expect(page.locator("#supervision-debut")).toHaveAttribute("aria-invalid", "true");
+  await page.context().close();
+});

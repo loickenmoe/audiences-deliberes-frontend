@@ -55,6 +55,21 @@ export function useNombreNotificationsATraiter() {
   });
 }
 
+/**
+ * #51 — taux de délivrance du canal applicatif (backend Q-109, NF-ALR-02). DJ et DJA.
+ *
+ * **Pas de rafraîchissement automatique.** C'est une mesure d'exploitation que l'on consulte, pas
+ * un compteur que l'on surveille du coin de l'œil : une fenêtre de trente jours ne bouge pas d'un
+ * dixième de point en trente secondes, et une cadence inutile ne ferait qu'interroger un agrégat.
+ */
+export function useStatistiquesDiffusion(dateDebut: string, dateFin: string, actif = true) {
+  return useQuery({
+    queryKey: [CLES.notifications, "diffusion", dateDebut, dateFin],
+    queryFn: () => alerteService.statistiquesDiffusion(dateDebut, dateFin),
+    enabled: actif && Boolean(dateDebut) && Boolean(dateFin),
+  });
+}
+
 /** #46 — le backend refuse (403) si l'appelant n'est pas le destinataire. */
 export function useTraiterAlerte() {
   const client = useQueryClient();

@@ -157,6 +157,14 @@ export const CAPACITES = {
    * deux étapes.
    */
   administrerConfigurations: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `GET /alertes/statistiques-diffusion` — DJ, DJA (backend Q-109).
+   *
+   * Distincte d'`administrerConfigurations` bien qu'elle porte aujourd'hui les mêmes rôles : c'est
+   * une **lecture** de supervision, pas une écriture d'administration. Les confondre ferait qu'un
+   * assouplissement futur de l'une déplacerait l'autre sans qu'on l'ait voulu.
+   */
+  superviserAlertes: ["ROLE_DJ", "ROLE_DJA"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Capacite = keyof typeof CAPACITES;

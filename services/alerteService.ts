@@ -1,6 +1,6 @@
 import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { Alerte, ConfigurationSysteme } from "@/types/domaine";
+import type { Alerte, ConfigurationSysteme, StatistiquesDiffusion } from "@/types/domaine";
 import type { StatutAlerte, TypeAlerte } from "@/types/enums";
 
 /**
@@ -50,6 +50,23 @@ export const alerteService = {
    */
   modifierSeuil: async (type: TypeAlerte, seuil: number): Promise<ConfigurationSysteme> => {
     const { data } = await apiClient.put<ConfigurationSysteme>("/alertes/seuils", { type, seuil });
+    return data;
+  },
+
+  /**
+   * #51 — DJ et DJA. Taux de délivrance du canal applicatif sur une fenêtre (backend Q-109).
+   *
+   * La fenêtre est **obligatoire** côté backend, et c'est délibéré : un taux cumulé depuis la mise
+   * en service masquerait une panne récente sous des mois de bon fonctionnement. Les dates sont au
+   * format ISO (`AAAA-MM-JJ`), bornes incluses.
+   */
+  statistiquesDiffusion: async (
+    dateDebut: string,
+    dateFin: string,
+  ): Promise<StatistiquesDiffusion> => {
+    const { data } = await apiClient.get<StatistiquesDiffusion>("/alertes/statistiques-diffusion", {
+      params: { dateDebut, dateFin },
+    });
     return data;
   },
 };

@@ -718,6 +718,33 @@ export interface ConfigurationSysteme {
   valeursPossibles: string[];
 }
 
+/**
+ * Supervision du canal applicatif sur une fenêtre (backend Q-109, NF-ALR-02).
+ *
+ * **Deux taux, et les confondre serait la première erreur.** `tauxDelivrance` répond à l'exigence
+ * NF-ALR-02 — le canal a-t-il fait son travail ? Seuls les échecs comptent contre nous : une alerte
+ * remise plus tard, parce que son destinataire n'était pas connecté, a bien été délivrée, le canal
+ * applicatif comprenant la liste des notifications. `tauxDiffusionTempsReel` mesure tout autre
+ * chose : à quel point les gens sont connectés quand on les alerte. Un chiffre bas sur le second
+ * n'est pas un défaut ; sur le premier, si.
+ *
+ * `observees` est le dénominateur réel — les alertes antérieures à la migration V16 n'ont pas
+ * d'issue enregistrée et sont exclues. `nonTraitees` ne participe à aucun taux : une alerte
+ * délivrée que personne n'a ouverte relève d'un autre problème.
+ */
+export interface StatistiquesDiffusion {
+  dateDebut: string;
+  dateFin: string;
+  observees: number;
+  diffusees: number;
+  differees: number;
+  echecs: number;
+  nonTraitees: number;
+  tauxDelivrance: number;
+  tauxDiffusionTempsReel: number;
+  seuilRespecte: boolean;
+}
+
 // ─────────────────────────────── Reporting ───────────────────────────────
 
 /**

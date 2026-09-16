@@ -1085,6 +1085,27 @@
     "filtreType": "Type",
     "filtreTousTypes": "Tous les types"
   },
+  "supervisionAlertes": {
+    "titre": "Supervision des alertes",
+    "description": "Le canal applicatif est le canal obligatoire des alertes. Cette mesure dit s’il a fait son travail sur la période choisie.",
+    "du": "Du",
+    "au": "Au",
+    "actualiser": "Actualiser",
+    "fenetreInversee": "La date de début est postérieure à la date de fin.",
+    "aucuneMesure": "Aucune alerte n’a été déclenchée sur cette période. Il n’y a donc rien à mesurer, ce qui n’est ni conforme ni fautif.",
+    "tauxDelivrance": "Taux de délivrance",
+    "tauxDelivranceAide": "Part des alertes que le canal a remises, immédiatement ou en attente dans la liste des notifications. Seuls les échecs de diffusion comptent contre le système.",
+    "seuilRespecte": "Au-dessus du seuil de 99 % exigé",
+    "seuilFranchi": "Sous le seuil de 99 % exigé",
+    "tauxTempsReel": "Diffusion en temps réel",
+    "tauxTempsReelAide": "Part des alertes remises à une personne connectée au moment du déclenchement. Un chiffre bas décrit les usages, pas une panne.",
+    "sansSeuil": "Indicateur d’usage, sans seuil opposable",
+    "observees": "Mesurées",
+    "diffusees": "Temps réel",
+    "differees": "En attente",
+    "echecs": "Échecs",
+    "nonTraitees": "{nombre} alerte(s) de cette période n’ont pas encore été ouvertes par leur destinataire. Ce compte ne participe à aucun taux : il dit autre chose que la délivrance."
+  },
   "configurations": {
     "titre": "Paramètres système",
     "description": "Les sept paramètres qui pilotent les seuils, les délais et les contrôles de l’application. Une modification prend effet immédiatement.",
