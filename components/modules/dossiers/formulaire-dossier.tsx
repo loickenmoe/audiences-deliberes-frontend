@@ -336,7 +336,7 @@ export function FormulaireDossier() {
                 <option value="">{t("choisirClient")}</option>
                 {(clients.data?.content ?? []).map((client) => (
                   <option key={client.id} value={client.id}>
-                    {client.reference} — {client.nom}
+                    {client.reference} - {client.nom}
                   </option>
                 ))}
               </Select>

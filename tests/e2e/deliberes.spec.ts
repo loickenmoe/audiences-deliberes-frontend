@@ -72,7 +72,7 @@ test("mettre en délibéré puis proroger : la date annoncée change et l'histor
   await page.getByRole("button", { name: /^Proroger le délibéré annoncé au / }).click();
   const prorogation = page.getByRole("dialog", { name: "Proroger le délibéré" });
   await prorogation.getByLabel("Nouvelle date du délibéré", { exact: true }).fill(dansJours(14));
-  await prorogation.getByLabel("Motif — facultatif", { exact: true }).fill("Juge empêché");
+  await prorogation.getByLabel("Motif - facultatif", { exact: true }).fill("Juge empêché");
   await prorogation.getByRole("button", { name: "Proroger" }).click();
 
   await expect(page.getByText("Prorogé une fois")).toBeVisible();

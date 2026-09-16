@@ -262,7 +262,7 @@ test("les formats de la GED se choisissent dans la liste publiée ; le juriste n
   await juriste.goto("/admin/configurations");
   await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
   await expect(
-    juriste.getByText("Consultation seule — seul le Directeur Juridique peut modifier ces paramètres."),
+    juriste.getByText("Consultation seule - seul le Directeur Juridique peut modifier ces paramètres."),
   ).toBeVisible();
   await expect(juriste.getByRole("button", { name: "Enregistrer" })).toHaveCount(0);
   await expect(juriste.locator("#configuration-SEUIL_PROROGATIONS")).toBeDisabled();

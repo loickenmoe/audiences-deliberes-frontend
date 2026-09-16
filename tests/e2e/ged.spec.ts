@@ -55,7 +55,7 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   const url = juriste.url();
 
   await juriste.getByRole("tab", { name: "Documents" }).click();
-  await juriste.getByRole("button", { name: `Demander la suppression — ${nom}` }).click();
+  await juriste.getByRole("button", { name: `Demander la suppression - ${nom}` }).click();
   await juriste.getByRole("dialog").getByRole("button", { name: "Demander la suppression" }).click();
   await expect(juriste.getByText("Demande de suppression envoyée au DJ et au DJA.")).toBeVisible();
   await juriste.context().close();
@@ -65,7 +65,7 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
 async function redemander(browser: Browser, url: string, nom: string) {
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`${url}?onglet=documents`);
-  await juriste.getByRole("button", { name: `Demander la suppression — ${nom}` }).click();
+  await juriste.getByRole("button", { name: `Demander la suppression - ${nom}` }).click();
   await juriste.getByRole("dialog").getByRole("button", { name: "Demander la suppression" }).click();
   await expect(juriste.getByText("Demande de suppression envoyée au DJ et au DJA.")).toBeVisible();
   await juriste.context().close();
@@ -82,7 +82,7 @@ test("le DJ voit quoi supprimer, rejette avec un motif, puis approuve la demande
   const ligne = dj.getByRole("row", { name: new RegExp(nom) });
   await expect(ligne).toContainText(reference);
 
-  await dj.getByRole("button", { name: `Rejeter la demande — ${nom}` }).click();
+  await dj.getByRole("button", { name: `Rejeter la demande - ${nom}` }).click();
   const rejet = dj.getByRole("dialog", { name: "Rejeter la demande" });
   await rejet.getByRole("button", { name: "Rejeter" }).click();
   // Sans motif, rien ne part.
@@ -98,7 +98,7 @@ test("le DJ voit quoi supprimer, rejette avec un motif, puis approuve la demande
   await redemander(browser, url, nom);
   await dj.getByRole("button", { name: "En attente" }).click();
   await dj.reload();
-  await dj.getByRole("button", { name: `Approuver la suppression — ${nom}` }).click();
+  await dj.getByRole("button", { name: `Approuver la suppression - ${nom}` }).click();
   await dj.getByRole("dialog", { name: "Approuver la suppression ?" }).getByRole("button", { name: "Approuver" }).click();
   await expect(dj.getByRole("row", { name: new RegExp(nom) })).toHaveCount(0);
 
@@ -112,7 +112,7 @@ test("une suppression directe par le DJ ferme la demande en attente (Q-79)", asy
 
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto(`${url}?onglet=documents`);
-  await dj.getByRole("button", { name: `Supprimer — ${nom}` }).click();
+  await dj.getByRole("button", { name: `Supprimer - ${nom}` }).click();
   await dj.getByRole("dialog").getByRole("button", { name: "Supprimer" }).click();
   await expect(dj.getByText("Document supprimé.")).toBeVisible();
 

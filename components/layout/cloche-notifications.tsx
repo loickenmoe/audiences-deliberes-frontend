@@ -20,7 +20,7 @@ export function ClocheNotifications() {
   return (
     <Link
       href="/notifications"
-      aria-label={`${t("badge")} — ${t("badgeCompteur", { nombre })}`}
+      aria-label={`${t("badge")} - ${t("badgeCompteur", { nombre })}`}
       className="relative inline-flex size-9 items-center justify-center rounded text-texte-secondaire transition-colors hover:bg-surface-attenuee hover:text-texte focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-anthracite"
     >
       <BellRing aria-hidden className="size-5" />

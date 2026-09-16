@@ -93,7 +93,7 @@ export function ModaleConstitution({
               <option value="">{t("choisirPrestataire")}</option>
               {liste.map((intervenant) => (
                 <option key={intervenant.id} value={intervenant.id}>
-                  {intervenant.nom} — {td(`TypeIntervenant.${intervenant.type}` as never)}
+                  {intervenant.nom} - {td(`TypeIntervenant.${intervenant.type}` as never)}
                 </option>
               ))}
             </Select>

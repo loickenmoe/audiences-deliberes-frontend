@@ -75,7 +75,7 @@ test("une pièce jointe se lit avant la création, puis se retrouve sur la fiche
 
   // Lire avant de valider : l'aperçu est servi depuis le fichier local, rien n'est encore envoyé.
   await page.getByRole("button", { name: "Aperçu" }).click();
-  const apercu = page.getByRole("dialog", { name: "Aperçu — pv-transfert.pdf" });
+  const apercu = page.getByRole("dialog", { name: "Aperçu - pv-transfert.pdf" });
   await expect(apercu.locator("iframe")).toHaveAttribute("src", /^blob:/);
   await apercu.getByRole("button", { name: "Fermer" }).first().click();
 
@@ -112,13 +112,13 @@ test("depuis la fiche : déposer, consulter et télécharger une pièce", async 
   await expect(page.getByText("Pièce déposée.")).toBeVisible();
 
   // Consulter : l'URL pré-signée est lue dans la page (CORS MinIO) et l'image s'affiche.
-  await page.getByRole("button", { name: "Consulter — scan.png" }).click();
-  await expect(page.getByRole("dialog", { name: "Aperçu — scan.png" }).getByRole("img", { name: "scan.png" })).toBeVisible();
-  await page.getByRole("dialog", { name: "Aperçu — scan.png" }).getByRole("button", { name: "Fermer" }).first().click();
+  await page.getByRole("button", { name: "Consulter - scan.png" }).click();
+  await expect(page.getByRole("dialog", { name: "Aperçu - scan.png" }).getByRole("img", { name: "scan.png" })).toBeVisible();
+  await page.getByRole("dialog", { name: "Aperçu - scan.png" }).getByRole("button", { name: "Fermer" }).first().click();
 
   // Télécharger : le fichier garde son nom d'origine.
   const telechargement = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Télécharger — pv-transfert.pdf" }).click();
+  await page.getByRole("button", { name: "Télécharger - pv-transfert.pdf" }).click();
   expect((await telechargement).suggestedFilename()).toBe("pv-transfert.pdf");
 });
 
@@ -128,7 +128,7 @@ test("un juriste demande la suppression ; le DJ supprime directement", async ({ 
   await juriste.getByRole("tab", { name: "Documents" }).click();
 
   // Juriste auteur : une demande, le document reste visible (202).
-  await juriste.getByRole("button", { name: "Demander la suppression — pv-transfert.pdf" }).click();
+  await juriste.getByRole("button", { name: "Demander la suppression - pv-transfert.pdf" }).click();
   await juriste.getByRole("dialog").getByRole("button", { name: "Demander la suppression" }).click();
   await expect(juriste.getByText("Demande de suppression envoyée au DJ et au DJA.")).toBeVisible();
   await expect(juriste.getByRole("row", { name: /pv-transfert\.pdf/ })).toBeVisible();
@@ -137,7 +137,7 @@ test("un juriste demande la suppression ; le DJ supprime directement", async ({ 
   // DJ : suppression immédiate (200), la pièce disparaît.
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto(`${url}?onglet=documents`);
-  await dj.getByRole("button", { name: "Supprimer — pv-transfert.pdf" }).click();
+  await dj.getByRole("button", { name: "Supprimer - pv-transfert.pdf" }).click();
   await dj.getByRole("dialog").getByRole("button", { name: "Supprimer" }).click();
   await expect(dj.getByText("Document supprimé.")).toBeVisible();
   await expect(dj.getByRole("row", { name: /pv-transfert\.pdf/ })).toHaveCount(0);

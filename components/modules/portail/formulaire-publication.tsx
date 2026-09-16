@@ -170,7 +170,7 @@ export function FormulairePublication() {
                 <option value="">{t("choisirAudience")}</option>
                 {(audiences.data ?? []).map((audience) => (
                   <option key={audience.id} value={audience.id}>
-                    {audience.datePlanifiee} — {td(`StatutAudience.${audience.statut}` as never)}
+                    {audience.datePlanifiee} - {td(`StatutAudience.${audience.statut}` as never)}
                   </option>
                 ))}
               </Select>

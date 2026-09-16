@@ -56,7 +56,7 @@ export function SelecteurDossier({
         <option value="">{t("choisirDossier")}</option>
         {dossiers.map((dossier) => (
           <option key={dossier.id} value={dossier.id}>
-            {dossier.reference} — {dossier.nature} ({dossier.juridictionSaisie})
+            {dossier.reference} - {dossier.nature} ({dossier.juridictionSaisie})
           </option>
         ))}
       </Select>

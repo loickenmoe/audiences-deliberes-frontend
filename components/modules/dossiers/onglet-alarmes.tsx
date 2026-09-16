@@ -133,7 +133,7 @@ export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: rea
                             variante="secondaire"
                             taille="sm"
                             onClick={() => setReprogrammation(alarme)}
-                            aria-label={`${t("reprogrammer")} — ${alarme.objet}`}
+                            aria-label={`${t("reprogrammer")} - ${alarme.objet}`}
                           >
                             {t("reprogrammer")}
                           </Button>
