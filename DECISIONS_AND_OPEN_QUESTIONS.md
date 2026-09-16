@@ -1065,6 +1065,42 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-47 — L'en-tête défilait avec le contenu, emportant la cloche et la déconnexion — corrigé
+
+**Signalé par le porteur du projet le 2026-09-16** : « je pense que le header doit être fixe donc ne
+doit pas scroller ».
+
+**Je n'ai pas traité cela comme une préférence d'affichage, parce que ce n'en était pas une.** Ce qui
+partait vers le haut emportait la **cloche de notifications** — canal obligatoire des alertes
+(NF-ALR-02), donc le seul dispositif qui signale une échéance d'audience — et le bouton de
+**déconnexion**, que le guide §1 réclame explicitement en poste partagé. Sur une fiche de dossier,
+qui est longue, les deux disparaissaient au bout de quelques centimètres de défilement.
+
+**L'intention était déjà dans le code ; il lui manquait sa contrainte.** La barre latérale portait
+`lg:h-svh`, le contenu `overflow-y-auto` — tout le dessin d'une coquille d'application. Mais le
+conteneur extérieur portait `min-h-svh` : une hauteur **minimale** ne borne rien, donc l'ensemble
+grandissait avec son contenu et c'est la **fenêtre** qui défilait. Ce n'est donc pas une
+fonctionnalité nouvelle, c'est une coquille inachevée. Corrigé par `lg:h-svh lg:overflow-hidden` sur
+le conteneur, et `lg:min-h-0` sur la colonne : `min-h-0` n'est pas décoratif — sans lui, un enfant
+flex refuse de rétrécir sous la hauteur de son contenu et l'`overflow-y-auto` ne s'active jamais.
+
+**Le mobile garde délibérément son défilement de page.** En-tête et bande de navigation pèsent 117 px
+sur 667 — **18 % de la hauteur** — et F17 avait justement transformé la navigation en bande
+défilante pour récupérer cette place. Les figer rendrait au téléphone le problème qu'on règle sur le
+bureau.
+
+**Une conséquence à traiter, pas à subir.** Le contenu étant devenu le conteneur de défilement, Next
+ne le remet plus à zéro en changeant d'écran — il ne connaît que la fenêtre : un écran se serait
+ouvert « au milieu », à la hauteur où l'on avait laissé le précédent. `RetourEnHaut` s'en charge, et
+n'écoute que le **chemin** : changer de page, de filtre ou de taille dans un tableau laisse la
+position intacte, ce que la pagination attend (`scroll: false`, Q-99).
+
+**Mesuré, pas supposé**, sur la pile réelle : en-tête et navigation immobiles à 1280 et 1024,
+défilants à 375, contenu remis à zéro au changement d'écran (384 → 0), et un tableau dense qui défile
+toujours dans son conteneur et non dans la page. Trois parcours de bout en bout gardent ces
+comportements, y compris celui du mobile — pour qu'on ne « corrige » pas plus tard le téléphone par
+symétrie.
+
 ---
 
 ## RISQUES

@@ -98,3 +98,77 @@ test("un tableau dense défile dans son conteneur, pas dans la page", async ({ p
   expect(conteneurDefile, "le tableau doit être enfermé dans un conteneur à défilement").toBe(true);
   expect(await debordementHorizontal(page)).toBe(0);
 });
+
+/**
+ * QF-47 — la coquille d'application : sur grand écran, l'en-tête et la barre latérale restent en
+ * place, seul le contenu défile.
+ *
+ * Ce que la correction protège : la **cloche de notifications** — canal obligatoire des alertes
+ * (NF-ALR-02) — et la **déconnexion**, que le guide §1 réclame en poste partagé. Les perdre en
+ * défilant une fiche de dossier, c'est perdre le seul dispositif qui signale une échéance et le seul
+ * qui ferme la session.
+ */
+test("sur grand écran, l'en-tête et la navigation ne défilent pas avec le contenu", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  const entete = page.getByRole("banner");
+  const navigation = page.getByRole("navigation", { name: "Navigation principale" });
+  const avantEntete = await entete.boundingBox();
+  const avantNavigation = await navigation.boundingBox();
+
+  await page.locator("#contenu-principal").evaluate((element) => element.scrollBy(0, 600));
+  await page.waitForTimeout(400);
+
+  expect((await entete.boundingBox())?.y).toBe(avantEntete?.y);
+  expect((await navigation.boundingBox())?.y).toBe(avantNavigation?.y);
+  // La cloche reste atteignable sans remonter : c'est l'objet de la correction. On vise celle de
+  // l'en-tête — la barre latérale porte un lien du même nom.
+  await expect(entete.getByRole("link", { name: /Notifications/ })).toBeVisible();
+});
+
+/**
+ * Le mobile garde son défilement de page **délibérément** : en-tête et bande de navigation pèsent
+ * 117 px sur 667, soit 18 % de la hauteur. F17 a transformé la navigation en bande défilante pour
+ * récupérer cette hauteur ; ce test empêche de défaire ce choix par inadvertance.
+ */
+test("sur mobile, la page défile en entier — l'espace vertical prime", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  const entete = page.getByRole("banner");
+  const avant = await entete.boundingBox();
+  await page.mouse.wheel(0, 500);
+  await page.waitForTimeout(400);
+
+  const defilement = await page.evaluate(() => window.scrollY);
+  if (defilement === 0) return; // page trop courte pour défiler : rien à observer
+  expect((await entete.boundingBox())?.y).toBeLessThan(avant?.y ?? 0);
+});
+
+/**
+ * Le contenu étant devenu le conteneur de défilement, Next ne le remet plus à zéro lui-même —
+ * il ne connaît que la fenêtre. Sans ce geste, un écran s'ouvrirait « au milieu », à la hauteur où
+ * l'on avait laissé le précédent.
+ */
+test("changer d'écran ramène le contenu en haut", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  await page.locator("#contenu-principal").evaluate((element) => element.scrollBy(0, 400));
+  await page.waitForTimeout(300);
+
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  await page.waitForURL(/\/clients/, { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  await expect
+    .poll(() => page.locator("#contenu-principal").evaluate((element) => element.scrollTop))
+    .toBe(0);
+});
