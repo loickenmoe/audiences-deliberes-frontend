@@ -172,3 +172,42 @@ test("changer d'écran ramène le contenu en haut", async ({ page }) => {
     .poll(() => page.locator("#contenu-principal").evaluate((element) => element.scrollTop))
     .toBe(0);
 });
+
+/**
+ * QF-49 — le logo rejoint l'accueil.
+ *
+ * Il n'est affiché qu'à partir de `lg` : en dessous, le bandeau qui le porte est masqué et le retour
+ * à l'accueil passe par l'entrée « Accueil » de la bande de navigation. Les deux moitiés sont
+ * vérifiées, pour qu'on ne « corrige » pas plus tard le mobile en croyant à un oubli.
+ *
+ * Le nom accessible est contrôlé en même temps que la destination : un lien dont le lecteur d'écran
+ * annonce « Afriland First Bank » dit à qui appartient l'image, pas où il mène.
+ */
+test("sur grand écran, le logo de l'en-tête ramène à l'accueil", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await seConnecter(page, "juriste.test");
+
+  await page.goto("/dossiers");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  const logo = page.getByRole("link", { name: /Afriland First Bank/ });
+  await expect(logo).toBeVisible();
+  await logo.click();
+
+  await page.waitForURL((url) => url.pathname === "/", { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+});
+
+test("sur mobile, le logo n'est pas affiché et l'accueil reste atteignable par la navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await seConnecter(page, "juriste.test");
+
+  await page.goto("/dossiers");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("link", { name: /Afriland First Bank/ })).toHaveCount(0);
+
+  await page.getByRole("navigation").getByRole("link", { name: "Accueil" }).click();
+  await page.waitForURL((url) => url.pathname === "/", { timeout: 30_000 });
+});
