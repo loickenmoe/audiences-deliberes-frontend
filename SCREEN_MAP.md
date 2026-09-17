@@ -214,6 +214,7 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 |---|---|---|---|---|---|---|
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
 | 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
+| 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.

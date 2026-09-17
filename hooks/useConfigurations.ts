@@ -37,12 +37,12 @@ export function useModifierConfiguration() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: [CLES.configurations] });
       /*
-       * Le journal des actions système (Q-110) vit sur le **même écran** et vient d'enregistrer
-       * cette modification. Sans cette invalidation, l'utilisateur enregistre un paramètre et voit
-       * juste en dessous un journal qui l'ignore — il en conclurait que rien n'a été tracé. Défaut
-       * trouvé par le parcours de bout en bout, pas à la relecture.
-       */
-      void client.invalidateQueries({ queryKey: [CLES.journalSysteme] });
+        * L'audit (Q-112) vient d'enregistrer cette modification, et l'écran des paramètres affiche
+        * désormais « modifié le … par … » sur chaque ligne. Sans cette invalidation, on
+        * enregistrerait un paramètre sans voir apparaître son propre nom — et l'on en conclurait
+        * que rien n'a été tracé. Défaut trouvé par un parcours de bout en bout, pas à la relecture.
+        */
+      void client.invalidateQueries({ queryKey: [CLES.audit] });
     },
   });
 }

@@ -56,7 +56,8 @@
     "modulesAVenir": "Les autres modules apparaîtront au fil des jalons.",
     "monEspace": "Mon espace",
     "deposerFrais": "Déposer une demande",
-    "deposerPublication": "Déposer une publication"
+    "deposerPublication": "Déposer une publication",
+    "audit": "Audit"
   },
   "accueil": {
     "titre": "Accueil",
@@ -1085,25 +1086,6 @@
     "filtreType": "Type",
     "filtreTousTypes": "Tous les types"
   },
-  "journalSysteme": {
-    "titre": "Journal des actions système",
-    "description": "Les modifications qui ne portent sur aucun dossier : paramètres système et référentiels. Qui a changé quoi, quand, et depuis quelle valeur.",
-    "perimetre": "Ce journal ne recense que les modifications. Les consultations ne sont pas tracées : l’absence de ligne ne prouve pas l’absence d’action.",
-    "filtreAuteur": "Auteur",
-    "tousLesAuteurs": "Tous les auteurs",
-    "filtreAction": "Action",
-    "toutesLesActions": "Toutes les actions",
-    "du": "Du",
-    "au": "Au",
-    "reinitialiser": "Réinitialiser",
-    "fenetreInversee": "La date de début est postérieure à la date de fin.",
-    "colonneDate": "Date",
-    "colonneAuteur": "Auteur",
-    "colonneAction": "Action",
-    "colonneDetails": "Détails",
-    "videTitre": "Aucune action enregistrée",
-    "videTexte": "Aucune modification hors dossier ne correspond à ces filtres."
-  },
   "supervisionAlertes": {
     "titre": "Supervision des alertes",
     "description": "Le canal applicatif est le canal obligatoire des alertes. Cette mesure dit s’il a fait son travail sur la période choisie.",
@@ -1147,7 +1129,8 @@
       "vide": "La liste comporte un élément vide."
     },
     "vide": "Aucun paramètre",
-    "videTexte": "Les paramètres système sont créés à l’installation de l’application."
+    "videTexte": "Les paramètres système sont créés à l’installation de l’application.",
+    "modifieeParAuteur": "Modifiée le {date} par {auteur}"
   },
   "tableauDeBord": {
     "titre": "Tableau de bord",
@@ -1248,5 +1231,32 @@
     "pieceJointeAide": "Le document qui étaye votre compte rendu : plumitif du greffe, note d’audience. Le compte rendu reste valable sans.",
     "compteNonRattacheTitre": "Votre compte n’est pas encore rattaché au répertoire",
     "compteNonRattacheTexte": "Un avocat doit être inscrit au répertoire des intervenants par la Direction Juridique, avec son identifiant de connexion, avant de pouvoir utiliser le portail. Ce n’est pas une erreur de votre part : contactez la Direction Juridique pour qu’elle procède à votre inscription."
+  },
+  "audit": {
+    "titre": "Audit",
+    "description": "Qui a fait quoi, quand. Filtrez par personne, par période, par nature d’action, ou remontez l’histoire d’un dossier précis.",
+    "perimetreCouvert": "L’audit recense les modifications. Les consultations ne sont pas tracées, à l’exception de celles de cet écran : l’absence de ligne ne prouve pas l’absence d’action.",
+    "consultationTracee": "Votre consultation de cet écran est elle-même enregistrée, avec les critères employés.",
+    "filtres": "Filtres de l’audit",
+    "filtrePerimetre": "Portée",
+    "perimetreTout": "Tout l’historique",
+    "perimetreHorsDossier": "Actions système (hors dossier)",
+    "perimetreUnDossier": "Un dossier précis",
+    "filtreDossier": "N° de dossier",
+    "dossierManquant": "Indiquez le numéro du dossier à consulter.",
+    "filtreAuteur": "Auteur",
+    "tousLesAuteurs": "Tous les auteurs",
+    "filtreAction": "Action",
+    "toutesLesActions": "Toutes les actions",
+    "du": "Du",
+    "au": "Au",
+    "reinitialiser": "Réinitialiser",
+    "fenetreInversee": "La date de début est postérieure à la date de fin.",
+    "colonneDate": "Date",
+    "colonneAuteur": "Auteur",
+    "colonneAction": "Action",
+    "colonneDetails": "Détails",
+    "videTitre": "Aucune action enregistrée",
+    "videTexte": "Aucune action ne correspond à ces critères."
   }
 }

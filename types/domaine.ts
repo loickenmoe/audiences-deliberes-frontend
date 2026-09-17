@@ -167,23 +167,22 @@ export interface HistoriqueAction {
 }
 
 /**
- * Journal des actions historisées **hors dossier** (backend Q-110).
+ * Une page d'audit (backend Q-112).
  *
- * Même forme qu'une page, plus `actionsDisponibles` : les natures réellement présentes en base, qui
+ * Même forme qu'une page, plus `actionsDisponibles` : les natures réellement présentes, qui
  * alimentent un filtre à **liste fermée**. Depuis le typage des actions (Q-111) elle porte des codes
  * et non des phrases, si bien qu'une clé de configuration ne produit plus une entrée par paramètre.
  * Cette liste est indépendante des filtres en cours, sinon en choisir une ferait disparaître les
  * autres et l'on ne pourrait plus changer d'avis.
  *
- * ⚠ **Ce journal ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée :
- * l'absence de ligne ne prouve pas l'absence d'action. C'est pourquoi l'écran s'appelle un journal
- * et non un audit.
+ * ⚠ **L'audit ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée, à
+ * l'exception de celle de cet écran : l'absence de ligne ne prouve donc pas l'absence d'action.
  */
-export interface JournalSysteme {
+export interface PageAudit {
   content: HistoriqueAction[];
   totalPages: number;
   totalElements: number;
-  actionsDisponibles: OptionActionJournal[];
+  actionsDisponibles: OptionActionAudit[];
 }
 
 /**
@@ -193,7 +192,7 @@ export interface JournalSysteme {
  * reprises par la migration V18 portent encore leur ancienne phrase, et une même nature se serait
  * alors présentée plusieurs fois dans la liste.
  */
-export interface OptionActionJournal {
+export interface OptionActionAudit {
   code: string;
   libelle: string;
 }
@@ -750,6 +749,11 @@ export interface ConfigurationSysteme {
   description: string | null;
   modifiablePar: string;
   dateModification: string | null;
+  /**
+   * Auteur de la dernière modification (backend Q-112). Nul tant que le paramètre n'a jamais
+   * été modifié, ou si le compte de l'auteur a été supprimé depuis.
+   */
+  dernierAuteurId: number | null;
   typeValeur: TypeValeurConfiguration | null;
   valeurMinimale: number | null;
   valeurMaximale: number | null;

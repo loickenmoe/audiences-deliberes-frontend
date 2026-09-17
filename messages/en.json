@@ -56,7 +56,8 @@
     "modulesAVenir": "Further modules will appear as milestones are delivered.",
     "monEspace": "My workspace",
     "deposerFrais": "File a claim",
-    "deposerPublication": "Submit a publication"
+    "deposerPublication": "Submit a publication",
+    "audit": "Audit"
   },
   "accueil": {
     "titre": "Home",
@@ -1085,25 +1086,6 @@
     "filtreType": "Type",
     "filtreTousTypes": "All types"
   },
-  "journalSysteme": {
-    "titre": "System action log",
-    "description": "Changes that concern no case file: system settings and reference data. Who changed what, when, and from which value.",
-    "perimetre": "This log records changes only. Views are not traced: the absence of a line does not prove the absence of an action.",
-    "filtreAuteur": "Author",
-    "tousLesAuteurs": "All authors",
-    "filtreAction": "Action",
-    "toutesLesActions": "All actions",
-    "du": "From",
-    "au": "To",
-    "reinitialiser": "Reset",
-    "fenetreInversee": "The start date is later than the end date.",
-    "colonneDate": "Date",
-    "colonneAuteur": "Author",
-    "colonneAction": "Action",
-    "colonneDetails": "Details",
-    "videTitre": "No action recorded",
-    "videTexte": "No change outside a case file matches these filters."
-  },
   "supervisionAlertes": {
     "titre": "Alert supervision",
     "description": "The in-app channel is the mandatory channel for alerts. This measure says whether it did its job over the chosen period.",
@@ -1147,7 +1129,8 @@
       "vide": "The list contains an empty item."
     },
     "vide": "No setting",
-    "videTexte": "System settings are created when the application is installed."
+    "videTexte": "System settings are created when the application is installed.",
+    "modifieeParAuteur": "Changed on {date} by {auteur}"
   },
   "tableauDeBord": {
     "titre": "Dashboard",
@@ -1248,5 +1231,32 @@
     "pieceJointeAide": "The document supporting your report: court record, hearing note. The report stands without it.",
     "compteNonRattacheTitre": "Your account is not linked to the directory yet",
     "compteNonRattacheTexte": "A lawyer must be registered in the directory by the Legal Department, with their login identifier, before using the portal. This is not a mistake on your side: contact the Legal Department so they can complete your registration."
+  },
+  "audit": {
+    "titre": "Audit",
+    "description": "Who did what, and when. Filter by person, period or kind of action, or follow the history of one case file.",
+    "perimetreCouvert": "The audit records changes. Views are not traced, except those of this screen: the absence of a line does not prove the absence of an action.",
+    "consultationTracee": "Your use of this screen is itself recorded, along with the criteria you applied.",
+    "filtres": "Audit filters",
+    "filtrePerimetre": "Scope",
+    "perimetreTout": "Whole history",
+    "perimetreHorsDossier": "System actions (no case file)",
+    "perimetreUnDossier": "One case file",
+    "filtreDossier": "Case file no.",
+    "dossierManquant": "Enter the number of the case file to consult.",
+    "filtreAuteur": "Author",
+    "tousLesAuteurs": "All authors",
+    "filtreAction": "Action",
+    "toutesLesActions": "All actions",
+    "du": "From",
+    "au": "To",
+    "reinitialiser": "Reset",
+    "fenetreInversee": "The start date is later than the end date.",
+    "colonneDate": "Date",
+    "colonneAuteur": "Author",
+    "colonneAction": "Action",
+    "colonneDetails": "Details",
+    "videTitre": "No action recorded",
+    "videTexte": "No action matches these criteria."
   }
 }
