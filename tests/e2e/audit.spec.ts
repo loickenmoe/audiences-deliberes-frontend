@@ -1,5 +1,6 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 
 /**
  * Audit des actions historisées (écran 43) **contre le backend réel** — backend Q-112.
@@ -254,16 +255,36 @@ test("une extraction produit un fichier et une archive scellee (Q-113)", async (
   const telechargement = dj.waitForEvent("download", { timeout: 60_000 });
   await dj.getByRole("button", { name: "Extraire en PDF" }).click();
   const fichier = await telechargement;
-  expect(fichier.suggestedFilename()).toMatch(/^audit-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.pdf$/);
+  /*
+   * Le nom porte desormais la reference de l'archive (Q-114) : « aud-2026-0042-du-au.pdf ». C'est ce
+   * nom qu'on citera dans un courrier de transmission, et c'est donc lui qui doit etre stable.
+   */
+  expect(fichier.suggestedFilename()).toMatch(
+    /^aud-\d{4}-\d{4}-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.pdf$/,
+  );
+  const reference = fichier.suggestedFilename().slice(0, 13).toUpperCase();
 
-  // L'empreinte remonte jusqu'à l'écran : sans elle, l'archive ne serait qu'une copie de plus.
-  await expect(dj.getByText(/Extraction produite et scell/)).toBeVisible({ timeout: 30_000 });
+  /*
+   * L'empreinte remonte jusqu'à l'écran : sans elle, l'archive ne serait qu'une copie de plus. On
+   * exige ici les caractères eux-mêmes, et non la seule phrase d'accompagnement — la version
+   * précédente se contentait du libellé, et n'a donc pas vu que l'empreinte affichée était vide,
+   * l'en-tête n'étant pas exposé en CORS. Une assertion qui ne regarde pas la valeur ne garde rien.
+   */
+  await expect(dj.getByText(/Extraction produite et scellée \(empreinte [0-9a-f]{12}…\)/)).toBeVisible({
+    timeout: 30_000,
+  });
 
-  // Et l'archive apparaît dans la liste, sans rien rafraîchir, avec son empreinte complète.
-  const archives = extraction.getByRole("listitem").first();
+  /*
+   * Et l'archive apparaît dans la liste, sans rien rafraîchir. On la désigne **par sa référence**,
+   * lue dans le nom du fichier, et non par « la première de la liste » : cette suite s'exécute sur
+   * deux workers, et l'extraction Excel du parcours voisin peut se glisser en tête au même instant.
+   * Un test qui prend la première ligne pour la sienne mesure l'ordonnancement, pas le produit.
+   */
+  const archives = extraction.getByRole("listitem").filter({ hasText: reference });
   await expect(archives).toBeVisible({ timeout: 30_000 });
   await expect(archives).toContainText(/PDF/);
-  await expect(archives.locator(".font-mono")).toHaveText(/^[0-9a-f]{64}$/);
+  // L'empreinte, elle, est groupée par blocs de huit pour être comparable à l'œil (Q-114).
+  await expect(archives.locator("code")).toHaveText(/^([0-9a-f]{8} ){3}[0-9a-f]{8}/);
 
   await dj.context().close();
 });
@@ -305,4 +326,73 @@ test("recuperer une archive laisse une trace (Q-113)", async ({ browser }) => {
   await expect(dj.getByRole("row", { name: /archive/ }).first()).toBeVisible({ timeout: 30_000 });
 
   await dj.context().close();
+});
+
+/**
+ * Vérification d'un fichier reçu (backend Q-114).
+ *
+ * L'empreinte existait depuis Q-113, mais rien ne permettait de s'en servir depuis l'application :
+ * il fallait ouvrir un terminal et comparer soixante-quatre caractères à l'œil. Ce parcours vérifie
+ * la boucle complète — un fichier produit ici est reconnu ici — parce que c'est cette boucle, et
+ * non l'empreinte seule, qui fait la valeur de la pièce.
+ */
+test("un fichier extrait est reconnu par le vérificateur (Q-114)", async ({ browser }, infos) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  const extraction = dj.getByRole("region", { name: "Extraire l’audit" });
+  await extraction.getByRole("button", { name: "Ce mois-ci" }).click();
+
+  const telechargement = dj.waitForEvent("download", { timeout: 60_000 });
+  await dj.getByRole("button", { name: "Extraire en PDF" }).click();
+  const fichier = await telechargement;
+  const chemin = infos.outputPath(fichier.suggestedFilename());
+  await fichier.saveAs(chemin);
+
+  // La référence citée dans le nom du fichier est celle de l'archive : on doit pouvoir retrouver
+  // l'une à partir de l'autre, sans rien recouper à la main.
+  const reference = fichier.suggestedFilename().slice(0, 13).toUpperCase();
+  expect(reference).toMatch(/^AUD-\d{4}-\d{4}$/);
+
+  const verificateur = dj.getByRole("region", { name: "Vérifier un fichier" });
+  await expect(verificateur).toBeVisible();
+  await verificateur.locator("#verifier-fichier").setInputFiles(chemin);
+
+  // Reconnu, et nommé : « ce fichier est bien l'archive AUD-2026-0042 » est la phrase utile.
+  const reponse = verificateur.getByRole("status");
+  await expect(reponse).toContainText("Fichier reconnu", { timeout: 60_000 });
+  await expect(reponse).toContainText(reference);
+  // La portée est énoncée : l'application ne laisse pas croire qu'elle prouve plus qu'elle ne peut.
+  await expect(reponse).toContainText(/antériorité face à un tiers/);
+  // L'empreinte calculée sur le poste est montrée, groupée : c'est elle qu'on transmet.
+  await expect(reponse.locator("code")).toHaveText(/^([0-9a-f]{8} ){3}[0-9a-f]{8}/);
+
+  await dj.context().close();
+});
+
+/**
+ * Un fichier inconnu n'est pas une erreur : c'est une réponse. Le distinguer d'une panne est tout
+ * l'intérêt — « je ne reconnais pas ce document » et « la vérification a échoué » n'engagent pas
+ * du tout les mêmes suites.
+ */
+test("un fichier qui n'est pas une archive reçoit une réponse, pas une erreur (Q-114)", async ({
+  browser,
+}, infos) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await ouvrirAudit(dja);
+
+  const chemin = infos.outputPath("document-quelconque.pdf");
+  await writeFile(chemin, "Ceci n'a jamais ete scelle ici.");
+
+  const verificateur = dja.getByRole("region", { name: "Vérifier un fichier" });
+  await verificateur.locator("#verifier-fichier").setInputFiles(chemin);
+
+  const reponse = verificateur.getByRole("status");
+  await expect(reponse).toContainText("Aucune archive ne correspond", { timeout: 60_000 });
+  // Et l'empreinte calculée reste affichée : c'est précisément le moment où l'on en a besoin.
+  await expect(reponse.locator("code")).toHaveText(/^([0-9a-f]{8} ){3}[0-9a-f]{8}/);
+  // Rien d'alarmant : la réponse n'emprunte pas le canal des erreurs.
+  await expect(verificateur.getByRole("alert")).toHaveCount(0);
+
+  await dja.context().close();
 });

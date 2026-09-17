@@ -385,12 +385,25 @@ test("une alerte destinée à quelqu'un de déconnecté reste délivrée (Q-109)
   const { debut, fin } = aujourdHui();
   const avant = await statistiques(debut, fin);
 
-  // Aucun navigateur ouvert pour l'Assistante : aucune session STOMP ne peut exister.
   await deposerDemandeDeFrais();
 
+  /*
+   * Ce qui est vérifié ici est que **rien ne se perd** : l'alerte est délivrée, poussée si le
+   * destinataire écoute, mise de côté sinon, jamais en échec. C'était toute la découverte de Q-109 —
+   * `convertAndSendToUser` ne lève pas quand personne n'écoute.
+   *
+   * Une version précédente exigeait que ce soit précisément le compteur des **différées** qui monte,
+   * au motif qu'aucun navigateur n'était ouvert pour l'Assistante dans ce parcours. La prémisse est
+   * fausse en suite complète : douze fichiers ouvrent une session Assistante, et la suite s'exécute
+   * en parallèle. Qu'un autre worker en tienne une, et l'alerte part en temps réel — le test échoue
+   * alors sur l'ordonnancement, pas sur le produit. On mesure donc la propriété qui tient dans les
+   * deux cas ; `echecs`, lui, reste le compteur qui ne doit jamais bouger.
+   */
+  const delivrees = (etat: { differees: number; diffusees: number }) => etat.differees + etat.diffusees;
+
   await expect
-    .poll(async () => (await statistiques(debut, fin)).differees, { timeout: 30_000 })
-    .toBeGreaterThan(avant.differees);
+    .poll(async () => delivrees(await statistiques(debut, fin)), { timeout: 30_000 })
+    .toBeGreaterThan(delivrees(avant));
 
   const apres = await statistiques(debut, fin);
   expect(apres.echecs).toBe(avant.echecs);

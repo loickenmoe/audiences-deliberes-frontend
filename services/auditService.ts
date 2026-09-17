@@ -1,6 +1,6 @@
 import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { ArchiveAudit, PageAudit } from "@/types/domaine";
+import type { ArchiveAudit, PageAudit, VerificationArchive } from "@/types/domaine";
 
 /** Portée d'une consultation. Exclusives : `UN_DOSSIER` exige `dossierId`. */
 export type PerimetreAudit = "TOUT" | "HORS_DOSSIER" | "UN_DOSSIER";
@@ -72,10 +72,18 @@ export const auditService = {
         format,
       },
     });
+    /*
+     * Le nom vient du serveur, qui y met la référence de l'archive (`aud-2026-0042-…`). Le
+     * reconstruire ici produirait un nom plausible mais différent de celui sous lequel la pièce est
+     * consignée — et c'est précisément ce nom qu'on citera dans un courrier.
+     */
     const extension = format === "PDF" ? "pdf" : "xlsx";
+    const disposition = String(reponse.headers["content-disposition"] ?? "");
+    const annonce = /filename="([^"]+)"/.exec(disposition)?.[1];
+
     return {
       fichier: reponse.data,
-      nomFichier: `audit-${filtres.dateDebut}-${filtres.dateFin}.${extension}`,
+      nomFichier: annonce ?? `audit-${filtres.dateDebut}-${filtres.dateFin}.${extension}`,
       empreinte: String(reponse.headers["x-empreinte-sha256"] ?? ""),
     };
   },
@@ -84,6 +92,19 @@ export const auditService = {
   archives: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<ArchiveAudit>> => {
     const { data } = await apiClient.get<PageReponse<ArchiveAudit>>("/historique/exports", {
       params: { page, size },
+    });
+    return data;
+  },
+
+  /**
+   * Vérifie qu'un fichier correspond à une archive connue (backend Q-114).
+   *
+   * **Seule l'empreinte part**, jamais le fichier : elle est calculée par le navigateur. Un document
+   * d'audit n'a aucune raison de traverser le réseau pour être comparé à lui-même.
+   */
+  verifier: async (empreinte: string): Promise<VerificationArchive> => {
+    const { data } = await apiClient.get<VerificationArchive>("/historique/exports/verification", {
+      params: { empreinte },
     });
     return data;
   },

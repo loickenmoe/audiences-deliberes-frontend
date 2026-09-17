@@ -1275,7 +1275,19 @@
     "archivesTitre": "Archives produites",
     "archivesVide": "Aucune extraction n’a encore été produite.",
     "archiveResume": "{format} - du {debut} au {fin} - {lignes} ligne(s)",
-    "recuperer": "Récupérer"
+    "recuperer": "Récupérer",
+    "copierEmpreinte": "Copier",
+    "empreinteCopiee": "Copiée",
+    "verifierTitre": "Vérifier un fichier",
+    "verifierDescription": "Déposez un document d’audit reçu : son empreinte est calculée sur votre poste - le fichier ne part pas - et comparée aux archives produites ici.",
+    "verifierChoisir": "Choisir un fichier",
+    "verifierEnCours": "Calcul en cours…",
+    "verifierReconnue": "Fichier reconnu : archive {reference}, du {debut} au {fin}, {lignes} ligne(s).",
+    "verifierPortee": "Le fichier n’a pas été modifié depuis son scellement. Cela n’atteste pas son antériorité face à un tiers, l’application détenant à la fois le fichier et la trace.",
+    "verifierInconnue": "Aucune archive ne correspond à ce fichier.",
+    "verifierInconnueAide": "Le document a été modifié, ou il ne provient pas de cette application. Transmettez cette empreinte pour comprendre.",
+    "verifierEchec": "La vérification a échoué. Réessayez avec le fichier d’origine.",
+    "verifierContexte": "Le calcul d’empreinte exige une connexion sécurisée (HTTPS)."
   },
   "historique": {
     "actions": {

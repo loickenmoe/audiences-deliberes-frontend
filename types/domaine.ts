@@ -209,6 +209,13 @@ export interface OptionActionAudit {
  */
 export interface ArchiveAudit {
   id: number;
+  /**
+   * Référence lisible, `AUD-2026-0042` (backend Q-114). Elle **désigne** l'archive, là où
+   * l'empreinte la **prouve** : on l'écrit dans un courrier, on la dicte au téléphone, et c'est par
+   * elle qu'on retrouve l'empreinte. C'est aussi la seule chose identifiant l'archive que le fichier
+   * puisse porter — tout ce qui décrit son contenu changerait ses octets en y étant écrit.
+   */
+  reference: string;
   utilisateurId: number | null;
   dateExport: string;
   dateDebut: string;
@@ -218,6 +225,17 @@ export interface ArchiveAudit {
   lignes: number;
   empreinte: string;
   tailleOctets: number;
+}
+
+/**
+ * Résultat d'une vérification d'empreinte (backend Q-114).
+ *
+ * `reconnue` à faux n'est **pas une erreur** : c'est une réponse, et souvent celle qu'on redoutait —
+ * le document qu'on vous a remis ne correspond à aucune archive.
+ */
+export interface VerificationArchive {
+  reconnue: boolean;
+  archive: ArchiveAudit | null;
 }
 
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */

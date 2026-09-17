@@ -1275,7 +1275,19 @@
     "archivesTitre": "Archives produced",
     "archivesVide": "No export has been produced yet.",
     "archiveResume": "{format} - from {debut} to {fin} - {lignes} row(s)",
-    "recuperer": "Retrieve"
+    "recuperer": "Retrieve",
+    "copierEmpreinte": "Copy",
+    "empreinteCopiee": "Copied",
+    "verifierTitre": "Verify a file",
+    "verifierDescription": "Drop an audit document you received: its fingerprint is computed on your machine - the file never leaves it - and compared with the archives produced here.",
+    "verifierChoisir": "Choose a file",
+    "verifierEnCours": "Computing…",
+    "verifierReconnue": "File recognised: archive {reference}, from {debut} to {fin}, {lignes} row(s).",
+    "verifierPortee": "The file has not changed since it was sealed. This does not establish anteriority against a third party, as the application holds both the file and the record.",
+    "verifierInconnue": "No archive matches this file.",
+    "verifierInconnueAide": "The document has been altered, or it does not come from this application. Share this fingerprint to investigate.",
+    "verifierEchec": "Verification failed. Try again with the original file.",
+    "verifierContexte": "Computing a fingerprint requires a secure connection (HTTPS)."
   },
   "historique": {
     "actions": {

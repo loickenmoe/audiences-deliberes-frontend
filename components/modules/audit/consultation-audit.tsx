@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { DateHeureValeur, TableDonnees } from "@/components/metier";
 import { ExportAudit } from "@/components/modules/audit/export-audit";
+import { VerificateurEmpreinte } from "@/components/modules/audit/verificateur-empreinte";
 import { Button } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { TAILLE_PAGE } from "@/hooks/const";
@@ -295,6 +296,12 @@ export function ConsultationAudit() {
           })
         }
       />
+
+      {/*
+        Le vérificateur suit l'extraction : produire une pièce et pouvoir la vérifier sont les deux
+        moitiés du même geste. Séparés, l'empreinte reste une curiosité que personne ne contrôle.
+      */}
+      <VerificateurEmpreinte />
 
       {criteresInvalides ? null : (
         <TableDonnees

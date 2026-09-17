@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { DateHeureValeur, PoidsFichier } from "@/components/metier";
+import { EmpreinteAffichee } from "@/components/modules/audit/empreinte-affichee";
 import { Button } from "@/components/ui/button";
 import { useArchivesAudit, useExporterAudit } from "@/hooks/useAudit";
 import { useLibelles } from "@/hooks/useLibelles";
@@ -146,7 +147,13 @@ export function ExportAudit({
             {lignes.map((archive) => (
               <li key={archive.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
                 <span className="flex flex-col gap-0.5 text-[length:var(--taille-sm)]">
+                  {/*
+                    La référence vient en premier : c'est par elle qu'on désigne l'archive dans un
+                    courrier ou au téléphone, là où l'empreinte, elle, la prouve.
+                  */}
                   <span className="font-medium">
+                    <span className="font-mono">{archive.reference}</span>
+                    {" · "}
                     {t("archiveResume", {
                       format: archive.format,
                       debut: archive.dateDebut,
@@ -162,12 +169,11 @@ export function ExportAudit({
                     <PoidsFichier valeur={archive.tailleOctets} />
                   </span>
                   {/*
-                    L'empreinte est affichée en entier : tronquée, elle ne servirait qu'à décorer.
-                    C'est elle qu'un contrôleur recopie pour vérifier le fichier qu'on lui a remis.
+                    L'empreinte est affichée en entier, mais **groupée** : tronquée elle ne servirait
+                    qu'à décorer, d'un seul tenant elle serait illisible. C'est elle qu'un contrôleur
+                    compare avec le fichier qu'on lui a remis.
                   */}
-                  <span className="font-mono text-[length:var(--taille-2xs)] text-texte-tertiaire">
-                    {archive.empreinte}
-                  </span>
+                  <EmpreinteAffichee empreinte={archive.empreinte} />
                 </span>
                 <Button variante="secondaire" taille="sm" onClick={() => void recuperer(archive.id)}>
                   {t("recuperer")}

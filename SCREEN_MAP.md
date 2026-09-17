@@ -227,6 +227,12 @@ modification ni suppression** : non demandées par les user stories. Cet écran 
 F5 — sans lui, aucun avocat n'existe, et `avocatsAffectes` est obligatoire à la création d'un
 dossier.
 
+**43** — trois blocs : la **consultation** filtrée (Q-112), l'**extraction scellée** avec la liste des
+archives produites (Q-113), et la **vérification d'un fichier reçu** (Q-114,
+`GET /historique/exports/verification`). L'empreinte du fichier déposé est calculée **par le
+navigateur** : seule sa valeur part au serveur. Chaque archive porte une référence lisible
+`AUD-2026-0042`, reprise dans le nom du fichier — l'empreinte prouve, la référence désigne.
+
 ---
 
 ## Récapitulatif par jalon
