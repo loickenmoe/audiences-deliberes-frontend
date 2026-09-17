@@ -1256,7 +1256,26 @@
     "colonneAction": "Action",
     "colonneDetails": "Details",
     "videTitre": "No action recorded",
-    "videTexte": "No action matches these criteria."
+    "videTexte": "No action matches these criteria.",
+    "exportTitre": "Export the audit",
+    "exportDescription": "Every export is sealed: the file is archived and its fingerprint recorded, so it can later be shown that the document produced is the one that was sealed.",
+    "raccourcis": "Period to export",
+    "periode": {
+      "jour": "Today",
+      "semaine": "This week",
+      "mois": "This month",
+      "trimestre": "This quarter",
+      "semestre": "This half-year",
+      "annee": "This year"
+    },
+    "exporterPdf": "Export as PDF",
+    "exporterExcel": "Export as Excel",
+    "periodeObligatoire": "Choose a period: an archive must state what it covers.",
+    "exportReussi": "Export produced and sealed (fingerprint {empreinte}…).",
+    "archivesTitre": "Archives produced",
+    "archivesVide": "No export has been produced yet.",
+    "archiveResume": "{format} - from {debut} to {fin} - {lignes} row(s)",
+    "recuperer": "Retrieve"
   },
   "historique": {
     "actions": {

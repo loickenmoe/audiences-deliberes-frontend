@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { auditService, type FiltresAudit } from "@/services/auditService";
@@ -31,5 +31,34 @@ export function useAudit(filtres: FiltresAudit, page = 0, size = TAILLE_PAGE) {
     ],
     queryFn: () => auditService.consulter(filtres, page, size),
     placeholderData: (precedent) => precedent,
+  });
+}
+
+/** Les archives déjà produites (backend Q-113), avec leur empreinte. */
+export function useArchivesAudit(page = 0, size = TAILLE_PAGE) {
+  return useQuery({
+    queryKey: [CLES.audit, "archives", page, size],
+    queryFn: () => auditService.archives(page, size),
+  });
+}
+
+/**
+ * Produit une extraction et la remet à l'utilisateur (backend Q-113).
+ *
+ * **Le succès invalide la liste des archives** : l'export vient d'en créer une, et voir la liste
+ * l'ignorer ferait croire que rien n'a été scellé — le même défaut que celui trouvé en Q-110 sur le
+ * journal qui ne se rafraîchissait pas après un enregistrement.
+ */
+export function useExporterAudit() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      filtres,
+      format,
+    }: {
+      filtres: FiltresAudit & { dateDebut: string; dateFin: string };
+      format: "PDF" | "EXCEL";
+    }) => auditService.exporter(filtres, format),
+    onSuccess: () => client.invalidateQueries({ queryKey: [CLES.audit, "archives"] }),
   });
 }

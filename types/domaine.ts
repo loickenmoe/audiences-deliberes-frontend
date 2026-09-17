@@ -197,6 +197,29 @@ export interface OptionActionAudit {
   libelle: string;
 }
 
+/**
+ * Une archive d'audit produite et scellée (backend Q-113).
+ *
+ * `empreinte` est le **SHA-256 du fichier déposé**. C'est lui qui permet de démontrer, des années
+ * plus tard, que le fichier produit est celui qui a été scellé — et donc de distinguer une archive
+ * d'une simple copie, qu'on peut rééditer en trois minutes.
+ *
+ * La clé de stockage n'est **pas** exposée : elle ne servirait qu'à contourner l'endpoint de
+ * téléchargement, seul endroit où la récupération est tracée.
+ */
+export interface ArchiveAudit {
+  id: number;
+  utilisateurId: number | null;
+  dateExport: string;
+  dateDebut: string;
+  dateFin: string;
+  perimetre: string;
+  format: "PDF" | "EXCEL";
+  lignes: number;
+  empreinte: string;
+  tailleOctets: number;
+}
+
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */
 export interface AuditSeuil {
   id: number;

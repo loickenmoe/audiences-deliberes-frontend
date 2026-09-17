@@ -226,3 +226,83 @@ test("en anglais, la nature de l'action et les cles de details sont traduites (Q
 
   await page.context().close();
 });
+
+/**
+ * Extraction de l'audit (backend Q-113).
+ *
+ * Ce que ce parcours verifie n'est pas la mise en forme du fichier — un test ne sait pas si un PDF
+ * est lisible — mais la chaîne qui rend l'archive opposable : le fichier part, son empreinte
+ * revient jusqu'à l'écran, et l'archive apparaît dans la liste avec cette même empreinte.
+ */
+test("une extraction produit un fichier et une archive scellee (Q-113)", async ({ browser }) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  const extraction = dj.getByRole("region", { name: "Extraire l’audit" });
+  await expect(extraction).toBeVisible();
+
+  // Sans période, l'extraction est refusée à l'écran plutôt que par un 400 du backend.
+  await expect(extraction.getByRole("alert")).toContainText("Choisissez une période");
+  await expect(dj.getByRole("button", { name: "Extraire en PDF" })).toBeDisabled();
+
+  // Un raccourci pré-remplit la période : il ne lance pas d'extraction.
+  await extraction.getByRole("button", { name: "Ce mois-ci" }).click();
+  await expect(dj.getByLabel("Du", { exact: true })).not.toHaveValue("");
+  await expect(dj.getByLabel("Au", { exact: true })).not.toHaveValue("");
+  await expect(extraction.getByRole("alert")).toHaveCount(0);
+
+  const telechargement = dj.waitForEvent("download", { timeout: 60_000 });
+  await dj.getByRole("button", { name: "Extraire en PDF" }).click();
+  const fichier = await telechargement;
+  expect(fichier.suggestedFilename()).toMatch(/^audit-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.pdf$/);
+
+  // L'empreinte remonte jusqu'à l'écran : sans elle, l'archive ne serait qu'une copie de plus.
+  await expect(dj.getByText(/Extraction produite et scell/)).toBeVisible({ timeout: 30_000 });
+
+  // Et l'archive apparaît dans la liste, sans rien rafraîchir, avec son empreinte complète.
+  const archives = extraction.getByRole("listitem").first();
+  await expect(archives).toBeVisible({ timeout: 30_000 });
+  await expect(archives).toContainText(/PDF/);
+  await expect(archives.locator(".font-mono")).toHaveText(/^[0-9a-f]{64}$/);
+
+  await dj.context().close();
+});
+
+/** L'Excel sert un autre usage que le PDF : les deux doivent être offerts, et fonctionner. */
+test("l'extraction Excel produit un classeur (Q-113)", async ({ browser }) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await ouvrirAudit(dja);
+
+  const extraction = dja.getByRole("region", { name: "Extraire l’audit" });
+  await extraction.getByRole("button", { name: "Aujourd’hui" }).click();
+
+  const telechargement = dja.waitForEvent("download", { timeout: 60_000 });
+  await dja.getByRole("button", { name: "Extraire en Excel" }).click();
+  const fichier = await telechargement;
+  expect(fichier.suggestedFilename()).toMatch(/\.xlsx$/);
+
+  await dja.context().close();
+});
+
+/**
+ * Récupérer une archive déjà produite. Le chemin passe par l'application — seul endroit où la
+ * récupération est tracée — et non par la clé de stockage, que l'API n'expose pas.
+ */
+test("recuperer une archive laisse une trace (Q-113)", async ({ browser }) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  const extraction = dj.getByRole("region", { name: "Extraire l’audit" });
+  const premiere = extraction.getByRole("listitem").first();
+  await expect(premiere).toBeVisible({ timeout: 30_000 });
+
+  const onglet = dj.context().waitForEvent("page", { timeout: 60_000 });
+  await premiere.getByRole("button", { name: "Récupérer" }).click();
+  await (await onglet).close();
+
+  // La trace apparaît dans l'audit lui-même.
+  await dj.getByLabel("Action", { exact: true }).selectOption("ARCHIVE_TELECHARGEE");
+  await expect(dj.getByRole("row", { name: /archive/ }).first()).toBeVisible({ timeout: 30_000 });
+
+  await dj.context().close();
+});

@@ -279,6 +279,9 @@ nuls tant que la décision n'est pas rendue.
 | 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
 | — | GET | `/alertes/statistiques-diffusion?dateDebut&dateFin` 🆕 Q-109 | **DJ + DJA** | 41 (supervision) | F18 | ✅ |
 | — | GET | `/historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin&page&size` 🆕 Q-112 | **DJ + DJA** | 43 (audit) | F18 | ✅ |
+| — | GET | `/historique/export?…&format=PDF|EXCEL` 🆕 Q-113 | **DJ + DJA** | 43 (audit) | F18 | ✅ |
+| — | GET | `/historique/exports?page&size` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
+| — | GET | `/historique/exports/{id}/telechargement` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la

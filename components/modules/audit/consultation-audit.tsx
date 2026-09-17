@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { DateHeureValeur, TableDonnees } from "@/components/metier";
+import { ExportAudit } from "@/components/modules/audit/export-audit";
 import { Button } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { TAILLE_PAGE } from "@/hooks/const";
@@ -272,6 +273,28 @@ export function ConsultationAudit() {
           </p>
         ) : null}
       </section>
+
+      {/*
+        L'extraction vit sous les filtres, et reprend les mêmes : ce qu'on exporte est ce qu'on
+        regarde. Un bloc d'export qui aurait ses propres critères aurait produit des archives sans
+        rapport avec l'écran où on les demande.
+      */}
+      <ExportAudit
+        filtres={{
+          perimetre,
+          dossierId: perimetre === "UN_DOSSIER" && dossier ? Number(dossier) : undefined,
+          utilisateurId: auteur ? Number(auteur) : undefined,
+          code: code || undefined,
+        }}
+        debut={debut}
+        fin={fin}
+        onPeriode={(periode) =>
+          filtrer(() => {
+            setDebut(periode.debut);
+            setFin(periode.fin);
+          })
+        }
+      />
 
       {criteresInvalides ? null : (
         <TableDonnees

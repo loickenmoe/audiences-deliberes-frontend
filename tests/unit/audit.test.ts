@@ -44,6 +44,20 @@ const serveur = setupServer(
     derniere = { methode: request.method, url: new URL(request.url) };
     return HttpResponse.json(PAGE as JsonBodyType);
   }),
+  http.get(`${BASE}/historique/export`, ({ request }) => {
+    derniere = { methode: request.method, url: new URL(request.url) };
+    return new HttpResponse(new Blob(["fichier"]), {
+      headers: {
+        "Content-Type": "application/pdf",
+        // L'empreinte voyage avec le fichier : le destinataire la compare sans interroger l'app.
+        "X-Empreinte-SHA256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      },
+    });
+  }),
+  http.get(`${BASE}/historique/exports/:id/telechargement`, ({ request }) => {
+    derniere = { methode: request.method, url: new URL(request.url) };
+    return HttpResponse.json({ url: "https://minio/archive" });
+  }),
 );
 
 beforeAll(() => {
@@ -199,5 +213,55 @@ describe("libelles d'historique (QF-24)", () => {
   it("ne conserve plus l'avertissement de langue", () => {
     expect(fr.fiche).not.toHaveProperty("historiqueLangue");
     expect(en.fiche).not.toHaveProperty("historiqueLangue");
+  });
+});
+
+/**
+ * Extraction de l'audit (backend Q-113).
+ *
+ * Ce qui compte ici n'est pas la mise en forme du fichier — le backend s'en charge et la teste —
+ * mais **ce qu'on demande** et **ce qu'on rapporte** : la période part toujours, et l'empreinte
+ * revient jusqu'a l'ecran, sans quoi elle ne servirait a rien.
+ */
+describe("extraction de l'audit", () => {
+  it("transmet la période et le format, et reprend les filtres en cours", async () => {
+    await auditService.exporter(
+      {
+        perimetre: "HORS_DOSSIER",
+        utilisateurId: 4,
+        code: "CONFIGURATION_MODIFIEE",
+        dateDebut: "2026-09-01",
+        dateFin: "2026-09-30",
+      },
+      "EXCEL",
+    );
+
+    expect(derniere?.url.pathname).toBe("/api/v1/historique/export");
+    expect(derniere?.url.searchParams.get("format")).toBe("EXCEL");
+    expect(derniere?.url.searchParams.get("dateDebut")).toBe("2026-09-01");
+    expect(derniere?.url.searchParams.get("dateFin")).toBe("2026-09-30");
+    // Ce qu'on exporte est ce qu'on regarde : les filtres de l'écran suivent l'extraction.
+    expect(derniere?.url.searchParams.get("perimetre")).toBe("HORS_DOSSIER");
+    expect(derniere?.url.searchParams.get("utilisateurId")).toBe("4");
+    expect(derniere?.url.searchParams.get("code")).toBe("CONFIGURATION_MODIFIEE");
+  });
+
+  it("rapporte l'empreinte et un nom de fichier qui porte la période", async () => {
+    const { nomFichier, empreinte } = await auditService.exporter(
+      { dateDebut: "2026-09-01", dateFin: "2026-09-30" },
+      "PDF",
+    );
+
+    expect(nomFichier).toBe("audit-2026-09-01-2026-09-30.pdf");
+    // Sans l'empreinte remontée jusqu'à l'écran, l'archive ne serait qu'une copie de plus.
+    expect(empreinte).toHaveLength(64);
+  });
+
+  it("récupère une archive par l'endpoint tracé, jamais par sa clé de stockage", async () => {
+    const url = await auditService.urlArchive(7);
+
+    expect(url).toBe("https://minio/archive");
+    // Le chemin passe par l'application : c'est le seul endroit où la récupération est tracée.
+    expect(derniere?.url.pathname).toBe("/api/v1/historique/exports/7/telechargement");
   });
 });

@@ -1256,7 +1256,26 @@
     "colonneAction": "Action",
     "colonneDetails": "Détails",
     "videTitre": "Aucune action enregistrée",
-    "videTexte": "Aucune action ne correspond à ces critères."
+    "videTexte": "Aucune action ne correspond à ces critères.",
+    "exportTitre": "Extraire l’audit",
+    "exportDescription": "Chaque extraction est scellée : le fichier est archivé et son empreinte consignée, ce qui permet de démontrer plus tard que la pièce produite est bien celle qui a été scellée.",
+    "raccourcis": "Période à extraire",
+    "periode": {
+      "jour": "Aujourd’hui",
+      "semaine": "Cette semaine",
+      "mois": "Ce mois-ci",
+      "trimestre": "Ce trimestre",
+      "semestre": "Ce semestre",
+      "annee": "Cette année"
+    },
+    "exporterPdf": "Extraire en PDF",
+    "exporterExcel": "Extraire en Excel",
+    "periodeObligatoire": "Choisissez une période : une archive doit dire ce qu’elle couvre.",
+    "exportReussi": "Extraction produite et scellée (empreinte {empreinte}…).",
+    "archivesTitre": "Archives produites",
+    "archivesVide": "Aucune extraction n’a encore été produite.",
+    "archiveResume": "{format} - du {debut} au {fin} - {lignes} ligne(s)",
+    "recuperer": "Récupérer"
   },
   "historique": {
     "actions": {
