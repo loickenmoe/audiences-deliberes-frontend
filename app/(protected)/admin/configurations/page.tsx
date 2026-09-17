@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { ParametresSysteme } from "@/components/modules/administration/parametres-systeme";
+import { JournalSysteme } from "@/components/modules/administration/journal-systeme";
 import { SupervisionAlertes } from "@/components/modules/administration/supervision-alertes";
 import { peut } from "@/lib/rbac";
 import { exigerCapacite } from "@/lib/serverAuth";
@@ -27,6 +28,13 @@ export default async function PageConfigurations() {
         ouverts à `ROLE_CONSULTATION` ; ce bloc ne l'est pas.
       */}
       {peut(session.roles, "superviserAlertes") ? <SupervisionAlertes /> : null}
+      {/*
+        Journal des actions système (Q-110). Il ferme la lacune ouverte par RG-DOS-06 : chaque
+        modification était historisée, mais celles qui ne portent sur aucun dossier n'avaient aucun
+        point de lecture. Sa place est ici parce que la grande majorité d'entre elles sont des
+        modifications de paramètres — voici les réglages, voici qui les a changés.
+      */}
+      {peut(session.roles, "consulterJournalSysteme") ? <JournalSysteme /> : null}
     </div>
   );
 }

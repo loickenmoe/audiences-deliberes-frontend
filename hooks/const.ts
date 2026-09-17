@@ -35,6 +35,7 @@ export const CLES = {
   mesConstitutions: "mes-constitutions",
   notifications: "notifications",
   configurations: "configurations",
+  journalSysteme: "journal-systeme",
   intervenants: "intervenants",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",

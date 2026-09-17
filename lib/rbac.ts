@@ -165,6 +165,16 @@ export const CAPACITES = {
    * assouplissement futur de l'une déplacerait l'autre sans qu'on l'ait voulu.
    */
   superviserAlertes: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `GET /historique/systeme` — DJ, DJA (backend Q-110).
+   *
+   * **Pourquoi pas `ROLE_CONSULTATION`**, alors que l'historique d'un dossier lui est ouvert : sur
+   * une fiche, on regarde un dossier, et voir l'action d'un collègue relève de la collaboration.
+   * Ici la lecture est agrégée et filtrable par auteur — même contenu, autre nature. La restreindre
+   * à l'administration est le minimum tant que NF-CONF-01 (RGPD, conservation) reste « à définir
+   * avec la DRH » dans les sources.
+   */
+  consulterJournalSysteme: ["ROLE_DJ", "ROLE_DJA"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Capacite = keyof typeof CAPACITES;

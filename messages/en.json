@@ -1085,6 +1085,25 @@
     "filtreType": "Type",
     "filtreTousTypes": "All types"
   },
+  "journalSysteme": {
+    "titre": "System action log",
+    "description": "Changes that concern no case file: system settings and reference data. Who changed what, when, and from which value.",
+    "perimetre": "This log records changes only. Views are not traced: the absence of a line does not prove the absence of an action.",
+    "filtreAuteur": "Author",
+    "tousLesAuteurs": "All authors",
+    "filtreAction": "Action",
+    "toutesLesActions": "All actions",
+    "du": "From",
+    "au": "To",
+    "reinitialiser": "Reset",
+    "fenetreInversee": "The start date is later than the end date.",
+    "colonneDate": "Date",
+    "colonneAuteur": "Author",
+    "colonneAction": "Action",
+    "colonneDetails": "Details",
+    "videTitre": "No action recorded",
+    "videTexte": "No change outside a case file matches these filters."
+  },
   "supervisionAlertes": {
     "titre": "Alert supervision",
     "description": "The in-app channel is the mandatory channel for alerts. This measure says whether it did its job over the chosen period.",

@@ -439,3 +439,119 @@ test("une fenêtre inversée est expliquée à l'écran, pas renvoyée en erreur
   await expect(page.locator("#supervision-debut")).toHaveAttribute("aria-invalid", "true");
   await page.context().close();
 });
+
+/**
+ * Q-110 — le journal des actions système, contre le backend réel.
+ *
+ * Le parcours vérifie ce qui fait la valeur de l'écran, et non son habillage : qu'une modification
+ * de paramètre y apparaît avec son auteur et ses valeurs, que l'activité des dossiers n'y entre
+ * **jamais**, et que la garde de rôle tient.
+ */
+test("une modification de paramètre apparaît au journal, avec son auteur et ses valeurs (Q-110)", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  await expect(dj.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // On produit la trace depuis l'écran lui-même : c'est le geste réel que le journal doit restituer.
+  const article = dj.locator("article", { hasText: "SEUIL_PROROGATIONS" });
+  const champ = article.locator("#configuration-SEUIL_PROROGATIONS");
+  const initiale = (await champ.inputValue()).trim();
+  const nouvelle = initiale === "12" ? "13" : "12";
+  await champ.fill(nouvelle);
+  await article.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dj.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+
+  const journal = dj.locator("section", { hasText: "Journal des actions système" });
+  await expect(journal.getByRole("heading", { name: "Journal des actions système" })).toBeVisible();
+
+  /*
+   * La remise en état est dans un `finally` : ce seuil pilote les alertes de prorogation et un autre
+   * parcours vérifie qu'il vaut toujours 10. Une première version restaurait après les assertions —
+   * l'échec de l'une d'elles laissait donc la valeur modifiée et faisait tomber le parcours suivant,
+   * pour une raison qui n'avait rien à voir avec lui. Un test qui échoue ne doit pas en salir un autre.
+   */
+  try {
+    /*
+     * Aucun clic pour rafraîchir : le journal vit sur le même écran et doit se mettre à jour seul.
+     * La première version ne le faisait pas — on enregistrait un paramètre et le journal juste en
+     * dessous l'ignorait, ce dont on aurait conclu que rien n'avait été tracé. Défaut trouvé ici,
+     * corrigé par une invalidation ; ce test empêche qu'il revienne.
+     */
+    const ligne = journal
+      .getByRole("row", { name: /Modification de la configuration SEUIL_PROROGATIONS/ })
+      .first();
+    await expect(ligne).toBeVisible({ timeout: 30_000 });
+    // L'ancienne et la nouvelle valeur : c'est ce qui distingue un journal d'une liste d'actes.
+    await expect(ligne).toContainText(new RegExp(`nouvelleValeur\\s*${nouvelle}`), { timeout: 30_000 });
+    await expect(ligne).toContainText(new RegExp(`ancienneValeur\\s*${initiale}`));
+  } finally {
+    await champ.fill(initiale);
+    await article.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(dj.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+    await dj.context().close();
+  }
+});
+
+/**
+ * Le test le plus important du lot. Le journal est une vue d'administration, pas une vue sur les
+ * personnes : l'activité des juristes sur leurs dossiers ne doit jamais y entrer. C'est cette
+ * limite qui le rend acceptable tant que NF-CONF-01 (RGPD, conservation) reste à définir.
+ */
+test("le journal ne laisse jamais entrer l'activité des dossiers (Q-110)", async ({ browser }) => {
+  // Une action sur un dossier, historisée avec son dossier.
+  const reference = await deposerDemandeDeFrais();
+
+  const dja = await pageConnectee(browser, "dja.test");
+  await dja.goto("/admin/configurations");
+  const journal = dja.locator("section", { hasText: "Journal des actions système" });
+  await expect(journal.getByRole("heading", { name: "Journal des actions système" })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  await expect(journal.getByRole("row", { name: new RegExp(reference) })).toHaveCount(0);
+  await expect(journal.getByRole("row", { name: /Création du dossier/ })).toHaveCount(0);
+  await expect(journal.getByRole("row", { name: /demande de frais/ })).toHaveCount(0);
+
+  // Et il dit lui-même ce qu'il ne couvre pas, plutôt que de le laisser découvrir.
+  await expect(journal.getByText(/Les consultations ne sont pas tracées/)).toBeVisible();
+  await dja.context().close();
+});
+
+test("le journal est fermé au juriste, à l'Assistante et au SH (Q-110)", async ({ browser }) => {
+  for (const profil of ["juriste.test", "assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, profil);
+    await page.goto("/admin/configurations");
+    await expect(page.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByRole("heading", { name: "Journal des actions système" })).toHaveCount(0);
+    await page.context().close();
+  }
+});
+
+test("le journal filtre par auteur et par action, et explique une fenêtre inversée (Q-110)", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  const journal = dj.locator("section", { hasText: "Journal des actions système" });
+  await expect(journal.getByRole("heading", { name: "Journal des actions système" })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // La liste des actions est fermée et vient de la donnée : elle porte au moins un libellé réel.
+  const filtreAction = journal.getByLabel("Action", { exact: true });
+  await expect(filtreAction.locator("option")).not.toHaveCount(1);
+
+  await journal.getByLabel("Du", { exact: true }).fill("2026-12-31");
+  await journal.getByLabel("Au", { exact: true }).fill("2026-01-01");
+  await expect(journal.getByRole("alert")).toContainText("date de début est postérieure");
+
+  await journal.getByRole("button", { name: "Réinitialiser" }).click();
+  await expect(journal.getByRole("alert")).toHaveCount(0);
+  await dj.context().close();
+});

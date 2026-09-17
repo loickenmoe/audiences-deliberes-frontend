@@ -160,6 +160,26 @@ export interface HistoriqueAction {
   dateAction: string;
 }
 
+/**
+ * Journal des actions historisées **hors dossier** (backend Q-110).
+ *
+ * Même forme qu'une page, plus `actionsDisponibles` : les libellés réellement présents en base, qui
+ * alimentent un filtre à **liste fermée**. Sans code d'action typé (QF-24), c'est le seul choix
+ * honnête — une liste recopiée côté écran divergerait au premier libellé ajouté par le backend.
+ * Cette liste est indépendante des filtres en cours, sinon choisir un libellé ferait disparaître les
+ * autres et l'on ne pourrait plus changer d'avis.
+ *
+ * ⚠ **Ce journal ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée :
+ * l'absence de ligne ne prouve pas l'absence d'action. C'est pourquoi l'écran s'appelle un journal
+ * et non un audit.
+ */
+export interface JournalSysteme {
+  content: HistoriqueAction[];
+  totalPages: number;
+  totalElements: number;
+  actionsDisponibles: string[];
+}
+
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */
 export interface AuditSeuil {
   id: number;
