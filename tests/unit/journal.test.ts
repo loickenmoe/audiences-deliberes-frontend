@@ -23,17 +23,17 @@ const JOURNAL = {
     {
       id: 9,
       utilisateurId: 4,
-      action: "Modification de la configuration SEUIL_PROROGATIONS",
-      details: { ancienneValeur: "10", nouvelleValeur: "11" },
+      code: "CONFIGURATION_MODIFIEE",
+      action: "Modification de la configuration",
+      details: { cle: "SEUIL_PROROGATIONS", ancienneValeur: "10", nouvelleValeur: "11" },
       dateAction: "2026-09-16T14:02:00",
     },
   ],
   totalPages: 1,
   totalElements: 1,
   actionsDisponibles: [
-    "Indexation d'une jurisprudence",
-    "Modification de la configuration SEUIL_MONTANT_DEFAUT",
-    "Modification de la configuration SEUIL_PROROGATIONS",
+    { code: "JURISPRUDENCE_INDEXEE", libelle: "Indexation d'une jurisprudence" },
+    { code: "CONFIGURATION_MODIFIEE", libelle: "Modification de la configuration" },
   ],
 };
 
@@ -70,32 +70,38 @@ describe("journal des actions système sur le fil", () => {
     expect(derniere?.url.pathname).toBe("/api/v1/historique/systeme");
     // Un filtre absent ne part pas en paramètre vide : le backend le lirait comme une valeur.
     expect(derniere?.url.searchParams.get("utilisateurId")).toBeNull();
-    expect(derniere?.url.searchParams.get("action")).toBeNull();
+    expect(derniere?.url.searchParams.get("code")).toBeNull();
     expect(derniere?.url.searchParams.get("dateDebut")).toBeNull();
     expect(derniere?.url.searchParams.get("page")).toBe("0");
   });
 
   it("transmet chaque filtre posé, période comprise", async () => {
     await journalService.systeme(
-      { utilisateurId: 4, action: "Indexation d'une jurisprudence", dateDebut: "2026-09-01", dateFin: "2026-09-30" },
+      { utilisateurId: 4, code: "JURISPRUDENCE_INDEXEE", dateDebut: "2026-09-01", dateFin: "2026-09-30" },
       2,
       25,
     );
 
     expect(derniere?.url.searchParams.get("utilisateurId")).toBe("4");
-    expect(derniere?.url.searchParams.get("action")).toBe("Indexation d'une jurisprudence");
+    expect(derniere?.url.searchParams.get("code")).toBe("JURISPRUDENCE_INDEXEE");
     expect(derniere?.url.searchParams.get("dateDebut")).toBe("2026-09-01");
     expect(derniere?.url.searchParams.get("dateFin")).toBe("2026-09-30");
     expect(derniere?.url.searchParams.get("page")).toBe("2");
     expect(derniere?.url.searchParams.get("size")).toBe("25");
   });
 
-  it("rapporte les libellés disponibles, qui alimentent une liste fermée", async () => {
+  it("rapporte les natures disponibles sous forme de code et de libellé", async () => {
     const journal = await journalService.systeme();
 
-    // La liste vient de la donnée, pas d'une énumération recopiée côté écran (QF-24).
-    expect(journal.actionsDisponibles).toHaveLength(3);
-    expect(journal.content[0]!.details).toEqual({ ancienneValeur: "10", nouvelleValeur: "11" });
+    // La liste vient de la donnée, jamais d'une énumération recopiée côté écran : elle ne propose
+    // pas un choix qui ne renverrait rien. Le code part au serveur, le libellé s'affiche.
+    expect(journal.actionsDisponibles).toHaveLength(2);
+    expect(journal.actionsDisponibles[1]).toEqual({
+      code: "CONFIGURATION_MODIFIEE",
+      libelle: "Modification de la configuration",
+    });
+    // Q-111 : la clé du paramètre est descendue de la phrase vers les détails, où elle s'interroge.
+    expect(journal.content[0]!.details).toMatchObject({ cle: "SEUIL_PROROGATIONS" });
   });
 });
 

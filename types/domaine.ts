@@ -155,6 +155,12 @@ export interface Dossier {
 export interface HistoriqueAction {
   id: number;
   utilisateurId: number | null;
+  /**
+   * Nature typée de l'action (backend Q-111). C'est elle qui fait foi et sur laquelle portent les
+   * filtres ; `action` n'en est que la formulation lisible, et ce qui variait autrefois dans la
+   * phrase — nom de l'étape, sens d'une décision, clé de configuration — se trouve dans `details`.
+   */
+  code: string;
   action: string;
   details: Record<string, unknown> | null;
   dateAction: string;
@@ -163,10 +169,10 @@ export interface HistoriqueAction {
 /**
  * Journal des actions historisées **hors dossier** (backend Q-110).
  *
- * Même forme qu'une page, plus `actionsDisponibles` : les libellés réellement présents en base, qui
- * alimentent un filtre à **liste fermée**. Sans code d'action typé (QF-24), c'est le seul choix
- * honnête — une liste recopiée côté écran divergerait au premier libellé ajouté par le backend.
- * Cette liste est indépendante des filtres en cours, sinon choisir un libellé ferait disparaître les
+ * Même forme qu'une page, plus `actionsDisponibles` : les natures réellement présentes en base, qui
+ * alimentent un filtre à **liste fermée**. Depuis le typage des actions (Q-111) elle porte des codes
+ * et non des phrases, si bien qu'une clé de configuration ne produit plus une entrée par paramètre.
+ * Cette liste est indépendante des filtres en cours, sinon en choisir une ferait disparaître les
  * autres et l'on ne pourrait plus changer d'avis.
  *
  * ⚠ **Ce journal ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée :
@@ -177,7 +183,19 @@ export interface JournalSysteme {
   content: HistoriqueAction[];
   totalPages: number;
   totalElements: number;
-  actionsDisponibles: string[];
+  actionsDisponibles: OptionActionJournal[];
+}
+
+/**
+ * Une entrée du filtre par nature d'action : le **code** part au serveur, le **libellé** s'affiche.
+ *
+ * Le libellé est dérivé de l'énumération côté backend plutôt que lu sur la ligne — les entrées
+ * reprises par la migration V18 portent encore leur ancienne phrase, et une même nature se serait
+ * alors présentée plusieurs fois dans la liste.
+ */
+export interface OptionActionJournal {
+  code: string;
+  libelle: string;
 }
 
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */

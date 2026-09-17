@@ -52,7 +52,8 @@ export function JournalSysteme() {
   const utilisateurs = useUtilisateurs();
 
   const [auteur, setAuteur] = useState("");
-  const [action, setAction] = useState("");
+  /** Code typé (backend Q-111), pas le libellé : c'est lui qui part au serveur. */
+  const [code, setCode] = useState("");
   const [debut, setDebut] = useState("");
   const [fin, setFin] = useState("");
   const [page, setPage] = useState(0);
@@ -63,7 +64,7 @@ export function JournalSysteme() {
   const requete = useJournalSysteme(
     {
       utilisateurId: auteur ? Number(auteur) : undefined,
-      action: action || undefined,
+      code: code || undefined,
       // Une fenêtre inversée n'est jamais envoyée : le backend la refuse en 400, et l'utilisateur
       // lirait un message technique là où il a simplement inversé deux dates.
       dateDebut: fenetreInversee ? undefined : debut || undefined,
@@ -155,13 +156,13 @@ export function JournalSysteme() {
         <Champ id="journal-action" label={t("filtreAction")}>
           <Select
             id="journal-action"
-            value={action}
-            onChange={(evenement) => filtrer(() => setAction(evenement.target.value))}
+            value={code}
+            onChange={(evenement) => filtrer(() => setCode(evenement.target.value))}
           >
             <option value="">{t("toutesLesActions")}</option>
-            {actionsDisponibles.map((libelle) => (
-              <option key={libelle} value={libelle}>
-                {libelle}
+            {actionsDisponibles.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.libelle}
               </option>
             ))}
           </Select>
@@ -192,7 +193,7 @@ export function JournalSysteme() {
           onClick={() =>
             filtrer(() => {
               setAuteur("");
-              setAction("");
+              setCode("");
               setDebut("");
               setFin("");
             })

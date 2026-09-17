@@ -17,7 +17,7 @@ export function useJournalSysteme(filtres: FiltresJournal, page = 0, size = TAIL
     queryKey: [
       CLES.journalSysteme,
       filtres.utilisateurId ?? "tous",
-      filtres.action ?? "toutes",
+      filtres.code ?? "toutes",
       filtres.dateDebut ?? "",
       filtres.dateFin ?? "",
       page,

@@ -481,13 +481,14 @@ test("une modification de paramètre apparaît au journal, avec son auteur et se
      * dessous l'ignorait, ce dont on aurait conclu que rien n'avait été tracé. Défaut trouvé ici,
      * corrigé par une invalidation ; ce test empêche qu'il revienne.
      */
-    const ligne = journal
-      .getByRole("row", { name: /Modification de la configuration SEUIL_PROROGATIONS/ })
-      .first();
+    // Depuis Q-111, la clé n'est plus concaténée au libellé : la phrase est générique.
+    const ligne = journal.getByRole("row", { name: /Modification de la configuration/ }).first();
     await expect(ligne).toBeVisible({ timeout: 30_000 });
     // L'ancienne et la nouvelle valeur : c'est ce qui distingue un journal d'une liste d'actes.
     await expect(ligne).toContainText(new RegExp(`nouvelleValeur\\s*${nouvelle}`), { timeout: 30_000 });
     await expect(ligne).toContainText(new RegExp(`ancienneValeur\\s*${initiale}`));
+    // Et la clé, descendue de la phrase vers les détails, s'affiche désormais comme une donnée.
+    await expect(ligne).toContainText(/cle\s*SEUIL_PROROGATIONS/);
   } finally {
     await champ.fill(initiale);
     await article.getByRole("button", { name: "Enregistrer" }).click();

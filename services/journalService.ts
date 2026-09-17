@@ -5,7 +5,8 @@ import type { JournalSysteme } from "@/types/domaine";
 /** Filtres du journal. Tous facultatifs : sans aucun, on lit le journal entier, du plus récent. */
 export interface FiltresJournal {
   utilisateurId?: number;
-  action?: string;
+  /** Code typé (backend Q-111), jamais le libellé : un texte libre ne se filtre pas sans mentir. */
+  code?: string;
   dateDebut?: string;
   dateFin?: string;
 }
@@ -29,7 +30,7 @@ export const journalService = {
     const { data } = await apiClient.get<JournalSysteme>("/historique/systeme", {
       params: {
         ...(filtres.utilisateurId ? { utilisateurId: filtres.utilisateurId } : {}),
-        ...(filtres.action ? { action: filtres.action } : {}),
+        ...(filtres.code ? { code: filtres.code } : {}),
         ...(filtres.dateDebut ? { dateDebut: filtres.dateDebut } : {}),
         ...(filtres.dateFin ? { dateFin: filtres.dateFin } : {}),
         page,
