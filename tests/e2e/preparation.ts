@@ -75,12 +75,27 @@ export default async function preparation() {
     });
   }
 
-  const avocats = await appel<unknown[]>("/intervenants?type=AVOCAT", juriste);
-  if (avocats && avocats.length === 0) {
+  /*
+   * Le socle ne garantissait qu'« au moins un avocat », créé sous le compte `avocat.socle.e2e`. Or
+   * les parcours du portail se connectent en **`avocat.test`** : sur une base neuve, ce compte
+   * n'était rattaché à aucune fiche du référentiel, et cinq parcours échouaient — non pas parce que
+   * l'application était en cause, mais parce que le socle ne couvrait pas ce dont ils ont besoin.
+   * C'est exactement le défaut que ce fichier existe pour prévenir (cf. son en-tête).
+   *
+   * Q-100 : la réponse est paginée ; `size` explicite parce qu'on cherche dans tout l'annuaire.
+   */
+  const avocats =
+    (await appel<{ content: { id: number; compteKeycloak: string | null }[] }>(
+      "/intervenants?type=AVOCAT&size=200",
+      juriste,
+    ))?.content ?? [];
+
+  const avocatDuCompteTest = avocats.find((a) => a.compteKeycloak === "avocat.test");
+  if (!avocatDuCompteTest) {
     // La création d'un intervenant est réservée au DJ/DJA (#61).
     await appel("/intervenants", dj, {
       method: "POST",
-      body: JSON.stringify({ type: "AVOCAT", nom: "Me Socle des parcours", compteKeycloak: "avocat.socle.e2e" }),
+      body: JSON.stringify({ type: "AVOCAT", nom: "Me Claire Avocat", compteKeycloak: "avocat.test" }),
     });
   }
 }

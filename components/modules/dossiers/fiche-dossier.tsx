@@ -238,7 +238,7 @@ export function FicheDossier({
           {onglet === "deliberes" ? <OngletDeliberes dossier={dossier} roles={roles} /> : null}
           {onglet === "alarmes" ? <OngletAlarmes dossier={dossier} roles={roles} /> : null}
           {onglet === "decisions" ? <OngletDecisions dossier={dossier} roles={roles} /> : null}
-          {onglet === "historique" ? <OngletHistorique historique={dossier.historique ?? []} /> : null}
+          {onglet === "historique" ? <OngletHistorique dossierId={dossier.id} /> : null}
           {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} roles={roles} /> : null}
           {onglet === "publications" && peut(roles, "consulterPublications") ? (
             <OngletPublications dossierId={dossier.id} roles={roles} />

@@ -1,3 +1,4 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import { gedService } from "@/services/gedService";
 import type {
@@ -31,7 +32,7 @@ export const publicationService = {
         dossierId: filtres.dossierId ?? undefined,
         statut: filtres.statut ?? undefined,
         page: filtres.page ?? 0,
-        size: filtres.size ?? 20,
+        size: filtres.size ?? TAILLE_PAGE,
       },
     });
     return data;

@@ -2,10 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CLES } from "@/hooks/const";
+import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { useCanalAlertes } from "@/providers/alertes.provider";
 import { alerteService } from "@/services/alerteService";
-import type { StatutAlerte } from "@/types/enums";
+import type { StatutAlerte, TypeAlerte } from "@/types/enums";
 
 /**
  * Repli HTTP du canal temps réel (QF-11).
@@ -26,11 +26,16 @@ export function cadenceRafraichissement(connecte: boolean): number {
 }
 
 /** `null` : les deux statuts confondus. */
-export function useMesNotifications(statut: StatutAlerte | null, page = 0, size = 20) {
+export function useMesNotifications(
+  statut: StatutAlerte | null,
+  page = 0,
+  size = TAILLE_PAGE,
+  type?: TypeAlerte,
+) {
   const { connecte } = useCanalAlertes();
   return useQuery({
-    queryKey: [CLES.notifications, statut ?? "toutes", page, size],
-    queryFn: () => alerteService.mesNotifications(statut, page, size),
+    queryKey: [CLES.notifications, statut ?? "toutes", page, size, type ?? "tous"],
+    queryFn: () => alerteService.mesNotifications(statut, page, size, type),
     refetchInterval: cadenceRafraichissement(connecte),
   });
 }
@@ -47,6 +52,21 @@ export function useNombreNotificationsATraiter() {
     queryFn: () => alerteService.mesNotifications("DECLENCHEE", 0, 1),
     refetchInterval: cadenceRafraichissement(connecte),
     select: (page) => page.totalElements,
+  });
+}
+
+/**
+ * #51 — taux de délivrance du canal applicatif (backend Q-109, NF-ALR-02). DJ et DJA.
+ *
+ * **Pas de rafraîchissement automatique.** C'est une mesure d'exploitation que l'on consulte, pas
+ * un compteur que l'on surveille du coin de l'œil : une fenêtre de trente jours ne bouge pas d'un
+ * dixième de point en trente secondes, et une cadence inutile ne ferait qu'interroger un agrégat.
+ */
+export function useStatistiquesDiffusion(dateDebut: string, dateFin: string, actif = true) {
+  return useQuery({
+    queryKey: [CLES.notifications, "diffusion", dateDebut, dateFin],
+    queryFn: () => alerteService.statistiquesDiffusion(dateDebut, dateFin),
+    enabled: actif && Boolean(dateDebut) && Boolean(dateFin),
   });
 }
 

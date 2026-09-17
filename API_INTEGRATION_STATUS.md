@@ -4,7 +4,10 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-14 (Q-98 — **#29 passe en multipart** avec une pièce facultative ;
+> Dernière mise à jour : 2026-09-15 (M22 — **huit endpoints passent en `PageResponse`** et dix filtres
+> s'ajoutent ; `GET /dossiers/{id}/historique` créé. Le décompte reste **74 sur 74** : ce sont les
+> mêmes endpoints, sous une autre forme).
+> Précédente : 2026-09-14 (Q-98 — **#29 passe en multipart** avec une pièce facultative ;
 > QF-20 rouverte puis tranchée. Le décompte est inchangé : **74 sur 74**).
 > Précédente : 2026-09-14 (jalon F16 — **74 endpoints consommés sur 74**, plus les cinq
 > endpoints du portail Avocat (Q-96, Q-97) et le canal `/ws` ; QF-01, QF-20 et QF-26 closes).
@@ -267,13 +270,15 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 44 | PUT | `/alertes/seuils` | DJ | 41 | F14 | ✅ |
+| 44 | PUT | `/alertes/seuils` | **DJ + DJA** (Q-108) | 41 | F14 | ✅ |
 | 45 | GET | `/alertes/mes-notifications?statut&page&size` | authentifié | 03, **amorçage de session**, badge | F14 | ✅ |
 | 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ✅ |
 | 47 | GET | `/configurations` | CONS | 41 | F14 | ✅ |
-| 48 | PUT | `/configurations/{cle}` | DJ | 41 | F14 | ✅ |
+| 48 | PUT | `/configurations/{cle}` | **DJ + DJA** (Q-108) | 41 | F14 | ✅ |
 | 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ✅ |
 | 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
+| — | GET | `/alertes/statistiques-diffusion?dateDebut&dateFin` 🆕 Q-109 | **DJ + DJA** | 41 (supervision) | F18 | ✅ |
+| — | GET | `/historique/systeme?utilisateurId&action&dateDebut&dateFin&page&size` 🆕 Q-110 | **DJ + DJA** | 41 (journal) | F18 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la

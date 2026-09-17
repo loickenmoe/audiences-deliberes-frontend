@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { CLES } from "@/hooks/const";
+import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { dossierService } from "@/services/dossierService";
 import { gedService } from "@/services/gedService";
 import type {
@@ -38,10 +38,18 @@ export function useDossier(id: number) {
   });
 }
 
-export function useDocumentsDossier(id: number) {
+/** Q-100 — l'historique paginé d'un dossier : la fiche n'en porte que la première page. */
+export function useHistoriqueDossier(dossierId: number, page = 0, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.documentsDossier, id],
-    queryFn: () => gedService.listerDocumentsDossier(id),
+    queryKey: [CLES.dossier, dossierId, "historique", page, size],
+    queryFn: () => dossierService.historique(dossierId, page, size),
+  });
+}
+
+export function useDocumentsDossier(id: number, page = 0, size = TAILLE_PAGE) {
+  return useQuery({
+    queryKey: [CLES.documentsDossier, id, page, size],
+    queryFn: () => gedService.listerDocumentsDossier(id, page, size),
     enabled: Number.isFinite(id) && id > 0,
   });
 }

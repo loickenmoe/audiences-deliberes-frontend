@@ -2,9 +2,13 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import { DateHeureValeur } from "@/components/metier";
+import { useState } from "react";
+
+import { EtatChargement, EtatErreur } from "@/components/global";
+import { DateHeureValeur, Pagination } from "@/components/metier";
+import { useHistoriqueDossier } from "@/hooks/useDossiers";
 import { useLibelles } from "@/hooks/useLibelles";
-import type { HistoriqueAction } from "@/types/domaine";
+import { messageErreur } from "@/lib/api/errors";
 
 /** Rend une valeur de `details`, dont la forme varie d'une action à l'autre. */
 function valeurLisible(valeur: unknown): string {
@@ -20,13 +24,25 @@ function valeurLisible(valeur: unknown): string {
  * ⚠ `action` est une phrase **française** rédigée par le backend, pas un code (QF-24) : elle ne
  * peut pas être traduite ici. En anglais, on l'affiche telle quelle et on le dit, plutôt que de
  * laisser croire à un oubli de traduction.
+ *
+ * **Paginé depuis Q-100.** RG-DOS-06 historise chaque action : sur un dossier suivi plusieurs
+ * années, l'historique atteint des centaines d'entrées, qui voyageaient toutes dans la réponse de la
+ * fiche. Celle-ci n'en porte plus que les dix plus récentes ; cet onglet lit l'endpoint dédié, si
+ * bien que **rien n'est perdu** — la suite est sur les pages suivantes.
  */
-export function OngletHistorique({ historique }: { historique: readonly HistoriqueAction[] }) {
+export function OngletHistorique({ dossierId }: { dossierId: number }) {
   const t = useTranslations("fiche");
   const locale = useLocale();
   const { nomUtilisateur } = useLibelles();
+  const [page, setPage] = useState(0);
+  const requete = useHistoriqueDossier(dossierId, page);
 
-  if (historique.length === 0) {
+  const historique = requete.data?.content ?? [];
+
+  if (requete.isLoading) return <EtatChargement lignes={5} />;
+  if (requete.error) return <EtatErreur message={messageErreur(requete.error)} />;
+
+  if (historique.length === 0 && page === 0) {
     return <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("historiqueVide")}</p>;
   }
 
@@ -63,6 +79,15 @@ export function OngletHistorique({ historique }: { historique: readonly Historiq
           </li>
         ))}
       </ol>
+
+      {requete.data ? (
+        <Pagination
+          page={page}
+          totalPages={requete.data.totalPages}
+          totalElements={requete.data.totalElements}
+          onChangement={setPage}
+        />
+      ) : null}
     </div>
   );
 }

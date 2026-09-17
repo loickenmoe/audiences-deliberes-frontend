@@ -253,3 +253,54 @@ test("changer de langue ne vide pas un formulaire en cours de saisie", async ({ 
   await page.getByRole("button", { name: "en", exact: true }).click();
   await expect(page.getByLabel("Reference", { exact: true })).toHaveValue(reference, { timeout: 30_000 });
 });
+
+/**
+ * QF-44 — la règle des dix lignes, vérifiée là où l'utilisateur la voit.
+ *
+ * Ce test ne compte pas seulement dix lignes : il relève les références de la page 1, passe à la
+ * page 2, et vérifie qu'elle en montre **d'autres**. Un tableau qui perdrait les lignes au-delà de
+ * la dixième passerait un test qui se contenterait de compter.
+ */
+test("un tableau montre dix lignes, et la suite est sur la page suivante", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const lignes = page.getByRole("main").getByRole("row");
+  await expect(lignes.nth(1)).toBeVisible({ timeout: 30_000 });
+
+  // L'en-tête compte pour une ligne : dix lignes de données font onze au total.
+  const nbPage1 = await lignes.count();
+  if (nbPage1 <= 2) return; // jeu de données trop petit pour que la règle s'observe
+
+  expect(nbPage1).toBeLessThanOrEqual(11);
+  const referencesPage1 = await lignes.nth(1).innerText();
+
+  const suivant = page.getByRole("button", { name: "Page suivante" });
+  if (await suivant.isDisabled()) return; // une seule page : rien à comparer
+
+  await suivant.click();
+  await expect(page).toHaveURL(/page=1/);
+
+  /*
+   * `not.toHaveText` **réessaie** jusqu'à ce que la ligne change. Lire le texte juste après le clic
+   * attrapait encore l'ancienne page : le test échouait sur sa propre course, pas sur un défaut.
+   * C'est le cœur de l'exigence — la page suivante montre autre chose, rien n'est perdu.
+   */
+  await expect(page.getByRole("main").getByRole("row").nth(1)).not.toHaveText(referencesPage1, {
+    timeout: 30_000,
+  });
+});
+
+/** Le sélecteur de taille : dix pour lire, cinquante pour balayer. */
+test("le sélecteur de taille change le nombre de lignes et vit dans l'URL", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+  await expect(page.getByRole("main").getByRole("row").nth(1)).toBeVisible({ timeout: 30_000 });
+
+  await page.getByLabel("Lignes par page").selectOption("50");
+  await expect(page).toHaveURL(/taille=50/);
+
+  // Un lien partagé doit rouvrir la liste telle que son auteur la voyait.
+  await page.reload();
+  await expect(page.getByLabel("Lignes par page")).toHaveValue("50");
+});

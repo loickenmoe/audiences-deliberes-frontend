@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CLES } from "@/hooks/const";
+import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { fraisService, type DecisionFrais } from "@/services/fraisService";
 import type { DemandeFrais } from "@/types/domaine";
 import type { StatutCircuitFrais } from "@/types/enums";
@@ -11,10 +11,10 @@ import type { StatutCircuitFrais } from "@/types/enums";
 export type EtapeDecision = "conformite" | "opportunite" | "conjointe";
 
 /** `null` : toutes les demandes. */
-export function useDemandesFrais(statut: StatutCircuitFrais | null, page: number) {
+export function useDemandesFrais(statut: StatutCircuitFrais | null, page: number, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.demandesFrais, statut ?? "toutes", page],
-    queryFn: () => fraisService.lister(statut, page),
+    queryKey: [CLES.demandesFrais, statut ?? "toutes", page, size],
+    queryFn: () => fraisService.lister(statut, page, size),
   });
 }
 

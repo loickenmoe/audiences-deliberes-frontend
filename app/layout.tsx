@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("commun");
   return {
     title: { default: t("application"), template: `%s · ${t("application")}` },
-    description: `${t("direction")} — ${t("organisation")}`,
+    description: `${t("direction")} - ${t("organisation")}`,
     icons: { icon: "/brand/symbole-afriland.svg" },
   };
 }

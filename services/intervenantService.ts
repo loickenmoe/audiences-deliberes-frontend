@@ -1,4 +1,5 @@
-import { apiClient } from "@/lib/api/client";
+import { TAILLE_PAGE } from "@/hooks/const";
+import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { CreerIntervenant, Intervenant } from "@/types/domaine";
 import type { TypeIntervenant } from "@/types/enums";
 
@@ -14,9 +15,26 @@ import type { TypeIntervenant } from "@/types/enums";
 const BASE = "/intervenants";
 
 export const intervenantService = {
-  /** #62 — `ROLE_CONSULTATION`. Sans filtre, retourne les deux types. */
-  lister: async (type?: TypeIntervenant): Promise<Intervenant[]> => {
-    const { data } = await apiClient.get<Intervenant[]>(BASE, { params: type ? { type } : {} });
+  /**
+   * #62 — `ROLE_CONSULTATION`. Sans filtre, retourne les deux types.
+   *
+   * **Paginé et cherchable depuis Q-100/Q-105.** `nom` porte la recherche au fil de la frappe des
+   * sélecteurs : ils n'ont plus besoin de détenir tout l'annuaire pour laisser choisir.
+   */
+  lister: async (params: {
+    type?: TypeIntervenant;
+    nom?: string;
+    page?: number;
+    size?: number;
+  } = {}): Promise<PageReponse<Intervenant>> => {
+    const { data } = await apiClient.get<PageReponse<Intervenant>>(BASE, {
+      params: {
+        ...(params.type ? { type: params.type } : {}),
+        ...(params.nom ? { nom: params.nom } : {}),
+        page: params.page ?? 0,
+        size: params.size ?? TAILLE_PAGE,
+      },
+    });
     return data;
   },
 

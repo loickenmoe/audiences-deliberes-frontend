@@ -160,6 +160,26 @@ export interface HistoriqueAction {
   dateAction: string;
 }
 
+/**
+ * Journal des actions historisées **hors dossier** (backend Q-110).
+ *
+ * Même forme qu'une page, plus `actionsDisponibles` : les libellés réellement présents en base, qui
+ * alimentent un filtre à **liste fermée**. Sans code d'action typé (QF-24), c'est le seul choix
+ * honnête — une liste recopiée côté écran divergerait au premier libellé ajouté par le backend.
+ * Cette liste est indépendante des filtres en cours, sinon choisir un libellé ferait disparaître les
+ * autres et l'on ne pourrait plus changer d'avis.
+ *
+ * ⚠ **Ce journal ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée :
+ * l'absence de ligne ne prouve pas l'absence d'action. C'est pourquoi l'écran s'appelle un journal
+ * et non un audit.
+ */
+export interface JournalSysteme {
+  content: HistoriqueAction[];
+  totalPages: number;
+  totalElements: number;
+  actionsDisponibles: string[];
+}
+
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */
 export interface AuditSeuil {
   id: number;
@@ -300,6 +320,10 @@ export interface FiltresDossiers {
   reference?: string;
   clientId?: number;
   mesDossiers?: boolean;
+  /** Q-101 — `false` filtre les dossiers **non** sensibles ; `undefined` ne filtre pas. */
+  estSensible?: boolean;
+  /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
+  sensibiliteStatut?: StatutValidation;
   page?: number;
   size?: number;
 }
@@ -712,6 +736,33 @@ export interface ConfigurationSysteme {
   valeurMinimale: number | null;
   valeurMaximale: number | null;
   valeursPossibles: string[];
+}
+
+/**
+ * Supervision du canal applicatif sur une fenêtre (backend Q-109, NF-ALR-02).
+ *
+ * **Deux taux, et les confondre serait la première erreur.** `tauxDelivrance` répond à l'exigence
+ * NF-ALR-02 — le canal a-t-il fait son travail ? Seuls les échecs comptent contre nous : une alerte
+ * remise plus tard, parce que son destinataire n'était pas connecté, a bien été délivrée, le canal
+ * applicatif comprenant la liste des notifications. `tauxDiffusionTempsReel` mesure tout autre
+ * chose : à quel point les gens sont connectés quand on les alerte. Un chiffre bas sur le second
+ * n'est pas un défaut ; sur le premier, si.
+ *
+ * `observees` est le dénominateur réel — les alertes antérieures à la migration V16 n'ont pas
+ * d'issue enregistrée et sont exclues. `nonTraitees` ne participe à aucun taux : une alerte
+ * délivrée que personne n'a ouverte relève d'un autre problème.
+ */
+export interface StatistiquesDiffusion {
+  dateDebut: string;
+  dateFin: string;
+  observees: number;
+  diffusees: number;
+  differees: number;
+  echecs: number;
+  nonTraitees: number;
+  tauxDelivrance: number;
+  tauxDiffusionTempsReel: number;
+  seuilRespecte: boolean;
 }
 
 // ─────────────────────────────── Reporting ───────────────────────────────

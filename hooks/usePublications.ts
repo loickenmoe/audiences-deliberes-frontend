@@ -6,7 +6,12 @@ import { CLES } from "@/hooks/const";
 import { publicationService, type DecisionPublication } from "@/services/publicationService";
 import type { StatutPublication } from "@/types/enums";
 
-export function usePublications(filtres: { dossierId?: number; statut?: StatutPublication | null; page?: number }) {
+export function usePublications(filtres: {
+  dossierId?: number;
+  statut?: StatutPublication | null;
+  page?: number;
+  size?: number;
+}) {
   return useQuery({
     queryKey: [CLES.publications, filtres],
     queryFn: () => publicationService.lister(filtres),

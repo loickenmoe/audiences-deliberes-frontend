@@ -2,7 +2,12 @@ import NextAuth, { CredentialsSignin, type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 import { getEnvServeur } from "@/lib/env.server";
-import { ERREUR_RAFRAICHISSEMENT, doitRafraichir, prochainRafraichissement } from "@/lib/rotation-jeton";
+import {
+  ERREUR_AUTH_INDISPONIBLE,
+  ERREUR_RAFRAICHISSEMENT,
+  doitRafraichir,
+  prochainRafraichissement,
+} from "@/lib/rotation-jeton";
 
 /**
  * Authentification par formulaire intégré, adossée à Keycloak.
@@ -71,20 +76,55 @@ async function obtenirJetons(
   return (await reponse.json()) as JetonsKeycloak;
 }
 
+/**
+ * Échec de rafraîchissement, **qualifié**.
+ *
+ * `refus` : Keycloak a répondu et a rejeté le jeton — il est expiré ou révoqué. La session est bien
+ * terminée, se reconnecter est la bonne action.
+ *
+ * Sinon : Keycloak n'a pas répondu, ou a répondu par une erreur serveur. La session n'est pas en
+ * cause, et demander à l'utilisateur de se reconnecter serait doublement faux — le diagnostic et la
+ * consigne, puisque la connexion passe par ce même service.
+ */
+class EchecRafraichissement extends Error {
+  constructor(
+    message: string,
+    readonly refus: boolean,
+  ) {
+    super(message);
+  }
+}
+
 async function rafraichir(refreshToken: string): Promise<JetonsKeycloak> {
   const env = getEnvServeur();
-  const reponse = await fetch(`${env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: env.KEYCLOAK_CLIENT_ID,
-      client_secret: env.KEYCLOAK_CLIENT_SECRET,
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
-  });
+  let reponse: Response;
+  try {
+    reponse = await fetch(`${env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: env.KEYCLOAK_CLIENT_ID,
+        client_secret: env.KEYCLOAK_CLIENT_SECRET,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
+  } catch (cause) {
+    // Aucune réponse : réseau coupé, service arrêté, DNS. Ce n'est pas la session qui est en cause.
+    throw new EchecRafraichissement(`Keycloak injoignable : ${String(cause)}`, false);
+  }
 
-  if (!reponse.ok) throw new Error(`Rafraîchissement refusé par Keycloak (HTTP ${reponse.status})`);
+  if (!reponse.ok) {
+    /*
+     * 4xx : Keycloak a examiné le jeton et l'a rejeté — `invalid_grant` quand il est expiré ou
+     * révoqué. 5xx : il n'a pas pu répondre, la session n'y est pour rien.
+     */
+    const refus = reponse.status >= 400 && reponse.status < 500;
+    throw new EchecRafraichissement(
+      `Rafraîchissement ${refus ? "refusé" : "indisponible"} (HTTP ${reponse.status})`,
+      refus,
+    );
+  }
   return (await reponse.json()) as JetonsKeycloak;
 }
 
@@ -203,13 +243,17 @@ export const authConfig: NextAuthConfig = {
           roles: rolesDepuisJeton(jetons.access_token),
           erreur: undefined,
         };
-      } catch {
+      } catch (echec) {
         /**
          * Échec définitif : on marque la session plutôt que de boucler sur des 401. La coquille
          * redirige alors vers la connexion — une déconnexion nette vaut mieux qu'une interface qui
          * refuse silencieusement chaque appel.
+         *
+         * Le marqueur **qualifie** la cause depuis 2026-09-16 : un jeton rejeté n'est pas un service
+         * à terre, et l'utilisateur n'a pas la même chose à faire dans les deux cas.
          */
-        return { ...token, erreur: ERREUR_RAFRAICHISSEMENT };
+        const indisponible = echec instanceof EchecRafraichissement && !echec.refus;
+        return { ...token, erreur: indisponible ? ERREUR_AUTH_INDISPONIBLE : ERREUR_RAFRAICHISSEMENT };
       }
     },
 

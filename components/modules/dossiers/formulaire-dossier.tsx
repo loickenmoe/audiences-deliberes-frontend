@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
 import { useClients } from "@/hooks/useClients";
 import { useCreerDossier } from "@/hooks/useDossiers";
+import { TAILLE_ANNUAIRE } from "@/hooks/const";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
@@ -68,7 +69,7 @@ export function FormulaireDossier() {
   const natures = useNaturesDossier();
   const typesSensibles = useTypesClientSensible();
   const juristes = useUtilisateurs("JURISTE");
-  const avocats = useIntervenants("AVOCAT");
+  const avocats = useIntervenants({ type: "AVOCAT", size: TAILLE_ANNUAIRE });
   // Les listes de sélection ne sont pas paginables : on charge une page large plutôt que d'imposer
   // une pagination dans un `<select>`. Si le volume devenait un problème, il faudrait un champ de
   // recherche côté serveur — pas un chargement plus gros.
@@ -335,7 +336,7 @@ export function FormulaireDossier() {
                 <option value="">{t("choisirClient")}</option>
                 {(clients.data?.content ?? []).map((client) => (
                   <option key={client.id} value={client.id}>
-                    {client.reference} — {client.nom}
+                    {client.reference} - {client.nom}
                   </option>
                 ))}
               </Select>
@@ -532,7 +533,7 @@ export function FormulaireDossier() {
                   enErreur={!!errors.avocatsAffectes}
                   {...register("avocatsAffectes")}
                 >
-                  {(avocats.data ?? []).map((avocat) => (
+                  {(avocats.data?.content ?? []).map((avocat) => (
                     <option key={avocat.id} value={avocat.id}>
                       {avocat.nom}
                     </option>

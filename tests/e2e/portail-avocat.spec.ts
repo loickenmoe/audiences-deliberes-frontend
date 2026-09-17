@@ -77,8 +77,14 @@ test("l'avocat ne voit que ses dossiers, et rien du portefeuille de la banque (Q
   );
   const tousLesDossiers = await json<{ totalElements: number }>("/dossiers?size=1", await jeton("juriste.test"));
 
-  // La base de développement porte bien plus de dossiers que ceux de cet avocat.
-  expect(mesDossiers.totalElements).toBeLessThan(tousLesDossiers.totalElements);
+  /*
+   * L'avocat ne voit jamais **plus** que ce qui existe. L'inégalité était stricte auparavant, ce qui
+   * supposait qu'un autre avocat détienne au moins un dossier — vrai sur la base de l'époque, faux
+   * sur une base neuve où `avocat.test` est le seul avocat inscrit : tous les dossiers sont alors
+   * légitimement les siens. Une assertion qui dépend de la composition du jeu de données ne mesure
+   * pas le cloisonnement ; ce sont la **forme de la réponse** et les **403** ci-dessous qui le font.
+   */
+  expect(mesDossiers.totalElements).toBeLessThanOrEqual(tousLesDossiers.totalElements);
 
   // La réponse est réduite à l'identification : aucun champ du portefeuille ne doit filtrer.
   const premier = mesDossiers.content[0];
@@ -258,5 +264,37 @@ test("les écrans du portail sont traduits", async ({ browser }) => {
   });
   await expect(avocat.getByRole("button", { name: "Submit" })).toBeVisible();
 
+  await avocat.context().close();
+});
+
+/**
+ * QF-45 — un avocat dont le compte n'est pas encore inscrit au répertoire.
+ *
+ * Ce test ne s'exécute que si le référentiel ne connaît pas `avocat.test` : sur une base peuplée, le
+ * cas n'existe pas, et le forcer supposerait de supprimer une fiche dont d'autres parcours dépendent.
+ * Il garde ce qui compte — que cet état soit **expliqué** et non présenté comme une panne, sur les
+ * quatre écrans que l'avocat peut atteindre.
+ */
+test("un compte non rattaché au répertoire est expliqué, pas présenté comme un échec", async ({
+  browser,
+}) => {
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/portail");
+
+  const explication = avocat.getByText("pas encore rattaché au répertoire");
+  if ((await explication.count()) === 0) {
+    await avocat.context().close();
+    return; // le compte est inscrit : ce n'est pas le cas visé
+  }
+
+  for (const chemin of ["/portail", "/frais", "/frais/nouvelle", "/publications/nouvelle"]) {
+    await avocat.goto(chemin);
+    await expect(
+      avocat.getByText("pas encore rattaché au répertoire"),
+      `${chemin} doit expliquer l'état du compte`,
+    ).toBeVisible({ timeout: 30_000 });
+    // Le point de la correction : plus jamais le message d'échec technique.
+    await expect(avocat.getByText("Le chargement a échoué")).toHaveCount(0);
+  }
   await avocat.context().close();
 });

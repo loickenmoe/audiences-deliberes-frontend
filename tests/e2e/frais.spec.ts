@@ -52,7 +52,12 @@ function suffixe() {
 async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
-    (await json<{ id: number; compteKeycloak: string | null }[]>("/intervenants?type=AVOCAT", juriste)).find(
+    (
+      await json<{ content: { id: number; compteKeycloak: string | null }[] }>(
+        "/intervenants?type=AVOCAT&size=200",
+        juriste,
+      )
+    ).content.find(
       (a) => a.compteKeycloak === "avocat.test",
     );
   const existant = await trouver();
@@ -195,7 +200,7 @@ test("validation conjointe : montant au-delà du seuil, deux accords, jamais deu
   const circuit = dj.getByRole("region", { name: "Circuit de validation" });
   await expect(circuit.getByRole("listitem").filter({ hasText: "Accord de la DJA" })).toContainText("Accord");
   await confirmer(dj, "Donner mon accord", "Donner votre accord ?", "Accord enregistré : les deux accords sont réunis, la demande est validée.");
-  await expect(dj.locator("header").filter({ hasText: `Demande de frais — facture ${facture}` })).toContainText("Validée");
+  await expect(dj.locator("header").filter({ hasText: `Demande de frais - facture ${facture}` })).toContainText("Validée");
   await dj.context().close();
 });
 
@@ -225,7 +230,7 @@ test("le paiement n'est jamais possible avant la validation ; chaque profil a sa
   await assistante.goto("/frais");
   await expect(assistante.getByRole("button", { name: "À contrôler" })).toHaveAttribute("aria-pressed", "true");
   await assistante.goto(`/frais/${id}`);
-  await expect(assistante.getByRole("heading", { name: `Demande de frais — facture ${facture}`, level: 1 })).toBeVisible();
+  await expect(assistante.getByRole("heading", { name: `Demande de frais - facture ${facture}`, level: 1 })).toBeVisible();
   await expect(assistante.getByRole("button", { name: "Marquer comme payée" })).toHaveCount(0);
   await assistante.context().close();
 

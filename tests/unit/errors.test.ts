@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
-import { CodeErreur, ErreurApi, messageErreur, normaliserErreur } from "@/lib/api/errors";
+import { CodeErreur, ErreurApi, messageErreur, normaliserErreur, estCompteAvocatNonRattache } from "@/lib/api/errors";
 
 /**
  * Les corps d'erreur utilisés ici sont ceux **réellement renvoyés par le backend**, relevés le
@@ -77,6 +77,36 @@ describe("demandeConfirmation", () => {
   it.each(["ERR-002", "ERR-006", "ERR-CONFLICT"])("%s reste une erreur franche", (code) => {
     const erreur = normaliserErreur({ response: { status: 409, data: { code, message: "…" } } });
     expect(erreur.demandeConfirmation).toBe(false);
+  });
+});
+
+describe("estCompteAvocatNonRattache", () => {
+  /**
+   * QF-45 — le compte est bien celui d'un avocat, mais aucune fiche du référentiel ne lui est
+   * rattachée. Ce n'est pas un refus de droits : l'interface l'explique au lieu d'afficher un échec.
+   */
+  it("reconnaît le code dédié", () => {
+    const erreur = normaliserErreur({
+      response: { status: 403, data: { code: "ERR-AVOCAT-NON-RATTACHE", message: "…" } },
+    });
+    expect(estCompteAvocatNonRattache(erreur)).toBe(true);
+  });
+
+  /**
+   * Le point qui justifie un code dédié : un **vrai** refus de droits ne doit pas être confondu avec
+   * lui, sans quoi un avocat forçant une URL interdite lirait « votre compte n'est pas rattaché » —
+   * un message faux, et qui l'enverrait déranger la Direction Juridique pour rien.
+   */
+  it("ne confond pas un refus de droits ordinaire", () => {
+    const erreur = normaliserErreur({
+      response: { status: 403, data: { code: "ERR-FORBIDDEN", message: "Droits insuffisants" } },
+    });
+    expect(estCompteAvocatNonRattache(erreur)).toBe(false);
+  });
+
+  it("ignore ce qui n'est pas une erreur d'API", () => {
+    expect(estCompteAvocatNonRattache(new Error("réseau"))).toBe(false);
+    expect(estCompteAvocatNonRattache(null)).toBe(false);
   });
 });
 

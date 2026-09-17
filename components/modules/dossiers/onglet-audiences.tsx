@@ -60,7 +60,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
 
   if (requete.isLoading) return <EtatChargement lignes={4} />;
   if (requete.error) return <EtatErreur message={messageErreur(requete.error)} />;
-  const audiences = requete.data ?? [];
+  const audiences = requete.data?.content ?? [];
 
   return (
     <div className="flex flex-col gap-4">

@@ -134,7 +134,11 @@ test("la navigation est filtrée par les droits du profil", async ({ page }) => 
   await seConnecter(page, COMPTES.juriste.identifiant);
 
   const navigation = page.getByRole("navigation", { name: "Navigation principale" });
-  await expect(navigation.getByRole("link", { name: "Accueil" })).toBeVisible();
+  // `exact` depuis QF-49 : le logo de l'en-tête est lui aussi un lien vers l'accueil, à l'intérieur
+  // de ce repère, et son nom accessible — « Afriland First Bank, retour à l'accueil » — contient le
+  // mot. Les deux liens sont légitimes et distincts pour un lecteur d'écran ; c'est la recherche par
+  // sous-chaîne qui les confondait.
+  await expect(navigation.getByRole("link", { name: "Accueil", exact: true })).toBeVisible();
 });
 
 test("un profil sans droit sur un écran est renvoyé vers le refus d'accès", async ({ page }) => {
@@ -168,4 +172,42 @@ test("le profil affiché correspond au compte connecté", async ({ page }) => {
   await expect(
     page.getByRole("main").getByText(COMPTES.assistante.profil, { exact: true }).first(),
   ).toBeVisible();
+});
+
+/**
+ * Le message de déconnexion est un **événement**, pas un état de la page.
+ *
+ * Signalé par le porteur du projet : il lisait « Votre session a expiré » en ouvrant son navigateur
+ * le lendemain, sans avoir eu de session ce jour-là — le navigateur avait restauré l'onglet, et avec
+ * lui l'URL porteuse du motif. Ce test garde la correction : le message s'affiche une fois, et
+ * l'adresse ne le rejoue pas.
+ */
+test("le motif de déconnexion s'affiche une fois puis quitte l'URL", async ({ page }) => {
+  await page.goto("/login?motif=session-expiree");
+
+  await expect(page.getByText("Votre session a expiré")).toBeVisible({ timeout: 30_000 });
+  // L'adresse est nettoyée : un signet ou une restauration d'onglet ne rejouera pas le message.
+  await expect(page).toHaveURL((url) => !url.searchParams.has("motif"), { timeout: 10_000 });
+
+  await page.reload();
+  await expect(page.getByText("Votre session a expiré")).toHaveCount(0);
+});
+
+/** Deux causes, deux messages : se reconnecter n'est pas la conduite à tenir quand le service est à terre. */
+test("un service d'authentification injoignable ne se présente pas comme une session expirée", async ({
+  page,
+}) => {
+  await page.goto("/login?motif=auth-indisponible");
+
+  await expect(page.getByText("service d’authentification est momentanément indisponible")).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByText("Votre session a expiré")).toHaveCount(0);
+});
+
+/** Une arrivée ordinaire sur la connexion n'annonce rien : il n'y a rien à annoncer. */
+test("arriver sur la connexion sans motif n'affiche aucun message", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByText("Votre session a expiré")).toHaveCount(0);
+  await expect(page.getByText("service d’authentification")).toHaveCount(0);
 });

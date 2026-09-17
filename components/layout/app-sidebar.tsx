@@ -32,9 +32,30 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
       aria-label={t("principale")}
       className="flex w-full shrink-0 flex-col border-b border-bordure bg-surface lg:h-svh lg:w-64 lg:border-b-0 lg:border-r"
     >
-      {/* Le nom de l'application est déjà dans l'en-tête : sur mobile, ce bandeau ferait doublon. */}
+      {/*
+        Le nom de l'application est déjà dans l'en-tête : sur mobile, ce bandeau ferait doublon.
+
+        **Le logo ramène à l'accueil (QF-49).** Convention universelle, et devenue nécessaire depuis
+        QF-47 : l'en-tête ne défile plus, ce logo est donc un point d'ancrage **en permanence à
+        l'écran**, à l'endroit exact où l'on a l'habitude de cliquer. Inerte, il faisait une zone
+        morte au meilleur emplacement de l'interface.
+
+        La cible est `/` sans condition : QF-19 a tranché une racine unique pour tous les profils,
+        dont le contenu s'adapte — l'avocat y trouve au moins sa file de notifications.
+
+        Le lien porte son propre libellé et le logo devient décoratif : un lien doit annoncer sa
+        destination, pas le propriétaire de l'image qu'il contient. Pas d'`aria-current` en
+        revanche — l'entrée « Accueil » ci-dessous le porte déjà, et deux éléments revendiquant la
+        page courante ne feraient que du bruit.
+      */}
       <div className="hidden h-16 items-center border-b border-bordure px-5 lg:flex">
-        <Logo hauteur={24} />
+        <Link
+          href="/"
+          aria-label={t("logoAccueil")}
+          className="rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-anthracite"
+        >
+          <Logo hauteur={24} decoratif />
+        </Link>
       </div>
 
       <ul className="flex flex-1 flex-row gap-0.5 overflow-x-auto p-2 lg:flex-col lg:overflow-y-auto lg:p-3">

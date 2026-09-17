@@ -47,7 +47,8 @@ describe("file des demandes", () => {
 
     expect(derniere?.url.searchParams.get("statut")).toBe("OPPORTUNITE");
     expect(derniere?.url.searchParams.get("page")).toBe("2");
-    expect(derniere?.url.searchParams.get("size")).toBe("20");
+    // Dix depuis Q-100 : la taille de page des tableaux est décidée par `TAILLE_PAGE`.
+    expect(derniere?.url.searchParams.get("size")).toBe("10");
   });
 
   it("n'envoie aucun statut pour toutes les demandes", async () => {

@@ -34,6 +34,15 @@ export function useModifierConfiguration() {
       cle === CLE_SEUIL_ALERTE
         ? alerteService.modifierSeuil(CLE_SEUIL_ALERTE, Number(valeur))
         : configurationService.modifier(cle, valeur),
-    onSuccess: () => client.invalidateQueries({ queryKey: [CLES.configurations] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: [CLES.configurations] });
+      /*
+       * Le journal des actions système (Q-110) vit sur le **même écran** et vient d'enregistrer
+       * cette modification. Sans cette invalidation, l'utilisateur enregistre un paramètre et voit
+       * juste en dessous un journal qui l'ignore — il en conclurait que rien n'a été tracé. Défaut
+       * trouvé par le parcours de bout en bout, pas à la relecture.
+       */
+      void client.invalidateQueries({ queryKey: [CLES.journalSysteme] });
+    },
   });
 }

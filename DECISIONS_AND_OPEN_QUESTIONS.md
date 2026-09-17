@@ -68,6 +68,11 @@ l'audit sont QF-01, QF-02, QF-03, QF-07 et QF-08 — elles servent de modèle de
 | 2026-09-14 | **Q-91 bis** (backend) | **Les plafonds des compteurs sont ramenés à ce que les sources permettent.** Le tableau CONF01-07 (US §11.2) fixe des valeurs par défaut, jamais des maxima, et la story 7.1 n'exige qu'un « entier positif ». Mes plafonds de 1 000 et 365 n'avaient pas d'assise ; restent les deux bornes justifiées — 10 Mo pour la GED (CONF06) et douze chiffres pour le seuil de montant. | F14 |
 | 2026-09-12 | **Q-92 / Q-93** (backend) | **Trois listes paginaient sans ordre défini** — notifications, clients, dossiers. Trouvé en construisant l'écran 03, puis démontré en usage : passé vingt clients, celui qu'un juriste venait de créer basculait en page 2, **invisible pour son auteur**. Tri du plus récent au plus ancien, départagé par `id`. Les trois autres listes paginées (frais, publications, jurisprudences) l'étaient déjà. | F14 |
 | 2026-09-12 | **Q-91** (backend) | **Les paramètres système sont validés par clé** et publient leur règle de saisie. Évolution backend décidée en ouverture de F14 : sans elle, une saisie erronée du DJ (« 50 000 000 ») ressortait en **erreur 500** dans les frais, les délibérés ou la GED — loin de l'écran fautif. L'écran 41 construit son champ à partir du contrat au lieu d'en redéclarer une copie. | F14 |
+| 2026-09-17 | **Q-110** (backend) | **Les actions historisées hors dossier deviennent lisibles.** RG-DOS-06 historise chaque modification (42 points d'écriture, 11 services), mais l'unique point de lecture partait d'un dossier : les actions qui n'en ont pas — paramètres système, indexations de jurisprudence — étaient **écrites et jamais relues** (26 lignes sur 657 mesurées en recette). Q-108 avait aggravé la lacune en doublant les détenteurs du pouvoir de modifier les paramètres. Livré : un bloc « Journal des actions système » sur l'écran 41, sous les paramètres, filtrable par auteur, libellé et période. **Quatre décisions.** Le périmètre est **figé côté serveur** par une énumération exclusive, pour qu'ouvrir un jour la vue transversale soit une décision et non un paramètre oublié. Le filtre par libellé est une **liste fermée** construite depuis la base et indépendante des filtres actifs — `action` étant une phrase libre (QF-24), un « contient » aurait menti par omission. Garde **DJ/DJA** et non `ROLE_CONSULTATION` : sur une fiche on regarde un dossier, ici la lecture est agrégée et filtrable par auteur — autre nature, et NF-CONF-01 (RGPD) reste « à définir avec la DRH ». Nommé **journal**, jamais « audit » : seules les modifications sont tracées, aucune consultation ne l'est, et l'écran le dit. **Reste ouvert** : la vue transversale de l'historique des dossiers, qui suppose un code d'action typé et NF-CONF-01 tranché. | Q-110 |
+| 2026-09-16 | **Q-109** (backend) | **Le taux de délivrance des alertes devient mesurable.** NF-ALR-02 fait du canal applicatif le canal obligatoire, avec une délivrance > 99 % ; ce taux n'était mesuré nulle part — un échec ne produisait qu'une ligne de journal. **Le piège évité** : `convertAndSendToUser` ne lève aucune exception quand le destinataire est déconnecté, donc « pas d'exception = délivré » aurait affiché 100 % en permanence, panne comprise. Le backend interroge `SimpUserRegistry` avant de pousser et enregistre trois issues — `DIFFUSEE`, `DIFFEREE` (repli garanti, **compte comme délivrée**), `ECHEC`. L'écran 41 affiche **deux taux séparés** : la délivrance (opposable au seuil de 99 %) et la diffusion temps réel (indicateur d'usage, sans seuil) — les réunir en un chiffre unique aurait vidé la mesure de son sens. Gardé par une capacité dédiée `superviserAlertes`, distincte d'`administrerConfigurations` : lire un taux global n'est pas écrire un seuil. | Q-109 |
+| 2026-09-16 | **Q-108** (backend) | **L'administration des paramètres système est ouverte à la DJA.** Relevé demandé par le porteur du projet, qui supposait que « la DJA peut tout ce que fait le DJ ». Mesuré sur les jetons réels : `ROLE_DJ` et `ROLE_DJA` sont **tous deux** composites de `ROLE_JURISTE` + `ROLE_SAISIE`, d'où **65 des 80 `@PreAuthorize` en commun** et seulement **deux écarts symétriques** — l'écriture des paramètres (DJ) et le contrôle d'opportunité des frais (DJA). Sa décision : ouvrir le premier, pour la **continuité de service** (DJ absent, plus personne ne pouvait relever un seuil ; la traçabilité est préservée, chaque écriture étant déjà historisée avec son auteur). **L'ouverture reste à sens unique** : le contrôle d'opportunité demeure réservé à la DJA, sinon RG-INT-03 perdrait la séparation de ses deux étapes. Écart restant : **1 sur 38 capacités**, verrouillé par un test. Deux commentaires de `lib/rbac.ts` affirmaient à tort que la DJA n'avait ni le calendrier ni le répertoire — faux, et corrigés : elle y accède par son `ROLE_JURISTE`. | Q-108 |
+| 2026-09-16 | **QF-49** | **Le logo de l'en-tête ramène à l'accueil.** Demandé par le porteur du projet. Convention universelle, devenue nécessaire depuis QF-47 : l'en-tête ne défilant plus, le logo est un point d'ancrage **en permanence à l'écran**, là où l'on a l'habitude de cliquer — inerte, il faisait une zone morte au meilleur emplacement de l'interface. Cible `/` sans condition : QF-19 a tranché une racine unique pour tous les profils, avocat compris. **Deux points non évidents.** Le logo n'apparaît qu'à partir de `lg` — en dessous, le retour à l'accueil passe par l'entrée de navigation, et un parcours le garde pour qu'on n'y voie pas un oubli. Le lien porte son propre libellé (`navigation.logoAccueil`) et le logo y devient décoratif : un lien doit annoncer sa destination, pas le propriétaire de l'image qu'il contient. Pas d'`aria-current` — l'entrée « Accueil » le porte déjà. | QF-49 |
+| 2026-09-16 | **QF-48** | **Le tiret cadratin « — » disparaît du texte visible au profit du trait d'union « - ».** Demandé par le porteur du projet, appliqué aux 34 libellés de `messages/{fr,en}.json` et aux 11 séparateurs de libellés et `aria-label` du code. **Deux exceptions assumées.** (1) Les 32 placeholders « valeur absente » gardent `—` (`SANS_VALEUR`, `aucuneValeur`) : dans une colonne Montant ou Téléphone, un `-` isolé se lit comme un signe moins ou une valeur tronquée, là où le cadratin dit sans ambiguïté « rien à afficher ». (2) Commentaires de code, titres de tests et fichiers `.md` sont **hors périmètre** : ils ne sont pas l'interface, et les balayer noierait le diff qui compte. Aucun garde-fou de lint n'existe encore — le cadratin reviendra donc par la rédaction ordinaire. | QF-48 |
 | 2026-09-08 | — | **Flux de branches en deux phases.** (1) Tant que le socle F1→F4 n'est pas prêt : travail **direct sur `main`**, aucune branche. (2) Ensuite **un écran = une branche** ; une fois l'écran testé et approuvé, **l'utilisateur pousse la branche puis la merge dans `dev`**, qui rassemble les écrans fonctionnels. Je crée et j'alimente la branche locale ; **je ne pousse ni ne merge jamais.** | tous |
 
 ---
@@ -923,6 +928,183 @@ de page : c'est une action serveur qui pose un cookie et revalide la coquille. N
 **réconcilie** l'arbre React au lieu de le remonter. Mesuré : elle survit. Mais rien ne garantit que
 cela reste vrai — un `redirect()` ajouté un jour à `changerLangue` viderait le formulaire en silence.
 Un quatrième test garde donc cette propriété.
+
+### ✅ QF-44 — Dix lignes par tableau, filtres manquants et sélecteurs qui tronquent — traité
+
+**Demande du porteur du projet (2026-09-15)** : « des tableaux de dix lignes maximum ; à partir de la
+onzième, on clique sur *suivant* ». Et, pour les filtres, un objectif énoncé : « l'application doit
+être optimale, évolutive et maintenable, car elle est amenée à recevoir beaucoup de données ».
+
+**Son raisonnement sur les filtres, discuté puis retenu.** Il craignait qu'un filtrage dans le
+navigateur ne le ralentisse. **Cet argument-là est le plus faible** : un navigateur filtre dix mille
+lignes en quelques millisecondes. Deux autres le fondent en revanche solidement. Le **transfert** :
+filtrer côté navigateur suppose d'y faire descendre toute la table — une ligne `dossier` pèse
+**1 554 octets** (relevé dans un plan d'exécution), soit **15 Mo** à dix mille dossiers, à chaque
+ouverture d'écran. Et surtout l'**exactitude** : sur une liste paginée par le serveur, un filtre
+appliqué dans le navigateur ne filtre que la page affichée. L'écran annoncerait « 2 résultats » quand
+il y en a quarante. **Un filtre lent se remarque ; un filtre qui ment ne se remarque pas.**
+
+**La règle qui en découle**, et qui a guidé chaque arbitrage du jalon : *la liste peut-elle dépasser
+une page ?* Si oui, le filtre appartient au serveur. Si non — trois étapes au maximum par dossier —
+l'y mettre serait du contrat à maintenir pour toujours en échange de rien.
+
+**Sur les dix lignes, un revers assumé.** L'objectif « ne pas trop défiler » est atteint. L'objectif
+« ne pas perdre l'information » ne l'est **pas par la pagination** : chercher un dossier parmi
+soixante demande six pages là où un défilement suffisait. Ce sont les **filtres** qui protègent de la
+perte, et c'est pourquoi les deux demandes se tiennent l'une l'autre. Un **sélecteur 10/25/50** a été
+ajouté sur décision du porteur du projet : dix pour lire, cinquante pour balayer.
+
+**Livré côté interface** : `TAILLE_PAGE` centralisée (le `20` était recopié dans quatre services, et
+l'écran Clients n'envoyait **aucune** taille — il prenait donc le défaut du backend) ; taille portée
+par l'URL comme les filtres ; huit écrans et trois onglets branchés sur les réponses paginées ;
+filtres de **sensibilité** (rappel explicite du porteur du projet), de **type d'alerte**, et
+**sélecteur à recherche au fil de la frappe** pour l'affectation.
+
+**Trois pièges de « taille unique », dont deux signalés par le compilateur.** La règle des dix lignes
+vaut pour les **tableaux**, pas pour les requêtes techniques. `GET /intervenants` sert **trois**
+usages : le tableau de l'écran 42, les sélecteurs d'affectation, et la **table de correspondance**
+identifiant → nom de `useLibelles`. Le borner à dix aurait tronqué les deux autres en silence — un
+nom d'avocat se serait soudain affiché `#42`, sans message. De même, `mesDossiers` du portail garde
+`size=100` : c'est le sélecteur du formulaire de frais. Et les **compteurs** de l'accueil ne demandent
+plus qu'**une** ligne : quatre cartes en rapatriaient jusqu'à vingt complètes pour afficher un nombre.
+
+**Le sélecteur de recherche a dû gérer le choix multiple.** L'affectation retient plusieurs juristes
+et plusieurs avocats — c'est-à-dire exactement l'écran qui porte le plus d'options, donc celui où la
+recherche sert le plus. Ne le traiter qu'en choix unique aurait vidé la correction de sa substance.
+
+**Vérifié en réel** (2026-09-15), sur la pile complète démarrée :
+
+| Contrôle | Mesure |
+|---|---|
+| Pagination des dossiers | 5 pages de **10 lignes**, **50 reçues sur 50 annoncées**, **0 doublon** |
+| `estSensible=true` / `=false` | **2** et **48**, total **50** — le `false` n'est pas confondu avec « non renseigné » |
+| `sensibiliteStatut=EN_ATTENTE` | 49 dossiers, la file du DJ/DJA existe enfin |
+| Recherche `?nom=Me` / `?nom=IntrouvableXYZ` | 3 et **0** — le fragment cherche au milieu du nom |
+| Historique | fiche plafonnée à **10** entrées, endpoint dédié pour la suite |
+| Suite de bout en bout | **138 sur 138** |
+| `npm run smoke` | **17 sur 17** |
+
+**Deux tests de bout en bout gardent l'exigence**, et ils ne se contentent pas de compter dix lignes :
+le premier relève une référence en page 1, passe en page 2 et vérifie qu'elle en montre une **autre**
+— un tableau qui perdrait tout au-delà de la dixième ligne passerait un test qui compterait seulement.
+Le second vérifie que le choix « 50 lignes » survit à un rechargement, donc qu'un lien partagé rouvre
+la liste telle que son auteur la voyait.
+
+### ✅ QF-45 — Un avocat non inscrit au répertoire lisait « Le chargement a échoué » — corrigé
+
+**Signalé par le porteur du projet le 2026-09-15**, connecté en avocat sur une base de développement
+réinitialisée : *Mon espace* et *Frais d'avocats* affichaient deux blocs d'échec portant le message
+brut du serveur.
+
+**Ce n'était pas une panne, et c'est tout le problème.** Deux choses distinctes portent le mot
+« avocat » : le **compte de connexion**, qui vit dans Keycloak et provisionne la ligne `utilisateur`
+à la volée, et l'**avocat du référentiel**, fiche métier créée par le DJ ou la DJA avec l'identifiant
+de connexion (RG-INT-01, UC-INT-01). Le portail ne travaille que sur la seconde. Tant qu'elle n'existe
+pas, il n'y a rien à montrer — **et l'avocat n'y peut rien lui-même**.
+
+L'interface présentait donc un **état d'inscription** comme un **échec technique** : message sans
+action possible, sans interlocuteur. Le cas n'est pas rare : il se produit à chaque mise en service,
+et pour chaque nouvel avocat tant que la Direction Juridique ne l'a pas inscrit.
+
+**Corrigé** : le backend lève désormais un code dédié (`ERR-AVOCAT-NON-RATTACHE`, Q-107) sur les
+quatre points concernés, et `CompteAvocatNonRattache` l'affiche comme un état — ce qui manque, que ce
+n'est pas de son fait, et à qui s'adresser. Posé sur les quatre écrans que l'avocat peut atteindre :
+*Mon espace*, la file des frais, et le sélecteur de dossier des deux formulaires de dépôt.
+
+**Le code dédié n'est pas un détail de mise en œuvre.** `ERR-FORBIDDEN` couvre aussi les **vrais**
+refus de droits : s'en contenter aurait fait dire « votre compte n'est pas rattaché » à un avocat qui
+force une URL interdite. Et reconnaître le cas à son message se briserait à la première reformulation
+ou traduction. Même parti que `ERR-009`, déjà traité comme un état et non comme une erreur.
+
+**Symétrique de QF-16**, vu depuis l'autre bout : là un juriste jamais connecté reste inaffectable,
+ici un avocat jamais inscrit ne voit rien. Dans les deux cas le système a raison ; c'est son
+explication qui manquait.
+
+**Une fragilité du socle de tests, révélée par la même base vierge.** `tests/e2e/preparation.ts`
+garantissait « au moins un avocat », créé sous le compte `avocat.socle.e2e`. Or les parcours du
+portail se connectent en **`avocat.test`** : sur une base neuve, ce compte n'était rattaché à aucune
+fiche, et cinq parcours échouaient — sans qu'aucune ligne de l'application soit en cause. C'est
+précisément le défaut que ce fichier avait été écrit pour prévenir, et son en-tête le dit :
+« une suite qui dépend de l'état laissé par l'exécution précédente ne teste pas l'application, elle
+teste l'historique de la base ». Le socle rattache désormais explicitement `avocat.test`.
+
+**Vérifié en réel** : sur la base vierge, les quatre endpoints du portail et des frais renvoient
+`ERR-AVOCAT-NON-RATTACHE`, tandis qu'un vrai refus (`GET /dossiers` pour un avocat) reste
+`ERR-FORBIDDEN` — la distinction tient. Et les quatre écrans concernés affichent l'explication, aucun
+n'affiche plus « Le chargement a échoué ».
+
+### ✅ QF-46 — « Votre session a expiré » s'affichait sans qu'aucune session n'ait expiré — corrigé
+
+**Signalé par le porteur du projet le 2026-09-16** : en démarrant l'application et en ouvrant son
+navigateur, il lisait ce message directement sur la page de connexion.
+
+**J'ai d'abord contesté l'observation, et la mesure m'a donné à moitié raison.** Le message ne peut
+**pas** apparaître dans un navigateur vierge : vérifié, la racine sans cookie redirige vers `/login`
+**sans motif**, et `/login` seul n'affiche rien. Il ne s'affiche que si l'adresse porte
+`?motif=session-expiree`. L'explication la plus probable était donc la **restauration d'onglets** du
+navigateur, qui rouvrait l'URL de la veille.
+
+**Mais l'observation désignait deux défauts réels**, que je n'aurais pas vus autrement.
+
+**1. Le message était un état d'URL, pas un événement.** Un tel message dit « ce qui vient de se
+passer » ; le loger dans l'adresse le rend **permanent**. Il survivait au rechargement, au retour
+arrière, au signet et à la restauration d'onglets — et pouvait donc annoncer une expiration à
+quelqu'un qui n'avait pas eu de session. Corrigé : `MotifConsomme` retire `motif` de l'adresse une
+fois le message affiché, par `replaceState` — corriger l'historique, pas naviguer, sans quoi un
+`router.replace` relancerait le rendu et effacerait le message qu'on vient de montrer.
+
+**2. Toute panne du rafraîchissement se présentait comme une expiration.** Le `catch` de la rotation
+attrapait **n'importe quelle** erreur — Keycloak arrêté, réseau coupé, 500 — et posait le même
+marqueur. L'utilisateur lisait « Votre session a expiré, reconnectez-vous » : un diagnostic faux, et
+une consigne **inapplicable**, puisque se reconnecter passe par le service précisément à terre. Il
+cherchait une faute de sa part là où rien ne dépendait de lui.
+
+Corrigé par un second marqueur, `ERREUR_AUTH_INDISPONIBLE`, et une qualification à la source :
+`rafraichir` distingue une **réponse 4xx** — Keycloak a examiné le jeton et l'a rejeté, la session est
+bien finie — d'une **absence de réponse ou d'un 5xx**, où la session n'est pas en cause. Les deux
+mènent au formulaire, car la session est inexploitable dans les deux cas ; ce qui change, c'est ce
+qu'on **dit** : se reconnecter, ou patienter.
+
+**Vérifié en réel** contre le Keycloak du poste : un jeton révoqué renvoie **401** (refus), un port
+fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué : le message s'affiche une
+fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
+gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
+
+### ✅ QF-47 — L'en-tête défilait avec le contenu, emportant la cloche et la déconnexion — corrigé
+
+**Signalé par le porteur du projet le 2026-09-16** : « je pense que le header doit être fixe donc ne
+doit pas scroller ».
+
+**Je n'ai pas traité cela comme une préférence d'affichage, parce que ce n'en était pas une.** Ce qui
+partait vers le haut emportait la **cloche de notifications** — canal obligatoire des alertes
+(NF-ALR-02), donc le seul dispositif qui signale une échéance d'audience — et le bouton de
+**déconnexion**, que le guide §1 réclame explicitement en poste partagé. Sur une fiche de dossier,
+qui est longue, les deux disparaissaient au bout de quelques centimètres de défilement.
+
+**L'intention était déjà dans le code ; il lui manquait sa contrainte.** La barre latérale portait
+`lg:h-svh`, le contenu `overflow-y-auto` — tout le dessin d'une coquille d'application. Mais le
+conteneur extérieur portait `min-h-svh` : une hauteur **minimale** ne borne rien, donc l'ensemble
+grandissait avec son contenu et c'est la **fenêtre** qui défilait. Ce n'est donc pas une
+fonctionnalité nouvelle, c'est une coquille inachevée. Corrigé par `lg:h-svh lg:overflow-hidden` sur
+le conteneur, et `lg:min-h-0` sur la colonne : `min-h-0` n'est pas décoratif — sans lui, un enfant
+flex refuse de rétrécir sous la hauteur de son contenu et l'`overflow-y-auto` ne s'active jamais.
+
+**Le mobile garde délibérément son défilement de page.** En-tête et bande de navigation pèsent 117 px
+sur 667 — **18 % de la hauteur** — et F17 avait justement transformé la navigation en bande
+défilante pour récupérer cette place. Les figer rendrait au téléphone le problème qu'on règle sur le
+bureau.
+
+**Une conséquence à traiter, pas à subir.** Le contenu étant devenu le conteneur de défilement, Next
+ne le remet plus à zéro en changeant d'écran — il ne connaît que la fenêtre : un écran se serait
+ouvert « au milieu », à la hauteur où l'on avait laissé le précédent. `RetourEnHaut` s'en charge, et
+n'écoute que le **chemin** : changer de page, de filtre ou de taille dans un tableau laisse la
+position intacte, ce que la pagination attend (`scroll: false`, Q-99).
+
+**Mesuré, pas supposé**, sur la pile réelle : en-tête et navigation immobiles à 1280 et 1024,
+défilants à 375, contenu remis à zéro au changement d'écran (384 → 0), et un tableau dense qui défile
+toujours dans son conteneur et non dans la page. Trois parcours de bout en bout gardent ces
+comportements, y compris celui du mobile — pour qu'on ne « corrige » pas plus tard le téléphone par
+symétrie.
 
 ---
 

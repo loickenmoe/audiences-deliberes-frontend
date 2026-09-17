@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import { TAILLE_ANNUAIRE } from "@/hooks/const";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { useUtilisateurs } from "@/hooks/useReferentiels";
 
@@ -21,7 +22,8 @@ import { useUtilisateurs } from "@/hooks/useReferentiels";
  */
 export function useLibelles() {
   const utilisateurs = useUtilisateurs();
-  const intervenants = useIntervenants();
+  // Table de correspondance : elle a besoin de l'annuaire entier, pas d'une page (cf. TAILLE_ANNUAIRE).
+  const intervenants = useIntervenants({ size: TAILLE_ANNUAIRE });
 
   const parUtilisateur = useMemo(() => {
     const table = new Map<number, string>();
@@ -34,7 +36,7 @@ export function useLibelles() {
 
   const parIntervenant = useMemo(() => {
     const table = new Map<number, string>();
-    for (const i of intervenants.data ?? []) table.set(i.id, i.nom);
+    for (const i of intervenants.data?.content ?? []) table.set(i.id, i.nom);
     return table;
   }, [intervenants.data]);
 

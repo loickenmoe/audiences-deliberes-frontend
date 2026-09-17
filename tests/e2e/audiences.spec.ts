@@ -152,14 +152,14 @@ test("marquer une alarme traitée la clôt sans la remplacer (QF-29)", async ({ 
   await creation.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByRole("row").filter({ hasText: "Appeler l’huissier" })).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Marquer traitée — Appeler l’huissier" }).click();
+  await page.getByRole("button", { name: "Marquer traitée - Appeler l’huissier" }).click();
   const confirmation = page.getByRole("dialog", { name: "Marquer l’alarme comme traitée" });
   await confirmation.getByRole("button", { name: "Marquer traitée" }).click();
 
   // Une seule ligne, close — contrairement à la reprogrammation, aucune remplaçante.
   await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
   await expect(page.getByRole("row").filter({ hasText: "Appeler l’huissier" })).toHaveCount(1);
-  await expect(page.getByRole("button", { name: "Reprogrammer — Appeler l’huissier" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reprogrammer - Appeler l’huissier" })).toHaveCount(0);
 });
 
 test("créer puis reprogrammer une alarme : l'ancienne est close, la nouvelle la reprend", async ({ page }) => {
@@ -174,7 +174,7 @@ test("créer puis reprogrammer une alarme : l'ancienne est close, la nouvelle la
   await creation.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByText("Alarme créée.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Reprogrammer — Relancer le greffe" }).click();
+  await page.getByRole("button", { name: "Reprogrammer - Relancer le greffe" }).click();
   const reprog = page.getByRole("dialog", { name: "Reprogrammer l’alarme" });
   await reprog.getByLabel("Échéance", { exact: true }).fill(`${dansJours(8)}T10:00`);
   await reprog.getByRole("button", { name: "Reprogrammer" }).click();

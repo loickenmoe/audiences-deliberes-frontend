@@ -1,4 +1,5 @@
-import { apiClient } from "@/lib/api/client";
+import { TAILLE_PAGE } from "@/hooks/const";
+import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { AvocatRepertoire, DemandeConstitution } from "@/types/domaine";
 import type { StatutConstitution } from "@/types/enums";
 
@@ -8,9 +9,13 @@ export type DecisionConstitution = { decision: "VALIDEE" } | { decision: "REJETE
 /** Constitutions de prestataires (#35, #36, #60) et répertoire des avocats (#37). */
 export const constitutionService = {
   /** #60 — `EN_ATTENTE` en ordre d'arrivée (la file du SH) ; sans filtre, l'historique, le plus récent d'abord. */
-  lister: async (statut: StatutConstitution | null): Promise<DemandeConstitution[]> => {
-    const { data } = await apiClient.get<DemandeConstitution[]>("/constitutions/prestataires", {
-      params: statut ? { statut } : {},
+  lister: async (
+    statut: StatutConstitution | null,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<DemandeConstitution>> => {
+    const { data } = await apiClient.get<PageReponse<DemandeConstitution>>("/constitutions/prestataires", {
+      params: { ...(statut ? { statut } : {}), page, size },
     });
     return data;
   },
@@ -31,9 +36,9 @@ export const constitutionService = {
   },
 
   /** #37 — répertoire, trié par charge croissante ; recherche par nom côté serveur. */
-  repertoire: async (nom?: string): Promise<AvocatRepertoire[]> => {
-    const { data } = await apiClient.get<AvocatRepertoire[]>("/repertoire/avocats", {
-      params: nom ? { nom } : {},
+  repertoire: async (nom?: string, page = 0, size = TAILLE_PAGE): Promise<PageReponse<AvocatRepertoire>> => {
+    const { data } = await apiClient.get<PageReponse<AvocatRepertoire>>("/repertoire/avocats", {
+      params: { ...(nom ? { nom } : {}), page, size },
     });
     return data;
   },

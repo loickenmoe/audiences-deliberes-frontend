@@ -55,7 +55,12 @@ function suffixe() {
 async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
-    (await json<{ id: number; compteKeycloak: string | null }[]>("/intervenants?type=AVOCAT", juriste)).find(
+    (
+      await json<{ content: { id: number; compteKeycloak: string | null }[] }>(
+        "/intervenants?type=AVOCAT&size=200",
+        juriste,
+      )
+    ).content.find(
       (a) => a.compteKeycloak === "avocat.test",
     );
   const existant = await trouver();
@@ -149,7 +154,7 @@ test("l'Assistante valide une pièce : invisible avant, consultable ensuite par 
   await menu(assistante).getByRole("link", { name: "Publications" }).click();
   await assistante.waitForURL(/\/publications/, { timeout: 60_000 });
   await expect(assistante.getByRole("button", { name: "À valider" })).toHaveAttribute("aria-pressed", "true");
-  await assistante.getByRole("row", { name: new RegExp(reference) }).getByRole("link", { name: `Pièce — ${nom}` }).click();
+  await assistante.getByRole("row", { name: new RegExp(reference) }).getByRole("link", { name: `Pièce - ${nom}` }).click();
   await assistante.waitForURL(/\/publications\/\d+$/, { timeout: 60_000 });
   await expect(assistante.getByText(nom, { exact: true })).toBeVisible();
   await assistante.getByRole("region", { name: "Validation" }).getByRole("button", { name: "Valider" }).click();
@@ -158,10 +163,10 @@ test("l'Assistante valide une pièce : invisible avant, consultable ensuite par 
   await assistante.context().close();
 
   await juriste.reload();
-  await expect(juriste.getByRole("heading", { name: `Pièce — ${nom}`, level: 1 })).toBeVisible();
+  await expect(juriste.getByRole("heading", { name: `Pièce - ${nom}`, level: 1 })).toBeVisible();
   // L'onglet de la fiche la liste aussi.
   await juriste.goto(`/dossiers/${dossierId}?onglet=publications`);
-  await expect(juriste.getByRole("link", { name: `Pièce — ${nom}` })).toBeVisible();
+  await expect(juriste.getByRole("link", { name: `Pièce - ${nom}` })).toBeVisible();
   await juriste.context().close();
 });
 
@@ -250,7 +255,7 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   const modale = juriste.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(modale.getByText(/obligatoire/i).first()).toBeVisible();
-  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: "Me Claire Avocat — Avocat" });
+  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: "Me Claire Avocat - Avocat" });
   await modale.getByLabel("Motif de la demande", { exact: true }).fill("Représentation devant le TGI de Douala");
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
@@ -260,11 +265,11 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   await sh.waitForURL(/\/constitutions/, { timeout: 60_000 });
   await expect(sh.getByRole("button", { name: "À signer" })).toHaveAttribute("aria-pressed", "true");
   const ligne = sh.getByRole("row", { name: new RegExp(reference) });
-  await ligne.getByRole("button", { name: "Signer la constitution — Me Claire Avocat" }).click();
+  await ligne.getByRole("button", { name: "Signer la constitution - Me Claire Avocat" }).click();
   await sh.getByRole("dialog", { name: "Signer la constitution ?" }).getByRole("button", { name: "Signer" }).click();
   await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
   await sh.getByRole("button", { name: "Toutes" }).click();
-  await expect(sh.getByRole("row", { name: new RegExp(reference) }).getByRole("button", { name: `Lettre de constitution — ${reference}` })).toBeVisible();
+  await expect(sh.getByRole("row", { name: new RegExp(reference) }).getByRole("button", { name: `Lettre de constitution - ${reference}` })).toBeVisible();
   await sh.context().close();
 
   await juriste.goto(`/dossiers/${dossierId}?onglet=documents`);

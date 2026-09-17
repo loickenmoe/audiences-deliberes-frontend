@@ -70,8 +70,11 @@ async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
     (
-      await json<{ id: number; compteKeycloak: string | null }[]>("/intervenants?type=AVOCAT", juriste)
-    ).find((a) => a.compteKeycloak === "avocat.test");
+      await json<{ content: { id: number; compteKeycloak: string | null }[] }>(
+        "/intervenants?type=AVOCAT&size=200",
+        juriste,
+      )
+    ).content.find((a) => a.compteKeycloak === "avocat.test");
   const existant = await trouver();
   if (existant) return existant.id;
   const creation = await appel("/intervenants", await jeton("dj.test"), {
@@ -259,11 +262,42 @@ test("les formats de la GED se choisissent dans la liste publiée ; le juriste n
   await juriste.goto("/admin/configurations");
   await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
   await expect(
-    juriste.getByText("Consultation seule — seul le Directeur Juridique peut modifier ces paramètres."),
+    juriste.getByText(
+      "Consultation seule - seuls le Directeur Juridique et son Adjoint peuvent modifier ces paramètres.",
+    ),
   ).toBeVisible();
   await expect(juriste.getByRole("button", { name: "Enregistrer" })).toHaveCount(0);
   await expect(juriste.locator("#configuration-SEUIL_PROROGATIONS")).toBeDisabled();
   await juriste.context().close();
+});
+
+/**
+ * Backend Q-108 — la DJA administre les paramètres comme le DJ.
+ *
+ * Le motif est la **continuité de service** : le DJ absent, plus personne ne pouvait relever un
+ * seuil, alors qu'un Adjoint existe pour suppléer. Le parcours vérifie l'écriture de bout en bout —
+ * l'écran pouvait auparavant afficher le formulaire à un profil que le backend refusait ensuite.
+ */
+test("la DJA enregistre un paramètre système comme le DJ (Q-108)", async ({ browser }) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await dja.goto("/admin/configurations");
+  await expect(dja.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
+  await expect(dja.getByText(/Consultation seule/)).toHaveCount(0);
+
+  const article = dja.locator("article", { hasText: "SEUIL_PROROGATIONS" });
+  const champ = article.locator("#configuration-SEUIL_PROROGATIONS");
+  await expect(champ).toBeEnabled();
+  const initiale = (await champ.inputValue()).trim();
+
+  await champ.fill("11");
+  await article.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+
+  // Remise en état : ce seuil pilote les alertes de prorogation des autres parcours.
+  await champ.fill(initiale);
+  await article.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+  await dja.context().close();
 });
 
 test("le backend refuse une valeur qui casserait un autre module (Q-91)", async () => {
@@ -290,4 +324,234 @@ test("le backend refuse une valeur qui casserait un autre module (Q-91)", async 
   // Et la valeur en base n'a pas bougé.
   const configurations = await json<{ cle: string; valeur: string }[]>("/configurations", dj);
   expect(configurations.find((c) => c.cle === "SEUIL_PROROGATIONS")?.valeur).toBe("10");
+});
+
+/**
+ * Q-109 — le taux de délivrance du canal applicatif, mesuré **en conditions réelles**.
+ *
+ * Ce parcours vérifie ce qu'aucun test unitaire ne peut établir : que l'issue enregistrée
+ * correspond à la présence réelle d'une session STOMP. C'est tout l'enjeu de la mesure —
+ * `convertAndSendToUser` réussit même quand personne n'écoute, si bien qu'un indicateur fondé sur
+ * l'absence d'exception afficherait 100 % en permanence, panne comprise.
+ */
+async function statistiques(dateDebut: string, dateFin: string) {
+  return json<{
+    observees: number;
+    diffusees: number;
+    differees: number;
+    echecs: number;
+    tauxDelivrance: number;
+    tauxDiffusionTempsReel: number;
+    seuilRespecte: boolean;
+  }>(`/alertes/statistiques-diffusion?dateDebut=${dateDebut}&dateFin=${dateFin}`, await jeton("dj.test"));
+}
+
+/** La fenêtre du jour : l'alerte qu'on va déclencher y tombe forcément. */
+function aujourdHui() {
+  const jour = new Date().toISOString().slice(0, 10);
+  return { debut: jour, fin: jour };
+}
+
+test("une alerte poussée à un destinataire connecté est comptée comme diffusée (Q-109)", async ({
+  browser,
+}) => {
+  const { debut, fin } = aujourdHui();
+  const page = await pageConnectee(browser, "assistante.test");
+  await page.goto("/notifications");
+  // Sans cette attente, le test mesurerait une différée et croirait à un défaut.
+  await expect(page.getByText("Temps réel actif")).toBeVisible({ timeout: 60_000 });
+
+  const avant = await statistiques(debut, fin);
+  const reference = await deposerDemandeDeFrais();
+  await expect(page.getByRole("row", { name: new RegExp(reference) })).toBeVisible({ timeout: 75_000 });
+
+  const apres = await statistiques(debut, fin);
+  expect(apres.observees).toBeGreaterThan(avant.observees);
+  expect(apres.diffusees).toBeGreaterThan(avant.diffusees);
+  expect(apres.echecs).toBe(avant.echecs);
+  // Le point central : une remise réussie ne fait pas bouger le taux de délivrance, qui ne compte
+  // que les échecs.
+  expect(apres.seuilRespecte).toBe(true);
+
+  await page.context().close();
+});
+
+/**
+ * Le pendant du précédent, et le plus important des deux : personne n'est connecté, l'alerte part
+ * quand même et **n'est pas comptée comme un échec**. Le canal applicatif comprend la liste des
+ * notifications, alimentée inconditionnellement — la remise est plus tardive, pas manquée.
+ */
+test("une alerte destinée à quelqu'un de déconnecté reste délivrée (Q-109)", async () => {
+  const { debut, fin } = aujourdHui();
+  const avant = await statistiques(debut, fin);
+
+  // Aucun navigateur ouvert pour l'Assistante : aucune session STOMP ne peut exister.
+  await deposerDemandeDeFrais();
+
+  await expect
+    .poll(async () => (await statistiques(debut, fin)).differees, { timeout: 30_000 })
+    .toBeGreaterThan(avant.differees);
+
+  const apres = await statistiques(debut, fin);
+  expect(apres.echecs).toBe(avant.echecs);
+  expect(apres.tauxDelivrance).toBe(100);
+  expect(apres.seuilRespecte).toBe(true);
+});
+
+test("la supervision s'affiche pour le DJ et la DJA, jamais pour un juriste (Q-109)", async ({
+  browser,
+}) => {
+  for (const profil of ["dj.test", "dja.test"]) {
+    const page = await pageConnectee(browser, profil);
+    await page.goto("/admin/configurations");
+    await expect(page.getByRole("heading", { name: "Supervision des alertes", level: 2 })).toBeVisible({
+      timeout: 60_000,
+    });
+    // Les deux taux sont montrés séparément : les réunir viderait la mesure de son sens.
+    await expect(page.getByText("Taux de délivrance")).toBeVisible();
+    await expect(page.getByText("Diffusion en temps réel")).toBeVisible();
+    await expect(page.getByText("Indicateur d’usage, sans seuil opposable")).toBeVisible();
+    await page.context().close();
+  }
+
+  // Les paramètres restent lisibles par un juriste ; le taux global, non.
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/admin/configurations");
+  await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
+  await expect(juriste.getByRole("heading", { name: "Supervision des alertes" })).toHaveCount(0);
+  await juriste.context().close();
+});
+
+test("une fenêtre inversée est expliquée à l'écran, pas renvoyée en erreur technique (Q-109)", async ({
+  browser,
+}) => {
+  const page = await pageConnectee(browser, "dj.test");
+  await page.goto("/admin/configurations");
+  await expect(page.getByRole("heading", { name: "Supervision des alertes", level: 2 })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  await page.locator("#supervision-debut").fill("2026-12-31");
+  // Le message est cherché **dans la section** : Next pose son propre `role="alert"` à la racine du
+  // document pour annoncer les changements de route, et un sélecteur global les confondrait.
+  const supervision = page.locator("section", { hasText: "Supervision des alertes" });
+  await expect(supervision.getByRole("alert")).toContainText("date de début est postérieure");
+  await expect(page.locator("#supervision-debut")).toHaveAttribute("aria-invalid", "true");
+  await page.context().close();
+});
+
+/**
+ * Q-110 — le journal des actions système, contre le backend réel.
+ *
+ * Le parcours vérifie ce qui fait la valeur de l'écran, et non son habillage : qu'une modification
+ * de paramètre y apparaît avec son auteur et ses valeurs, que l'activité des dossiers n'y entre
+ * **jamais**, et que la garde de rôle tient.
+ */
+test("une modification de paramètre apparaît au journal, avec son auteur et ses valeurs (Q-110)", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  await expect(dj.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // On produit la trace depuis l'écran lui-même : c'est le geste réel que le journal doit restituer.
+  const article = dj.locator("article", { hasText: "SEUIL_PROROGATIONS" });
+  const champ = article.locator("#configuration-SEUIL_PROROGATIONS");
+  const initiale = (await champ.inputValue()).trim();
+  const nouvelle = initiale === "12" ? "13" : "12";
+  await champ.fill(nouvelle);
+  await article.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dj.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+
+  const journal = dj.locator("section", { hasText: "Journal des actions système" });
+  await expect(journal.getByRole("heading", { name: "Journal des actions système" })).toBeVisible();
+
+  /*
+   * La remise en état est dans un `finally` : ce seuil pilote les alertes de prorogation et un autre
+   * parcours vérifie qu'il vaut toujours 10. Une première version restaurait après les assertions —
+   * l'échec de l'une d'elles laissait donc la valeur modifiée et faisait tomber le parcours suivant,
+   * pour une raison qui n'avait rien à voir avec lui. Un test qui échoue ne doit pas en salir un autre.
+   */
+  try {
+    /*
+     * Aucun clic pour rafraîchir : le journal vit sur le même écran et doit se mettre à jour seul.
+     * La première version ne le faisait pas — on enregistrait un paramètre et le journal juste en
+     * dessous l'ignorait, ce dont on aurait conclu que rien n'avait été tracé. Défaut trouvé ici,
+     * corrigé par une invalidation ; ce test empêche qu'il revienne.
+     */
+    const ligne = journal
+      .getByRole("row", { name: /Modification de la configuration SEUIL_PROROGATIONS/ })
+      .first();
+    await expect(ligne).toBeVisible({ timeout: 30_000 });
+    // L'ancienne et la nouvelle valeur : c'est ce qui distingue un journal d'une liste d'actes.
+    await expect(ligne).toContainText(new RegExp(`nouvelleValeur\\s*${nouvelle}`), { timeout: 30_000 });
+    await expect(ligne).toContainText(new RegExp(`ancienneValeur\\s*${initiale}`));
+  } finally {
+    await champ.fill(initiale);
+    await article.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(dj.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+    await dj.context().close();
+  }
+});
+
+/**
+ * Le test le plus important du lot. Le journal est une vue d'administration, pas une vue sur les
+ * personnes : l'activité des juristes sur leurs dossiers ne doit jamais y entrer. C'est cette
+ * limite qui le rend acceptable tant que NF-CONF-01 (RGPD, conservation) reste à définir.
+ */
+test("le journal ne laisse jamais entrer l'activité des dossiers (Q-110)", async ({ browser }) => {
+  // Une action sur un dossier, historisée avec son dossier.
+  const reference = await deposerDemandeDeFrais();
+
+  const dja = await pageConnectee(browser, "dja.test");
+  await dja.goto("/admin/configurations");
+  const journal = dja.locator("section", { hasText: "Journal des actions système" });
+  await expect(journal.getByRole("heading", { name: "Journal des actions système" })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  await expect(journal.getByRole("row", { name: new RegExp(reference) })).toHaveCount(0);
+  await expect(journal.getByRole("row", { name: /Création du dossier/ })).toHaveCount(0);
+  await expect(journal.getByRole("row", { name: /demande de frais/ })).toHaveCount(0);
+
+  // Et il dit lui-même ce qu'il ne couvre pas, plutôt que de le laisser découvrir.
+  await expect(journal.getByText(/Les consultations ne sont pas tracées/)).toBeVisible();
+  await dja.context().close();
+});
+
+test("le journal est fermé au juriste, à l'Assistante et au SH (Q-110)", async ({ browser }) => {
+  for (const profil of ["juriste.test", "assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, profil);
+    await page.goto("/admin/configurations");
+    await expect(page.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByRole("heading", { name: "Journal des actions système" })).toHaveCount(0);
+    await page.context().close();
+  }
+});
+
+test("le journal filtre par auteur et par action, et explique une fenêtre inversée (Q-110)", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  const journal = dj.locator("section", { hasText: "Journal des actions système" });
+  await expect(journal.getByRole("heading", { name: "Journal des actions système" })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // La liste des actions est fermée et vient de la donnée : elle porte au moins un libellé réel.
+  const filtreAction = journal.getByLabel("Action", { exact: true });
+  await expect(filtreAction.locator("option")).not.toHaveCount(1);
+
+  await journal.getByLabel("Du", { exact: true }).fill("2026-12-31");
+  await journal.getByLabel("Au", { exact: true }).fill("2026-01-01");
+  await expect(journal.getByRole("alert")).toContainText("date de début est postérieure");
+
+  await journal.getByRole("button", { name: "Réinitialiser" }).click();
+  await expect(journal.getByRole("alert")).toHaveCount(0);
+  await dj.context().close();
 });

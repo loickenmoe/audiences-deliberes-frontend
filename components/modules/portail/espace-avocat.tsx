@@ -10,7 +10,8 @@ import { DateHeureValeur, TableDonnees } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { useMesConstitutions, useMesPublications } from "@/hooks/usePortailAvocat";
-import { messageErreur } from "@/lib/api/errors";
+import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
+import { estCompteAvocatNonRattache, messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION } from "@/lib/publications";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
 
@@ -28,6 +29,7 @@ export function EspaceAvocat() {
   const { page, definirPage } = useFiltresUrl({});
   const publications = useMesPublications(page);
   const constitutions = useMesConstitutions();
+
 
   const colonnes = useMemo<ColumnDef<Publication, unknown>[]>(
     () => [
@@ -62,6 +64,16 @@ export function EspaceAvocat() {
     ],
     [t, td],
   );
+
+  /*
+   * Q-107 : si le compte n'est pas rattaché au référentiel, **aucune** section de cet écran ne peut
+   * aboutir. On l'explique une fois plutôt que d'afficher deux blocs « le chargement a échoué » pour
+   * une cause unique sur laquelle l'avocat n'a aucune prise. Le test vient **après** les hooks : un
+   * retour anticipé placé avant en changerait l'ordre d'un rendu à l'autre.
+   */
+  if (estCompteAvocatNonRattache(publications.error) || estCompteAvocatNonRattache(constitutions.error)) {
+    return <CompteAvocatNonRattache />;
+  }
 
   return (
     <div className="flex flex-col gap-8">

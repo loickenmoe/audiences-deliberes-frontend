@@ -59,7 +59,10 @@ function aujourdhui() {
 async function dossierCree(): Promise<{ id: number; reference: string; etapeId: number }> {
   const juriste = await jeton("juriste.test");
   const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
-  const avocats = await json<{ id: number }[]>("/intervenants?type=AVOCAT", juriste);
+  // Q-100 : réponse paginée ; `size` explicite parce qu'on cherche dans tout l'annuaire.
+  const avocats = (
+    await json<{ content: { id: number }[] }>("/intervenants?type=AVOCAT&size=200", juriste)
+  ).content;
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
   const reference = `DOS-DEF-${suffixe()}`;
   const { id } = await json<{ id: number }>("/dossiers", juriste, {
@@ -178,21 +181,21 @@ test("condamnation : suivie, son statut mis à jour puis relu après rechargemen
   await modale.getByRole("button", { name: "Enregistrer" }).click();
   await expect(juriste.getByText("Condamnation enregistrée.")).toBeVisible();
 
-  const statut = juriste.getByLabel("Statut de paiement — Frais de procédure");
+  const statut = juriste.getByLabel("Statut de paiement - Frais de procédure");
   await expect(statut).toHaveValue("EN_ATTENTE");
   await statut.selectOption("PAYE");
   await juriste.getByRole("row", { name: /Frais de procédure/ }).getByRole("button", { name: "Mettre à jour" }).click();
   await expect(juriste.getByText("Statut de paiement mis à jour.")).toBeVisible();
   // Relu du backend après rechargement : c'est ce que QF-03 rendait impossible.
   await juriste.reload();
-  await expect(juriste.getByLabel("Statut de paiement — Frais de procédure")).toHaveValue("PAYE");
+  await expect(juriste.getByLabel("Statut de paiement - Frais de procédure")).toHaveValue("PAYE");
   await juriste.context().close();
 
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto(`/dossiers/${id}?onglet=decisions`);
   await expect(assistante.getByRole("row", { name: /Frais de procédure/ })).toContainText("Payée");
   await expect(assistante.getByRole("button", { name: "Suivre une condamnation" })).toHaveCount(0);
-  await expect(assistante.getByLabel("Statut de paiement — Frais de procédure")).toHaveCount(0);
+  await expect(assistante.getByLabel("Statut de paiement - Frais de procédure")).toHaveCount(0);
   await assistante.context().close();
 });
 
@@ -229,7 +232,7 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
   await juridiction.press("Enter");
   await expect(ligne).toHaveCount(1);
 
-  await ligne.getByRole("button", { name: "Consulter — Arrêt, Cour d’appel du Littoral" }).click();
+  await ligne.getByRole("button", { name: "Consulter - Arrêt, Cour d’appel du Littoral" }).click();
   const apercu = page.getByRole("dialog", { name: /Arrêt-2026-06-30\.pdf/ });
   await expect(apercu.locator("iframe")).toBeVisible();
   // Le bouton ne s'active qu'une fois le fichier récupéré depuis MinIO.

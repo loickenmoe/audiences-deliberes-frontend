@@ -4,19 +4,21 @@ import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 
 import { auth } from "@/lib/auth";
-import { ERREUR_RAFRAICHISSEMENT } from "@/lib/rotation-jeton";
+import { sessionInutilisable } from "@/lib/rotation-jeton";
 import { type Capacite, peut } from "@/lib/rbac";
 
 /**
  * Garde d'authentification des composants serveur.
  *
  * Une session dont la rotation a échoué est traitée comme absente : mieux vaut une reconnexion
- * franche qu'une interface qui se heurte à des 401 sur chaque appel.
+ * franche qu'une interface qui se heurte à des 401 sur chaque appel. Les **deux** causes comptent —
+ * jeton rejeté ou service injoignable : dans les deux cas la session n'est plus exploitable. Ce qui
+ * les sépare n'est pas la conduite à tenir ici, mais ce qu'on **dit** à l'utilisateur.
  */
 export async function exigerSession(redirection = "/login"): Promise<Session> {
   const session = await auth();
 
-  if (!session?.user || session.erreur === ERREUR_RAFRAICHISSEMENT) {
+  if (!session?.user || sessionInutilisable(session.erreur)) {
     redirect(redirection);
   }
 

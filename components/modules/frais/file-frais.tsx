@@ -10,6 +10,8 @@ import { DateHeureValeur, MontantFcfa, TableDonnees } from "@/components/metier"
 import { useDemandesFrais } from "@/hooks/useFrais";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { TON_STATUT_FRAIS, aDonneSonAccord, vuesFrais, type CleVueFrais } from "@/lib/frais";
+import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
+import { estCompteAvocatNonRattache } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { DemandeFrais } from "@/types/domaine";
@@ -34,11 +36,12 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesFrais(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0].cle as string }), [vues]);
-  const { filtres, page, definirFiltre, definirPage } = useFiltresUrl(defauts);
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage } = useFiltresUrl(defauts);
   const vue = vues.find((v) => v.cle === filtres.vue) ?? vues[0];
-  const requete = useDemandesFrais(vue.statut, page);
+  const requete = useDemandesFrais(vue.statut, page, taille);
   // L'avocat ne consulte pas les dossiers (`ROLE_CONSULTATION`) : la référence reste un texte.
   const lienDossier = peut(roles, "consulterDossiers");
+
 
   const colonnes = useMemo<ColumnDef<DemandeFrais, unknown>[]>(
     () => [
@@ -99,6 +102,13 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
     [t, td, lienDossier, roles],
   );
 
+  /*
+   * Q-107 : un avocat dont le compte n'est pas rattaché au référentiel n'a pas de demandes, et n'en
+   * aura pas tant qu'il n'y est pas inscrit. Ce n'est pas un échec de chargement. Le test vient
+   * **après** les hooks : un retour anticipé placé avant en changerait l'ordre d'un rendu à l'autre.
+   */
+  if (estCompteAvocatNonRattache(requete.error)) return <CompteAvocatNonRattache />;
+
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
@@ -132,6 +142,8 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
         erreur={requete.error}
         page={page}
         onChangementPage={definirPage}
+        taille={taille}
+        onChangementTaille={definirTaille}
         onReessayer={() => void requete.refetch()}
         titreVide={t(VIDE[vue.cle] as never)}
         descriptionVide={t("videTexte")}

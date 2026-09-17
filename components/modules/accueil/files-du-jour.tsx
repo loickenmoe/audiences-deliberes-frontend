@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { TAILLE_COMPTEUR } from "@/hooks/const";
 import { useNombreNotificationsATraiter } from "@/hooks/useAlertes";
 import { useConstitutions } from "@/hooks/useConstitutions";
 import { useDossiers } from "@/hooks/useDossiers";
@@ -29,7 +30,9 @@ import { cn } from "@/lib/utils";
  * `@PreAuthorize` du backend — la même source que la navigation.
  *
  * **Chaque carte interroge son propre compte**, sur une page d'un seul élément : `totalElements`
- * suffit, et une carte lente n'empêche pas les autres de s'afficher. Les hooks de React interdisant
+ * suffit, et une carte lente n'empêche pas les autres de s'afficher. Ce n'était vrai qu'en
+ * intention jusqu'à Q-100 — quatre cartes rapatriaient en fait une page entière, soit jusqu'à vingt
+ * lignes complètes chacune, pour n'afficher qu'un nombre. Les hooks de React interdisant
  * un appel conditionnel, chaque file est un composant distinct, monté seulement si la capacité est
  * accordée.
  */
@@ -119,7 +122,7 @@ function FileFraisAControler({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("accueil");
   const profil = profilPrincipal(roles);
   const statut = profil === "ROLE_ASSISTANTE" ? "DEPOSEE" : profil === "ROLE_DJA" ? "CONFORMITE" : "OPPORTUNITE";
-  const requete = useDemandesFrais(statut, 0);
+  const requete = useDemandesFrais(statut, 0, TAILLE_COMPTEUR);
   return (
     <Carte
       icone={Receipt}
@@ -134,7 +137,7 @@ function FileFraisAControler({ roles }: { roles: readonly string[] }) {
 
 function FilePublicationsAValider() {
   const t = useTranslations("accueil");
-  const requete = usePublications({ statut: "DEPOSE", page: 0 });
+  const requete = usePublications({ statut: "DEPOSE", page: 0, size: TAILLE_COMPTEUR });
   return (
     <Carte
       icone={FileSignature}
@@ -149,13 +152,13 @@ function FilePublicationsAValider() {
 
 function FileConstitutionsASigner() {
   const t = useTranslations("accueil");
-  const requete = useConstitutions("EN_ATTENTE");
+  const requete = useConstitutions("EN_ATTENTE", 0, TAILLE_COMPTEUR);
   return (
     <Carte
       icone={Gavel}
       titre={t("constitutionsTitre")}
       aide={t("constitutionsAide")}
-      compte={requete.data?.length}
+      compte={requete.data?.totalElements}
       chargement={requete.isLoading}
       href="/constitutions"
     />
@@ -164,13 +167,13 @@ function FileConstitutionsASigner() {
 
 function FileSuppressions() {
   const t = useTranslations("accueil");
-  const requete = useDemandesSuppression("EN_ATTENTE");
+  const requete = useDemandesSuppression("EN_ATTENTE", 0, TAILLE_COMPTEUR);
   return (
     <Carte
       icone={Trash2}
       titre={t("suppressionsTitre")}
       aide={t("suppressionsAide")}
-      compte={requete.data?.length}
+      compte={requete.data?.totalElements}
       chargement={requete.isLoading}
       href="/ged/demandes-suppression"
     />
@@ -180,7 +183,7 @@ function FileSuppressions() {
 /** `mesDossiers` se résout sur l'utilisateur authentifié côté backend : aucun identifiant à passer. */
 function FileMesDossiers() {
   const t = useTranslations("accueil");
-  const requete = useDossiers({ mesDossiers: true, page: 0 });
+  const requete = useDossiers({ mesDossiers: true, page: 0, size: TAILLE_COMPTEUR });
   return (
     <Carte
       icone={FolderOpen}

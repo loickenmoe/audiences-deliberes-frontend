@@ -143,7 +143,7 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   // Le libellé de l'option est construit par `SelecteurDossier` : référence, nature, juridiction.
   await avocat
     .locator("#publication-dossier")
-    .selectOption({ label: `DOS-${marque} — Assignation en paiement (TGI Douala)` });
+    .selectOption({ label: `DOS-${marque} - Assignation en paiement (TGI Douala)` });
   await expect(avocat.locator("#publication-audience")).toBeEnabled({ timeout: 30_000 });
   await avocat.locator("#publication-audience").selectOption({ index: 1 });
   await avocat.locator("#publication-contenu").fill(`Audience renvoyée — ${marque}`);
@@ -188,7 +188,7 @@ test("P6 — une demande de frais traverse tout son circuit, de l'avocat au paie
   const facture = `FAC-${marque}`;
   await avocat
     .locator("#frais-dossier")
-    .selectOption({ label: `DOS-${marque} — Assignation en paiement (TGI Douala)` });
+    .selectOption({ label: `DOS-${marque} - Assignation en paiement (TGI Douala)` });
   await avocat.locator("#frais-reference").fill(facture);
   await avocat.locator("#frais-montant").fill("400000");
   await avocat
@@ -218,7 +218,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
   const nom = `pv-${marque}.pdf`;
 
   await juriste.goto(`${url}?onglet=documents`);
-  await juriste.getByRole("button", { name: `Demander la suppression — ${nom}` }).click();
+  await juriste.getByRole("button", { name: `Demander la suppression - ${nom}` }).click();
   await juriste.getByRole("dialog").getByRole("button", { name: "Demander la suppression" }).click();
   await expect(juriste.getByText("Demande de suppression envoyée au DJ et au DJA.")).toBeVisible({
     timeout: 30_000,

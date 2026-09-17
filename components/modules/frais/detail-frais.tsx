@@ -119,7 +119,7 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
               <span className="font-medium">
                 {demande.validationConjointeRequise ? t("conjointeOui") : t("conjointeNon")}
               </span>
-              {" — "}
+              {" - "}
               <span className="text-texte-secondaire">{raison}</span>
             </p>
             <Circuit demande={demande} />

@@ -32,6 +32,8 @@ export function TableDonnees<T>({
   erreur,
   page,
   onChangementPage,
+  taille,
+  onChangementTaille,
   titreVide,
   descriptionVide,
   actionVide,
@@ -45,6 +47,9 @@ export function TableDonnees<T>({
   erreur?: unknown;
   page: number;
   onChangementPage: (page: number) => void;
+  /** Taille courante ; omise, le sélecteur de taille n'est pas rendu. */
+  taille?: number;
+  onChangementTaille?: (taille: number) => void;
   titreVide?: string;
   descriptionVide?: string;
   actionVide?: ReactNode;
@@ -132,6 +137,8 @@ export function TableDonnees<T>({
 
       <Pagination
         page={page}
+        taille={taille}
+        onChangementTaille={onChangementTaille}
         totalPages={donnees.totalPages}
         totalElements={donnees.totalElements}
         onChangement={onChangementPage}

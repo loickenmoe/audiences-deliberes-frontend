@@ -44,6 +44,20 @@ const serveur = setupServer(
   http.get(`${BASE}/alertes/mes-notifications`, ({ request }) => capturer(request, PAGE_VIDE)),
   http.patch(`${BASE}/alertes/:id/traiter`, ({ request }) => capturer(request, { id: 9 })),
   http.put(`${BASE}/alertes/seuils`, ({ request }) => capturer(request, { cle: "CHARGE_MAX_AVOCAT" })),
+  http.get(`${BASE}/alertes/statistiques-diffusion`, ({ request }) =>
+    capturer(request, {
+      dateDebut: "2026-09-01",
+      dateFin: "2026-09-30",
+      observees: 1000,
+      diffusees: 700,
+      differees: 295,
+      echecs: 5,
+      nonTraitees: 42,
+      tauxDelivrance: 99.5,
+      tauxDiffusionTempsReel: 70,
+      seuilRespecte: true,
+    }),
+  ),
   http.get(`${BASE}/configurations`, ({ request }) => capturer(request, [])),
   http.put(`${BASE}/configurations/:cle`, ({ request }) => capturer(request, { cle: "FORMATS_GED", valeur: "PDF,XLSX" })),
 );
@@ -210,5 +224,45 @@ describe("paramètres système sur le fil", () => {
     expect(derniere?.corps).toEqual({ valeur: "PDF,XLSX" });
     // La réponse du backend fait foi : c'est elle qui porte la valeur normalisée.
     expect(mise.valeur).toBe("PDF,XLSX");
+  });
+});
+
+/**
+ * Supervision du canal applicatif (backend Q-109, NF-ALR-02).
+ *
+ * Ce qui est vérifié ici n'est pas le calcul — il appartient au backend, qui le teste — mais **ce
+ * qui part sur le fil** et la lecture des deux taux. Les confondre serait l'erreur la plus facile à
+ * commettre, et la plus coûteuse : l'un est opposable, l'autre non.
+ */
+describe("supervision des alertes", () => {
+  it("envoie la fenêtre demandée, bornes comprises", async () => {
+    await alerteService.statistiquesDiffusion("2026-09-01", "2026-09-30");
+
+    expect(derniere?.methode).toBe("GET");
+    expect(derniere?.url.pathname).toBe("/api/v1/alertes/statistiques-diffusion");
+    expect(derniere?.url.searchParams.get("dateDebut")).toBe("2026-09-01");
+    expect(derniere?.url.searchParams.get("dateFin")).toBe("2026-09-30");
+  });
+
+  it("distingue le taux opposable du taux d'usage", async () => {
+    const stats = await alerteService.statistiquesDiffusion("2026-09-01", "2026-09-30");
+
+    // 995 alertes sur 1000 remises : les différées comptent comme délivrées, seuls les 5 échecs
+    // pèsent. C'est ce taux que NF-ALR-02 borne à 99 %.
+    expect(stats.tauxDelivrance).toBe(99.5);
+    expect(stats.seuilRespecte).toBe(true);
+    // Tout autre chose : 700 destinataires sur 1000 étaient connectés. Aucun seuil ne s'y oppose,
+    // et un chiffre bas ici ne dit rien d'une panne.
+    expect(stats.tauxDiffusionTempsReel).toBe(70);
+    expect(stats.tauxDiffusionTempsReel).not.toBe(stats.tauxDelivrance);
+  });
+
+  it("rapporte les non traitées sans les mêler aux taux", async () => {
+    const stats = await alerteService.statistiquesDiffusion("2026-09-01", "2026-09-30");
+
+    // Une alerte délivrée que personne n'a ouverte relève d'un autre problème que la délivrance :
+    // le compte existe, il n'entre dans aucun quotient.
+    expect(stats.nonTraitees).toBe(42);
+    expect(stats.diffusees + stats.differees + stats.echecs).toBe(stats.observees);
   });
 });

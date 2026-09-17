@@ -1,3 +1,4 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { DemandeFrais, DeposerFrais } from "@/types/domaine";
 import type { StatutCircuitFrais } from "@/types/enums";
@@ -21,7 +22,7 @@ export const fraisService = {
    * #28 — file de travail, la plus récente d'abord. Transverse pour le personnel interne ; l'avocat
    * n'y voit que ses propres demandes.
    */
-  lister: async (statut: StatutCircuitFrais | null, page = 0, size = 20): Promise<PageReponse<DemandeFrais>> => {
+  lister: async (statut: StatutCircuitFrais | null, page = 0, size = TAILLE_PAGE): Promise<PageReponse<DemandeFrais>> => {
     const { data } = await apiClient.get<PageReponse<DemandeFrais>>("/frais/demandes", {
       params: { statut: statut ?? undefined, page, size },
     });

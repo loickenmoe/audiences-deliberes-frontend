@@ -2,15 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CLES } from "@/hooks/const";
+import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { constitutionService, type DecisionConstitution } from "@/services/constitutionService";
 import type { StatutConstitution } from "@/types/enums";
 
 /** `null` : tout l'historique. */
-export function useConstitutions(statut: StatutConstitution | null) {
+export function useConstitutions(statut: StatutConstitution | null, page = 0, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.constitutions, statut ?? "toutes"],
-    queryFn: () => constitutionService.lister(statut),
+    queryKey: [CLES.constitutions, statut ?? "toutes", page, size],
+    queryFn: () => constitutionService.lister(statut, page, size),
   });
 }
 
@@ -34,10 +34,10 @@ export function useDeciderConstitution() {
   });
 }
 
-export function useRepertoire(nom: string) {
+export function useRepertoire(nom: string, page = 0, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.repertoire, nom],
-    queryFn: () => constitutionService.repertoire(nom || undefined),
+    queryKey: [CLES.repertoire, nom, page, size],
+    queryFn: () => constitutionService.repertoire(nom || undefined, page, size),
     // Garder la liste affichée pendant la recherche suivante.
     placeholderData: (precedent) => precedent,
   });

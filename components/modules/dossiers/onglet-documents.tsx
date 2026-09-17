@@ -87,7 +87,7 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
   if (requete.error) return <EtatErreur message={messageErreur(requete.error)} />;
 
   // Les documents supprimés restent dans la réponse, marqués : ils ne doivent pas s'afficher ici.
-  const documents = (requete.data ?? []).filter((document) => !document.estSupprime);
+  const documents = (requete.data?.content ?? []).filter((document) => !document.estSupprime);
 
   return (
     <div className="flex flex-col gap-5">
@@ -144,7 +144,7 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                         variante="secondaire"
                         taille="sm"
                         onClick={() => setApercu(document)}
-                        aria-label={`${tdoc("consulter")} — ${document.nomFichier}`}
+                        aria-label={`${tdoc("consulter")} - ${document.nomFichier}`}
                       >
                         <Eye size={14} aria-hidden />
                         {tdoc("consulter")}
@@ -153,7 +153,7 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                         variante="secondaire"
                         taille="sm"
                         onClick={() => void telecharger(document)}
-                        aria-label={`${tdoc("telecharger")} — ${document.nomFichier}`}
+                        aria-label={`${tdoc("telecharger")} - ${document.nomFichier}`}
                       >
                         <Download size={14} aria-hidden />
                       </Button>
@@ -162,7 +162,7 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                           variante="secondaire"
                           taille="sm"
                           onClick={() => setASupprimer(document)}
-                          aria-label={`${suppressionDirecte ? tdoc("supprimer") : tdoc("demanderSuppression")} — ${document.nomFichier}`}
+                          aria-label={`${suppressionDirecte ? tdoc("supprimer") : tdoc("demanderSuppression")} - ${document.nomFichier}`}
                         >
                           <Trash2 size={14} aria-hidden />
                         </Button>

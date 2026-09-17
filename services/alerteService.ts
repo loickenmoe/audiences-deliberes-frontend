@@ -1,5 +1,6 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { Alerte, ConfigurationSysteme } from "@/types/domaine";
+import type { Alerte, ConfigurationSysteme, StatistiquesDiffusion } from "@/types/domaine";
 import type { StatutAlerte, TypeAlerte } from "@/types/enums";
 
 /**
@@ -13,14 +14,26 @@ export const alerteService = {
   /**
    * #45 — les notifications du compte connecté, de la plus récente à la plus ancienne côté
    * backend. `statut` omis : les deux statuts confondus.
+   *
+   * `type` et `dossierId` sont arrivés en Q-102 : avec dix-sept types d'alerte et des rappels à J-7,
+   * J-3 et J-1, la liste se remplit vite. Ils sont filtrés **par le serveur** — les rejouer ici
+   * n'aurait cherché que dans la page affichée, et le décompte aurait menti.
    */
   mesNotifications: async (
     statut: StatutAlerte | null,
     page = 0,
-    size = 20,
+    size = TAILLE_PAGE,
+    type?: TypeAlerte,
+    dossierId?: number,
   ): Promise<PageReponse<Alerte>> => {
     const { data } = await apiClient.get<PageReponse<Alerte>>("/alertes/mes-notifications", {
-      params: { ...(statut ? { statut } : {}), page, size },
+      params: {
+        ...(statut ? { statut } : {}),
+        ...(type ? { type } : {}),
+        ...(dossierId ? { dossierId } : {}),
+        page,
+        size,
+      },
     });
     return data;
   },
@@ -37,6 +50,23 @@ export const alerteService = {
    */
   modifierSeuil: async (type: TypeAlerte, seuil: number): Promise<ConfigurationSysteme> => {
     const { data } = await apiClient.put<ConfigurationSysteme>("/alertes/seuils", { type, seuil });
+    return data;
+  },
+
+  /**
+   * #51 — DJ et DJA. Taux de délivrance du canal applicatif sur une fenêtre (backend Q-109).
+   *
+   * La fenêtre est **obligatoire** côté backend, et c'est délibéré : un taux cumulé depuis la mise
+   * en service masquerait une panne récente sous des mois de bon fonctionnement. Les dates sont au
+   * format ISO (`AAAA-MM-JJ`), bornes incluses.
+   */
+  statistiquesDiffusion: async (
+    dateDebut: string,
+    dateFin: string,
+  ): Promise<StatistiquesDiffusion> => {
+    const { data } = await apiClient.get<StatistiquesDiffusion>("/alertes/statistiques-diffusion", {
+      params: { dateDebut, dateFin },
+    });
     return data;
   },
 };

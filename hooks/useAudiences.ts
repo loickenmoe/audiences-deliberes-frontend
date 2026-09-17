@@ -2,23 +2,23 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CLES } from "@/hooks/const";
+import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { audienceService } from "@/services/audienceService";
 import type { CreerAlarme, PlanifierAudience, ReprogrammerAlarme } from "@/types/domaine";
 import type { PeriodeCalendrier } from "@/types/enums";
 
-export function useAudiencesDossier(dossierId: number) {
+export function useAudiencesDossier(dossierId: number, page = 0, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.audiencesDossier, dossierId],
-    queryFn: () => audienceService.listerAudiences(dossierId),
+    queryKey: [CLES.audiencesDossier, dossierId, page, size],
+    queryFn: () => audienceService.listerAudiences(dossierId, page, size),
     enabled: Number.isFinite(dossierId) && dossierId > 0,
   });
 }
 
-export function useAlarmesDossier(dossierId: number) {
+export function useAlarmesDossier(dossierId: number, page = 0, size = TAILLE_PAGE) {
   return useQuery({
-    queryKey: [CLES.alarmesDossier, dossierId],
-    queryFn: () => audienceService.listerAlarmes(dossierId),
+    queryKey: [CLES.alarmesDossier, dossierId, page, size],
+    queryFn: () => audienceService.listerAlarmes(dossierId, page, size),
     enabled: Number.isFinite(dossierId) && dossierId > 0,
   });
 }

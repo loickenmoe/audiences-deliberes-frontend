@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Champ, Select, Textarea } from "@/components/ui/champ";
 import { Dialog } from "@/components/ui/dialog";
 import { useSolliciterConstitution } from "@/hooks/useConstitutions";
+import { TAILLE_ANNUAIRE } from "@/hooks/const";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { messageErreur } from "@/lib/api/errors";
 
@@ -29,7 +30,7 @@ export function ModaleConstitution({
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
-  const intervenants = useIntervenants();
+  const intervenants = useIntervenants({ size: TAILLE_ANNUAIRE });
   const solliciter = useSolliciterConstitution();
   const [prestataireId, setPrestataireId] = useState("");
   const [motif, setMotif] = useState("");
@@ -59,7 +60,7 @@ export function ModaleConstitution({
     }
   }
 
-  const liste = intervenants.data ?? [];
+  const liste = intervenants.data?.content ?? [];
 
   return (
     <Dialog
@@ -92,7 +93,7 @@ export function ModaleConstitution({
               <option value="">{t("choisirPrestataire")}</option>
               {liste.map((intervenant) => (
                 <option key={intervenant.id} value={intervenant.id}>
-                  {intervenant.nom} — {td(`TypeIntervenant.${intervenant.type}` as never)}
+                  {intervenant.nom} - {td(`TypeIntervenant.${intervenant.type}` as never)}
                 </option>
               ))}
             </Select>
