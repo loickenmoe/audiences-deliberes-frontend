@@ -105,11 +105,15 @@ test("consulter l'audit y laisse sa propre trace (Q-112)", async ({ browser }) =
   const dj = await pageConnectee(browser, "dj.test");
   await ouvrirAudit(dj);
 
-  await dj.getByLabel("Action", { exact: true }).selectOption({ label: "Consultation de l'audit" });
-  const ligne = dj.getByRole("row", { name: /Consultation de l'audit/ }).first();
+  // Par **valeur** et non par libelle : le code est stable d'une langue a l'autre, et insensible au
+  // style d'apostrophe. Une premiere version selectionnait « Consultation de l'audit » avec une
+  // apostrophe droite, quand la traduction porte une apostrophe typographique.
+  await dj.getByLabel("Action", { exact: true }).selectOption("AUDIT_CONSULTE");
+  const ligne = dj.getByRole("row", { name: /Consultation de l/ }).first();
   await expect(ligne).toBeVisible({ timeout: 30_000 });
   // Les critères employés figurent dans la trace : une trace sans critères ne dirait presque rien.
-  await expect(ligne).toContainText(/perimetre/);
+  // La clé s'affiche traduite (« Portée ») et non brute : QF-24 vaut aussi pour la trace elle-même.
+  await expect(ligne).toContainText(/Portée/);
 
   await dj.context().close();
 });
@@ -180,4 +184,45 @@ test("l'écran des paramètres porte l'auteur de la dernière modification (Q-11
     await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
     await dja.context().close();
   }
+});
+
+/**
+ * QF-24 — close par Q-112 : la colonne Action et les cles de details sont traduites.
+ *
+ * Signale par le porteur du projet en recette : en anglais, ces deux colonnes restaient en francais.
+ * C'etait un defaut connu et jusque-la insoluble — on ne traduit pas une phrase libre. Q-111 ayant
+ * pose un code type sur chaque ligne, la traduction est devenue une simple correspondance.
+ */
+test("en anglais, la nature de l'action et les cles de details sont traduites (QF-24)", async ({
+  browser,
+}) => {
+  const page = await pageConnectee(browser, "dj.test");
+
+  /*
+   * On se connecte **puis** on bascule, dans cet ordre. La langue vit dans un cookie posé par le
+   * sélecteur, pas dans la locale du navigateur : ouvrir un contexte en `en-US` ne traduit rien.
+   * Et basculer avant la connexion traduit le formulaire, que l'aide `seConnecter` cherche alors
+   * en français. C'est aussi le geste d'un vrai utilisateur : il bascule depuis l'application.
+   */
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  await page.goto("/admin/audit");
+  await expect(page.getByRole("heading", { name: "Audit", level: 1 })).toBeVisible({ timeout: 60_000 });
+
+  const action = page.getByLabel("Action", { exact: true });
+  await expect.poll(() => action.locator("option").count(), { timeout: 30_000 }).toBeGreaterThan(1);
+  // Le filtre lui-meme est traduit : choisir une entree en francais pour voir un tableau en anglais
+  // aurait ete le pire des deux mondes.
+  await action.selectOption("CONFIGURATION_MODIFIEE");
+
+  const ligne = page.getByRole("row", { name: /Setting changed/ }).first();
+  await expect(ligne).toBeVisible({ timeout: 30_000 });
+  // Et les cles de details, qui n'avaient jamais ete traduites nulle part.
+  await expect(ligne).toContainText(/Setting/);
+  await expect(ligne).toContainText(/Previous value/);
+  // Plus aucune trace du libelle francais du backend.
+  await expect(page.getByText("Modification de la configuration")).toHaveCount(0);
+
+  await page.context().close();
 });

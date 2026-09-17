@@ -216,5 +216,6 @@ test("la fiche est traduite", async ({ page }) => {
 
   // L'historique est rédigé en français par le serveur : la fiche le dit au lieu de le cacher.
   await page.getByRole("tab", { name: "History" }).click();
-  await expect(page.getByText("History entries are written by the server, in French.")).toBeVisible();
+  // QF-24 close par Q-112 : l'avertissement a disparu, parce que les libelles sont traduits.
+  await expect(page.getByText(/written by the server, in French/)).toHaveCount(0);
 });

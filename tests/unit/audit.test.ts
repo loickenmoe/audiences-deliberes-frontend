@@ -9,6 +9,8 @@
  */
 import { HttpResponse, http, type JsonBodyType } from "msw";
 import { setupServer } from "msw/node";
+import { readFileSync } from "node:fs";
+
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { CAPACITES, peut } from "@/lib/rbac";
@@ -137,5 +139,65 @@ describe("garde de l'audit", () => {
   it("ne se confond avec aucune autre capacité d'administration", () => {
     expect(CAPACITES.consulterAudit).not.toBe(CAPACITES.administrerConfigurations);
     expect(CAPACITES.consulterAudit).not.toBe(CAPACITES.superviserAlertes);
+  });
+});
+
+/**
+ * QF-24 — la traduction des libelles d'action et des cles de details.
+ *
+ * Ce que ces tests protegent : la **couverture**. Un code ajoute au backend sans traduction ici
+ * s'afficherait en brut, et personne ne le verrait avant la recette anglaise.
+ */
+describe("libelles d'historique (QF-24)", () => {
+  /** Forme minimale des fichiers de messages, limitee a ce que ces tests interrogent. */
+  interface Messages {
+    fiche: Record<string, unknown>;
+    historique: { actions: Record<string, string>; details: Record<string, string> };
+  }
+
+  const fr = JSON.parse(readFileSync("messages/fr.json", "utf8")) as Messages;
+  const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as Messages;
+
+  const actionsFr = fr.historique.actions;
+  const actionsEn = en.historique.actions;
+  const detailsFr = fr.historique.details;
+  const detailsEn = en.historique.details;
+
+  /**
+   * Les 44 valeurs de `TypeActionHistorique` (backend Q-111, plus AUDIT_CONSULTE en Q-112). Un
+   * ecart avec l'enumeration se verrait ici avant de se voir a l'ecran.
+   */
+  it("traduit les 44 natures d'action dans les deux langues", () => {
+    expect(Object.keys(actionsFr)).toHaveLength(44);
+    expect(Object.keys(actionsEn)).toEqual(Object.keys(actionsFr));
+  });
+
+  it("traduit les 52 cles de details dans les deux langues", () => {
+    expect(Object.keys(detailsFr)).toHaveLength(52);
+    expect(Object.keys(detailsEn)).toEqual(Object.keys(detailsFr));
+  });
+
+  /** Une traduction vide serait pire qu'une absente : elle afficherait un blanc, sans repli. */
+  it("n'a aucun libelle vide", () => {
+    for (const table of [actionsFr, actionsEn, detailsFr, detailsEn]) {
+      for (const [cle, valeur] of Object.entries(table)) {
+        expect(valeur.trim(), `libellé de ${cle}`).not.toBe("");
+      }
+    }
+  });
+
+  /**
+   * Le francais et l'anglais doivent differer sur l'essentiel : deux tables identiques signaleraient
+   * une traduction oubliee, recopiee depuis le francais.
+   */
+  it("distingue reellement les deux langues", () => {
+    const identiques = Object.keys(actionsFr).filter((cle) => actionsFr[cle] === actionsEn[cle]);
+    expect(identiques).toHaveLength(0);
+  });
+
+  /** La cle d'avertissement de QF-24 n'a plus de raison d'etre : elle s'excusait du defaut corrige. */
+  it("ne conserve plus l'avertissement de langue", () => {
+    expect(fr.fiche).not.toHaveProperty("historiqueLangue");
+    expect(en.fiche).not.toHaveProperty("historiqueLangue");
   });
 });

@@ -9,6 +9,7 @@ import { Champ, Input, Select } from "@/components/ui/champ";
 import { TAILLE_PAGE } from "@/hooks/const";
 import { useAudit } from "@/hooks/useAudit";
 import { useLibelles } from "@/hooks/useLibelles";
+import { useLibellesHistorique } from "@/hooks/useLibellesHistorique";
 import { useUtilisateurs } from "@/hooks/useReferentiels";
 import type { PerimetreAudit } from "@/services/auditService";
 import type { HistoriqueAction } from "@/types/domaine";
@@ -49,6 +50,7 @@ function valeurLisible(valeur: unknown): string {
 export function ConsultationAudit() {
   const t = useTranslations("audit");
   const { nomUtilisateur } = useLibelles();
+  const { libelleAction, libelleDetail } = useLibellesHistorique();
   const utilisateurs = useUtilisateurs();
 
   const [perimetre, setPerimetre] = useState<PerimetreAudit>("TOUT");
@@ -95,7 +97,10 @@ export function ConsultationAudit() {
       {
         id: "action",
         header: t("colonneAction"),
-        cell: ({ row }: { row: { original: HistoriqueAction } }) => row.original.action,
+        // QF-24 : le libellé vient du **code typé**, pas de la phrase du backend. Celle-ci reste
+        // le repli, pour qu'un code non encore traduit s'affiche lisiblement plutôt qu'en brut.
+        cell: ({ row }: { row: { original: HistoriqueAction } }) =>
+          libelleAction(row.original.code, row.original.action),
       },
       {
         id: "details",
@@ -107,7 +112,7 @@ export function ConsultationAudit() {
             <dl className="flex flex-col gap-0.5">
               {Object.entries(details).map(([cle, valeur]) => (
                 <div key={cle} className="flex gap-1">
-                  <dt className="text-texte-tertiaire">{cle}</dt>
+                  <dt className="text-texte-tertiaire">{libelleDetail(cle)}</dt>
                   <dd className="font-medium">{valeurLisible(valeur)}</dd>
                 </div>
               ))}
@@ -116,7 +121,7 @@ export function ConsultationAudit() {
         },
       },
     ],
-    [t, nomUtilisateur],
+    [t, nomUtilisateur, libelleAction, libelleDetail],
   );
 
   /**
@@ -203,9 +208,13 @@ export function ConsultationAudit() {
             onChange={(evenement) => filtrer(() => setCode(evenement.target.value))}
           >
             <option value="">{t("toutesLesActions")}</option>
+            {/*
+              Le libellé du filtre est traduit comme celui des lignes (QF-24) : sans cela, on aurait
+              choisi une entrée en français pour voir se remplir un tableau en anglais.
+            */}
             {actionsDisponibles.map((option) => (
               <option key={option.code} value={option.code}>
-                {option.libelle}
+                {libelleAction(option.code, option.libelle)}
               </option>
             ))}
           </Select>
