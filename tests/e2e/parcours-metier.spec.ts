@@ -1,5 +1,6 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { ligneDansLaFile } from "./files-de-travail";
 
 /**
  * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
@@ -160,7 +161,8 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   // L'Assistante la valide : elle devient alors consultable par le juriste (RG-INT-10).
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/publications");
-  const ligne = assistante.getByRole("row", { name: new RegExp(`DOS-${marque}`) }).first();
+  // File FIFO et paginée : la publication qu'on vient de déposer est en queue, pas en tête.
+  const ligne = await ligneDansLaFile(assistante, new RegExp(`DOS-${marque}`));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
 
   // Q-98 : la pièce du compte rendu s'ouvre depuis la publication elle-même — c'est ce qui
@@ -228,7 +230,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
   // Le DJ arbitre : la demande lui est parvenue, nommée par son fichier et son dossier (Q-79).
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/ged/demandes-suppression");
-  const ligne = dj.getByRole("row", { name: new RegExp(nom) });
+  const ligne = await ligneDansLaFile(dj, new RegExp(nom));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
   await expect(ligne).toContainText(`DOS-${marque}`);
   await dj.context().close();

@@ -1,5 +1,6 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { ligneDansLaFile } from "./files-de-travail";
 
 /**
  * Publications, constitutions et répertoire (écrans 13, 31, 32, 34, 35) **contre le backend réel et
@@ -154,7 +155,8 @@ test("l'Assistante valide une pièce : invisible avant, consultable ensuite par 
   await menu(assistante).getByRole("link", { name: "Publications" }).click();
   await assistante.waitForURL(/\/publications/, { timeout: 60_000 });
   await expect(assistante.getByRole("button", { name: "À valider" })).toHaveAttribute("aria-pressed", "true");
-  await assistante.getByRole("row", { name: new RegExp(reference) }).getByRole("link", { name: `Pièce - ${nom}` }).click();
+  const ligne = await ligneDansLaFile(assistante, reference);
+  await ligne.getByRole("link", { name: `Pièce - ${nom}` }).click();
   await assistante.waitForURL(/\/publications\/\d+$/, { timeout: 60_000 });
   await expect(assistante.getByText(nom, { exact: true })).toBeVisible();
   await assistante.getByRole("region", { name: "Validation" }).getByRole("button", { name: "Valider" }).click();

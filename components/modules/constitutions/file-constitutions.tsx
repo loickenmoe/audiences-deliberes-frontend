@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { StatutChip } from "@/components/global/statut-chip";
-import { DateHeureValeur, DialogueConfirmation } from "@/components/metier";
+import { DateHeureValeur, DialogueConfirmation, Pagination } from "@/components/metier";
 import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Button } from "@/components/ui/button";
 import { Champ, Textarea } from "@/components/ui/champ";
@@ -41,9 +41,18 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesConstitutions(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0] as string }), [vues]);
-  const { filtres, definirFiltre } = useFiltresUrl(defauts);
+  /*
+   * `page` vient d'ici et non d'un état local : changer de vue remet alors de lui-même à la première
+   * page, et un lien partagé montre la file telle que son auteur la voyait.
+   */
+  const { filtres, definirFiltre, page, definirPage } = useFiltresUrl(defauts);
   const vue: CleVueConstitutions = vues.find((v) => v === filtres.vue) ?? vues[0];
-  const requete = useConstitutions(vue === "aSigner" ? "EN_ATTENTE" : null);
+  /*
+   * La file est paginée côté serveur, dix lignes par page. Elle l'a toujours été : ce qui manquait,
+   * c'était le moyen d'atteindre les suivantes. La vue « à signer » étant la plus ancienne d'abord,
+   * une demande fraîche restait invisible passé la dixième en attente.
+   */
+  const requete = useConstitutions(vue === "aSigner" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderConstitution();
   const peutSigner = peut(roles, "signerConstitution");
   const [signature, setSignature] = useState<DemandeConstitution | null>(null);
@@ -193,6 +202,19 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
           </table>
         </div>
       )}
+
+      {/*
+        Rendue dès qu'une page suivante existe : une file tronquée sans le dire est pire qu'une file
+        longue, car rien n'avertit celui qui signe qu'il lui manque des demandes.
+      */}
+      {requete.data && requete.data.totalPages > 1 ? (
+        <Pagination
+          page={page}
+          totalPages={requete.data.totalPages}
+          totalElements={requete.data.totalElements}
+          onChangement={definirPage}
+        />
+      ) : null}
 
       <DialogueConfirmation
         ouvert={signature !== null}

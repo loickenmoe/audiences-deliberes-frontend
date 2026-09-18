@@ -162,7 +162,7 @@ notification applicative (Q-52).
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ✅ (fichier et dossier nommés, aperçu, rejet motivé, historique — Q-79) |
+| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ✅ (fichier et dossier nommés, aperçu, rejet motivé, historique — Q-79 ; paginée — QF-50) |
 | 37 | Rapport journalier | `/ged/rapport-journalier` | JUR, DJ, DJA, AST | `GET /ged/rapport-journalier?date=` | F10 | ✅ (état vide explicite ; ouvert à 4 profils — Q-80) |
 
 **`DELETE /ged/documents/{id}` a deux comportements** selon le profil résolu côté serveur :
