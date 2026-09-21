@@ -45,7 +45,20 @@ export default defineConfig({
     trace: "on-first-retry",
     locale: "fr-FR",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  /**
+   * **Le Chrome installé sur le poste, et non le Chromium que Playwright télécharge.**
+   *
+   * `npx playwright install` échoue sur les postes de la banque : `cdn.playwright.dev` y est
+   * injoignable — le téléchargement reste à 0 % puis expire, sans proxy configuré pour le
+   * contourner. Sans navigateur, les 165 parcours ne démarrent même pas : ils échouent en une
+   * milliseconde sur `browserType.launch`, ce qui se lit à tort comme une régression.
+   *
+   * `channel: "chrome"` fait tourner la suite sur le Chrome déjà présent. L'écart avec le
+   * Chromium figé de Playwright est réel mais mince — Chrome 153 contre Chrome for Testing 153
+   * — et il vaut mieux qu'une suite qu'on ne peut pas exécuter du tout. Le jour où le CDN
+   * s'ouvre, retirer cette ligne restaure le navigateur épinglé.
+   */
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], channel: "chrome" } }],
   webServer: {
     /**
      * **Build de production, pas serveur de développement.**
