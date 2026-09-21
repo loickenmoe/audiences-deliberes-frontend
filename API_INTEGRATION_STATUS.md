@@ -283,6 +283,8 @@ nuls tant que la décision n'est pas rendue.
 | — | GET | `/historique/exports?page&size` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | GET | `/historique/exports/{id}/telechargement` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | GET | `/historique/exports/verification?empreinte` 🆕 Q-114 | **DJ + DJA** | 43 (vérification) | F18 | ✅ |
+| — | GET | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **SH + JURISTE** | file des constitutions | F18 | ✅ |
+| — | PUT | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **JURISTE** | file des constitutions | F18 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la

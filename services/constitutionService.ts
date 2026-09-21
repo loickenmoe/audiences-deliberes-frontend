@@ -1,10 +1,19 @@
 import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { AvocatRepertoire, DemandeConstitution } from "@/types/domaine";
+import type { AvocatRepertoire, DemandeConstitution, LettreConstitution } from "@/types/domaine";
 import type { StatutConstitution } from "@/types/enums";
 
 /** Signature, ou rejet toujours motivé (RG-INT-08). */
 export type DecisionConstitution = { decision: "VALIDEE" } | { decision: "REJETEE"; motifRejet: string };
+
+/**
+ * Ce qu'un rédacteur enregistre : la lettre, moins ce que le serveur décide seul — son identifiant,
+ * son numéro proposé, son gel.
+ */
+export type RedactionLettre = Omit<
+  LettreConstitution,
+  "id" | "demandeId" | "numeroPropose" | "modifiable" | "dateGeneration" | "dateModification"
+>;
 
 /** Constitutions de prestataires (#35, #36, #60) et répertoire des avocats (#37). */
 export const constitutionService = {
@@ -32,6 +41,32 @@ export const constitutionService = {
    */
   decider: async (id: number, decision: DecisionConstitution): Promise<DemandeConstitution> => {
     const { data } = await apiClient.put<DemandeConstitution>(`/constitutions/prestataires/${id}/validation`, decision);
+    return data;
+  },
+
+  /**
+   * La lettre d'une demande — brouillon ou pièce signée (backend Q-115 B2).
+   *
+   * Lisible par le **juriste** qui l'a rédigée comme par le **SH** qui doit la signer : refuser cette
+   * lecture au second reviendrait à lui demander de signer sans voir.
+   */
+  lettre: async (demandeId: number): Promise<LettreConstitution> => {
+    const { data } = await apiClient.get<LettreConstitution>(`/constitutions/prestataires/${demandeId}/lettre`);
+    return data;
+  },
+
+  /**
+   * Enregistre la rédaction — **juriste seul**. Le SH consulte, accepte ou rejette ; il ne récrit
+   * pas, ce qui préserve le sens de la seconde signature.
+   *
+   * **409** si la lettre est déjà signée : une pièce versée au dossier ne se retouche pas, une
+   * correction passe par une nouvelle demande. **409** également si le numéro est déjà employé.
+   */
+  redigerLettre: async (demandeId: number, lettre: RedactionLettre): Promise<LettreConstitution> => {
+    const { data } = await apiClient.put<LettreConstitution>(
+      `/constitutions/prestataires/${demandeId}/lettre`,
+      lettre,
+    );
     return data;
   },
 

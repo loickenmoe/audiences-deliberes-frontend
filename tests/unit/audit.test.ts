@@ -178,11 +178,12 @@ describe("libelles d'historique (QF-24)", () => {
   const detailsEn = en.historique.details;
 
   /**
-   * Les 44 valeurs de `TypeActionHistorique` (backend Q-111, plus AUDIT_CONSULTE en Q-112). Un
-   * ecart avec l'enumeration se verrait ici avant de se voir a l'ecran.
+   * Les valeurs de `TypeActionHistorique` (backend Q-111, plus AUDIT_CONSULTE en Q-112 et
+   * LETTRE_CONSTITUTION_REDIGEE en Q-115 B2). Un ecart avec l'enumeration se verrait ici avant de
+   * se voir a l'ecran — et c'est ce garde-fou qui a rappele d'ajouter la traduction du code.
    */
-  it("traduit les 44 natures d'action dans les deux langues", () => {
-    expect(Object.keys(actionsFr)).toHaveLength(44);
+  it("traduit les 45 natures d'action dans les deux langues", () => {
+    expect(Object.keys(actionsFr)).toHaveLength(45);
     expect(Object.keys(actionsEn)).toEqual(Object.keys(actionsFr));
   });
 

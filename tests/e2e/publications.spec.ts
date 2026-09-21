@@ -298,3 +298,80 @@ test("le répertoire est trié par charge croissante ; le SH ne voit ni publicat
   await expect(sh.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
   await sh.context().close();
 });
+
+/**
+ * La rédaction de la lettre de constitution (backend Q-115 B2).
+ *
+ * Ce parcours vérifie la répartition des rôles, qui est tout le sens du jalon : **le juriste rédige,
+ * le supérieur hiérarchique consulte** avant de signer. Lui refuser la lecture reviendrait à lui
+ * demander de signer sans voir ; lui donner la plume viderait la seconde signature de son sens.
+ *
+ * Et une fois signée, la lettre est **figée** : elle est partie chez un huissier et figure dans la
+ * GED. La retoucher ferait mentir la pièce — une correction passe par une nouvelle demande.
+ */
+test("le juriste rédige la lettre, le SH la consulte, puis elle est figée (Q-115 B2)", async ({
+  browser,
+}) => {
+  const { id: dossierId, reference } = await dossier();
+
+  // ── Le juriste sollicite, puis rédige ────────────────────────────────────────
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto(`/dossiers/${dossierId}`);
+  await juriste.getByRole("button", { name: "Solliciter un prestataire" }).click();
+  const modale = juriste.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
+  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: "Me Claire Avocat - Avocat" });
+  await modale.getByLabel("Motif de la demande", { exact: true }).fill("Saisie-attribution urgente");
+  await modale.getByRole("button", { name: "Soumettre" }).click();
+  await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+
+  await menu(juriste).getByRole("link", { name: "Constitutions" }).click();
+  await juriste.waitForURL(/\/constitutions/, { timeout: 60_000 });
+  const ligneJuriste = await ligneDansLaFile(juriste, reference);
+  await ligneJuriste.getByRole("button", { name: "Rédiger la lettre" }).click();
+
+  const lettre = juriste.getByRole("dialog", { name: "Lettre de constitution" });
+  // Le numéro n'est pas encore attribué : il le sera à la signature, pour ne pas en brûler un.
+  await expect(lettre.getByText(/Le numéro est attribué à la signature/)).toBeVisible();
+  await lettre.getByLabel("Objet", { exact: true }).fill("Constitution aux fins de saisie-attribution");
+  await lettre.getByLabel("Corps de la lettre", { exact: true })
+    .fill("Nous vous constituons aux fins de saisie-attribution sur les comptes du débiteur.");
+  await lettre.getByRole("button", { name: "Enregistrer la lettre" }).click();
+  await expect(juriste.getByText("Lettre enregistrée.")).toBeVisible();
+  await juriste.context().close();
+
+  // ── Le SH consulte, sans pouvoir récrire ────────────────────────────────────
+  const sh = await pageConnectee(browser, "sh.test");
+  await menu(sh).getByRole("link", { name: "Constitutions" }).click();
+  await sh.waitForURL(/\/constitutions/, { timeout: 60_000 });
+  const ligneSh = await ligneDansLaFile(sh, reference);
+  await ligneSh.getByRole("button", { name: "Consulter la lettre" }).click();
+
+  const lue = sh.getByRole("dialog", { name: "Lettre de constitution" });
+  await expect(lue.getByLabel("Objet", { exact: true })).toHaveValue("Constitution aux fins de saisie-attribution");
+  // Il lit ce qu'il va signer, et rien de plus : aucun champ n'est ouvert, aucun bouton n'enregistre.
+  await expect(lue.getByLabel("Objet", { exact: true })).toBeDisabled();
+  await expect(lue.getByRole("button", { name: "Enregistrer la lettre" })).toHaveCount(0);
+  // Deux boutons portent « Fermer » : la croix de l'en-tête et celui du pied. On vise le second,
+  // qui est celui que l'utilisateur atteint après avoir lu — l'ordre du DOM les départage.
+  await lue.getByRole("button", { name: "Fermer" }).last().click();
+
+  // ── La signature fige la lettre ─────────────────────────────────────────────
+  await ligneSh.getByRole("button", { name: `Signer la constitution - Me Claire Avocat` }).click();
+  await sh.getByRole("dialog", { name: "Signer la constitution ?" }).getByRole("button", { name: "Signer" }).click();
+  await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
+  await sh.context().close();
+
+  /*
+   * Une fois signée, le chemin d'édition **disparaît** : le juriste ne se voit plus proposer de
+   * rédiger, et c'est la lettre elle-même — le PDF versé au dossier — qu'il consulte désormais.
+   * Le gel n'est donc pas un message à lire, c'est une action qui n'est plus offerte ; le serveur
+   * la refuse de son côté par un 409, au cas où l'on passerait outre l'écran.
+   */
+  const relecture = await pageConnectee(browser, "juriste.test");
+  await relecture.goto("/constitutions");
+  await relecture.getByRole("button", { name: "Toutes" }).click();
+  const ligneFigee = await ligneDansLaFile(relecture, reference);
+  await expect(ligneFigee.getByRole("button", { name: "Rédiger la lettre" })).toHaveCount(0);
+  await expect(ligneFigee.getByRole("button", { name: `Lettre de constitution - ${reference}` })).toBeVisible();
+  await relecture.context().close();
+});

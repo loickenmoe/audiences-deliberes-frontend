@@ -644,6 +644,37 @@ export interface Publication {
 // ─────────────────────────────── Constitutions et répertoire ───────────────────────────────
 
 /** Demande de constitution d'un prestataire (#35, #36, #60), nommée depuis Q-86 backend. */
+/**
+ * Le contenu d'une lettre de constitution (backend Q-115 B2).
+ *
+ * **Le juriste rédige, le SH consulte.** C'est le même document lu par deux rôles : `modifiable` dit
+ * lequel des deux usages reste ouvert, plutôt que de laisser l'écran le déduire d'un statut.
+ *
+ * `numero` est **nul tant que la lettre est un brouillon** : il est attribué à la signature, pour ne
+ * pas brûler un numéro sur une demande sans suite — la série ne repart jamais à un, et les trous y
+ * resteraient.
+ */
+export interface LettreConstitution {
+  id: number;
+  demandeId: number;
+  numero: number | null;
+  numeroPropose: number | null;
+  /** `First Bank/DAJR/DR/CM/ABN/18` — l'écran le découpe sur « / », le serveur le stocke d'un bloc. */
+  suffixeNumero: string;
+  lieu: string;
+  destinataireNom: string | null;
+  destinataireQualite: string | null;
+  destinataireVille: string | null;
+  concerne: string | null;
+  objet: string;
+  corps: string;
+  signataire: string;
+  /** Faux dès que la lettre est signée : une pièce versée au dossier ne se retouche pas. */
+  modifiable: boolean;
+  dateGeneration: string | null;
+  dateModification: string | null;
+}
+
 export interface DemandeConstitution {
   id: number;
   dossierId: number;

@@ -3,7 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CLES, TAILLE_PAGE } from "@/hooks/const";
-import { constitutionService, type DecisionConstitution } from "@/services/constitutionService";
+import {
+  constitutionService,
+  type DecisionConstitution,
+  type RedactionLettre,
+} from "@/services/constitutionService";
 import type { StatutConstitution } from "@/types/enums";
 
 /** `null` : tout l'historique. */
@@ -11,6 +15,35 @@ export function useConstitutions(statut: StatutConstitution | null, page = 0, si
   return useQuery({
     queryKey: [CLES.constitutions, statut ?? "toutes", page, size],
     queryFn: () => constitutionService.lister(statut, page, size),
+  });
+}
+
+/**
+ * La lettre d'une demande (backend Q-115 B2).
+ *
+ * `enabled` laisse l'appelant n'ouvrir la requête qu'au moment où l'écran de rédaction s'affiche :
+ * charger la lettre de chaque ligne d'une file de trente demandes serait trente appels pour rien.
+ */
+export function useLettreConstitution(demandeId: number | null) {
+  return useQuery({
+    queryKey: [CLES.constitutions, "lettre", demandeId],
+    queryFn: () => constitutionService.lettre(demandeId as number),
+    enabled: demandeId !== null,
+  });
+}
+
+/**
+ * Enregistre la rédaction du juriste.
+ *
+ * La file des constitutions est invalidée au passage : la date de modification y figure, et une
+ * lettre rédigée à l'instant ne doit pas s'y afficher comme si elle ne l'avait jamais été.
+ */
+export function useRedigerLettre() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ demandeId, lettre }: { demandeId: number; lettre: RedactionLettre }) =>
+      constitutionService.redigerLettre(demandeId, lettre),
+    onSuccess: () => void client.invalidateQueries({ queryKey: [CLES.constitutions] }),
   });
 }
 

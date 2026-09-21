@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { StatutChip } from "@/components/global/statut-chip";
 import { DateHeureValeur, DialogueConfirmation, Pagination } from "@/components/metier";
+import { ModaleLettre } from "@/components/modules/constitutions/modale-lettre";
 import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Button } from "@/components/ui/button";
 import { Champ, Textarea } from "@/components/ui/champ";
@@ -55,9 +56,12 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const requete = useConstitutions(vue === "aSigner" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderConstitution();
   const peutSigner = peut(roles, "signerConstitution");
+  const peutRediger = peut(roles, "solliciterConstitution");
   const [signature, setSignature] = useState<DemandeConstitution | null>(null);
   const [rejet, setRejet] = useState<DemandeConstitution | null>(null);
   const [lettre, setLettre] = useState<DemandeConstitution | null>(null);
+  /** La lettre ouverte dans la modale (Q-115 B2) : rédigeable par le juriste, lue par le SH. */
+  const [lettreOuverte, setLettreOuverte] = useState<number | null>(null);
 
   async function signer() {
     if (!signature) return;
@@ -165,6 +169,23 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex justify-end gap-1">
+                        {enAttente ? (
+                          /*
+                            Le même bouton pour deux rôles, et deux droits (Q-115 B2). Le juriste
+                            rédige ; le SH consulte avant de signer — lui refuser cette lecture
+                            reviendrait à lui demander de signer sans voir, et lui donner la plume
+                            viderait la seconde signature de son sens.
+                          */
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setLettreOuverte(demande.id)}
+                            aria-label={peutRediger ? t("redigerLettre") : t("consulterLettre")}
+                          >
+                            <FileText size={14} aria-hidden />
+                            {peutRediger ? t("redigerLettre") : t("consulterLettre")}
+                          </Button>
+                        ) : null}
                         {enAttente && peutSigner ? (
                           <>
                             <Button taille="sm" onClick={() => setSignature(demande)} aria-label={t("signerAria", { prestataire: demande.prestataireNom })}>
@@ -215,6 +236,13 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
           onChangement={definirPage}
         />
       ) : null}
+
+      <ModaleLettre
+        demandeId={lettreOuverte}
+        redactionPossible={peutRediger}
+        ouvert={lettreOuverte !== null}
+        onFermeture={() => setLettreOuverte(null)}
+      />
 
       <DialogueConfirmation
         ouvert={signature !== null}
