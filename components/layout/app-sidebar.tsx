@@ -15,6 +15,12 @@ import { cn } from "@/lib/utils";
  *
  * L'état actif est signalé par un filet rouge **et** par `aria-current` : la couleur seule ne
  * suffirait pas.
+ *
+ * **Responsive (F17).** En `w-64 shrink-0` sur toutes les largeurs, cette barre poussait le contenu
+ * hors de l'écran — 324 px de débordement horizontal mesurés sur un mobile de 375 px, qui rendaient
+ * l'application inutilisable. En dessous de `lg`, elle devient une **bande horizontale** défilant
+ * dans son propre conteneur : toutes les entrées restent atteignables, sans menu à bascule ni
+ * JavaScript supplémentaire.
  */
 export function AppSidebar({ roles }: { roles: readonly string[] }) {
   const chemin = usePathname();
@@ -24,13 +30,35 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
   return (
     <nav
       aria-label={t("principale")}
-      className="flex w-64 shrink-0 flex-col border-r border-bordure bg-surface"
+      className="flex w-full shrink-0 flex-col border-b border-bordure bg-surface lg:h-svh lg:w-64 lg:border-b-0 lg:border-r"
     >
-      <div className="flex h-16 items-center border-b border-bordure px-5">
-        <Logo hauteur={24} />
+      {/*
+        Le nom de l'application est déjà dans l'en-tête : sur mobile, ce bandeau ferait doublon.
+
+        **Le logo ramène à l'accueil (QF-49).** Convention universelle, et devenue nécessaire depuis
+        QF-47 : l'en-tête ne défile plus, ce logo est donc un point d'ancrage **en permanence à
+        l'écran**, à l'endroit exact où l'on a l'habitude de cliquer. Inerte, il faisait une zone
+        morte au meilleur emplacement de l'interface.
+
+        La cible est `/` sans condition : QF-19 a tranché une racine unique pour tous les profils,
+        dont le contenu s'adapte — l'avocat y trouve au moins sa file de notifications.
+
+        Le lien porte son propre libellé et le logo devient décoratif : un lien doit annoncer sa
+        destination, pas le propriétaire de l'image qu'il contient. Pas d'`aria-current` en
+        revanche — l'entrée « Accueil » ci-dessous le porte déjà, et deux éléments revendiquant la
+        page courante ne feraient que du bruit.
+      */}
+      <div className="hidden h-16 items-center border-b border-bordure px-5 lg:flex">
+        <Link
+          href="/"
+          aria-label={t("logoAccueil")}
+          className="rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-anthracite"
+        >
+          <Logo hauteur={24} decoratif />
+        </Link>
       </div>
 
-      <ul className="flex flex-1 flex-col gap-0.5 p-3">
+      <ul className="flex flex-1 flex-row gap-0.5 overflow-x-auto p-2 lg:flex-col lg:overflow-y-auto lg:p-3">
         {entrees.map(({ cle, href, icone: Icone }) => {
           const actif = chemin === href;
           return (
@@ -39,7 +67,7 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
                 href={href}
                 aria-current={actif ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded px-3 py-2 text-[length:var(--taille-sm)] transition-colors",
+                  "flex shrink-0 items-center gap-3 whitespace-nowrap rounded px-3 py-2 text-[length:var(--taille-sm)] transition-colors",
                   actif
                     ? "bg-surface-attenuee font-medium text-texte shadow-[inset_2px_0_0_var(--afb-rouge)]"
                     : "text-texte-secondaire hover:bg-surface-attenuee hover:text-texte",
@@ -53,7 +81,7 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
         })}
       </ul>
 
-      <p className="border-t border-bordure px-5 py-4 text-[length:var(--taille-xs)] text-texte-tertiaire">
+      <p className="hidden border-t border-bordure px-5 py-4 text-[length:var(--taille-xs)] text-texte-tertiaire lg:block">
         {t("modulesAVenir")}
       </p>
     </nav>

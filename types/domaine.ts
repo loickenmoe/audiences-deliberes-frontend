@@ -1,16 +1,32 @@
 import type {
   CategorieDossier,
+  DecisionValidationFrais,
+  EtapeValidationFrais,
   EtatDelibere,
   FormatDocument,
   ResultatDelibere,
+  CanalAlerte,
   StatutAlarme,
+  StatutAlerte,
   StatutExpedition,
   StatutAudience,
+  SensCondamnation,
+  StatutCircuitFrais,
+  StatutConstitution,
+  StatutPaiementCondamnation,
+  StatutPaiementFrais,
+  StatutPublication,
+  TypeArchiveJurisprudence,
   SeuilOrigine,
   StatutCycleVie,
   StatutValidation,
+  TypeAutrePublication,
+  TypeAlerte,
   TypeEtape,
+  TypeRapport,
   TypeIntervenant,
+  TypePublication,
+  TypeValeurConfiguration,
 } from "@/types/enums";
 
 /**
@@ -65,6 +81,16 @@ export interface CreerClient {
   nom: string;
   email?: string;
   telephone?: string;
+}
+
+/**
+ * `PUT /clients/{id}` — la référence n'y figure pas : elle est l'identifiant du client et reste
+ * figée (décision du 2026-09-22). Un champ facultatif vidé part en `null` et devient absent.
+ */
+export interface ModifierClient {
+  nom: string;
+  email: string | null;
+  telephone: string | null;
 }
 
 /**
@@ -139,9 +165,87 @@ export interface Dossier {
 export interface HistoriqueAction {
   id: number;
   utilisateurId: number | null;
+  /**
+   * Nature typée de l'action (backend Q-111). C'est elle qui fait foi et sur laquelle portent les
+   * filtres ; `action` n'en est que la formulation lisible, et ce qui variait autrefois dans la
+   * phrase — nom de l'étape, sens d'une décision, clé de configuration — se trouve dans `details`.
+   */
+  code: string;
   action: string;
   details: Record<string, unknown> | null;
   dateAction: string;
+}
+
+/**
+ * Une page d'audit (backend Q-112).
+ *
+ * Même forme qu'une page, plus `actionsDisponibles` : les natures réellement présentes, qui
+ * alimentent un filtre à **liste fermée**. Depuis le typage des actions (Q-111) elle porte des codes
+ * et non des phrases, si bien qu'une clé de configuration ne produit plus une entrée par paramètre.
+ * Cette liste est indépendante des filtres en cours, sinon en choisir une ferait disparaître les
+ * autres et l'on ne pourrait plus changer d'avis.
+ *
+ * ⚠ **L'audit ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée, à
+ * l'exception de celle de cet écran : l'absence de ligne ne prouve donc pas l'absence d'action.
+ */
+export interface PageAudit {
+  content: HistoriqueAction[];
+  totalPages: number;
+  totalElements: number;
+  actionsDisponibles: OptionActionAudit[];
+}
+
+/**
+ * Une entrée du filtre par nature d'action : le **code** part au serveur, le **libellé** s'affiche.
+ *
+ * Le libellé est dérivé de l'énumération côté backend plutôt que lu sur la ligne — les entrées
+ * reprises par la migration V18 portent encore leur ancienne phrase, et une même nature se serait
+ * alors présentée plusieurs fois dans la liste.
+ */
+export interface OptionActionAudit {
+  code: string;
+  libelle: string;
+}
+
+/**
+ * Une archive d'audit produite et scellée (backend Q-113).
+ *
+ * `empreinte` est le **SHA-256 du fichier déposé**. C'est lui qui permet de démontrer, des années
+ * plus tard, que le fichier produit est celui qui a été scellé — et donc de distinguer une archive
+ * d'une simple copie, qu'on peut rééditer en trois minutes.
+ *
+ * La clé de stockage n'est **pas** exposée : elle ne servirait qu'à contourner l'endpoint de
+ * téléchargement, seul endroit où la récupération est tracée.
+ */
+export interface ArchiveAudit {
+  id: number;
+  /**
+   * Référence lisible, `AUD-2026-0042` (backend Q-114). Elle **désigne** l'archive, là où
+   * l'empreinte la **prouve** : on l'écrit dans un courrier, on la dicte au téléphone, et c'est par
+   * elle qu'on retrouve l'empreinte. C'est aussi la seule chose identifiant l'archive que le fichier
+   * puisse porter — tout ce qui décrit son contenu changerait ses octets en y étant écrit.
+   */
+  reference: string;
+  utilisateurId: number | null;
+  dateExport: string;
+  dateDebut: string;
+  dateFin: string;
+  perimetre: string;
+  format: "PDF" | "EXCEL";
+  lignes: number;
+  empreinte: string;
+  tailleOctets: number;
+}
+
+/**
+ * Résultat d'une vérification d'empreinte (backend Q-114).
+ *
+ * `reconnue` à faux n'est **pas une erreur** : c'est une réponse, et souvent celle qu'on redoutait —
+ * le document qu'on vous a remis ne correspond à aucune archive.
+ */
+export interface VerificationArchive {
+  reconnue: boolean;
+  archive: ArchiveAudit | null;
 }
 
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */
@@ -186,13 +290,37 @@ export interface ValiderSensibilite {
 }
 
 /** Demande de suppression créée quand un juriste auteur supprime une pièce (#40, réponse 202). */
+export type StatutSuppression = "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
+
+/**
+ * Demande de suppression (#40 en 202, #41, #63). Depuis Q-79, elle nomme ce qu'elle vise — fichier,
+ * type, dossier — y compris quand le document a déjà été supprimé.
+ */
 export interface DemandeSuppression {
   id: number;
   documentId: number;
+  documentNom: string;
+  typeDocument: string | null;
+  dossierId: number;
+  referenceDossier: string;
   demandeurId: number | null;
   motif: string | null;
-  statut: "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
+  statut: StatutSuppression;
+  valideParId: number | null;
+  motifRejet: string | null;
   dateDemande: string;
+  dateDecision: string | null;
+  /** Relance automatique aux DJ/DJA toutes les 72 h tant que la demande attend. */
+  dateDerniereRelance: string | null;
+}
+
+/** Rapport journalier GED (#42) : zéros et liste vide un jour sans activité, jamais d'erreur. */
+export interface RapportJournalier {
+  date: string;
+  dossiersManipules: number;
+  piecesAjoutees: number;
+  affairesNouvelles: number;
+  planificationActes: { dossierId: number; reference: string; datePlanifiee: string }[];
 }
 
 /** Issue d'une suppression : immédiate (DJ/DJA, 200) ou soumise à décision (juriste, 202). */
@@ -260,6 +388,10 @@ export interface FiltresDossiers {
   reference?: string;
   clientId?: number;
   mesDossiers?: boolean;
+  /** Q-101 — `false` filtre les dossiers **non** sensibles ; `undefined` ne filtre pas. */
+  estSensible?: boolean;
+  /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
+  sensibiliteStatut?: StatutValidation;
   page?: number;
   size?: number;
 }
@@ -428,4 +560,394 @@ export interface CreerIntervenant {
   telephone?: string;
   compteKeycloak?: string;
   notification?: boolean;
+}
+
+/**
+ * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
+ * figés, l'identité se gérant dans Keycloak. La notification ne concerne qu'un autre prestataire.
+ */
+export interface ModifierIntervenant {
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+  notification: boolean | null;
+}
+
+// ─────────────────────────────── Frais d'avocats ───────────────────────────────
+
+/** Une décision du circuit (Q-82 backend) : qui, à quelle étape, quoi, pourquoi, quand. */
+export interface ValidationFrais {
+  etape: EtapeValidationFrais;
+  decision: DecisionValidationFrais;
+  motif: string | null;
+  utilisateurId: number | null;
+  utilisateurNom: string | null;
+  dateValidation: string | null;
+}
+
+/**
+ * Demande de frais (#23 à #28 et son détail, Q-82 backend). Elle se lit sans autre appel : dossier
+ * et avocat nommés, décisions du circuit dans l'ordre. `validationConjointeRequise` applique la
+ * règle RG-INT-03 (dossier sensible **ou** montant > `seuilApplicable`) — pour une demande qui n'a
+ * pas encore atteint l'opportunité, c'est ce qui l'attend.
+ *
+ * `piecesJustificatives` : des **noms** déclarés par l'avocat, pas des fichiers (QF-26).
+ */
+export interface DemandeFrais {
+  id: number;
+  dossierId: number;
+  referenceDossier: string;
+  avocatId: number;
+  avocatNom: string;
+  montant: number;
+  piecesJustificatives: string[];
+  statutCircuit: StatutCircuitFrais;
+  motifRejet: string | null;
+  statutPaiement: StatutPaiementFrais;
+  referenceFacture: string;
+  dossierSensible: boolean | null;
+  seuilApplicable: number;
+  validationConjointeRequise: boolean;
+  validations: ValidationFrais[];
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+// ─────────────────────────────── Publications ───────────────────────────────
+
+/** Commentaire d'un juriste (#33) : destiné au DJ et à la DJA, jamais à l'avocat (RG-INT-07). */
+export interface CommentairePublication {
+  id: number;
+  publicationId: number;
+  auteurId: number | null;
+  auteurNom: string | null;
+  contenu: string;
+  createdAt: string;
+}
+
+/** Correspondance unique du DJ/DJA à l'avocat (#34). */
+export interface CorrespondanceAvocat {
+  id: number;
+  publicationId: number;
+  auteurId: number | null;
+  auteurNom: string | null;
+  contenu: string;
+  createdAt: string;
+}
+
+/**
+ * Publication d'un avocat (#32, #59) : compte rendu d'audience (`contenu`, `audienceDate`) ou autre
+ * publication (`typeDocument`, `nomFichier`). Depuis Q-86 backend, elle est nommée ;
+ * `urlTelechargement` (10 minutes), `commentaires` et `correspondance` n'existent que sur le détail.
+ */
+export interface Publication {
+  id: number;
+  type: TypePublication;
+  dossierId: number;
+  avocatId: number;
+  dateDepot: string;
+  statutValidation: StatutPublication;
+  motifRejet: string | null;
+  restrictionAccesId: number | null;
+  audienceId: number | null;
+  contenu: string | null;
+  typeDocument: TypeAutrePublication | null;
+  referenceDossier: string;
+  avocatNom: string;
+  audienceDate: string | null;
+  restrictionAccesNom: string | null;
+  nomFichier: string | null;
+  urlTelechargement: string | null;
+  commentaires: CommentairePublication[] | null;
+  correspondance: CorrespondanceAvocat | null;
+}
+
+// ─────────────────────────────── Constitutions et répertoire ───────────────────────────────
+
+/** Demande de constitution d'un prestataire (#35, #36, #60), nommée depuis Q-86 backend. */
+/**
+ * Le contenu d'une lettre de constitution (backend Q-115 B2).
+ *
+ * **Le juriste rédige, le SH consulte.** C'est le même document lu par deux rôles : `modifiable` dit
+ * lequel des deux usages reste ouvert, plutôt que de laisser l'écran le déduire d'un statut.
+ *
+ * `numero` est **nul tant que la lettre est un brouillon** : il est attribué à la signature, pour ne
+ * pas brûler un numéro sur une demande sans suite — la série ne repart jamais à un, et les trous y
+ * resteraient.
+ */
+export interface LettreConstitution {
+  id: number;
+  demandeId: number;
+  numero: number | null;
+  numeroPropose: number | null;
+  /** `First Bank/DAJR/DR/CM/ABN/18` — l'écran le découpe sur « / », le serveur le stocke d'un bloc. */
+  suffixeNumero: string;
+  lieu: string;
+  destinataireNom: string | null;
+  destinataireQualite: string | null;
+  destinataireVille: string | null;
+  concerne: string | null;
+  objet: string;
+  corps: string;
+  signataire: string;
+  /** Faux dès que la lettre est signée : une pièce versée au dossier ne se retouche pas. */
+  modifiable: boolean;
+  dateGeneration: string | null;
+  dateModification: string | null;
+}
+
+export interface DemandeConstitution {
+  id: number;
+  dossierId: number;
+  prestataireId: number;
+  demandeurId: number;
+  motif: string;
+  statut: StatutConstitution;
+  valideParId: number | null;
+  motifRejet: string | null;
+  /** Lettre générée à la signature du SH, déposée dans la GED du dossier. */
+  lettreDocumentId: number | null;
+  dateDemande: string;
+  dateDecision: string | null;
+  referenceDossier: string;
+  prestataireNom: string;
+  prestataireType: TypeIntervenant;
+  demandeurNom: string | null;
+  valideParNom: string | null;
+}
+
+/**
+ * Avocat du répertoire (#37), trié par charge croissante. `indicateurCharge` : dossiers actifs ;
+ * `indicateurPerformance` : part des délibérés favorables, entre 0 et 1 (0 sans délibéré).
+ */
+export interface AvocatRepertoire {
+  id: number;
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+  indicateurCharge: number;
+  indicateurPerformance: number;
+}
+
+// ─────────────────────────────── Décisions définitives et jurisprudence ───────────────────────────────
+
+/** Adjudication (#51) : décision définitive favorable à la Banque, sur une étape clôturée (RG-DEF-01/02). */
+export interface Adjudication {
+  id: number;
+  dossierId: number;
+  etapeId: number;
+  beneficiaire: string;
+  statutComptabilisation: string | null;
+  repriseProvision: boolean;
+  restitutionSoulte: boolean;
+  mutation: boolean;
+  reliquat: number;
+  dateDecision: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Condamnation pécuniaire (#52, #53) : seul son statut de paiement évolue (RG-DEF-03/04). */
+export interface Condamnation {
+  id: number;
+  dossierId: number;
+  etapeId: number | null;
+  sens: SensCondamnation;
+  naturePaiement: string;
+  statutPaiement: StatutPaiementCondamnation;
+  dateDecision: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Décisions d'un dossier (Q-88 backend), chaque liste de la plus récente à la plus ancienne. */
+export interface DecisionsDossier {
+  adjudications: Adjudication[];
+  condamnations: Condamnation[];
+}
+
+export interface CreerAdjudication {
+  /** Étape `CLOTURE` du dossier (400 sinon, RG-DEF-01). */
+  etapeId: number;
+  beneficiaire: string;
+  statutComptabilisation: string;
+  repriseProvision: boolean;
+  restitutionSoulte: boolean;
+  mutation: boolean;
+  /** ≥ 0 (400 sinon). */
+  reliquat: number;
+  dateDecision: string;
+}
+
+/** Aucune précondition d'étape (Q-59) ; le statut de paiement commence toujours `EN_ATTENTE` (QF-40). */
+export interface CreerCondamnation {
+  etapeId?: number;
+  sens: SensCondamnation;
+  naturePaiement: string;
+  dateDecision: string;
+}
+
+/** Jurisprudence (#54, #55) ; `urlTelechargement` pré-signée, valable 10 minutes. */
+export interface Jurisprudence {
+  id: number;
+  dossierId: number | null;
+  typeArchive: TypeArchiveJurisprudence;
+  motsCles: string[];
+  natureDecision: string;
+  juridiction: string;
+  dateDecision: string;
+  urlTelechargement: string | null;
+  createdAt: string;
+}
+
+/** Indexation obligatoire (RG-DEF-05) ; fichier PDF de 10 Mo au plus ; dossier facultatif. */
+export interface ArchiverJurisprudence {
+  dossierId?: number;
+  typeArchive: TypeArchiveJurisprudence;
+  motsCles: string[];
+  natureDecision: string;
+  juridiction: string;
+  dateDecision: string;
+}
+
+// ─────────────────────────────── Alertes et configurations ───────────────────────────────
+
+/**
+ * Notification destinée à un utilisateur (#45, #46). Le backend l'enregistre **avant** de tenter
+ * la diffusion temps réel : une alerte n'est jamais perdue, seul le push peut manquer.
+ *
+ * `declencheur` est le texte métier, parfois préfixé d'un marqueur technique anti-doublon du type
+ * `[delibereId:12] ` — l'affichage le retire (`lib/alertes.ts`).
+ */
+export interface Alerte {
+  id: number;
+  dossierId: number | null;
+  destinataireId: number;
+  type: TypeAlerte;
+  declencheur: string;
+  canal: CanalAlerte;
+  statut: StatutAlerte;
+  dateDeclenchement: string;
+  dateTraitement: string | null;
+}
+
+/**
+ * Paramètre système (#47, #48). Les quatre derniers champs décrivent la **règle de saisie** de la
+ * clé (backend Q-91) : le formulaire d'administration s'y conforme au lieu de redéclarer les
+ * bornes, et le backend refuse de toute façon une valeur hors règle.
+ */
+export interface ConfigurationSysteme {
+  cle: string;
+  valeur: string;
+  description: string | null;
+  modifiablePar: string;
+  dateModification: string | null;
+  /**
+   * Auteur de la dernière modification (backend Q-112). Nul tant que le paramètre n'a jamais
+   * été modifié, ou si le compte de l'auteur a été supprimé depuis.
+   */
+  dernierAuteurId: number | null;
+  typeValeur: TypeValeurConfiguration | null;
+  valeurMinimale: number | null;
+  valeurMaximale: number | null;
+  valeursPossibles: string[];
+}
+
+/**
+ * Supervision du canal applicatif sur une fenêtre (backend Q-109, NF-ALR-02).
+ *
+ * **Deux taux, et les confondre serait la première erreur.** `tauxDelivrance` répond à l'exigence
+ * NF-ALR-02 — le canal a-t-il fait son travail ? Seuls les échecs comptent contre nous : une alerte
+ * remise plus tard, parce que son destinataire n'était pas connecté, a bien été délivrée, le canal
+ * applicatif comprenant la liste des notifications. `tauxDiffusionTempsReel` mesure tout autre
+ * chose : à quel point les gens sont connectés quand on les alerte. Un chiffre bas sur le second
+ * n'est pas un défaut ; sur le premier, si.
+ *
+ * `observees` est le dénominateur réel — les alertes antérieures à la migration V16 n'ont pas
+ * d'issue enregistrée et sont exclues. `nonTraitees` ne participe à aucun taux : une alerte
+ * délivrée que personne n'a ouverte relève d'un autre problème.
+ */
+export interface StatistiquesDiffusion {
+  dateDebut: string;
+  dateFin: string;
+  observees: number;
+  diffusees: number;
+  differees: number;
+  echecs: number;
+  nonTraitees: number;
+  tauxDelivrance: number;
+  tauxDiffusionTempsReel: number;
+  seuilRespecte: boolean;
+}
+
+// ─────────────────────────────── Reporting ───────────────────────────────
+
+/**
+ * Tableau de bord exécutif (#50, écran 39). Six indicateurs **temps réel, tous dossiers
+ * confondus** : le backend ne les restreint ni à une période ni au portefeuille de l'appelant.
+ *
+ * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage — `Pourcentage` le met en
+ * forme.
+ */
+export interface TableauDeBord {
+  nbDossiersActifs: number;
+  nbAudiencesPlanifiees: number;
+  nbDemandesFraisEnAttente: number;
+  nbProrogationsAlerte: number;
+  tauxSuccesRecouvrement: number;
+  provisionsReprises: number;
+}
+
+/**
+ * Rapport d'activité sur une période (#49, écran 40). `type` n'est qu'une **étiquette** : ce sont
+ * `dateDebut` et `dateFin` qui bornent le calcul (backend Q-63).
+ *
+ * Le backend répond **204 quand les quatre compteurs sont nuls** : c'est un état vide, pas une
+ * erreur — le service le rend comme `null`.
+ */
+export interface Rapport {
+  type: TypeRapport;
+  dateDebut: string;
+  dateFin: string;
+  nbNouveauxDossiers: number;
+  nbAudiencesTenues: number;
+  nbDemandesFraisDeposees: number;
+  nbDeliberesEnregistres: number;
+  tauxSuccesRecouvrement: number;
+  provisionsReprises: number;
+}
+
+// ─────────────────────────────── Portail Avocat ───────────────────────────────
+
+/**
+ * Dépôt d'une demande de frais par l'avocat (#23, écran 30, US 4.1).
+ *
+ * `piecesJustificatives` porte les **chemins de stockage** renvoyés par
+ * `portailAvocatService.deposerPieceJustificative` (QF-26 corrigée par le backend Q-97) — c'est ce
+ * que le dictionnaire des données prévoit : « chemins ou références des pièces ». Les fichiers sont
+ * donc bien téléversés, en deux temps.
+ */
+export interface DeposerFrais {
+  dossierId: number;
+  /** > 0 (400 sinon). */
+  montant: number;
+  /** Au moins une pièce (400 sinon) : les clés renvoyées par le téléversement. */
+  piecesJustificatives: string[];
+  /** Unique — un doublon revient en 409 `ERR-006` sur ce champ. */
+  referenceFacture: string;
+}
+
+/**
+ * Dépôt d'un compte rendu d'audience (#29, écran 33, US 5.1). L'audience doit appartenir au
+ * dossier, sans quoi le backend répond 404.
+ *
+ * Le **récit** est obligatoire ; la pièce qui l'étaye est facultative (backend Q-98) et se passe
+ * à part, en multipart.
+ */
+export interface DeposerCompteRendu {
+  dossierId: number;
+  audienceId: number;
+  contenu: string;
+  /** Identifiant du seul lecteur autorisé ; omis, la publication suit les droits ordinaires. */
+  restrictionAcces?: number;
 }

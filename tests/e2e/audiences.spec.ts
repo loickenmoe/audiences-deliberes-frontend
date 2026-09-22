@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
@@ -30,6 +31,15 @@ function dansJours(jours: number) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * La ligne dont la **cellule de statut** vaut exactement `statut`. Un `filter({ hasText })` ne suffit
+ * pas : il compare une sous-chaîne sans tenir compte de la casse, et le bouton « Marquer traitée »
+ * d'une alarme active suffisait à la compter parmi les « Traitée ».
+ */
+function ligneAuStatut(page: Page, statut: string) {
+  return page.getByRole("row").filter({ has: page.getByRole("cell", { name: statut, exact: true }) });
+}
+
 /** Crée un dossier et fait passer son instance « En cours » : la condition d'une audience. */
 async function dossierEnCours(page: Page) {
   const reference = `DOS-AUD-${suffixe()}`;
@@ -41,8 +51,7 @@ async function dossierEnCours(page: Page) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-AUD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-AUD");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
@@ -63,8 +72,7 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
@@ -143,14 +151,14 @@ test("marquer une alarme traitée la clôt sans la remplacer (QF-29)", async ({ 
   await creation.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByRole("row").filter({ hasText: "Appeler l’huissier" })).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Marquer traitée — Appeler l’huissier" }).click();
+  await page.getByRole("button", { name: "Marquer traitée - Appeler l’huissier" }).click();
   const confirmation = page.getByRole("dialog", { name: "Marquer l’alarme comme traitée" });
   await confirmation.getByRole("button", { name: "Marquer traitée" }).click();
 
   // Une seule ligne, close — contrairement à la reprogrammation, aucune remplaçante.
-  await expect(page.getByRole("row").filter({ hasText: "Traitée" })).toHaveCount(1);
+  await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
   await expect(page.getByRole("row").filter({ hasText: "Appeler l’huissier" })).toHaveCount(1);
-  await expect(page.getByRole("button", { name: "Reprogrammer — Appeler l’huissier" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reprogrammer - Appeler l’huissier" })).toHaveCount(0);
 });
 
 test("créer puis reprogrammer une alarme : l'ancienne est close, la nouvelle la reprend", async ({ page }) => {
@@ -165,15 +173,15 @@ test("créer puis reprogrammer une alarme : l'ancienne est close, la nouvelle la
   await creation.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByText("Alarme créée.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Reprogrammer — Relancer le greffe" }).click();
+  await page.getByRole("button", { name: "Reprogrammer - Relancer le greffe" }).click();
   const reprog = page.getByRole("dialog", { name: "Reprogrammer l’alarme" });
   await reprog.getByLabel("Échéance", { exact: true }).fill(`${dansJours(8)}T10:00`);
   await reprog.getByRole("button", { name: "Reprogrammer" }).click();
   await expect(page.getByText("Alarme reprogrammée.")).toBeVisible();
 
   // Deux lignes : l'ancienne « Traitée », la nouvelle « Active » qui la cite.
-  await expect(page.getByRole("row").filter({ hasText: "Traitée" })).toHaveCount(1);
-  await expect(page.getByRole("row").filter({ hasText: "Active" })).toContainText("Reprend une alarme précédente");
+  await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
+  await expect(ligneAuStatut(page, "Active")).toContainText("Reprend une alarme précédente");
 });
 
 test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel", async ({ page }) => {

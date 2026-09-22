@@ -10,12 +10,12 @@ export async function generateMetadata() {
 }
 
 export default async function PageClient({ params }: { params: Promise<{ id: string }> }) {
-  await exigerCapacite("consulterReferentiels");
+  const session = await exigerCapacite("consulterReferentiels");
 
   const { id } = await params;
   const clientId = Number.parseInt(id, 10);
   // Une URL malformée ne doit pas produire un appel `/clients/NaN` au backend.
   if (Number.isNaN(clientId) || clientId <= 0) notFound();
 
-  return <VueClient clientId={clientId} />;
+  return <VueClient clientId={clientId} roles={session.roles} />;
 }

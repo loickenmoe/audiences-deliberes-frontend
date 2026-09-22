@@ -23,6 +23,12 @@ export const CodeErreur = {
   REQUETE_INVALIDE: "ERR-VALIDATION",
   NON_AUTHENTIFIE: "ERR-UNAUTHENTICATED",
   DROITS_INSUFFISANTS: "ERR-FORBIDDEN",
+  /**
+   * Le compte porte `ROLE_AVOCAT` mais aucun avocat du référentiel ne lui est rattaché (Q-107).
+   * **Ce n'est pas un refus de droits** : c'est un état d'inscription, que l'interface explique au
+   * lieu de l'afficher comme un échec — cf. `estCompteAvocatNonRattache`.
+   */
+  AVOCAT_NON_RATTACHE: "ERR-AVOCAT-NON-RATTACHE",
   RESSOURCE_INTROUVABLE: "ERR-NOT-FOUND",
   CONFLIT: "ERR-CONFLICT",
   REGLE_METIER_VIOLEE: "ERR-BUSINESS-RULE",
@@ -179,6 +185,24 @@ function codeDepuisStatut(statut: number): string {
 }
 
 /** Message prêt à afficher, avec repli si l'erreur n'est pas une `ErreurApi`. */
+/**
+ * Vrai lorsque l'échec n'en est pas un : le compte connecté est bien un avocat, mais **aucune fiche
+ * du référentiel ne lui est rattachée**.
+ *
+ * Un avocat existe pour le métier parce qu'un juriste l'a inscrit au répertoire avec son identifiant
+ * de connexion (RG-INT-01, UC-INT-01) — jamais parce qu'il possède un compte. Tant que cette fiche
+ * n'existe pas, le portail n'a rien à montrer, et **l'utilisateur n'y peut rien**. Lui afficher
+ * « le chargement a échoué » le laisse devant un message technique sans action possible ni
+ * interlocuteur.
+ *
+ * Reconnaître le cas suppose un **code dédié**, pas une lecture du message : `ERR-FORBIDDEN` couvre
+ * aussi les vrais refus de droits, et comparer des phrases se briserait à la première reformulation
+ * ou traduction.
+ */
+export function estCompteAvocatNonRattache(erreur: unknown): boolean {
+  return erreur instanceof ErreurApi && erreur.code === CodeErreur.AVOCAT_NON_RATTACHE;
+}
+
 export function messageErreur(erreur: unknown, repli = "Une erreur est survenue."): string {
   if (erreur instanceof ErreurApi) return erreur.message;
   return normaliserErreur(erreur).message || repli;

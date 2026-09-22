@@ -1,5 +1,7 @@
+import type { Session } from "next-auth";
 import { Toaster } from "sonner";
 
+import { AlertesProvider } from "@/providers/alertes.provider";
 import { AuthProvider } from "@/providers/session.provider";
 import { QueryProvider } from "@/providers/query.provider";
 
@@ -9,11 +11,16 @@ import { QueryProvider } from "@/providers/query.provider";
  * contrastes sans bénéfice métier. Les jetons restent structurés pour qu'un thème sombre puisse
  * être ajouté sans refonte.
  */
-export function AppProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+export function AppProvider({
+  children,
+  session,
+}: Readonly<{ children: React.ReactNode; session: Session | null }>) {
   return (
     <>
-      <AuthProvider>
-        <QueryProvider>{children}</QueryProvider>
+      <AuthProvider session={session}>
+        <QueryProvider>
+          <AlertesProvider>{children}</AlertesProvider>
+        </QueryProvider>
       </AuthProvider>
       <Toaster position="bottom-right" richColors closeButton />
     </>

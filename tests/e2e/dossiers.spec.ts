@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 
 /**
  * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
@@ -32,8 +33,7 @@ async function remplirTroncCommun(page: Page, reference: string, nature: string)
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
 }
 
 test("un juriste atteint les dossiers depuis la navigation", async ({ page }) => {
@@ -184,4 +184,123 @@ test("les écrans dossiers sont traduits", async ({ page }) => {
     timeout: 60_000,
   });
   await expect(page.getByLabel("Case nature", { exact: true })).toBeVisible();
+});
+
+/**
+ * Garde contre la perte d'une saisie (piste 2 du recensement).
+ *
+ * Ce que ce test protège n'est pas le dialogue lui-même, c'est la **saisie** : on vérifie qu'après
+ * avoir renoncé à partir, les champs sont toujours là. Un test qui s'arrêterait à l'apparition du
+ * dialogue passerait encore si la garde laissait filer le formulaire derrière elle.
+ */
+test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  const reference = `DOS-GARDE-${suffixe()}`;
+  await page.getByLabel("Référence", { exact: true }).fill(reference);
+
+  // Un clic sur la navigation : la garde doit s'interposer.
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  const dialogue = page.getByRole("dialog", { name: "Quitter sans enregistrer ?" });
+  await expect(dialogue).toBeVisible({ timeout: 10_000 });
+
+  // Renoncer : on reste sur le formulaire, et la saisie est intacte.
+  await dialogue.getByRole("button", { name: "Annuler" }).click();
+  await expect(page).toHaveURL(/\/dossiers\/nouveau/);
+  await expect(page.getByLabel("Référence", { exact: true })).toHaveValue(reference);
+
+  // Confirmer : on part pour de bon.
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Quitter sans enregistrer" }).click();
+  await page.waitForURL(/\/clients/, { timeout: 30_000 });
+});
+
+/** L'« Annuler » du formulaire exprime une intention explicite : il ne doit pas être doublé. */
+test("l'Annuler du formulaire n'est pas intercepté par la garde", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+  await page.getByLabel("Référence", { exact: true }).fill(`DOS-GARDE-${suffixe()}`);
+
+  await page.getByRole("link", { name: "Annuler" }).click();
+  await page.waitForURL(/\/dossiers$/, { timeout: 30_000 });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+/** Sans saisie, la garde reste muette : elle ne doit pas gêner une simple visite du formulaire. */
+test("un formulaire vierge se quitte sans confirmation", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
+  await page.waitForURL(/\/clients/, { timeout: 30_000 });
+});
+
+/**
+ * La bascule de langue n'est ni un lien ni un déchargement de page : c'est une action serveur qui
+ * pose un cookie et revalide la coquille. La garde ne l'intercepte donc pas, et `beforeunload` non
+ * plus — la saisie ne survit que parce que le rafraîchissement **réconcilie** l'arbre au lieu de le
+ * remonter. Rien ne garantit que cela reste vrai : un `redirect()` ajouté un jour à `changerLangue`
+ * viderait le formulaire en silence, sans qu'aucun autre test ne s'en aperçoive.
+ */
+test("changer de langue ne vide pas un formulaire en cours de saisie", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  const reference = `DOS-LANGUE-${suffixe()}`;
+  await page.getByLabel("Référence", { exact: true }).fill(reference);
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByLabel("Reference", { exact: true })).toHaveValue(reference, { timeout: 30_000 });
+});
+
+/**
+ * QF-44 — la règle des dix lignes, vérifiée là où l'utilisateur la voit.
+ *
+ * Ce test ne compte pas seulement dix lignes : il relève les références de la page 1, passe à la
+ * page 2, et vérifie qu'elle en montre **d'autres**. Un tableau qui perdrait les lignes au-delà de
+ * la dixième passerait un test qui se contenterait de compter.
+ */
+test("un tableau montre dix lignes, et la suite est sur la page suivante", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const lignes = page.getByRole("main").getByRole("row");
+  await expect(lignes.nth(1)).toBeVisible({ timeout: 30_000 });
+
+  // L'en-tête compte pour une ligne : dix lignes de données font onze au total.
+  const nbPage1 = await lignes.count();
+  if (nbPage1 <= 2) return; // jeu de données trop petit pour que la règle s'observe
+
+  expect(nbPage1).toBeLessThanOrEqual(11);
+  const referencesPage1 = await lignes.nth(1).innerText();
+
+  const suivant = page.getByRole("button", { name: "Page suivante" });
+  if (await suivant.isDisabled()) return; // une seule page : rien à comparer
+
+  await suivant.click();
+  await expect(page).toHaveURL(/page=1/);
+
+  /*
+   * `not.toHaveText` **réessaie** jusqu'à ce que la ligne change. Lire le texte juste après le clic
+   * attrapait encore l'ancienne page : le test échouait sur sa propre course, pas sur un défaut.
+   * C'est le cœur de l'exigence — la page suivante montre autre chose, rien n'est perdu.
+   */
+  await expect(page.getByRole("main").getByRole("row").nth(1)).not.toHaveText(referencesPage1, {
+    timeout: 30_000,
+  });
+});
+
+/** Le sélecteur de taille : dix pour lire, cinquante pour balayer. */
+test("le sélecteur de taille change le nombre de lignes et vit dans l'URL", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+  await expect(page.getByRole("main").getByRole("row").nth(1)).toBeVisible({ timeout: 30_000 });
+
+  await page.getByLabel("Lignes par page").selectOption("50");
+  await expect(page).toHaveURL(/taille=50/);
+
+  // Un lien partagé doit rouvrir la liste telle que son auteur la voyait.
+  await page.reload();
+  await expect(page.getByLabel("Lignes par page")).toHaveValue("50");
 });

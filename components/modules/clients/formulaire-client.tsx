@@ -10,32 +10,58 @@ import { Champ, Input } from "@/components/ui/champ";
 import { Dialog } from "@/components/ui/dialog";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
-import { useCreerClient } from "@/hooks/useClients";
+import { useCreerClient, useModifierClient } from "@/hooks/useClients";
+import type { Client } from "@/types/domaine";
 
 /**
- * Création d'un client.
+ * Création d'un client, ou correction d'un client existant quand `client` est fourni.
  *
- * Le schéma **reprend les contraintes Bean Validation du backend** (`CreerClientRequest`) : la
- * référence et le nom sont obligatoires, avec les mêmes longueurs maximales. Valider en amont évite
- * un aller-retour pour une faute que le formulaire pouvait voir ; le backend reste l'arbitre.
+ * Le schéma **reprend les contraintes Bean Validation du backend** (`CreerClientRequest`,
+ * `ModifierClientRequest`) : le nom est obligatoire, avec les mêmes longueurs maximales. Valider en
+ * amont évite un aller-retour pour une faute que le formulaire pouvait voir ; le backend reste
+ * l'arbitre.
+ *
+ * Un seul formulaire pour les deux usages, et non deux : ses règles de validation ne doivent pas
+ * pouvoir diverger entre la création et la correction d'un même client.
  */
 const CHAMPS = ["reference", "nom", "email", "telephone"] as const;
 
 /** `POST /clients` n'a qu'un seul conflit possible : la référence (ClientService, RG-CLI-01). */
 const CONFLIT_SUR_REFERENCE = { "ERR-CONFLICT": "reference" } as const;
 
-export function FormulaireClient({ ouvert, onFermeture }: { ouvert: boolean; onFermeture: () => void }) {
+export function FormulaireClient({
+  ouvert,
+  onFermeture,
+  client,
+}: {
+  ouvert: boolean;
+  onFermeture: () => void;
+  /** Le client à corriger. Absent : le formulaire crée un nouveau client. */
+  client?: Client;
+}) {
   const t = useTranslations("clients");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
+  const edition = client !== undefined;
   const creer = useCreerClient();
+  const modifier = useModifierClient(client?.id ?? 0);
+  const mutation = edition ? modifier : creer;
 
   const schema = z.object({
-    reference: z.string().trim().min(1, tm("champObligatoire")).max(50),
+    // En édition la référence est figée et n’est pas envoyée : un champ désactivé pouvant revenir
+    // vide de react-hook-form, l’exiger bloquerait la soumission pour une valeur qu’on ne transmet pas.
+    reference: edition ? z.string().optional() : z.string().trim().min(1, tm("champObligatoire")).max(50),
     nom: z.string().trim().min(1, tm("champObligatoire")).max(255),
     email: z.union([z.string().email(), z.literal("")]).optional(),
     telephone: z.string().max(20).optional(),
   });
+
+  const valeursInitiales = {
+    reference: client?.reference ?? "",
+    nom: client?.nom ?? "",
+    email: client?.email ?? "",
+    telephone: client?.telephone ?? "",
+  };
 
   const {
     register,
@@ -45,23 +71,35 @@ export function FormulaireClient({ ouvert, onFermeture }: { ouvert: boolean; onF
     formState: { errors },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { reference: "", nom: "", email: "", telephone: "" },
+    // `values` et non `defaultValues` : le client peut arriver après le premier rendu, et le
+    // formulaire doit alors se remplir de ses valeurs courantes.
+    values: valeursInitiales,
   });
 
   function fermer() {
-    reset();
-    creer.reset();
+    reset(valeursInitiales);
+    mutation.reset();
     onFermeture();
   }
 
   const soumettre = handleSubmit(async (valeurs) => {
     try {
-      await creer.mutateAsync({
-        reference: valeurs.reference,
-        nom: valeurs.nom,
-        email: valeurs.email || undefined,
-        telephone: valeurs.telephone || undefined,
-      });
+      if (edition) {
+        // Un champ vidé part en `null` : le backend l'enregistre comme absent.
+        await modifier.mutateAsync({
+          nom: valeurs.nom,
+          email: valeurs.email || null,
+          telephone: valeurs.telephone || null,
+        });
+      } else {
+        await creer.mutateAsync({
+          // Exigée par le schéma en création : jamais vide ici.
+          reference: valeurs.reference ?? "",
+          nom: valeurs.nom,
+          email: valeurs.email || undefined,
+          telephone: valeurs.telephone || undefined,
+        });
+      }
       fermer();
     } catch (erreur) {
       // Le doublon de référence client remonte en `ERR-CONFLICT` — code générique côté backend :
@@ -76,14 +114,14 @@ export function FormulaireClient({ ouvert, onFermeture }: { ouvert: boolean; onF
     <Dialog
       ouvert={ouvert}
       onFermeture={fermer}
-      titre={t("creerTitre")}
-      description={t("creerDescription")}
+      titre={edition ? t("modifierTitre") : t("creerTitre")}
+      description={edition ? t("modifierDescription") : t("creerDescription")}
       pied={
         <>
-          <Button variante="secondaire" onClick={fermer} disabled={creer.isPending}>
+          <Button variante="secondaire" onClick={fermer} disabled={mutation.isPending}>
             {tc("annuler")}
           </Button>
-          <Button onClick={() => void soumettre()} disabled={creer.isPending}>
+          <Button onClick={() => void soumettre()} disabled={mutation.isPending}>
             {tc("enregistrer")}
           </Button>
         </>
@@ -99,8 +137,21 @@ export function FormulaireClient({ ouvert, onFermeture }: { ouvert: boolean; onF
           </p>
         ) : null}
 
-        <Champ id="reference" label={t("colonneReference")} obligatoire erreur={errors.reference?.message}>
-          <Input id="reference" enErreur={!!errors.reference} {...register("reference")} />
+        {/* La référence est l'identifiant du client : saisie à la création, figée ensuite. */}
+        <Champ
+          id="reference"
+          label={t("colonneReference")}
+          obligatoire={!edition}
+          aide={edition ? t("referenceFigee") : undefined}
+          erreur={errors.reference?.message}
+        >
+          <Input
+            id="reference"
+            enErreur={!!errors.reference}
+            disabled={edition}
+            readOnly={edition}
+            {...register("reference")}
+          />
         </Champ>
 
         <Champ id="nom" label={t("colonneNom")} obligatoire erreur={errors.nom?.message}>

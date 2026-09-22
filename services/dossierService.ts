@@ -1,3 +1,4 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
   AuditSeuil,
@@ -6,6 +7,7 @@ import type {
   Dossier,
   EtapeProcedure,
   FiltresDossiers,
+  HistoriqueAction,
   ModifierAffectation,
   ValiderDerogation,
   ValiderSensibilite,
@@ -39,10 +41,33 @@ export const dossierService = {
         clientId: filtres.clientId ?? undefined,
         // `false` est le défaut du backend : ne pas l'envoyer garde l'URL lisible.
         mesDossiers: filtres.mesDossiers ? true : undefined,
+        // Q-101 : `estSensible=false` est un filtre légitime (les dossiers non sensibles), il ne
+        // doit donc pas être confondu avec « non renseigné ».
+        estSensible: filtres.estSensible ?? undefined,
+        sensibiliteStatut: filtres.sensibiliteStatut || undefined,
         page: filtres.page ?? 0,
-        size: filtres.size ?? 20,
+        size: filtres.size ?? TAILLE_PAGE,
       },
     });
+    return data;
+  },
+
+  /**
+   * Q-100 — l'historique complet d'un dossier, paginé.
+   *
+   * La fiche (#3) n'en embarque que la première page : RG-DOS-06 historise chaque action, et un
+   * dossier suivi plusieurs années en accumule des centaines qui voyageaient à chaque ouverture.
+   * **Aucune entrée n'est perdue** — les suivantes sont sur les pages suivantes, par cet endpoint.
+   */
+  historique: async (
+    dossierId: number,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<HistoriqueAction>> => {
+    const { data } = await apiClient.get<PageReponse<HistoriqueAction>>(
+      `/dossiers/${dossierId}/historique`,
+      { params: { page, size } },
+    );
     return data;
   },
 

@@ -14,6 +14,22 @@
  */
 export const ERREUR_RAFRAICHISSEMENT = "RafraichissementImpossible";
 
+/**
+ * Marqueur posé quand le service d'authentification est **injoignable** — réseau coupé, Keycloak
+ * arrêté, erreur serveur.
+ *
+ * <p>Le distinguer d'une session expirée n'est pas une nuance de vocabulaire. Les deux menaient au
+ * même message, « Votre session a expiré, reconnectez-vous » : un diagnostic faux, et une consigne
+ * **inapplicable** puisque se reconnecter suppose précisément que Keycloak réponde. L'utilisateur
+ * cherchait une erreur de sa part là où le service était à terre.
+ */
+export const ERREUR_AUTH_INDISPONIBLE = "AuthentificationIndisponible";
+
+/** Vrai si la session est inutilisable, quelle qu'en soit la raison. */
+export function sessionInutilisable(erreur: string | undefined): boolean {
+  return erreur === ERREUR_RAFRAICHISSEMENT || erreur === ERREUR_AUTH_INDISPONIBLE;
+}
+
 /** Marge avant expiration : le rafraîchissement doit aboutir avant la limite, pas pile dessus. */
 export const MARGE_MS = 5 * 60 * 1000;
 

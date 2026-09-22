@@ -12,7 +12,13 @@ import type { Role } from "@/types/enums";
  * `API_INTEGRATION_STATUS.md`, lui-même relevé endpoint par endpoint dans le code du backend.
  */
 
-/** Les cinq profils internes. Tous portent `ROLE_CONSULTATION` et `ROLE_SAISIE` (composite). */
+/**
+ * Les cinq profils internes. Tous portent `ROLE_CONSULTATION` et `ROLE_SAISIE` (composite).
+ *
+ * Depuis Q-81, `ROLE_DJ` et `ROLE_DJA` incluent aussi `ROLE_JURISTE` (composite) : leur jeton porte
+ * les deux, si bien que toute capacité « juriste » ci-dessous leur est ouverte **sans** qu'ils y
+ * soient listés. `profilPrincipal` garde le DJ et la DJA en tête, pour l'affichage.
+ */
 export const ROLES_INTERNES = [
   "ROLE_JURISTE",
   "ROLE_DJ",
@@ -64,24 +70,32 @@ export const CAPACITES = {
   consulterReferentiels: ["ROLE_CONSULTATION"],
   /** `POST /clients` — ROLE_SAISIE */
   creerClient: ["ROLE_SAISIE"],
+  /** `PUT /clients/{id}` — ROLE_SAISIE : qui peut créer un client peut en corriger une coquille. */
+  modifierClient: ["ROLE_SAISIE"],
   /** `POST /intervenants` — DJ, DJA */
   administrerIntervenants: ["ROLE_DJ", "ROLE_DJA"],
 
   // ── Audiences et délibérés ────────────────────────────────────────────────
   /** `POST .../audiences`, `PUT /audiences/{id}/compte-rendu`, alarmes — JURISTE */
   gererAudiences: ["ROLE_JURISTE"],
-  /** `GET /audiences/calendrier` — JURISTE, DJ (ni DJA ni Assistante) */
+  /**
+   * `GET /audiences/calendrier` — JURISTE, DJ. **L'Assistante n'y a pas accès ; la DJA, si** — par
+   * son `ROLE_JURISTE` composite, comme le DJ. Le commentaire disait auparavant « ni DJA ni
+   * Assistante » : c'était faux, et vérifié faux en exécution. La liste ci-dessous n'a jamais changé.
+   */
   consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ"],
   /** `POST .../deliberes`, prorogations, rabattement, expédition, recours — JURISTE */
   gererDeliberes: ["ROLE_JURISTE"],
 
   // ── Frais ─────────────────────────────────────────────────────────────────
-  /** `GET /frais/demandes` — AVOCAT, ASSISTANTE, DJA, DJ */
+  /** `GET /frais/demandes`, `GET /frais/demandes/{id}` (Q-82) — AVOCAT, ASSISTANTE, DJA, DJ */
   consulterFrais: ["ROLE_AVOCAT", "ROLE_ASSISTANTE", "ROLE_DJA", "ROLE_DJ"],
   /** `POST /frais/demandes` — AVOCAT */
   deposerFrais: ["ROLE_AVOCAT"],
-  /** `PUT .../conformite`, `PATCH .../paiement` — ASSISTANTE */
+  /** `PUT .../conformite` — ASSISTANTE */
   controlerConformiteFrais: ["ROLE_ASSISTANTE"],
+  /** `PATCH .../paiement` — ASSISTANTE */
+  enregistrerPaiementFrais: ["ROLE_ASSISTANTE"],
   /** `PUT .../opportunite` — DJA */
   controlerOpportuniteFrais: ["ROLE_DJA"],
   /** `POST .../validation-conjointe` — DJ et DJA */
@@ -98,10 +112,16 @@ export const CAPACITES = {
   transmettreCorrespondance: ["ROLE_DJ", "ROLE_DJA"],
   /** `POST /publications/cr-audience`, `POST /publications/autres` — AVOCAT */
   deposerPublication: ["ROLE_AVOCAT"],
-  /** `GET /repertoire/avocats` — JURISTE, ASSISTANTE (ni DJ ni DJA) */
+  /**
+   * `GET /repertoire/avocats` — JURISTE, ASSISTANTE. **Le DJ et la DJA y accèdent aussi**, par leur
+   * `ROLE_JURISTE` composite : mesuré, l'endpoint leur répond 200. Le commentaire disait « ni DJ ni
+   * DJA » ; seuls le SH et l'avocat en sont écartés.
+   */
   consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
-  /** `GET /constitutions/prestataires`, `POST` — SH, JURISTE */
+  /** `GET /constitutions/prestataires` — SH, JURISTE */
   consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE"],
+  /** `POST /constitutions/prestataires` — JURISTE */
+  solliciterConstitution: ["ROLE_JURISTE"],
   /** `PUT /constitutions/prestataires/{id}/validation` — SH */
   signerConstitution: ["ROLE_SH"],
 
@@ -114,8 +134,8 @@ export const CAPACITES = {
   supprimerDocument: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
   /** `GET /ged/demandes-suppression`, `PUT .../approbation-suppression` — DJ, DJA */
   arbitrerSuppressions: ["ROLE_DJ", "ROLE_DJA"],
-  /** `GET /ged/rapport-journalier` — JURISTE */
-  consulterRapportJournalier: ["ROLE_JURISTE"],
+  /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE (Q-80 backend) */
+  consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE"],
 
   // ── Décisions définitives ─────────────────────────────────────────────────
   /** adjudications, condamnations, jurisprudences (écriture) — JURISTE */
@@ -124,14 +144,39 @@ export const CAPACITES = {
   consulterJurisprudence: ["ROLE_CONSULTATION"],
 
   // ── Pilotage et administration ────────────────────────────────────────────
-  /** `GET /tableau-de-bord` — DJ **seul** (cf. QF-04, arbitrage en attente) */
-  consulterTableauDeBord: ["ROLE_DJ"],
-  /** `GET /rapports` — JURISTE **seul** (cf. QF-04, arbitrage en attente) */
+  /** `GET /tableau-de-bord` — DJ et **DJA** (backend Q-95 ; US 8.5 ne nommait que le DJ) */
+  consulterTableauDeBord: ["ROLE_DJ", "ROLE_DJA"],
+  /** `GET /rapports` — JURISTE ; le DJ l'atteint par son `ROLE_JURISTE` composite (Q-81, QF-04) */
   genererRapport: ["ROLE_JURISTE"],
   /** `GET /configurations` — CONSULTATION */
   consulterConfigurations: ["ROLE_CONSULTATION"],
-  /** `PUT /configurations/{cle}`, `PUT /alertes/seuils` — DJ */
-  administrerConfigurations: ["ROLE_DJ"],
+  /**
+   * `PUT /configurations/{cle}`, `PUT /alertes/seuils` — DJ **et DJA** (backend Q-108).
+   *
+   * Ouvert à la DJA sur décision du porteur du projet, pour la **continuité de service** : le DJ
+   * absent, plus personne ne pouvait relever un seuil. L'ouverture est **à sens unique** — le
+   * contrôle d'opportunité reste réservé à la DJA, sans quoi RG-INT-03 perdrait la séparation de ses
+   * deux étapes.
+   */
+  administrerConfigurations: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `GET /alertes/statistiques-diffusion` — DJ, DJA (backend Q-109).
+   *
+   * Distincte d'`administrerConfigurations` bien qu'elle porte aujourd'hui les mêmes rôles : c'est
+   * une **lecture** de supervision, pas une écriture d'administration. Les confondre ferait qu'un
+   * assouplissement futur de l'une déplacerait l'autre sans qu'on l'ait voulu.
+   */
+  superviserAlertes: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `GET /historique` — DJ, DJA (backend Q-112).
+   *
+   * **Distincte d'`administrerConfigurations` et de `superviserAlertes`**, bien qu'elle porte
+   * aujourd'hui les mêmes rôles : lire l'activité nommée d'un collègue n'est ni écrire un seuil ni
+   * lire un taux global. Les confondre ferait qu'un assouplissement futur de l'une déplacerait
+   * l'autre sans qu'on l'ait voulu — et ici, ce serait un assouplissement sur des données
+   * personnelles (NF-CONF-01).
+   */
+  consulterAudit: ["ROLE_DJ", "ROLE_DJA"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Capacite = keyof typeof CAPACITES;

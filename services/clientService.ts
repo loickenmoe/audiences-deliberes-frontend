@@ -1,5 +1,6 @@
+import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { Client, CreerClient, VueClientDossiers } from "@/types/domaine";
+import type { Client, CreerClient, ModifierClient, VueClientDossiers } from "@/types/domaine";
 
 /**
  * Miroir 1:1 des endpoints clients du backend (#9 à #12).
@@ -17,7 +18,10 @@ export const clientService = {
     page?: number;
     size?: number;
   }): Promise<PageReponse<Client>> => {
-    const { data } = await apiClient.get<PageReponse<Client>>(BASE, { params });
+    // La taille n'était pas transmise : la page valait donc le défaut du backend, pas celui de l'écran.
+    const { data } = await apiClient.get<PageReponse<Client>>(BASE, {
+      params: { ...params, size: params.size ?? TAILLE_PAGE },
+    });
     return data;
   },
 
@@ -36,9 +40,18 @@ export const clientService = {
     return data;
   },
 
-  /** #12 — `ROLE_SAISIE`. Pas d'endpoint de modification côté backend (Q-23). */
+  /** #12 — `ROLE_SAISIE`. */
   creer: async (corps: CreerClient): Promise<Client> => {
     const { data } = await apiClient.post<Client>(BASE, corps);
+    return data;
+  },
+
+  /**
+   * 🆕 `PUT /clients/{id}` — `ROLE_SAISIE`, comme la création. La référence ne se modifie pas ;
+   * une modification qui ne change rien n'écrit rien côté backend (ni base, ni historique).
+   */
+  modifier: async (id: number, corps: ModifierClient): Promise<Client> => {
+    const { data } = await apiClient.put<Client>(`${BASE}/${id}`, corps);
     return data;
   },
 };

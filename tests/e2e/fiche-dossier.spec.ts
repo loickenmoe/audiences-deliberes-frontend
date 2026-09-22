@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 
 /**
  * Parcours de la fiche dossier (écrans 07, 08, 15, 16, 18) **contre le backend réel**.
@@ -40,8 +41,7 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-FICHE");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-FICHE");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
   if (sensible) {
     await page.getByLabel("Dossier sensible", { exact: true }).check();
     await page.getByLabel("Seuil proposé (FCFA)", { exact: true }).fill("60000000");
@@ -216,5 +216,6 @@ test("la fiche est traduite", async ({ page }) => {
 
   // L'historique est rédigé en français par le serveur : la fiche le dit au lieu de le cacher.
   await page.getByRole("tab", { name: "History" }).click();
-  await expect(page.getByText("History entries are written by the server, in French.")).toBeVisible();
+  // QF-24 close par Q-112 : l'avertissement a disparu, parce que les libelles sont traduits.
+  await expect(page.getByText(/written by the server, in French/)).toHaveCount(0);
 });

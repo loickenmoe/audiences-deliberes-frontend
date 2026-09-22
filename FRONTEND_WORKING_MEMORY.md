@@ -2,7 +2,7 @@
 
 > **Fichier de tête. À lire en premier, à chaque session, avant toute intervention.**
 > Les autres fichiers de contexte ne sont ouverts que si le sujet de la session l'exige.
-> Dernière mise à jour : 2026-09-09 (jalon **F4** livré — composants métier, en attente de validation).
+> Dernière mise à jour : 2026-09-15 (QF-44 / backend M22 — pagination, filtres et recherche serveur).
 
 ---
 
@@ -41,13 +41,18 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 
 | | |
 |---|---|
-| Jalons validés | **F0** à **F8** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`) |
-| Jalon livré, **en attente de validation** | **F9** — délibérés (`feat/f9-deliberes`) ; backend aligné sur `fix/deliberes-cycle` (Q-78). Rien de commité. |
-| Jalon suivant | **F10** — gestion documentaire |
+| Jalons validés | **F0** à **F17** (F3 + F3b `2248918`, F4 `c4548bb`, F5 `f9749b4`, F6 `b96880b`, F7 `0ed36a5` + `08723a8`, F8 `6ed2cd2`, F9 `21b2022`, F10 — PR #6, F11 — PR #7, F12 — PR #8, F13 — PR #9, F14 — PR #10 et #11, F15 — PR #12, F16 — PR #13, F17 — PR #14 ; backend PR #22 à #28) |
+| Jalon livré, **en attente de validation** | **Q-98** — pièce jointe facultative sur le compte rendu d'audience (`feat/cr-piece-jointe` depuis `origin/dev` 4022d82 ; backend même nom depuis b13978d). Écran 33 refondu en formulaire continu, « Pièce, décision, conclusion » renommé **« Document du dossier »**. **Évolution backend autorisée** (V13, endpoint #29 en multipart). |
+| Jalon livré, **en attente de validation** | **QF-44 / M22** — dix lignes par tableau avec sélecteur 10/25/50, pagination généralisée à 8 endpoints, 10 filtres neufs (dont sensibilité), recherche au fil de la frappe. **Les deux dépôts doivent être fusionnés ensemble** : 8 réponses changent de forme (`List` → `PageResponse`) |
+| Jalon précédent | **QF-42** — la déconnexion ne fermait pas la session quand elle suivait de près une lecture de session. Cache du jeton, session fournie par le rendu serveur, marqueur de déconnexion lu par un middleware. **Premier `middleware.ts` du projet**, cantonné à ce seul rôle |
+| Jalon précédent | **F17** — durcissement (PR #14) : accueil achevé, accessibilité AA, responsive, performance, parcours P1-P9, guide utilisateur, revue de sécurité |
+| Jalon suivant | **aucun** — les 18 jalons sont livrés, la revue de clôture est faite (`RAPPORT_DE_RECETTE.md`). Reste la recette du porteur du projet et la soutenance |
+| Questions bloquantes | **aucune.** QF-16 tranchée le 2026-09-15 — limite acceptée pour la V1, écrite au §1 du guide : un utilisateur interne n'est affectable qu'après sa première connexion (les avocats, eux, le sont dès le répertoire). QF-08 close : ce n'était pas une lacune, les sources traitent le cas par la notification |
 | Dépôt git | `git@github.com:loickenmoe/audiences-deliberes-frontend.git` · une branche par jalon, fusionnée dans `dev` par l'utilisateur |
 | `.gitignore` | ✅ créé et vérifié (RF-04 clos) |
-| Décompte | **24 écrans sur 42** · **40 endpoints consommés sur 72** (plus #45 en partie) — mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` |
+| Décompte | **42 écrans sur 42** · **74 endpoints consommés sur 74** — tout le contrat est consommé — plus les cinq endpoints du portail Avocat et le canal `/ws`. Mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` (l'écran 14 y figure deux fois : compter les numéros distincts) |
 | Vérification continue | `npm run smoke` — 17 hypothèses contrôlées sur le backend réel, **à rejouer à chaque jalon** |
+| Suite de bout en bout | **139 sur 139** (2026-09-15, un seul travailleur), après QF-45 puis QF-44 — +6 tests : pagination, sélecteur de taille, garde de saisie. Auparavant 132 sur 132 après correction de QF-42 — les deux tests de déconnexion sont passés 20 fois sur 20 en rejeu. Une suite lente et instable est un **symptôme**, pas une fatalité : ici, un N+1 backend (Q-94). Redémarrer le serveur Next avant toute mesure — un reliquat de session meurt en cours de route et produit 21 faux échecs. |
 | Artifact d'audit publié | https://claude.ai/code/artifact/0c6cc220-5c2a-4780-b005-fcf34b04e777 |
 
 ## 4. Décisions actées (ne pas rouvrir)
@@ -97,6 +102,11 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   Je crée la branche locale et j'y travaille ; **je ne pousse ni ne merge jamais moi-même.**
   → **Le socle s'achève avec F4 : la phase 2 s'applique à partir de F5.** Rappelé par l'utilisateur
   le 2026-09-09. `dev` doit être créée par l'utilisateur ; elle n'existe pas encore en ligne.
+- **Durcissement (F17)** : quatre suites de bout en bout tiennent les exigences non fonctionnelles —
+  `accessibilite.spec.ts` (axe, WCAG 2.1 AA, aucune violation tolérée), `responsive.spec.ts` (trois
+  points de rupture, zéro débordement horizontal), `performance.spec.ts` (NF-PERF-01 < 2 s,
+  NF-PERF-02 < 10 s), `securite.spec.ts` (en-têtes, jeton hors des stockages lisibles, gardes de
+  route). Les faire échouer est le signal d'une régression, pas d'un test trop strict.
 - **Jalons** : périmètre annoncé → implémentation → vérifications → mise à jour du contexte →
   instructions de test manuel → **STOP et attente de validation**. Les tests automatisés qui
   passent ne valent **pas** validation.
@@ -113,14 +123,29 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   `GET /dossiers/{id}/documents`.
 - **Multipart** : métadonnées en `@RequestParam`, seul `file` en `@RequestPart`.
 - **`ROLE_SAISIE` est composite** : porté automatiquement par JURISTE, DJ, DJA, ASSISTANTE, SH.
-- **`AVOCAT` n'a PAS `ROLE_CONSULTATION`** → il n'atteint que 6 endpoints. Cause de QF-01.
+- **`AVOCAT` n'a PAS `ROLE_CONSULTATION`** → il n'atteignait que 6 endpoints (cause de QF-01). Depuis
+  Q-96 (F16), il dispose en plus de quatre lectures sous `/avocat`, cadrées sur lui **dans la
+  requête**. Ne jamais élargir un endpoint interne à `ROLE_AVOCAT` : la confidentialité reposerait
+  alors sur un filtre qu'on peut oublier.
+- **`ROLE_DJ` et `ROLE_DJA` portent aussi `ROLE_JURISTE`** depuis Q-81 (F12). Conséquence rarement
+  anticipée : la direction atteint tout ce qui est ouvert au juriste — rapports, calendrier,
+  répertoire des avocats. Ne pas raisonner sur l'intention d'une user story, mais sur le jeton réel.
 - **Les cinq profils internes sont tous des « juristes augmentés »** : chacun porte `ROLE_SAISIE` et
   `ROLE_CONSULTATION` en plus de son profil. Ne pas se fier aux descriptions fonctionnelles du
   backend (« le SH signe les constitutions ») pour en déduire ses droits — il en a **11 sur 36**.
   Se référer à `lib/rbac.ts`, dérivé des `@PreAuthorize`.
 - Le jeton ne contient **pas** l'`utilisateur.id` numérique (QF-02).
 - Push temps réel : STOMP sur SockJS, endpoint `/ws`, destination `/user/queue/alertes`, jeton dans
-  la trame `CONNECT`. Repli garanti : `GET /alertes/mes-notifications`.
+  la trame `CONNECT`. Repli garanti : `GET /alertes/mes-notifications`. **Branché en F14** —
+  `lib/temps-reel.ts` + `providers/alertes.provider.tsx`. L'endpoint n'est exposé **qu'en SockJS**
+  (`withSockJS()`), une WebSocket native ne négocie rien ; le jeton se relit à chaque connexion
+  (`beforeConnect`), sans quoi la reconnexion après rotation repartirait avec un jeton périmé.
+  **S'abonner AVANT d'annoncer le canal ouvert** : un courtier STOMP ne conserve rien pour une
+  destination sans abonné, et l'ordre inverse perdait définitivement toute alerte poussée dans
+  l'intervalle (corrigé le 2026-09-14).
+- **Les paramètres système publient leur règle de saisie** (backend Q-91) : `typeValeur`,
+  `valeurMinimale`, `valeurMaximale`, `valeursPossibles`. L'écran 41 construit son champ à partir de
+  là — ne jamais recopier ces bornes dans le frontend.
 
 ### Pièges d'implémentation rencontrés (à ne pas refaire)
 
@@ -158,6 +183,10 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 - **Ne jamais rediriger vers une route non encore livrée.** Le routeur App échoue *en silence* :
   l'URL ne change même pas, et le bouton semble cassé alors que le backend a répondu 201. Découvert
   en renvoyant vers `/dossiers/{id}`, écran livré seulement en F7 (QF-22).
+- **`filter({ hasText: "…" })` compare une sous-chaîne sans tenir compte de la casse** (F12) : une
+  ligne « Active » dont un bouton dit « Marquer traitée » passe le filtre « Traitée ». Pour un
+  statut, viser la cellule exacte : `filter({ has: page.getByRole("cell", { name, exact: true }) })`.
+  Et `allInnerTexts()` n'attend rien : attendre d'abord qu'une ligne soit visible.
 - **Un `<dialog>` fermé reste dans le DOM.** Deux conséquences, corrigées dans `components/ui/dialog.tsx`
   en F7 : (1) un identifiant de titre **fixe** donnait à toutes les modales montées le nom de la
   première — d'où `useId` ; (2) le navigateur émet `close` **aussi** quand le programme ferme :
@@ -256,6 +285,9 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-31** | Le calendrier inclut le 1er jour de la période suivante (`BETWEEN` borne incluse). Non bloquant. | aucun |
 | **QF-32** | `dateTenue` = jour de saisie du compte rendu, pas de l'audience. Non bloquant. | aucun |
 | ~~QF-33~~ | ✅ **Levée** (2026-09-11) : prorogation et rabattement n'existaient qu'après la décision, contre toutes les sources. Backend aligné (Q-78) : mise en délibéré sans résultat, `PUT /deliberes/{id}/resultat`, `GET /deliberes/{id}/prorogations`. | F9 |
+| ~~QF-34~~ | ✅ **Levée** (2026-09-11) : demande de suppression orpheline après une suppression directe, file anonyme. Backend corrigé (Q-79), V10. | F10 |
+| ~~QF-35~~ | ✅ **Levée** (2026-09-11) : rapport journalier ouvert au DJ, à la DJA et à l'Assistante (Q-80). | F10 |
+| ~~QF-36~~ | ✅ **Levée** (2026-09-11) : `ROLE_JURISTE` ajouté aux composites de `ROLE_DJ`/`ROLE_DJA` (realm + Keycloak en service) ; provisionnement par priorité de profil (Q-81). Un jeton antérieur au changement exige une reconnexion. | transverse |
 | **QF-26** | Les pièces justificatives des frais sont une **liste de noms**, pas des fichiers (`List<String>`). À trancher à l'ouverture de F11. | **F11**, F16 |
 | **QF-27** | Aucun endpoint « utilisateur courant » : l'interface ne sait pas si l'on est l'auteur d'une pièce. Non bloquant. | aucun |
 | **QF-25** | ✅ Levée le 2026-09-10 (Q-75) : `@NotEmpty` + `@Valid` sur `PUT /affectation`. Reste ouvert : l'alerte au DJ à presque chaque changement d'affectation (règle métier RG-DOS-07, à confirmer par la DJ). | — |
@@ -265,7 +297,8 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
 | **QF-08** | Aucune file « sensibilité à valider » ni « dérogations en attente » pour DJ/DJA | F7 |
 | QF-02 | Pas d'endpoint « moi » → contournement par rapprochement d'email | F2 |
 | QF-06 | CORS MinIO / affichage inline des documents | F10 |
-| QF-11 | Temps réel STOMP ou rafraîchissement périodique | F14 |
+| ~~QF-41~~ | ✅ **Corrigée** (2026-09-14, backend Q-94) : la vue consolidée d'un client faisait trois requêtes **par dossier** — 11 à 19 s pour 310 dossiers. Trois requêtes pour la liste entière ; mesuré à **0,12 s** sur 355 dossiers, contrat inchangé. | — |
+| ~~QF-11~~ | ✅ **Tranchée** (2026-09-12) : **temps réel STOMP sur SockJS, avec repli HTTP garanti** — 30 s canal coupé, 5 min canal ouvert. Le push est un accélérateur, jamais la source de vérité. | F14 |
 
 Détail complet et recommandations : `DECISIONS_AND_OPEN_QUESTIONS.md`.
 
@@ -289,9 +322,11 @@ Détail complet et recommandations : `DECISIONS_AND_OPEN_QUESTIONS.md`.
 
 | Besoin | Fichier |
 |---|---|
+| **Bilan de fin de projet : périmètre, chiffres mesurés, limites assumées** | `RAPPORT_DE_RECETTE.md` |
 | Arborescence, couches, auth, RBAC, design system, tests | `FRONTEND_ARCHITECTURE.md` |
 | Les 42 écrans, routes, rôles, états, avancement | `SCREEN_MAP.md` |
-| Les 67 endpoints et leur état de consommation | `API_INTEGRATION_STATUS.md` |
+| Les 74 endpoints et leur état de consommation | `API_INTEGRATION_STATUS.md` |
+| Mode d'emploi destiné aux utilisateurs | `GUIDE_UTILISATEUR.md` |
 | Jalons F0→F17, périmètre, avancement | `DEVELOPMENT_ROADMAP.md` |
 | Arbitrages, questions ouvertes, risques | `DECISIONS_AND_OPEN_QUESTIONS.md` |
 | Source de vérité métier | `../audiences-deliberes-backend/` (lecture seule) |

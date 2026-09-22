@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import { CAPACITES, type Capacite, aRole, peut, profilPrincipal } from "@/lib/rbac";
 
 /**
- * Jeux de rôles **réels**, relevés dans les jetons émis par le Keycloak du projet le 2026-09-08 —
- * pas des combinaisons théoriques.
+ * Jeux de rôles **réels**, relevés dans les jetons émis par le Keycloak du projet — pas des
+ * combinaisons théoriques. Relevé refait le **2026-09-14** : depuis Q-81, `ROLE_DJ` et `ROLE_DJA`
+ * sont composites et portent aussi `ROLE_JURISTE`, ce que le relevé du 2026-09-08 ignorait. C'est ce
+ * qui rend le parcours de pilotage P9 jouable par le DJ et ferme l'essentiel de QF-04.
  */
 const JURISTE = ["ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
-const DJ = ["ROLE_DJ", "ROLE_SAISIE", "ROLE_CONSULTATION"];
-const DJA = ["ROLE_DJA", "ROLE_SAISIE", "ROLE_CONSULTATION"];
+const DJ = ["ROLE_DJ", "ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
+const DJA = ["ROLE_DJA", "ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 const ASSISTANTE = ["ROLE_ASSISTANTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 const SH = ["ROLE_SH", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 const AVOCAT = ["ROLE_AVOCAT"];
@@ -49,31 +51,48 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     expect(peut(JURISTE, "creerDossier")).toBe(true);
   });
 
-  /** `GET /tableau-de-bord` est `hasRole('DJ')` : le DJA en est exclu. Cf. QF-04. */
-  it("seul le DJ accède au tableau de bord", () => {
+  /** `GET /tableau-de-bord` est `hasAnyRole('DJ','DJA')` depuis Q-95 — la direction seule. */
+  it("le tableau de bord est réservé au DJ et à la DJA", () => {
     expect(peut(DJ, "consulterTableauDeBord")).toBe(true);
-    expect(peut(DJA, "consulterTableauDeBord")).toBe(false);
+    expect(peut(DJA, "consulterTableauDeBord")).toBe(true);
     expect(peut(JURISTE, "consulterTableauDeBord")).toBe(false);
+    expect(peut(ASSISTANTE, "consulterTableauDeBord")).toBe(false);
+    expect(peut(SH, "consulterTableauDeBord")).toBe(false);
   });
 
-  /** `GET /rapports` est `hasRole('JURISTE')` : le DJ ne peut pas générer de rapport. Cf. QF-04. */
-  it("seul le juriste génère des rapports", () => {
+  /**
+   * `GET /rapports` est `hasRole('JURISTE')`. Le DJ et la DJA l'atteignent par leur composite
+   * (Q-81) : c'est ce qui rend le parcours P9 jouable et ferme QF-04.
+   */
+  it("le juriste génère des rapports, le DJ et la DJA par leur composite", () => {
     expect(peut(JURISTE, "genererRapport")).toBe(true);
-    expect(peut(DJ, "genererRapport")).toBe(false);
+    expect(peut(DJ, "genererRapport")).toBe(true);
+    expect(peut(DJA, "genererRapport")).toBe(true);
+    expect(peut(ASSISTANTE, "genererRapport")).toBe(false);
   });
 
-  /** `GET /audiences/calendrier` est `hasAnyRole('JURISTE','DJ')` — ni DJA ni Assistante. */
-  it("le calendrier est réservé au juriste et au DJ", () => {
+  /**
+   * `GET /audiences/calendrier` est `hasAnyRole('JURISTE','DJ')`. La DJA y accède **depuis Q-81**,
+   * par son composite — ce n'est pas une exception ajoutée ici, c'est ce que le backend autorise.
+   * L'Assistante, elle, ne porte pas `ROLE_JURISTE` et reste exclue.
+   */
+  it("le calendrier suit le composite : juriste, DJ et DJA, mais pas l'Assistante", () => {
     expect(peut(JURISTE, "consulterCalendrier")).toBe(true);
     expect(peut(DJ, "consulterCalendrier")).toBe(true);
-    expect(peut(DJA, "consulterCalendrier")).toBe(false);
+    expect(peut(DJA, "consulterCalendrier")).toBe(true);
     expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
+    expect(peut(SH, "consulterCalendrier")).toBe(false);
   });
 
-  /** `GET /repertoire/avocats` est `hasAnyRole('JURISTE','ASSISTANTE')` — ni DJ ni DJA. */
-  it("le répertoire des avocats exclut la direction", () => {
+  /**
+   * `GET /repertoire/avocats` est `hasAnyRole('JURISTE','ASSISTANTE')`. La direction y accède elle
+   * aussi depuis Q-81 : le composite prime sur l'intention d'origine, et le backend est l'arbitre.
+   */
+  it("le répertoire suit le composite : la direction y accède depuis Q-81", () => {
     expect(peut(ASSISTANTE, "consulterRepertoire")).toBe(true);
-    expect(peut(DJ, "consulterRepertoire")).toBe(false);
+    expect(peut(JURISTE, "consulterRepertoire")).toBe(true);
+    expect(peut(DJ, "consulterRepertoire")).toBe(true);
+    expect(peut(SH, "consulterRepertoire")).toBe(false);
   });
 
   it("la signature des constitutions est réservée au supérieur hiérarchique", () => {
@@ -84,6 +103,44 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   it("le contrôle d'opportunité des frais est réservé au DJA", () => {
     expect(peut(DJA, "controlerOpportuniteFrais")).toBe(true);
     expect(peut(DJ, "controlerOpportuniteFrais")).toBe(false);
+  });
+
+  /**
+   * Backend Q-108 — l'administration des paramètres est ouverte à la DJA, pour la continuité de
+   * service : le DJ absent, plus personne ne pouvait relever un seuil.
+   */
+  it("l'administration des paramètres est ouverte au DJ et à la DJA, à eux seuls", () => {
+    expect(peut(DJ, "administrerConfigurations")).toBe(true);
+    expect(peut(DJA, "administrerConfigurations")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "administrerConfigurations")).toBe(false);
+    }
+  });
+
+  /**
+   * Le pendant du test précédent. L'ouverture consentie à la DJA est **à sens unique** : le DJ ne
+   * rejoint pas la DJA sur le contrôle d'opportunité, sans quoi RG-INT-03 perdrait la séparation de
+   * ses deux étapes — le même profil préparerait l'avis puis voterait la validation conjointe.
+   */
+  it("DJ et DJA ne diffèrent plus que par le contrôle d'opportunité", () => {
+    const ecarts = (Object.keys(CAPACITES) as Capacite[]).filter(
+      (capacite) => peut(DJ, capacite) !== peut(DJA, capacite),
+    );
+    expect(ecarts).toEqual(["controlerOpportuniteFrais"]);
+  });
+
+  /**
+   * `ROLE_DJ` et `ROLE_DJA` sont **tous deux** composites de `ROLE_JURISTE` dans Keycloak. Deux
+   * commentaires de la table affirmaient le contraire — corrigés avec Q-108. Ces assertions
+   * empêchent que la confusion revienne.
+   */
+  it("le DJ et la DJA atteignent le calendrier et le répertoire par leur rôle juriste", () => {
+    for (const profil of [DJ, DJA]) {
+      expect(peut(profil, "consulterCalendrier")).toBe(true);
+      expect(peut(profil, "consulterRepertoire")).toBe(true);
+    }
+    expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
+    expect(peut(SH, "consulterRepertoire")).toBe(false);
   });
 });
 

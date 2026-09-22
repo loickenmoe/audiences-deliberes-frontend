@@ -31,6 +31,16 @@ export function DateHeureValeur({ valeur }: { valeur: string | null | undefined 
   return <time dateTime={valeur ?? undefined}>{formaterDateHeure(valeur, langue)}</time>;
 }
 
+/** Proportion entre 0 et 1, affichée en pourcentage entier. */
+export function Pourcentage({ valeur }: { valeur: number | null | undefined }) {
+  const langue = useLocale() as Langue;
+  return (
+    <span data-nombres>
+      {valeur == null ? "—" : new Intl.NumberFormat(langue, { style: "percent", maximumFractionDigits: 0 }).format(valeur)}
+    </span>
+  );
+}
+
 export function PoidsFichier({ valeur }: { valeur: number | null | undefined }) {
   const langue = useLocale() as Langue;
   return <span data-nombres>{formaterOctets(valeur, langue)}</span>;

@@ -1,17 +1,27 @@
 "use client";
 
+import type { Session } from "next-auth";
 import { SessionProvider, getSession, signOut, useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
 
 import { apiClient, definirFournisseurDeJeton } from "@/lib/api/client";
-import { ERREUR_RAFRAICHISSEMENT } from "@/lib/rotation-jeton";
+import { definirLectureDeSession, jetonCourant } from "@/lib/cache-jeton";
+import { ERREUR_AUTH_INDISPONIBLE, sessionInutilisable } from "@/lib/rotation-jeton";
 
 /**
- * Branche le jeton de session sur le client HTTP. `getSession()` lit le cache de NextAuth et
- * déclenche la rotation côté serveur quand la fenêtre est dépassée : le jeton remis est donc
- * toujours valide, sans que les appelants aient à s'en préoccuper.
+ * Branche le jeton de session sur le client HTTP.
+ *
+ * **Via un cache, et non un `getSession()` par requête** (QF-42) : chaque lecture de
+ * `/api/auth/session` repose le cookie de session, si bien qu'un écran lançant huit requêtes
+ * réécrivait huit fois le cookie — et pouvait annuler une déconnexion simultanée. Le cache ne relit
+ * la session qu'à l'approche de la rotation, fenêtre publiée par le serveur ; `getSession()`
+ * déclenche alors la rotation comme avant, et le jeton remis reste donc toujours valide.
  */
-definirFournisseurDeJeton(async () => (await getSession())?.accessToken ?? null);
+definirLectureDeSession(async () => {
+  const session = await getSession();
+  return session ? { accessToken: session.accessToken, rafraichirApres: session.rafraichirApres } : null;
+});
+definirFournisseurDeJeton(() => jetonCourant());
 
 /**
  * Amorçage de session.
@@ -31,9 +41,16 @@ function AmorcageSession() {
   useEffect(() => {
     if (status !== "authenticated") return;
 
-    // Rotation définitivement échouée : déconnexion nette plutôt qu'une avalanche de 401.
-    if (session?.erreur === ERREUR_RAFRAICHISSEMENT) {
-      void signOut({ redirectTo: "/login?motif=session-expiree" });
+    /*
+     * Rotation définitivement échouée : déconnexion nette plutôt qu'une avalanche de 401. Le motif
+     * transmis dit **laquelle** des deux causes, parce que l'utilisateur n'a pas la même chose à
+     * faire : se reconnecter quand son jeton est expiré, patienter quand c'est le service qui est à
+     * terre — auquel cas se reconnecter est de toute façon impossible.
+     */
+    if (sessionInutilisable(session?.erreur)) {
+      const motif =
+        session?.erreur === ERREUR_AUTH_INDISPONIBLE ? "auth-indisponible" : "session-expiree";
+      void signOut({ redirectTo: `/login?motif=${motif}` });
       return;
     }
 
@@ -48,9 +65,18 @@ function AmorcageSession() {
   return null;
 }
 
-export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+/**
+ * `session` vient du rendu serveur : `SessionProvider` n'a donc rien à aller chercher au montage.
+ * `refetchOnWindowFocus` est coupé pour la même raison (QF-42) — la fraîcheur du jeton est assurée
+ * par le cache, qui relit la session à l'approche de la rotation, et par le rendu serveur de chaque
+ * page. Il ne reste alors **aucune** lecture de session déclenchée par l'interface.
+ */
+export function AuthProvider({
+  children,
+  session,
+}: Readonly<{ children: React.ReactNode; session: Session | null }>) {
   return (
-    <SessionProvider>
+    <SessionProvider session={session} refetchOnWindowFocus={false}>
       <AmorcageSession />
       {children}
     </SessionProvider>

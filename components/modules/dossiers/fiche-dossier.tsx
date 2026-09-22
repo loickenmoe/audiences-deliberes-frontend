@@ -10,14 +10,17 @@ import { StatutChip, type TonStatut } from "@/components/global/statut-chip";
 import { DateValeur } from "@/components/metier";
 import { DerogationsEnAttente } from "@/components/modules/dossiers/derogations-en-attente";
 import { ModaleAffectation } from "@/components/modules/dossiers/modale-affectation";
+import { ModaleConstitution } from "@/components/modules/dossiers/modale-constitution";
 import { ModaleDerogation } from "@/components/modules/dossiers/modale-derogation";
 import { ModaleSensibilite } from "@/components/modules/dossiers/modale-sensibilite";
 import { OngletAlarmes } from "@/components/modules/dossiers/onglet-alarmes";
 import { OngletAudiences } from "@/components/modules/dossiers/onglet-audiences";
+import { OngletDecisions } from "@/components/modules/dossiers/onglet-decisions";
 import { OngletDeliberes } from "@/components/modules/dossiers/onglet-deliberes";
 import { OngletDocuments } from "@/components/modules/dossiers/onglet-documents";
 import { OngletEtapes } from "@/components/modules/dossiers/onglet-etapes";
 import { OngletHistorique } from "@/components/modules/dossiers/onglet-historique";
+import { OngletPublications } from "@/components/modules/dossiers/onglet-publications";
 import { OngletSynthese } from "@/components/modules/dossiers/onglet-synthese";
 import { Button } from "@/components/ui/button";
 import { useDossier } from "@/hooks/useDossiers";
@@ -26,7 +29,17 @@ import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { StatutValidation } from "@/types/enums";
 
-const ONGLETS = ["synthese", "etapes", "audiences", "deliberes", "alarmes", "historique", "documents"] as const;
+const ONGLETS = [
+  "synthese",
+  "etapes",
+  "audiences",
+  "deliberes",
+  "alarmes",
+  "decisions",
+  "historique",
+  "documents",
+  "publications",
+] as const;
 type Onglet = (typeof ONGLETS)[number];
 
 const LIBELLES_ONGLETS: Record<Onglet, string> = {
@@ -35,8 +48,10 @@ const LIBELLES_ONGLETS: Record<Onglet, string> = {
   audiences: "ongletAudiences",
   deliberes: "ongletDeliberes",
   alarmes: "ongletAlarmes",
+  decisions: "ongletDecisions",
   historique: "ongletHistorique",
   documents: "ongletDocuments",
+  publications: "ongletPublications",
 };
 
 const TON_SENSIBILITE: Record<StatutValidation, TonStatut> = {
@@ -70,15 +85,17 @@ export function FicheDossier({
   const [onglet, setOnglet] = useState<Onglet>(
     (ONGLETS as readonly string[]).includes(ongletInitial ?? "") ? (ongletInitial as Onglet) : "synthese",
   );
-  const [modale, setModale] = useState<"affectation" | "derogation" | "sensibilite" | null>(null);
+  const [modale, setModale] = useState<"affectation" | "derogation" | "sensibilite" | "constitution" | null>(null);
   const refsOnglets = useRef<Record<Onglet, HTMLButtonElement | null>>({
     synthese: null,
     etapes: null,
     audiences: null,
     deliberes: null,
     alarmes: null,
+    decisions: null,
     historique: null,
     documents: null,
+    publications: null,
   });
 
   if (requete.isLoading) return <EtatChargement lignes={10} />;
@@ -97,20 +114,24 @@ export function FicheDossier({
   // L'arbitrage d'une dérogation n'est recevable que sur une sensibilité déjà validée (Q-74).
   const peutArbitrerDerogation =
     peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
+  // UC-INT-05 : le juriste sollicite la constitution d'un prestataire depuis le dossier.
+  const peutSolliciter = peut(roles, "solliciterConstitution");
+  // Le SH ne lit pas les publications (`GET /publications` le refuse) : pas d'onglet pour lui.
+  const onglets = ONGLETS.filter((cle) => cle !== "publications" || peut(roles, "consulterPublications"));
 
   // Navigation clavier du motif « onglets » (WAI-ARIA) : flèches, début, fin.
   function surToucheOnglet(evenement: KeyboardEvent<HTMLButtonElement>) {
-    const index = ONGLETS.indexOf(onglet);
+    const index = onglets.indexOf(onglet);
     const cibles: Record<string, number> = {
-      ArrowRight: (index + 1) % ONGLETS.length,
-      ArrowLeft: (index - 1 + ONGLETS.length) % ONGLETS.length,
+      ArrowRight: (index + 1) % onglets.length,
+      ArrowLeft: (index - 1 + onglets.length) % onglets.length,
       Home: 0,
-      End: ONGLETS.length - 1,
+      End: onglets.length - 1,
     };
     const cible = cibles[evenement.key];
     if (cible === undefined) return;
     evenement.preventDefault();
-    const suivant = ONGLETS[cible]!;
+    const suivant = onglets[cible]!;
     setOnglet(suivant);
     refsOnglets.current[suivant]?.focus();
   }
@@ -165,6 +186,11 @@ export function FicheDossier({
               {t("actionDerogation")}
             </Button>
           ) : null}
+          {peutSolliciter ? (
+            <Button variante="secondaire" onClick={() => setModale("constitution")}>
+              {t("actionConstitution")}
+            </Button>
+          ) : null}
           {peutStatuer ? (
             <Button onClick={() => setModale("sensibilite")}>{t("actionSensibilite")}</Button>
           ) : null}
@@ -175,7 +201,7 @@ export function FicheDossier({
 
       <div className="flex flex-col gap-5">
         <div role="tablist" aria-label={t("ongletsLibelle")} className="flex gap-1 border-b border-bordure">
-          {ONGLETS.map((cle) => {
+          {onglets.map((cle) => {
             const actif = cle === onglet;
             return (
               <button
@@ -211,8 +237,12 @@ export function FicheDossier({
           {onglet === "audiences" ? <OngletAudiences dossier={dossier} roles={roles} /> : null}
           {onglet === "deliberes" ? <OngletDeliberes dossier={dossier} roles={roles} /> : null}
           {onglet === "alarmes" ? <OngletAlarmes dossier={dossier} roles={roles} /> : null}
-          {onglet === "historique" ? <OngletHistorique historique={dossier.historique ?? []} /> : null}
+          {onglet === "decisions" ? <OngletDecisions dossier={dossier} roles={roles} /> : null}
+          {onglet === "historique" ? <OngletHistorique dossierId={dossier.id} /> : null}
           {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} roles={roles} /> : null}
+          {onglet === "publications" && peut(roles, "consulterPublications") ? (
+            <OngletPublications dossierId={dossier.id} roles={roles} />
+          ) : null}
         </div>
       </div>
 
@@ -234,6 +264,13 @@ export function FicheDossier({
         <ModaleSensibilite
           dossier={dossier}
           ouvert={modale === "sensibilite"}
+          onFermeture={() => setModale(null)}
+        />
+      ) : null}
+      {peutSolliciter ? (
+        <ModaleConstitution
+          dossierId={dossier.id}
+          ouvert={modale === "constitution"}
           onFermeture={() => setModale(null)}
         />
       ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -11,7 +11,10 @@ import { Champ, Select } from "@/components/ui/champ";
 import { Table, TableWrapper, Tbody, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { messageErreur } from "@/lib/api/errors";
+import { Pagination } from "@/components/metier";
+import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { peut } from "@/lib/rbac";
+import type { Intervenant } from "@/types/domaine";
 import { TypeIntervenant } from "@/types/enums";
 
 /**
@@ -27,9 +30,12 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("intervenants");
   const td = useTranslations("domaine");
   const [type, setType] = useState<TypeIntervenant | "">("");
+  const { page, taille, definirPage, definirTaille } = useFiltresUrl({});
   const [creationOuverte, setCreationOuverte] = useState(false);
+  // Pas de fiche intervenant : la correction s'ouvre depuis sa ligne du référentiel (Q-117).
+  const [enEdition, setEnEdition] = useState<Intervenant | null>(null);
 
-  const requete = useIntervenants(type || undefined);
+  const requete = useIntervenants({ type: type || undefined, page, size: taille });
   const peutCreer = peut(roles, "administrerIntervenants");
 
   return (
@@ -82,7 +88,7 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
             </button>
           }
         />
-      ) : (requete.data ?? []).length === 0 ? (
+      ) : (requete.data?.content ?? []).length === 0 ? (
         <EtatVide
           titre={t("aucunIntervenant")}
           description={t("aucunIntervenantTexte")}
@@ -105,10 +111,15 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
                 <Th>{t("colonneEmail")}</Th>
                 <Th>{t("colonneTelephone")}</Th>
                 <Th>{t("colonneCompte")}</Th>
+                {peutCreer ? (
+                  <Th>
+                    <span className="sr-only">{t("colonneActions")}</span>
+                  </Th>
+                ) : null}
               </Tr>
             </Thead>
             <Tbody>
-              {(requete.data ?? []).map((intervenant) => (
+              {(requete.data?.content ?? []).map((intervenant) => (
                 <Tr key={intervenant.id} className="hover:bg-surface-attenuee">
                   <Td className="font-medium">{intervenant.nom}</Td>
                   <Td>
@@ -127,6 +138,18 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
                       <span className="text-texte-tertiaire">{t("sansCompte")}</span>
                     )}
                   </Td>
+                  {peutCreer ? (
+                    <Td className="text-right">
+                      <Button
+                        variante="secondaire"
+                        aria-label={t("modifierNomme", { nom: intervenant.nom })}
+                        onClick={() => setEnEdition(intervenant)}
+                      >
+                        <Pencil size={14} aria-hidden />
+                        {t("modifier")}
+                      </Button>
+                    </Td>
+                  ) : null}
                 </Tr>
               ))}
             </Tbody>
@@ -134,10 +157,31 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
         </TableWrapper>
       )}
 
+      {requete.data ? (
+        <Pagination
+          page={page}
+          totalPages={requete.data.totalPages}
+          totalElements={requete.data.totalElements}
+          onChangement={definirPage}
+          taille={taille}
+          onChangementTaille={definirTaille}
+        />
+      ) : null}
+
       {peutCreer ? (
         <FormulaireIntervenant
           ouvert={creationOuverte}
           onFermeture={() => setCreationOuverte(false)}
+        />
+      ) : null}
+
+      {/* La clé remonte le formulaire à chaque intervenant : ses valeurs de départ sont les siennes. */}
+      {enEdition ? (
+        <FormulaireIntervenant
+          key={enEdition.id}
+          ouvert
+          onFermeture={() => setEnEdition(null)}
+          intervenant={enEdition}
         />
       ) : null}
     </div>

@@ -1,7 +1,15 @@
 # SCREEN_MAP
 
 > Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-11 (jalon F9 — écrans 10, 26 et 27 livrés, cycle du délibéré Q-78).
+> Dernière mise à jour : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
+> Précédente : 2026-09-14 (jalon F17 — accueil contextualisé achevé : **42 écrans sur 42**).
+> Précédente : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ; 41 sur 42).
+> Précédente : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; 39 écrans sur 42).
+> Précédente : 2026-09-12 (jalon F14 — écrans 03 et 41 livrés ; 37 écrans sur 42).
+> Précédente : 2026-09-11 (jalon F13 — écrans 14 et 38 livrés ; l'écran 14 figure en §2 et §8).
+> Précédente : 2026-09-11 (jalon F12 — écrans 13, 31, 32, 34, 35 livrés).
+> Précédente : 2026-09-11 (jalon F11 — écrans 28 et 29 livrés).
+> Précédente : 2026-09-11 (jalon F10 — écrans 36 et 37 livrés ; l'écran 12 l'était depuis F7).
 
 **Statut** : `❌` non implémenté · `🟡` partiel · `✅` implémenté et validé manuellement
 
@@ -16,8 +24,8 @@
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 01 | Connexion | `/login` | — | flux OIDC Keycloak (Authorization Code) | F2 | ✅ |
-| 02 | Accueil contextualisé | `/` | tous | selon profil : `/tableau-de-bord` (DJ), files de travail (AST/DJA/SH), `/alertes/mes-notifications` | F2 puis enrichi | 🟡 socle posé (identité, rôles, droits) — cartes métier à venir |
-| 03 | Mes notifications | `/notifications` | authentifié | `GET /alertes/mes-notifications`, `PATCH /alertes/{id}/traiter`, canal `/ws` | F14 | ❌ |
+| 02 | Accueil contextualisé | `/` | tous | files de travail selon le profil : frais, publications, constitutions, suppressions, dossiers, notifications | F2, achevé en **F17** | ✅ |
+| 03 | Mes notifications | `/notifications` | authentifié | `GET /alertes/mes-notifications`, `PATCH /alertes/{id}/traiter`, canal `/ws` | F14 | ✅ |
 | 04 | Non autorisé | `/unauthorized` | tous | — | F2 | ✅ |
 | — | Introuvable | `not-found` | tous | — | F1 | ✅ |
 
@@ -52,8 +60,8 @@
 | 10 | Fiche — Délibérés | onglet | CONS / JUR | `GET /dossiers/{id}/deliberes`, `POST /dossiers/{id}/deliberes`, `GET /deliberes/{id}/prorogations` | F9 | ✅ (état de chaque délibéré, historique des prorogations — Q-78) |
 | 11 | Fiche — Alarmes | onglet | CONS / JUR | `GET /dossiers/{id}/alarmes`, `POST /dossiers/{id}/alarmes`, `PATCH /alarmes/{id}/traiter` | F8 | ✅ (« Marquer traitée » — QF-29) |
 | 12 | Fiche — Documents | onglet | CONS / SAI | `GET /dossiers/{id}/documents`, `POST /ged/documents`, `DELETE /ged/documents/{id}` | F7 | ✅ (dépôt, aperçu, téléchargement, suppression — avancé depuis F10) |
-| 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ❌ |
-| 14 | Fiche — Décisions définitives | onglet | JUR | `POST .../adjudications`, `POST .../condamnations` — **aucune lecture, cf. QF-03** | F13 | ❌ |
+| 13 | Fiche — Publications | onglet | AST, JUR, DJ, DJA | `GET /publications?dossierId=` | F12 | ✅ (Assistante : tout ; autres : validées) |
+| 14 | Fiche — Décisions définitives | onglet | CONS / JUR | `GET /dossiers/{id}/decisions` (Q-88), `POST .../adjudications`, `POST .../condamnations`, `PATCH /condamnations/{id}/statut`, jurisprudences du dossier | F13 | ✅ (adjudication proposée sur étape clôturée seulement ; statut de condamnation modifiable sur sa ligne) |
 | 15 | Fiche — Historique | onglet | CONS | inclus dans `GET /dossiers/{id}` (`historique[]`) | F7 | ✅ (libellés en français, QF-24) |
 | 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ✅ |
 | 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ✅ (arbitrage débloqué par Q-74) |
@@ -81,7 +89,7 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ✅ |
-| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ✅ |
+| 20 | Vue consolidée par client | `/clients/[id]` | CONS (modification : SAI) | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers`, `PUT /clients/{id}` | F5 · Q-116 | ✅ |
 | 21 | Création client | modale (écran 19) | SAI | `POST /clients` | F5 | ✅ |
 
 > **20** : la réponse regroupe les dossiers en `{recouvrement[], exploitationLitiges[]}` et est
@@ -118,9 +126,9 @@ est strictement consultatif (Q-19) · `statutExpedition ∈ {A_LEVER, LEVEE}`.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 28 | File des demandes | `/frais` | AVO, AST, DJA, DJ | `GET /frais/demandes?statut&page&size` | F11 | ❌ |
-| 29 | Détail et action de circuit | `/frais/[id]` | selon l'étape | `PUT .../conformite` (AST), `PUT .../opportunite` (DJA), `POST .../validation-conjointe` (DJ+DJA), `PATCH .../paiement` (AST) | F11 | ❌ |
-| 30 | Déposer une demande | `/frais/nouvelle` | AVO | `POST /frais/demandes` | **F16** | ❌ |
+| 28 | File des demandes | `/frais` | AVO, AST, DJA, DJ | `GET /frais/demandes?statut&page&size` | F11 | ✅ (vue par défaut selon le profil, vue dans l'URL) |
+| 29 | Détail et action de circuit | `/frais/[id]` | selon l'étape | `GET /frais/demandes/{id}` (Q-82), `PUT .../conformite` (AST), `PUT .../opportunite` (DJA), `POST .../validation-conjointe` (DJ+DJA), `PATCH .../paiement` (AST) | F11 | ✅ (règle RG-INT-03 expliquée, décisions nommées, une seule action par profil et par étape) |
+| 30 | Déposer une demande | `/frais/nouvelle` | AVO | `POST /frais/demandes`, `GET /avocat/mes-dossiers` | **F16** | ✅ |
 
 **Circuit** : `DEPOSEE → CONFORMITE → [OPPORTUNITE] → VALIDEE → PAYEE`, avec `REJETEE` terminal
 depuis n'importe quelle étape. La validation conjointe DJ **et** DJA n'est requise que si
@@ -135,11 +143,11 @@ ses propres demandes pour un avocat · les deux accords sont requis, un seul ref
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 31 | File des publications | `/publications` | AST, JUR, DJ, DJA | `GET /publications?dossierId&statut&page&size` | F12 | ❌ |
-| 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ❌ |
-| 33 | Dépôt de compte rendu / pièce | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (texte), `POST /publications/autres` (fichier) — ⚠ **QF-20** : pas de compte rendu en pièce jointe | **F16** | ❌ |
-| 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ❌ |
-| 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ❌ |
+| 31 | File des publications | `/publications` | AST, JUR, DJ, DJA | `GET /publications?dossierId&statut&page&size` | F12 | ✅ (Assistante : à valider, validées, rejetées ; autres : validées) |
+| 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ✅ (fichier consultable, accès restreint en écran dédié, correspondance unique — Q-86) |
+| 33 | Dépôt d'une publication (compte rendu ou document) | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (multipart, pièce facultative — Q-98), `POST /publications/autres` (fichier), `GET /avocat/mes-dossiers{/id/audiences}` — formulaire continu à deux choix décrits, QF-20 rouverte puis tranchée | **F16**, revu Q-98 | ✅ |
+| 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ✅ (trié par charge croissante, recherche par nom) |
+| 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR, modale de la fiche 07), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ✅ (lettre consultable depuis la ligne, nommée — Q-86) |
 
 **Règles** : `statut=DEPOSE` alimente la file de l'assistante · `GET /publications/{id}` renvoie 403
 `ERR-009` si `restrictionAcces` désigne un autre utilisateur — traiter comme un écran « accès
@@ -154,8 +162,8 @@ notification applicative (Q-52).
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ❌ |
-| 37 | Rapport journalier | `/ged/rapport-journalier` | JUR | `GET /ged/rapport-journalier?date=` | F10 | ❌ |
+| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ✅ (fichier et dossier nommés, aperçu, rejet motivé, historique — Q-79 ; paginée — QF-50) |
+| 37 | Rapport journalier | `/ged/rapport-journalier` | JUR, DJ, DJA, AST | `GET /ged/rapport-journalier?date=` | F10 | ✅ (état vide explicite ; ouvert à 4 profils — Q-80) |
 
 **`DELETE /ged/documents/{id}` a deux comportements** selon le profil résolu côté serveur :
 **202** pour le juriste auteur du chargement (demande créée, document intact), **200** pour DJ/DJA
@@ -170,8 +178,8 @@ L'interface doit interpréter le code de retour, pas le rôle local.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 14 | Décisions du dossier | onglet (fiche) | JUR | `POST /dossiers/{id}/adjudications`, `POST /dossiers/{id}/condamnations`, `PATCH /condamnations/{id}/statut` | F13 | ❌ |
-| 38 | Base jurisprudentielle | `/jurisprudences` | CONS / JUR | `GET /jurisprudences?motCle&natureDecision&juridiction&page&size`, `POST /jurisprudences` | F13 | ❌ |
+| 14 | Décisions du dossier | onglet (fiche) | CONS / JUR | `GET /dossiers/{id}/decisions`, `POST /dossiers/{id}/adjudications`, `POST /dossiers/{id}/condamnations`, `PATCH /condamnations/{id}/statut` | F13 | ✅ (voir la ligne 14 ci-dessus) |
+| 38 | Base jurisprudentielle | `/jurisprudences` | CONS / JUR | `GET /jurisprudences?motCle&natureDecision&juridiction&page&size`, `POST /jurisprudences` | F13 | ✅ (recherche partielle, filtres dans l'URL, archivage PDF) |
 
 > ⚠ **QF-03 — bloquant fonctionnel.** Il n'existe **aucun `GET`** sur les adjudications ni les
 > condamnations. L'écran « Suivi des condamnations » prévu par `FUNCTIONAL_MAP.md` §8 n'a pas de
@@ -189,8 +197,8 @@ transition reste manuelle via l'endpoint générique d'étape.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ seul** | `GET /tableau-de-bord` | F15 | ❌ |
-| 40 | Générer un rapport d'activité | `/rapports` | **JUR seul** | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ❌ |
+| 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ et DJA** (Q-95) | `GET /tableau-de-bord` | F15 | ✅ |
+| 40 | Générer un rapport d'activité | `/rapports` | **JUR**, et la direction par son composite (Q-81) | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ✅ |
 
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
@@ -204,8 +212,9 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}`, `PUT /alertes/seuils` | F14 | ❌ |
-| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
+| 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
+| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants`, `PUT /intervenants/{id}` | F5 · Q-117 | ✅ |
+| 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.
@@ -217,6 +226,12 @@ refuse le champ `notification` ; un `AUTRE_PRESTATAIRE` refuse tout compte appli
 modification ni suppression** : non demandées par les user stories. Cet écran est indispensable en
 F5 — sans lui, aucun avocat n'existe, et `avocatsAffectes` est obligatoire à la création d'un
 dossier.
+
+**43** — trois blocs : la **consultation** filtrée (Q-112), l'**extraction scellée** avec la liste des
+archives produites (Q-113), et la **vérification d'un fichier reçu** (Q-114,
+`GET /historique/exports/verification`). L'empreinte du fichier déposé est calculée **par le
+navigateur** : seule sa valeur part au serveur. Chaque archive porte une référence lisible
+`AUD-2026-0042`, reprise dans le nom du fichier — l'empreinte prouve, la référence désigne.
 
 ---
 

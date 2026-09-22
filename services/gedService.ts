@@ -1,10 +1,16 @@
-import { apiClient } from "@/lib/api/client";
-import type { DemandeSuppression, DocumentDossier, ResultatSuppression } from "@/types/domaine";
+import { TAILLE_PAGE } from "@/hooks/const";
+import { apiClient, type PageReponse } from "@/lib/api/client";
+import type {
+  DemandeSuppression,
+  DocumentDossier,
+  RapportJournalier,
+  ResultatSuppression,
+  StatutSuppression,
+} from "@/types/domaine";
 
 /**
- * GED — dépôt, consultation et suppression des pièces d'un dossier (#38, #39, #40, #43).
- *
- * La file des demandes de suppression (DJ/DJA) et le rapport journalier arrivent avec F10.
+ * GED — pièces d'un dossier (#38, #39, #40, #43), file des demandes de suppression du DJ/DJA (#63,
+ * #41) et rapport journalier (#42).
  */
 export const gedService = {
   /**
@@ -14,8 +20,14 @@ export const gedService = {
    * (Q-67 backend). Les éléments de cette liste ne portent **pas** d'URL de téléchargement : on la
    * demande au moment de l'ouverture (#39), et c'est tant mieux, elle ne vit que 10 minutes.
    */
-  listerDocumentsDossier: async (dossierId: number): Promise<DocumentDossier[]> => {
-    const { data } = await apiClient.get<DocumentDossier[]>(`/dossiers/${dossierId}/documents`);
+  listerDocumentsDossier: async (
+    dossierId: number,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<DocumentDossier>> => {
+    const { data } = await apiClient.get<PageReponse<DocumentDossier>>(`/dossiers/${dossierId}/documents`, {
+      params: { page, size },
+    });
     return data;
   },
 
@@ -55,6 +67,42 @@ export const gedService = {
     return reponse.status === 202
       ? { immediate: false, demande: reponse.data as DemandeSuppression }
       : { immediate: true, document: reponse.data as DocumentDossier };
+  },
+
+  /**
+   * #63 — file du DJ/DJA. Avec `statut`, les demandes de ce statut, **la plus ancienne d'abord**
+   * (l'ordre de traitement) ; sans, tout l'historique, la plus récente d'abord.
+   */
+  listerDemandesSuppression: async (
+    statut: StatutSuppression | null,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<DemandeSuppression>> => {
+    const { data } = await apiClient.get<PageReponse<DemandeSuppression>>("/ged/demandes-suppression", {
+      params: { ...(statut ? { statut } : {}), page, size },
+    });
+    return data;
+  },
+
+  /**
+   * #41 — décision du DJ/DJA sur la demande en attente d'un document. Approuvée : le document est
+   * supprimé. Rejetée : il est conservé, et le motif — obligatoire — est transmis au juriste.
+   */
+  deciderSuppression: async (
+    documentId: number,
+    decision: { decision: "APPROUVEE" } | { decision: "REJETEE"; motifRejet: string },
+  ): Promise<DemandeSuppression> => {
+    const { data } = await apiClient.put<DemandeSuppression>(
+      `/ged/documents/${documentId}/approbation-suppression`,
+      decision,
+    );
+    return data;
+  },
+
+  /** #42 — activité documentaire d'une journée ; un jour sans activité rend des zéros, pas une erreur. */
+  rapportJournalier: async (date: string): Promise<RapportJournalier> => {
+    const { data } = await apiClient.get<RapportJournalier>("/ged/rapport-journalier", { params: { date } });
+    return data;
   },
 
   /**

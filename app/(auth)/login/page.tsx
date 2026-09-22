@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Logo, SelecteurLangue } from "@/components/global";
 import { FormulaireConnexion } from "@/components/modules/auth/formulaire-connexion";
+import { MotifConsomme } from "@/components/modules/auth/motif-consomme";
 import { auth } from "@/lib/auth";
 
 export async function generateMetadata() {
@@ -34,8 +35,22 @@ export default async function PageConnexion({
 
   const t = await getTranslations("connexion");
   const tc = await getTranslations("commun");
+  /*
+   * Le motif dit ce qui vient de se passer — un événement, pas un état de la page. Il est donc
+   * affiché puis **retiré de l'URL** par `MotifConsomme` : sans cela il survivait au rechargement et
+   * à la restauration d'onglets du navigateur, et annonçait une expiration à quelqu'un qui n'avait
+   * pas eu de session.
+   *
+   * Deux causes, deux messages : un jeton rejeté appelle une reconnexion ; un service
+   * d'authentification injoignable appelle de la patience — s'y reconnecter est impossible.
+   */
   const { motif } = await searchParams;
-  const message = motif === "session-expiree" ? t("sessionExpiree") : null;
+  const message =
+    motif === "session-expiree"
+      ? t("sessionExpiree")
+      : motif === "auth-indisponible"
+        ? t("authIndisponible")
+        : null;
 
   return (
     <div className="flex h-svh flex-col overflow-hidden">
@@ -60,6 +75,7 @@ export default async function PageConnexion({
             </div>
 
             <FormulaireConnexion messageInitial={message} />
+            {message ? <MotifConsomme /> : null}
 
             <p className="mt-4 text-center text-[length:var(--taille-xs)] leading-relaxed text-texte-tertiaire">
               {t("mention")}

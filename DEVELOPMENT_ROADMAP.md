@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP
 
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
-> Dernière mise à jour : 2026-09-11 (**F0 à F8 validés**, **F9 livré** en attente de validation).
+> Dernière mise à jour : 2026-09-11 (**F0 à F9 validés**, **F10 livré** en attente de validation).
 
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
@@ -446,34 +446,140 @@ complète à 62/64, puis les 2 parcours corrigés — sélecteurs ambigus — re
 
 ---
 
-## F10 — Gestion documentaire ⏳
+## F10 — Gestion documentaire ✅ *(validé, fusionné dans `dev`)*
 
-Écrans **12**, **36**, **37**. Endpoints **#38-43**, **#63**.
+Écrans **12**, **36**, **37**. Endpoints **#38-43**, **#63**. **Livré le 2026-09-11** sur
+`feat/f10-ged`, branchée sur `origin/dev` (F9 fusionné).
 
-**Vérifications** : format non conforme et fichier > 10 Mo refusés avec message explicite ;
-**suppression par un juriste auteur → 202 (demande), par un DJ → 200 (immédiate)**, les deux
-correctement interprétés ; approbation et rejet avec motif ; document supprimé → 404 ; rapport
-journalier à zéro affiché comme état vide. Trancher **QF-06** (affichage des URL MinIO).
+L'écran 12 (onglet Documents) et #38, #39, #40, #43 étaient livrés depuis F7, QF-06 tranchée ; F10
+apporte la **file des demandes de suppression** (36) et le **rapport journalier** (37).
+
+**L'audit a trouvé deux défauts backend, corrigés sur décision du porteur du projet (M16)** :
+- **Q-79 / QF-34** — une suppression directe (DJ/DJA) laissait la demande du juriste en attente,
+  indécidable (404) et relancée toutes les 72 h ; notre propre parcours e2e de F7 en créait une à
+  chaque exécution. Et la file ne nommait ni le fichier ni le dossier. Corrigé, plus V10 pour les
+  orphelines existantes (une en base locale).
+- **Q-80 / QF-35** — le rapport journalier n'était servi qu'au juriste ; ouvert au DJ, à la DJA et
+  à l'Assistante, comme le veulent les sources.
+- **QF-36 / Q-81**, constaté au même audit et tranché le même jour — le DJ et la DJA n'avaient pas
+  les droits d'un juriste : `ROLE_JURISTE` ajouté à leurs composites (realm et Keycloak en
+  service), le backend choisissant désormais le profil par priorité. Côté frontend, rien à lister :
+  leur jeton porte `ROLE_JURISTE`. Parcours `droits-dj.spec.ts` : le DJ fait avancer une étape et
+  planifie une audience, reste affiché « Directeur Juridique » et garde son menu de DJ.
+
+- `gedService` (#63, #41, #42), `hooks/useGed.ts`, deux entrées de menu (DJ/DJA ; 4 profils).
+- **Écran 36** : vues « en attente » (ordre de traitement) et « toutes » (historique), fichier et
+  dossier nommés, aperçu du document avant décision, approbation confirmée, rejet à motif
+  obligatoire, décideur et date de la décision.
+- **Écran 37** : date au choix (aujourd'hui par défaut), trois indicateurs, audiences du jour ;
+  un jour sans activité affiché comme un état vide explicite.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **200 tests unitaires** ✅ ·
+`build` ✅ · **69 parcours Playwright contre le backend réel et MinIO** ✅ (build de production, une
+seule exécution, après Q-81). Backend : 293 tests, `BUILD SUCCESS`, V10 appliquée.
+**Dépend de** : F7.
+
+> **Points à retenir :**
+> - **Un de nos propres tests fabriquait le défaut.** Le parcours « le juriste demande, le DJ
+>   supprime » de F7 était vert et laissait, à chaque exécution, une demande indécidable en base.
+>   Un test qui passe ne dit rien de l'état qu'il laisse.
+> - **Un port libre ne prouve pas l'absence de backend** : un `spring-boot:run` peut vivre sans
+>   écouter, et devtools le redémarre sur le nouveau `target/` au prochain build.
+
+---
+
+## F11 — Frais d'avocats (profils internes) ✅ *(validé, fusionné dans `dev`)*
+
+Écrans **28**, **29**. Endpoints **#24-28**, plus le détail `GET /frais/demandes/{id}` (Q-82).
+**#23 (dépôt avocat) reporté à F16.** **Livré le 2026-09-11** sur `feat/f11-frais`, branchée sur
+`origin/dev` (F10 fusionné).
+
+**L'audit a trouvé des manques backend, corrigés sur décision du porteur du projet (M16)** :
+- **Q-82 / QF-37** — aucun détail d'une demande, décisions du circuit invisibles (le DJ ne voyait pas
+  l'accord de la DJA ; l'écran aurait proposé un vote refusé ensuite), réponse faite d'identifiants,
+  file sans ordre stable. Ajout de `GET /frais/demandes/{id}`, réponse enrichie, tri.
+- **Q-83** — la relance CONF04 (validation conjointe sans suite après 5 jours) n'existait pas :
+  `FraisRelanceScheduler`, migration V11.
+- **QF-26** — pièces affichées par leur nom ; le choix GED ou multipart est reporté à F16.
+- **Q-84 / QF-38**, constaté en préparant les parcours — le backend reconnaissait l'avocat par le
+  `sub` Keycloak (un UUID), pas par l'identifiant de connexion que saisit le DJ : aucun avocat créé
+  par l'interface ne pouvait déposer. Corrigé avant la clôture : identifiant de connexion d'abord,
+  `sub` en second ; formulaire des intervenants relibellé « Identifiant de connexion ».
+- **Q-85** — deux créations concurrentes du même avocat rendaient 500 : une violation d'unicité
+  rend désormais 409.
+
+- `fraisService`, `hooks/useFrais.ts`, `lib/frais.ts` (vues par profil, accord conjoint du profil),
+  entrée de menu « Frais d'avocats » (Assistante, DJA, DJ, avocat).
+- **Écran 28** : vue par défaut selon le profil (Assistante : à contrôler, à payer ; DJA :
+  opportunité, validation conjointe ; DJ : validation conjointe ; « toutes » pour chacun), vue
+  dans l'URL, mention « validation conjointe » et « votre accord est enregistré ».
+- **Écran 29** : dossier, avocat, montant, pièces déclarées ; règle RG-INT-03 expliquée (dossier
+  sensible ou seuil applicable) ; circuit avec chaque décision nommée et datée ; une seule action
+  par profil et par étape, confirmée ; rejet à motif obligatoire ; la DJA prévenue avant de valider
+  qu'une validation conjointe suivra (UC-INT-02 alt. 4-a) ; un second vote jamais proposé.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **213 tests unitaires** ✅ ·
+`build` ✅ · **73 parcours Playwright contre le backend réel** ✅ (build de production), dont 4 pour
+F11 : circuit simple (Assistante, DJA seule, paiement) ; montant au-delà du seuil (validation
+conjointe, second vote de la DJA refusé en 409, accord du DJ qui valide) ; rejet à motif
+obligatoire ; paiement refusé en 400 avant validation, vue par défaut du DJ et de l'Assistante,
+juriste sans accès. Backend : 300 tests, `BUILD SUCCESS`, V11 appliquée.
+**Après Q-84/Q-85** (même jour, avant clôture) : backend **310 tests**, `BUILD SUCCESS`, V12 appliquée ;
+frontend `typecheck` ✅ · `lint` ✅ · 213 tests unitaires ✅ · `build` ✅ · **73 parcours Playwright** ✅,
+l'avocat de test rattaché par son identifiant de connexion `avocat.test` ; chaque compte porte
+désormais son identifiant en base.
+
+> **Point à retenir :** deux parcours parallèles créant le même avocat ont obtenu un **500** et non
+> un 409 : le contrôle d'unicité du service précède l'insertion, la contrainte de la base répond la
+> première quand deux créations se croisent. Corrigé par Q-85 avant la clôture du jalon.
+
 **Dépend de** : F7.
 
 ---
 
-## F11 — Frais d'avocats (profils internes) ⏳
-
-Écrans **28**, **29**. Endpoints **#24-28**. **#23 (dépôt avocat) reporté à F16.**
-
-**Vérifications** : le circuit complet parcouru avec quatre comptes différents ; cas non sensible
-sous seuil validé par le seul DJA ; cas sensible exigeant les deux accords ; double vote du même
-profil refusé ; un seul refus rejette ; paiement refusé sur demande non validée ; motif obligatoire
-à chaque rejet ; la file est bien filtrée par profil.
-**Dépend de** : F7.
-
----
-
-## F12 — Publications, constitutions, répertoire ⏳
+## F12 — Publications, constitutions, répertoire ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **13**, **31**, **32**, **34**, **35**. Endpoints **#30**, **#32-37**, **#59-60**.
-**#29 et #31 (dépôts avocat) reportés à F16.**
+**#29 et #31 (dépôts avocat) reportés à F16.** **Livré le 2026-09-11** sur `feat/f12-publications`,
+branchée sur `origin/dev` (F11 fusionné).
+
+**L'audit a trouvé des manques backend, corrigés sur décision du porteur du projet (M16)** :
+- **Q-86 / QF-39** — le fichier d'une pièce déposée n'était exposé nulle part ; l'Assistante ne
+  pouvait pas ouvrir une publication à valider ; les commentaires des juristes n'étaient lisibles
+  par personne ; publications et constitutions ne portaient que des identifiants ; aucun juriste
+  n'était prévenu d'une publication validée. Tout est corrigé.
+- **Q-87** — un avocat constitué n'était jamais notifié : le prestataire, chargé à la demande, était
+  un proxy qu'`instanceof Avocat` ne reconnaissait pas.
+- **Reporté à F16** : l'observation du DJ/DJA de sa propre initiative (UC-INT-08 étapes 8 à 12), la
+  lecture de ses correspondances par l'avocat, et QF-20 (compte rendu déposé en fichier).
+
+- `publicationService` (#30, #32-34, #59), `constitutionService` (#35-37, #60), `usePublications`,
+  `useConstitutions`, `lib/publications.ts` (vues par profil), capacité `solliciterConstitution`,
+  trois entrées de menu.
+- **Écran 31** : l'Assistante ouvre sur « à valider » (ordre d'arrivée), puis validées, rejetées ;
+  les autres profils ne voient que les publications validées.
+- **Écran 32** : pièce consultable et téléchargeable, compte rendu lisible ; validation confirmée,
+  rejet à motif obligatoire ; commentaire du juriste « pour le DJ/DJA, jamais pour l'avocat » ;
+  correspondance unique du DJ/DJA, confirmée ; accès restreint et publication non validée en écrans
+  dédiés, pas en erreurs.
+- **Écran 13** : onglet « Publications » de la fiche (masqué au SH, qui ne lit pas les publications).
+- **Écran 34** : répertoire trié par charge croissante, recherche par nom, performance en pourcentage.
+- **Écran 35** : file du SH (« à signer ») et historique ; signature confirmée, rejet motivé ; lettre
+  de constitution consultable depuis la ligne. Sollicitation depuis la fiche (07), motif obligatoire.
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **226 tests unitaires** ✅ ·
+`build` ✅ · **Playwright contre le backend réel et MinIO** (build de production) : suite complète
+**78 sur 79**, le 79ᵉ étant un défaut du test F8 décrit ci-dessous — corrigé, son fichier rejoué
+**8 sur 8** (la suite complète n'a pas été relancée après ce correctif). Dont 6 parcours pour F12 : pièce invisible avant validation puis consultable ; rejet à motif obligatoire ;
+commentaire du juriste lu par le DJ, correspondance unique (second envoi refusé en 409) ; accès
+restreint en écran dédié ; constitution sans motif refusée, signée par le SH, lettre dans la GED ;
+répertoire trié par charge croissante, SH sans publications ni répertoire. Backend : 315 tests,
+`BUILD SUCCESS`.
+
+> **Point à retenir :** la suite complète a révélé un défaut **d'un test F8**, pas de l'application :
+> `filter({ hasText: "Traitée" })` compare une sous-chaîne sans tenir compte de la casse, et le
+> bouton « Marquer traitée » d'une alarme active suffisait à la compter. Il passait jusqu'ici par
+> chance de synchronisation. Corrigé en visant la cellule de statut exacte.
 
 **Vérifications** : publication non validée invisible ; restriction d'accès → écran dédié, pas une
 erreur technique ; commentaire de juriste transmis au DJ/DJA et **jamais directement à l'avocat** ;
@@ -483,15 +589,36 @@ lettre consultable dans la GED ; répertoire trié par charge croissante.
 
 ---
 
-## F13 — Décisions définitives et jurisprudence ⏳ *(inclut une évolution backend)*
+## F13 — Décisions définitives et jurisprudence ✅ *(validé, fusionné dans `dev`)*
 
-Écrans **14**, **38**. Endpoints **#51-55**.
+Écrans **14**, **38**. Endpoints **#51-55**, plus `GET /dossiers/{id}/decisions` (Q-88).
+**Livré le 2026-09-11** sur `feat/f13-decisions`, branchée sur `origin/dev` (F12 fusionné).
 
-🔧 **Comprend une évolution backend (QF-03)** : aucun `GET` n'existe sur les adjudications ni les
-condamnations, l'onglet 14 serait sinon en écriture seule. Ajout attendu :
-`GET /dossiers/{id}/decisions`, symétrique de #56/#57/#58 livrés en M15, sans règle métier nouvelle.
-**À décider et à réaliser au début de ce jalon**, dans le dépôt backend. La base jurisprudentielle
-(**38**) est livrable sans cette évolution.
+**Évolution backend décidée par le porteur du projet à l'ouverture du jalon (M16)** :
+- **Q-88 / QF-03** — `GET /dossiers/{id}/decisions` : l'onglet 14 n'est plus en écriture seule, et le
+  statut d'une condamnation se met à jour même après un rechargement.
+- **Q-89** — la recherche jurisprudentielle était exacte, casse comprise ; elle est partielle et
+  insensible à la casse, et filtrable par dossier (les décisions archivées d'une fiche).
+- **Laissé ouvert (Q-90 backend, QF-40)** : la mise à jour d'une adjudication (les sources ne la
+  prévoient que pour la condamnation) et le statut initial d'une condamnation, toujours « En
+  attente » — l'écran le dit et le statut se change ensuite sur la ligne.
+
+- `decisionService` (#51-55, Q-88), `hooks/useDecisions.ts`, entrée de menu « Jurisprudence ».
+- **Écran 14** (onglet « Décisions » de la fiche) : adjudications (proposées seulement sur une étape
+  clôturée, l'écran dit pourquoi sinon ; reliquat négatif refusé) ; condamnations (statut de paiement
+  modifiable sur la ligne, lecture seule hors juriste) ; décisions archivées du dossier.
+- **Écran 38** (`/jurisprudences`) : recherche par mot-clé, nature et juridiction, filtres dans
+  l'URL ; archivage d'un PDF indexé (indexation incomplète refusée) ; aperçu et téléchargement avec
+  une URL redemandée à l'ouverture (elle ne vit que 10 minutes).
+
+**Vérifications exécutées le 2026-09-11** : `typecheck` ✅ · `lint` ✅ · **233 tests unitaires** ✅ ·
+`build` ✅ · **83 parcours Playwright sur 83 contre le backend réel et MinIO** ✅ (build de
+production), dont 4 pour F13 : adjudication refusée hors étape clôturée (400) et à reliquat négatif
+(400, et refusée à l'écran), puis enregistrée sur une étape clôturée ; condamnation suivie, statut
+passé à « Payée » et relu après rechargement, lecture seule pour l'Assistante ; indexation incomplète
+refusée, archivage PDF, recherche par fragment de mot-clé et de juridiction en minuscules, aperçu et
+téléchargement ; décision archivée depuis la fiche listée dans son onglet. Backend : 319 tests,
+`BUILD SUCCESS`.
 
 **Vérifications** : adjudication refusée hors étape `CLOTURE` ; reliquat négatif refusé ; indexation
 jurisprudentielle incomplète refusée ; recherche par mots-clés, nature et juridiction ;
@@ -500,52 +627,172 @@ téléchargement du PDF.
 
 ---
 
-## F14 — Alertes, notifications, configurations ⏳
+## F14 — Alertes, notifications, configurations ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **03**, **41**. Endpoints **#44-48**, canal `/ws`.
 Badge de notifications, marquage traité, configurations CONF01-07, seuil `CHARGE_MAX_AVOCAT`.
 
-**Vérifications** : une alerte déclenchée côté backend apparaît sans rechargement ; le repli HTTP
-fonctionne canal coupé ; un non-destinataire ne peut pas traiter une alerte (403) ; un seuil modifié
-par le DJ est pris en compte immédiatement.
-**Dépend de** : F2. **Décision attendue** : QF-11.
+**Vérifications exécutées le 2026-09-12** : `typecheck` ✅ · `lint` ✅ · **252 tests unitaires** ✅ ·
+`build` ✅ (24 routes) · **`npm run smoke`** ✅ · **89 parcours Playwright sur 89** contre le backend
+réel, en 5 min 42 · backend **351 tests** ✅.
+
+> **Deux défauts antérieurs mis au jour par la suite de bout en bout, tous deux sans rapport avec
+> le périmètre annoncé, tous deux corrigés sur arbitrage :**
+> - **Q-93** : `GET /clients` et `GET /dossiers` paginaient sans ordre défini. Passé vingt clients —
+>   seuil franchi ce jour-là — celui qu'un juriste venait de créer basculait en page 2, invisible
+>   pour son auteur. Deux parcours le démontraient, en parallèle **et** en exécution seule.
+> - **Q-94 (QF-41)** : `GET /clients/{id}/dossiers` interrogeait la base trois fois **par dossier** —
+>   930 requêtes, 11 à 19 s pour 310 dossiers, jusqu'à 70 s sous charge. Ma première piste, alléger
+>   la réponse, était fausse : le contrat inclut `etapes` et l'écran 13 s'en sert. Trois requêtes pour
+>   la liste entière, contrat inchangé — **0,12 s** mesuré ensuite sur 355 dossiers.
+>
+> Cette seconde correction a réglé l'instabilité de la suite de bout en bout : **89 parcours sur 89
+> en 5 min 42**, contre 18 à 25 minutes et des échecs tournants auparavant. Les « flakinesses »
+> attribuées à la charge venaient de cet appel, qui retenait une connexion assez longtemps pour faire
+> expirer ses voisines.
+**Dépend de** : F2. **Décision rendue** : **QF-11 ✅ — temps réel avec repli HTTP garanti**.
+
+> **Évolution backend décidée en début de jalon (Q-91)** — `PUT /configurations/{cle}` acceptait
+> n'importe quelle chaîne non vide, alors que cinq services reconvertissent ces valeurs : une faute
+> de frappe du DJ (« 50 000 000 ») se transformait en erreur 500 dans les frais, les délibérés ou la
+> GED, loin de l'écran fautif. Chaque clé publie désormais sa règle — type, bornes, valeurs
+> acceptées — refusée en 400 à la source et **exposée dans la réponse**, si bien que l'écran 41
+> construit son champ de saisie à partir du contrat plutôt que d'en redéclarer une copie.
+>
+> **Points à retenir :**
+> - Le canal `/ws` n'est exposé qu'en **SockJS** : une WebSocket native ne négocierait rien, d'où
+>   `sockjs-client` en plus de `@stomp/stompjs`.
+> - Le jeton est relu **à chaque connexion** (`beforeConnect`) : capturé une fois au montage, il
+>   aurait expiré à la première reconnexion après rotation.
+> - Le canal est ouvert **une seule fois**, dans la coquille authentifiée, pas dans l'écran 03 :
+>   une alerte doit atteindre le badge quelle que soit la page affichée.
+> - `#44` (`PUT /alertes/seuils`) est la voie désignée par le contrat pour `CHARGE_MAX_AVOCAT` :
+>   l'écran 41 l'emprunte pour cette clé et passe par `#48` pour les six autres.
 
 ---
 
-## F15 — Rapports et tableau de bord ⏳
+## F15 — Rapports et tableau de bord ✅ *(validé, fusionné dans `dev`)*
 
 Écrans **39**, **40**. Endpoints **#49-50**.
 
-**Vérifications** : les 6 indicateurs cohérents avec les données des jalons précédents ; **204 sur
-période vide affiché comme état vide** ; les 4 formats d'export téléchargés et ouvrables ; les
-restrictions de rôle respectées.
-**Dépend de** : F6→F13. **Décision attendue** : QF-04.
+**Vérifications exécutées le 2026-09-14** : `typecheck` ✅ · `lint` ✅ · **262 tests unitaires** ✅ ·
+`build` ✅ (26 routes) · **`npm run smoke`** ✅ · **96 parcours Playwright sur 96** contre le backend
+réel, en 5 min 54 (dont les 7 de ce jalon) · backend **351 tests** + parcours P9 étendu ✅.
+**Dépend de** : F6→F13. **Décision rendue** : **QF-04 close**.
+
+> **QF-04 close, et pour une raison qui n'était plus celle du constat initial.** La question disait
+> que le DJ ne pouvait pas générer de rapport, faute de `ROLE_JURISTE`. Ce n'est plus vrai depuis
+> Q-81 (jalon F12) : relevé sur le Keycloak en service, son jeton porte
+> `ROLE_CONSULTATION, ROLE_DJ, ROLE_JURISTE, ROLE_SAISIE`. Le parcours de pilotage P9 est donc
+> jouable d'un bout à l'autre sans rien changer. Restait le revers — la DJA n'avait pas le tableau
+> de bord — tranché par le porteur du projet en **Q-95** : `GET /tableau-de-bord` passe à
+> `hasAnyRole('DJ','DJA')`. US 8.5 ne nommait que le DJ, mais les spécifications fonctionnelles
+> décrivent ce tableau comme obtenu « à travers le DJ/DJA » (partie prenante STK-06).
+>
+> **Points à retenir :**
+> - **Le 204 est un état vide, pas une erreur** (RG-REP-02). Le service le rend en `null` plutôt que
+>   de laisser chaque écran réinterpréter un statut, et l'export le refuse au lieu de produire un
+>   fichier creux.
+> - Le rapport est une **mutation**, pas une requête : une requête se relancerait à chaque
+>   changement de borne, alors que rien ne doit partir avant le clic.
+> - `type` n'est qu'une **étiquette** côté backend (Q-63) ; c'est l'écran qui en déduit des bornes
+>   cohérentes, que l'utilisateur reste libre d'ajuster.
+> - **Les jeux de rôles de `tests/unit/rbac.test.ts` dataient du 2026-09-08** et ignoraient les
+>   composites de Q-81. Relevé refait sur le Keycloak réel : deux attentes décrivaient une réalité
+>   périmée — la DJA accède au calendrier et la direction au répertoire des avocats depuis F12.
 
 ---
 
-## F16 — Portail Avocat ⏳ *(inclut une évolution backend)*
+## F16 — Portail Avocat ✅ *(validé, fusionné dans `dev`)*
 
-Écrans **30**, **33**. Endpoints **#23**, **#29**, **#31**, **#45-46**, **#28**.
+Écrans **30**, **33**, plus l'espace de l'avocat. Endpoints **#23**, **#29**, **#31**, les quatre
+lectures du portail (backend **Q-96**) et le téléversement des pièces justificatives (**Q-97**).
 
-🔧 **Comprend une évolution backend** (décision QF-01 actée) : l'avocat doit pouvoir découvrir ses
-dossiers et les audiences associées, relire ses publications et consulter ses lettres de
-constitution. Quatre lectures cadrées sur l'avocat connecté suffiraient — **sans** lui accorder
-`ROLE_CONSULTATION`, qui lui ouvrirait tous les dossiers, clients et employés.
-**À spécifier et à réaliser au début de ce jalon**, dans le dépôt backend.
+**Vérifications exécutées le 2026-09-14** : `typecheck` ✅ · `lint` ✅ · **269 tests unitaires** ✅ ·
+`build` ✅ (29 routes) · **`npm run smoke`** ✅ · **270 tests unitaires** ✅ · **103 parcours
+Playwright sur 103** contre le backend réel · backend **356 tests** ✅.
+**Dépend de** : F11, F12. **Décisions rendues** : **QF-01 ✅** (périmètre complet) · **QF-20 ✅**
+close sans modification · **QF-26 ✅** corrigée par Q-97.
 
-**Vérifications** : un avocat ne voit **que** ses dossiers, ses demandes et ses publications ; il ne
-peut énumérer ni le personnel interne, ni les clients, ni les autres dossiers.
-**Dépend de** : F11, F12 + jalon backend.
+> **L'évolution backend (Q-96), et pourquoi elle était inévitable.** L'avocat ne porte pas
+> `ROLE_CONSULTATION` : US 4.1 le faisait soumettre un `dossierId` et US 5.1 lui demandait de déposer
+> « en choisissant le dossier et l'audience », alors que rien ne lui permettait de les découvrir.
+> L'exigence était **inapplicable**, pas seulement inconfortable.
+>
+> **Points à retenir :**
+> - **Une surface distincte sous `/avocat`, plutôt que l'élargissement des endpoints internes.**
+>   Ouvrir `GET /dossiers` à `ROLE_AVOCAT` aurait fait reposer la confidentialité sur un filtre à
+>   l'intérieur d'un service partagé — un oubli, et le portefeuille de la banque passait à un tiers.
+> - **Un dossier réduit à son identification** : ni client, ni risque, ni sensibilité. Un test
+>   d'intégration vérifie l'**absence** de ces champs, pas seulement la présence des autres.
+> - **QF-20 n'était pas une lacune** : la story 5.1 décrit bien un compte rendu textuel, et la story
+>   5.3 prévoit le dépôt de fichier. L'écran 33 expose les deux voies plutôt que d'en inventer une.
+>
+> **QF-26 : je m'étais trompé, le porteur du projet m'a corrigé.** J'avais clos la question comme
+> « conforme à la lettre », au motif que la story 4.1 n'exige que « ≥ 1 » entrée. Les sources disent
+> l'inverse, et sans ambiguïté : UC-INT-01 étape 4 — « l'avocat **charge** les pièces justificatives » ;
+> UC-INT-02 étape 3 — l'instructeur « affiche la demande, **ses pièces justificatives** et le résultat
+> du contrôle de conformité » ; dictionnaire des données — `pieces_justificatives TEXT[]`, « **chemins
+> ou références** des pièces ». Contrôler la conformité d'une liste de noms n'a aucun sens. Corrigé
+> par le backend **Q-97** : téléversement en deux temps, URL pré-signées sur le détail. Vérifié en
+> réel de bout en bout — l'Assistante télécharge effectivement le PDF déposé par l'avocat.
+>
+> **Défaut de F14 trouvé par la suite de ce jalon — le canal temps réel s'annonçait ouvert trop
+> tôt.** `lib/temps-reel.ts` signalait « Temps réel actif » **avant** de poser l'abonnement STOMP.
+> Un courtier ne conserve rien pour une destination sans abonné : une alerte poussée dans cet
+> intervalle était **perdue définitivement**, et comme l'écran se croyait connecté, le repli restait
+> en veille. Corrigé en s'abonnant d'abord ; et la cadence de rafraîchissement canal ouvert passe de
+> 5 minutes à 1, parce qu'un transport SockJS peut se figer sans se fermer et que le jalon F14
+> garantit qu'aucune notification n'est perdue. **Ma première hypothèse — un test trop impatient —
+> était fausse** : la fenêtre élargie à 75 s n'a rien changé, c'est la seconde exécution qui a
+> imposé de chercher la vraie cause. Vérifié : spec des alertes jouée deux fois, 12 passages sur 12,
+> puis 103 parcours sur 103.
+> - `Champ` affiche le message d'erreur, mais c'est `Input` qui porte `aria-invalid`, via `enErreur` :
+>   les deux vont ensemble, la bordure rouge seule ne dit rien à un lecteur d'écran.
 
 ---
 
-## F17 — Durcissement ⏳
+## F17 — Durcissement 🔵 *(livré, en attente de validation manuelle)*
 
 Accessibilité (audit AA complet), responsive sur les trois points de rupture, performance
-(< 2 s sur les vues courantes, conformément à NF-PERF-01), parcours e2e couvrant P1 à P9,
-documentation utilisateur, revue de sécurité frontend.
+(NF-PERF-01), parcours e2e couvrant P1 à P9, documentation utilisateur, revue de sécurité frontend —
+**plus l'achèvement de l'écran 02**, dernier écran incomplet du projet.
 
-**Dépend de** : tous.
+**Vérifications exécutées le 2026-09-14** : `typecheck` ✅ · `lint` ✅ · **270 tests unitaires** ✅ ·
+`build` ✅ (29 routes) · **`npm run smoke`** ✅ · **131 parcours Playwright sur 131** contre le backend
+réel, en 9 min 12 — dont **28 nouveaux** pour ce jalon (7 accessibilité, 5 responsive, 4 performance,
+5 parcours métier, 7 sécurité).
+**Dépend de** : tous. **Aucune décision en attente, aucune évolution backend.**
+
+> **L'écran 02 affichait la liste des identifiants de capacités en police à chasse fixe** —
+> `consulterDossiers`, `deposerFrais`, `arbitrerSuppressions`… Une vue de mise au point, utile
+> pendant la construction du socle, sans valeur pour un juriste. Il présente désormais les **files de
+> travail** de chaque profil : le compte, le libellé, le lien direct. Une carte par **capacité**,
+> jamais par rôle — le DJ portant `ROLE_JURISTE` depuis Q-81, raisonner par rôle afficherait des
+> files incohérentes.
+>
+> **Trois défauts réels trouvés par ce jalon, aucun supposé :**
+>
+> | Défaut | Mesure | Correction |
+> |---|---|---|
+> | Champ de fichier sans nom accessible (`Televersement`) | violation `label` d'axe, **impact critique** | `aria-label`, libellé propre à chaque usage |
+> | Barre latérale non responsive | **324 px** de débordement sur un mobile de 375 px | bande horizontale défilante en dessous de `lg` |
+> | En-tête trop large sur mobile | 68 px résiduels | identité masquée sous `sm`, titre tronqué, marges réduites |
+>
+> **Et aucun en-tête de sécurité n'était posé.** Cinq sont désormais émis sur toutes les réponses,
+> `X-Powered-By` supprimé. La CSP complète et `Strict-Transport-Security` ne le sont **pas** : la
+> première exige un `nonce` par requête, donc un middleware, et casserait l'hydratation si elle était
+> posée à l'aveugle ; la seconde n'a de sens que sous TLS. Les poser ici donnerait l'illusion d'une
+> protection sans l'apporter — c'est un point de mise en production, avec la DSI.
+>
+> **Points à retenir :**
+> - `tests/unit/contraste.test.ts` mesurait les **jetons** ; axe mesure le **rendu**. Les deux sont
+>   nécessaires : le premier empêche d'éclaircir une couleur, le second voit ce que le premier ignore.
+> - Les parcours P1 à P9 ne rejouent que **cinq** journées métier : P3, P4, P5 et P7 sont déjà tenus
+>   de bout en bout par leur suite de module, et les redoubler n'aurait rien prouvé de neuf. Le
+>   tableau de correspondance est dans l'en-tête de `parcours-metier.spec.ts`.
+> - Une audience ne se planifie que sur une étape **en cours** : c'est exactement l'enchaînement
+>   qu'une suite par module tient pour acquis, et que ces parcours ont mis au jour.
 
 ---
 
@@ -557,8 +804,9 @@ documentation utilisateur, revue de sécurité frontend.
 
 | Jalon | F9 | F10 | F11 | F12 | F13 | F14 | F15 | F16 | F17 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Statut** | 🔵 | ⏳ | ⏳ | ⏳ | 🔧 | ⏳ | ⏳ | 🔧 | ⏳ |
+| **Statut** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔵 |
 
-**9 jalons validés sur 18 (F0 à F8) · F9 livré en attente de validation · 24 écrans sur 42 ·
-40 endpoints consommés sur 72** (plus #45 en partie ; 72 depuis les ajouts de M16, dont Q-78) —
-mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-11.
+**17 jalons validés sur 18 (F0 à F16) · F17 livré en attente de validation · 42 écrans sur 42 ·
+74 endpoints consommés sur 74**, plus les cinq endpoints du portail Avocat et le canal `/ws` —
+mesurés sur `SCREEN_MAP.md` et `API_INTEGRATION_STATUS.md` le 2026-09-14.
+**Tout le contrat d'API est consommé, et tous les écrans sont livrés.**

@@ -20,6 +20,8 @@ const BASE = "http://localhost:8080/api/v1";
 
 /** Mémorise la dernière requête reçue, pour vérifier ce que le service a réellement demandé. */
 let derniereUrl: URL | null = null;
+/** Corps et verbe de la dernière écriture, pour les endpoints où la forme du corps est la règle. */
+let derniereEcriture: { methode: string; corps: unknown } | null = null;
 
 const serveur = setupServer(
   http.get(`${BASE}/clients`, ({ request }) => {
@@ -57,20 +59,54 @@ const serveur = setupServer(
     ),
   ),
 
+  http.put(`${BASE}/clients/:id`, async ({ request, params }) => {
+    derniereUrl = new URL(request.url);
+    derniereEcriture = { methode: request.method, corps: await request.json() };
+    return HttpResponse.json({
+      id: Number(params.id),
+      reference: "CLI-001",
+      nom: "SARL Bâtir et Fils",
+      email: null,
+      telephone: "+237 600 000 000",
+      createdAt: "2026-09-01T10:00:00",
+      updatedAt: "2026-09-22T08:00:00",
+    });
+  }),
+
+  http.put(`${BASE}/intervenants/:id`, async ({ request, params }) => {
+    derniereUrl = new URL(request.url);
+    derniereEcriture = { methode: request.method, corps: await request.json() };
+    return HttpResponse.json({
+      id: Number(params.id),
+      type: "AVOCAT",
+      nom: "Me Fotso",
+      email: null,
+      telephone: null,
+      compteKeycloak: "avocat.fotso",
+      notification: null,
+      createdAt: "2026-09-01T10:00:00",
+    });
+  }),
+
   http.get(`${BASE}/intervenants`, ({ request }) => {
     derniereUrl = new URL(request.url);
-    return HttpResponse.json([
-      {
-        id: 4,
-        type: "AVOCAT",
-        nom: "Me Ngo Bassong",
-        email: "avocat@example.cm",
-        telephone: null,
-        compteKeycloak: "avocat.test",
-        notification: null,
-        createdAt: "2026-09-02T09:00:00",
-      },
-    ]);
+    // Paginé depuis Q-100 : le référentiel était renvoyé en entier.
+    return HttpResponse.json({
+      content: [
+        {
+          id: 4,
+          type: "AVOCAT",
+          nom: "Me Ngo Bassong",
+          email: "avocat@example.cm",
+          telephone: null,
+          compteKeycloak: "avocat.test",
+          notification: null,
+          createdAt: "2026-09-02T09:00:00",
+        },
+      ],
+      totalPages: 1,
+      totalElements: 1,
+    });
   }),
 
   http.get(`${BASE}/referentiels/natures-dossier`, ({ request }) => {
@@ -140,17 +176,78 @@ describe("clientService", () => {
   });
 });
 
+describe("clientService.modifier", () => {
+  /**
+   * La référence est figée (décision du 2026-09-22) : elle ne doit pas partir dans le corps, et un
+   * champ vidé part en `null` pour que le backend l’enregistre comme absent.
+   */
+  it("envoie un PUT sans référence, les champs vidés en null", async () => {
+    const client = await clientService.modifier(1, {
+      nom: "SARL Bâtir et Fils",
+      email: null,
+      telephone: "+237 600 000 000",
+    });
+
+    expect(derniereEcriture?.methode).toBe("PUT");
+    expect(derniereUrl?.pathname).toBe("/api/v1/clients/1");
+    expect(derniereEcriture?.corps).toEqual({ nom: "SARL Bâtir et Fils", email: null, telephone: "+237 600 000 000" });
+    expect(derniereEcriture?.corps).not.toHaveProperty("reference");
+    expect(client.nom).toBe("SARL Bâtir et Fils");
+  });
+});
+
+describe("intervenantService.modifier", () => {
+  /** Le type et l'identifiant de connexion sont figés (Q-117) : ils ne partent pas dans le corps. */
+  it("envoie un PUT sans type ni identifiant de connexion", async () => {
+    const intervenant = await intervenantService.modifier(7, {
+      nom: "Me Fotso",
+      email: "fotso@cab.cm",
+      telephone: null,
+      notification: null,
+    });
+
+    expect(derniereEcriture?.methode).toBe("PUT");
+    expect(derniereUrl?.pathname).toBe("/api/v1/intervenants/7");
+    expect(derniereEcriture?.corps).not.toHaveProperty("type");
+    expect(derniereEcriture?.corps).not.toHaveProperty("compteKeycloak");
+    expect(derniereEcriture?.corps).toMatchObject({ email: "fotso@cab.cm", notification: null });
+    expect(intervenant.type).toBe("AVOCAT");
+  });
+});
+
 describe("intervenantService", () => {
   it("filtre par type quand il est fourni", async () => {
-    await intervenantService.lister("AVOCAT");
+    await intervenantService.lister({ type: "AVOCAT" });
     expect(derniereUrl?.searchParams.get("type")).toBe("AVOCAT");
   });
 
   it("n'envoie aucun filtre sans type", async () => {
-    const liste = await intervenantService.lister();
+    const page = await intervenantService.lister();
 
     expect(derniereUrl?.searchParams.has("type")).toBe(false);
-    expect(liste[0]?.compteKeycloak).toBe("avocat.test");
+    expect(page.content[0]?.compteKeycloak).toBe("avocat.test");
+  });
+
+  /**
+   * Q-105 — la recherche au fil de la frappe. Ce qui compte n'est pas que le paramètre parte, mais
+   * qu'il **ne parte pas** quand il est vide : un `nom=` vide ferait chercher la chaîne vide et
+   * renverrait tout, en donnant l'illusion d'un filtre appliqué.
+   */
+  it("transmet la recherche par nom, et l'omet quand elle est vide", async () => {
+    await intervenantService.lister({ nom: "Fotso" });
+    expect(derniereUrl?.searchParams.get("nom")).toBe("Fotso");
+
+    await intervenantService.lister({ nom: "" });
+    expect(derniereUrl?.searchParams.has("nom")).toBe(false);
+  });
+
+  /** Q-100 — la taille de page est toujours transmise : sans elle, le backend impose la sienne. */
+  it("transmet toujours une taille de page", async () => {
+    await intervenantService.lister();
+    expect(derniereUrl?.searchParams.get("size")).toBe("10");
+
+    await intervenantService.lister({ size: 50 });
+    expect(derniereUrl?.searchParams.get("size")).toBe("50");
   });
 });
 

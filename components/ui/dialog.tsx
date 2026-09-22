@@ -13,8 +13,11 @@ import { cn } from "@/lib/utils";
  * la fermeture par Échap, l'inertie de l'arrière-plan et le rôle ARIA. Une dépendance de plus
  * n'apporterait rien ici et alourdirait le paquet.
  *
- * Le `<form method="dialog">` du bouton de fermeture est le mécanisme natif : il ferme sans
- * JavaScript, donc même si l'hydratation n'est pas terminée.
+ * Le bouton de fermeture appelle `close()`. Il était auparavant un `<form method="dialog">`,
+ * mécanisme natif qui fermait sans JavaScript ; mais une modale ne s'ouvre que par `showModal()`,
+ * appelé après l'hydratation, et ne peut donc jamais être ouverte sans JavaScript. Ce formulaire
+ * s'imbriquait en revanche dans celui du parent quand la modale y était rendue, ce qu'HTML interdit
+ * (aperçu d'une pièce dans le formulaire du dossier, 2026-09-22).
  *
  * **Identifiants uniques par instance (`useId`).** Un `<dialog>` fermé reste dans le DOM : la fiche
  * dossier en monte plusieurs à la fois. Avec un identifiant fixe, `aria-labelledby` de chacune
@@ -88,15 +91,21 @@ export function Dialog({
           ) : null}
         </div>
 
-        <form method="dialog">
-          <button
-            type="submit"
-            aria-label={t("fermer")}
-            className="rounded p-1 text-texte-tertiaire transition-colors hover:bg-surface-attenuee hover:text-texte"
-          >
-            <X size={16} aria-hidden />
-          </button>
-        </form>
+        {/*
+          Un simple bouton, et non un `<form method="dialog">` : la modale est souvent rendue dans
+          un formulaire (l'aperçu d'une pièce, dans celui du dossier), et un formulaire imbriqué est
+          interdit en HTML. Rendu par le serveur, le formulaire intérieur serait supprimé, et ce
+          bouton enverrait le formulaire parent. `close()` émet le même événement `close` : la
+          fermeture suit exactement la même voie qu'avant.
+        */}
+        <button
+          type="button"
+          onClick={() => reference.current?.close()}
+          aria-label={t("fermer")}
+          className="rounded p-1 text-texte-tertiaire transition-colors hover:bg-surface-attenuee hover:text-texte"
+        >
+          <X size={16} aria-hidden />
+        </button>
       </div>
 
       {children ? <div className="px-5 py-4">{children}</div> : null}

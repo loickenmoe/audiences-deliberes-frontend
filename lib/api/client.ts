@@ -21,6 +21,14 @@ export function definirFournisseurDeJeton(fournisseur: FournisseurDeJeton): void
   fournisseurDeJeton = fournisseur;
 }
 
+/**
+ * Jeton courant, pour les transports qui ne passent **pas** par axios — le canal temps réel STOMP
+ * porte son `Authorization` sur la trame `CONNECT`, pas sur une requête HTTP (F14).
+ */
+export async function obtenirJeton(): Promise<string | null> {
+  return fournisseurDeJeton();
+}
+
 export const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",

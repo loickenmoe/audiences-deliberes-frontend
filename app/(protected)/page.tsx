@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
 
+import { FilesDuJour } from "@/components/modules/accueil/files-du-jour";
 import { StatutChip } from "@/components/global";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CAPACITES, type Capacite, peut, profilPrincipal } from "@/lib/rbac";
+import { profilPrincipal } from "@/lib/rbac";
 import { exigerSession } from "@/lib/serverAuth";
 
 export async function generateMetadata() {
@@ -14,8 +14,12 @@ export async function generateMetadata() {
  * Accueil.
  *
  * **QF-19** : une seule racine pour tous les profils, dont le contenu s'adapte — pas de redirection
- * par rôle. Aucun profil interne n'a de métier unique. Les files de travail par profil seront
- * greffées ici au fil des jalons métier ; voir `SCREEN_MAP.md`, écran 02.
+ * par rôle. Aucun profil interne n'a de métier unique.
+ *
+ * **Achevé en F17.** L'écran affichait jusqu'ici les identifiants de capacités en police à chasse
+ * fixe : une vue de mise au point, utile pendant la construction du socle, sans valeur pour un
+ * juriste. Il présente désormais les **files de travail** de chaque profil — ce qui l'attend, avec
+ * le compte et le lien direct.
  */
 export default async function PageAccueil() {
   const session = await exigerSession();
@@ -24,7 +28,6 @@ export default async function PageAccueil() {
   const tr = await getTranslations("roles");
 
   const profil = profilPrincipal(session.roles);
-  const capacites = (Object.keys(CAPACITES) as Capacite[]).filter((c) => peut(session.roles, c));
   const prenom = session.user.prenom?.trim();
 
   return (
@@ -39,42 +42,22 @@ export default async function PageAccueil() {
         <p className="text-texte-secondaire">{t("sessionActive")}</p>
       </header>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("rolesTitre")}</CardTitle>
-            <CardDescription>{t("rolesDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {session.roles.map((role) => (
-              <StatutChip key={role} ton={role === profil ? "info" : "neutre"}>
-                {tr(role)}
-              </StatutChip>
-            ))}
-          </CardContent>
-        </Card>
+      <FilesDuJour roles={session.roles} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("droitsTitre")}</CardTitle>
-            <CardDescription>
-              {t("droitsDescription", {
-                accordees: capacites.length,
-                total: Object.keys(CAPACITES).length,
-              })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-1 text-[length:var(--taille-sm)] text-texte-secondaire">
-              {capacites.map((capacite) => (
-                <li key={capacite} className="font-mono text-[length:var(--taille-xs)]">
-                  {capacite}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="flex flex-col gap-2">
+        <h2 className="text-[length:var(--taille-lg)] font-semibold">{t("rolesTitre")}</h2>
+        <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("rolesDescription")}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {session.roles.map((role) => (
+            <StatutChip key={role} ton={role === profil ? "info" : "neutre"}>
+              {tr(role)}
+            </StatutChip>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }

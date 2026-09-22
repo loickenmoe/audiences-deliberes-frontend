@@ -10,14 +10,22 @@ import { cn } from "@/lib/utils";
  * elle s'emploie à fond perdu, jamais détourée sur un fond clair où l'aplat paraîtrait accidentel.
  *
  * Les fichiers sont les originaux fournis par la banque, non retouchés.
+ *
+ * `decoratif` — vide le texte alternatif. À n'employer que lorsque le logo est **à l'intérieur
+ * d'un élément qui porte déjà son propre libellé**, typiquement le lien de retour à l'accueil : sans
+ * cela, le nom accessible du lien serait « Afriland First Bank », qui dit à qui appartient le logo
+ * et non où le lien mène. Partout ailleurs — connexion, page introuvable, accès refusé — le texte
+ * alternatif reste indispensable : le logo y est la seule identification de l'émetteur.
  */
 export function Logo({
   variante = "lockup",
   hauteur = 32,
+  decoratif = false,
   className,
 }: {
   variante?: "lockup" | "symbole";
   hauteur?: number;
+  decoratif?: boolean;
   className?: string;
 }) {
   const lockup = variante === "lockup";
@@ -26,7 +34,7 @@ export function Logo({
   return (
     <Image
       src={lockup ? "/brand/logo-afriland.svg" : "/brand/symbole-afriland.svg"}
-      alt="Afriland First Bank"
+      alt={decoratif ? "" : "Afriland First Bank"}
       width={Math.round(hauteur * ratio)}
       height={hauteur}
       priority

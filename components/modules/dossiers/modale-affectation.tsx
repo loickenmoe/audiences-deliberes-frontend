@@ -1,21 +1,17 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 
-import { DialogueConfirmation } from "@/components/metier";
+import { CasesACocher, DialogueConfirmation } from "@/components/metier";
 import { Button } from "@/components/ui/button";
-import { Champ, Select } from "@/components/ui/champ";
 import { Dialog } from "@/components/ui/dialog";
 import { useModifierAffectation } from "@/hooks/useDossiers";
+import { SelecteurCherchable } from "@/components/metier";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { useUtilisateurs } from "@/hooks/useReferentiels";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";
 import type { Dossier } from "@/types/domaine";
-
-function selection(evenement: ChangeEvent<HTMLSelectElement>): number[] {
-  return Array.from(evenement.target.selectedOptions, (option) => Number(option.value));
-}
 
 /**
  * Écran 16 — modification des affectations.
@@ -45,7 +41,13 @@ export function ModaleAffectation({
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const juristes = useUtilisateurs("JURISTE");
-  const avocats = useIntervenants("AVOCAT");
+  /*
+   * Q-105 — la recherche remplace le « charger tout l'annuaire ». Le champ n'affiche que ce que le
+   * serveur renvoie pour la saisie en cours : le choix reste exact quel que soit le nombre d'avocats
+   * inscrits, là où une page fixe se serait tronquée en silence.
+   */
+  const [rechercheAvocat, setRechercheAvocat] = useState("");
+  const avocats = useIntervenants({ type: "AVOCAT", nom: rechercheAvocat || undefined });
   const modifier = useModifierAffectation(dossier.id);
 
   const [juristesChoisis, setJuristesChoisis] = useState<number[]>(dossier.juristesAffectes);
@@ -120,53 +122,42 @@ export function ModaleAffectation({
             </p>
           ) : null}
 
-          <Champ
-            id="affectation-juristes"
+          {/* Mêmes cases à cocher qu'à la création (2026-09-22) : un clic ajoute ou retire. */}
+          <CasesACocher
             label={td("champJuristes")}
             obligatoire
-            aide={td("aideSelectionMultiple")}
+            valeur={juristesChoisis}
+            onChangement={setJuristesChoisis}
+            chargement={juristes.isLoading}
             erreur={tentee && juristesManquants ? tm("champObligatoire") : undefined}
-          >
-            <Select
-              id="affectation-juristes"
-              multiple
-              size={5}
-              enErreur={tentee && juristesManquants}
-              value={juristesChoisis.map(String)}
-              onChange={(evenement) => setJuristesChoisis(selection(evenement))}
-            >
-              {(juristes.data ?? []).map((utilisateur) => (
-                <option key={utilisateur.id} value={utilisateur.id}>
-                  {[utilisateur.prenom, utilisateur.nom].filter(Boolean).join(" ") ||
-                    utilisateur.email ||
-                    `#${utilisateur.id}`}
-                </option>
-              ))}
-            </Select>
-          </Champ>
+            options={(juristes.data ?? []).map((utilisateur) => ({
+              id: utilisateur.id,
+              libelle:
+                [utilisateur.prenom, utilisateur.nom].filter(Boolean).join(" ") ||
+                utilisateur.email ||
+                `#${utilisateur.id}`,
+            }))}
+          />
 
-          <Champ
-            id="affectation-avocats"
-            label={td("champAvocats")}
-            obligatoire
-            aide={td("aideSelectionMultiple")}
-            erreur={tentee && avocatsManquants ? tm("champObligatoire") : undefined}
-          >
-            <Select
+          <div className="flex flex-col gap-1">
+            <SelecteurCherchable
               id="affectation-avocats"
+              label={td("champAvocats")}
+              obligatoire
               multiple
-              size={5}
-              enErreur={tentee && avocatsManquants}
-              value={avocatsChoisis.map(String)}
-              onChange={(evenement) => setAvocatsChoisis(selection(evenement))}
-            >
-              {(avocats.data ?? []).map((avocat) => (
-                <option key={avocat.id} value={avocat.id}>
-                  {avocat.nom}
-                </option>
-              ))}
-            </Select>
-          </Champ>
+              valeur={avocatsChoisis}
+              onChangement={(valeur) => setAvocatsChoisis(valeur as number[])}
+              options={(avocats.data?.content ?? []).map((avocat) => ({
+                id: avocat.id,
+                libelle: avocat.nom,
+              }))}
+              onRecherche={setRechercheAvocat}
+              chargement={avocats.isLoading}
+            />
+            {tentee && avocatsManquants ? (
+              <p className="text-[length:var(--taille-xs)] text-danger">{tm("champObligatoire")}</p>
+            ) : null}
+          </div>
         </div>
       </Dialog>
 

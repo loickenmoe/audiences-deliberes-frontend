@@ -3,6 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
+import { TAILLE_PAGE, TAILLES_PAGE } from "@/hooks/const";
+
 /**
  * Filtres et pagination synchronisés à l'URL.
  *
@@ -31,6 +33,16 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
   const page = useMemo(() => {
     const brut = Number.parseInt(parametres.get("page") ?? "0", 10);
     return Number.isNaN(brut) || brut < 0 ? 0 : brut;
+  }, [parametres]);
+
+  /**
+   * Taille de page, dans l'URL comme les filtres : un lien partagé montre la liste telle que son
+   * auteur la voyait. Une valeur hors de `TAILLES_PAGE` est ignorée — l'URL est saisissable à la
+   * main, et rien n'empêcherait d'y écrire `size=100000`.
+   */
+  const taille = useMemo(() => {
+    const brut = Number.parseInt(parametres.get("taille") ?? "", 10);
+    return (TAILLES_PAGE as readonly number[]).includes(brut) ? brut : TAILLE_PAGE;
   }, [parametres]);
 
   const ecrire = useCallback(
@@ -62,6 +74,13 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
     [ecrire],
   );
 
+  /** Changer de taille remet à la première page : la page 4 en 10 lignes n'existe pas en 50. */
+  const definirTaille = useCallback(
+    (suivante: number) =>
+      ecrire({ taille: suivante === TAILLE_PAGE ? undefined : String(suivante), page: undefined }),
+    [ecrire],
+  );
+
   const effacer = useCallback(() => {
     router.replace(chemin, { scroll: false });
   }, [chemin, router]);
@@ -72,5 +91,5 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
     [defauts, filtres],
   );
 
-  return { filtres, page, definirFiltre, definirPage, effacer, nbFiltresActifs };
+  return { filtres, page, taille, definirFiltre, definirPage, definirTaille, effacer, nbFiltresActifs };
 }

@@ -81,11 +81,15 @@ export type StatutCircuitFrais = (typeof StatutCircuitFrais)[number];
 export const StatutPaiementFrais = ["EN_ATTENTE", "PAYEE"] as const;
 export type StatutPaiementFrais = (typeof StatutPaiementFrais)[number];
 
-/*
- * `EtapeValidationFrais` et `DecisionValidationFrais` ne sont **pas** typées ici : vérifié contre
- * `contracts/openapi.json` et le code backend, elles vivent uniquement dans `domain/`, `service/`
- * et `repository/` — aucun DTO exposé ne les renvoie.
+/**
+ * Décisions du circuit, exposées depuis Q-82 backend (`DemandeFraisResponse.validations`) : deux
+ * contrôles individuels, puis les deux accords **distincts** de la validation conjointe (US 4.5).
  */
+export const EtapeValidationFrais = ["CONFORMITE", "OPPORTUNITE", "CONJOINTE_DJ", "CONJOINTE_DJA"] as const;
+export type EtapeValidationFrais = (typeof EtapeValidationFrais)[number];
+
+export const DecisionValidationFrais = ["ACCORD", "REJET"] as const;
+export type DecisionValidationFrais = (typeof DecisionValidationFrais)[number];
 
 // ─────────────────────────────── Publications ───────────────────────────────
 
@@ -143,6 +147,18 @@ export const TypeAlerte = [
   "DOSSIER_INCOMPLET",
 ] as const;
 export type TypeAlerte = (typeof TypeAlerte)[number];
+
+// ─────────────────────────────── Configurations ───────────────────────────────
+
+/**
+ * Nature de la valeur attendue par une clé de configuration (backend Q-91). Le contrat décrit la
+ * saisie — bornes d'un entier, valeurs acceptées d'une liste — au lieu de la faire redéclarer ici.
+ *
+ * Absente d'`ENUMERATIONS_TRADUITES` : elle ne s'affiche jamais. C'est un descripteur de contrat,
+ * qui dit à l'écran 41 quel champ construire — pas un mot à montrer à l'utilisateur.
+ */
+export const TypeValeurConfiguration = ["ENTIER", "LISTE"] as const;
+export type TypeValeurConfiguration = (typeof TypeValeurConfiguration)[number];
 
 // ─────────────────────────────── Décisions définitives ───────────────────────────────
 
@@ -221,6 +237,8 @@ export const ENUMERATIONS_TRADUITES = {
   EtatDelibere,
   StatutCircuitFrais,
   StatutPaiementFrais,
+  EtapeValidationFrais,
+  DecisionValidationFrais,
   TypePublication,
   TypeAutrePublication,
   StatutPublication,

@@ -13,6 +13,12 @@ declare module "next-auth" {
     roles: string[];
     /** Positionné quand la rotation du jeton a définitivement échoué : impose une reconnexion. */
     erreur?: string;
+    /**
+     * Époque en millisecondes à partir de laquelle le serveur renouvellera les jetons. Publiée pour
+     * que le navigateur sache **jusqu'à quand** garder son jeton en mémoire sans relire la session
+     * (QF-42) ; calculée par `prochainRafraichissement`, jamais recalculée côté client.
+     */
+    rafraichirApres?: number;
     user: {
       keycloakId?: string;
       nom?: string | null;

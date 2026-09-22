@@ -1,8 +1,11 @@
 export { BarreFiltres } from "./barre-filtres";
+export { CasesACocher, type OptionCase } from "./cases-a-cocher";
 export { CycleEtape } from "./cycle-etape";
 export { DialogueConfirmation } from "./dialogue-confirmation";
+export { GardeSaisie } from "./garde-saisie";
 export { MenuExport } from "./menu-export";
 export { Pagination } from "./pagination";
+export { SelecteurCherchable, type OptionCherchable } from "./selecteur-cherchable";
 export { TableDonnees } from "./table-donnees";
 export { Televersement } from "./televersement";
-export { DateHeureValeur, DateValeur, MontantFcfa, PoidsFichier } from "./valeurs";
+export { DateHeureValeur, DateValeur, MontantFcfa, PoidsFichier, Pourcentage } from "./valeurs";

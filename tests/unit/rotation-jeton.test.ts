@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { MARGE_MS, doitRafraichir, prochainRafraichissement } from "@/lib/rotation-jeton";
+import {
+  ERREUR_AUTH_INDISPONIBLE,
+  ERREUR_RAFRAICHISSEMENT,
+  MARGE_MS, doitRafraichir, prochainRafraichissement,
+  sessionInutilisable,
+} from "@/lib/rotation-jeton";
 
 const MINUTE = 60 * 1000;
 
@@ -58,5 +63,31 @@ describe("doitRafraichir", () => {
     expect(naive).toBeGreaterThan(refreshMort);
     // Notre politique, elle, déclenche avant.
     expect(prochainRafraichissement(t0 + ACCES_MS, refreshMort)).toBeLessThan(refreshMort);
+  });
+});
+
+describe("sessionInutilisable", () => {
+  /**
+   * Les deux marqueurs rendent la session inexploitable — le garde de route doit donc rediriger dans
+   * les deux cas. Ce qui les sépare n'est pas la conduite à tenir, c'est ce qu'on **dit** à
+   * l'utilisateur : se reconnecter d'un côté, patienter de l'autre.
+   */
+  it("reconnaît les deux causes d'échec", () => {
+    expect(sessionInutilisable(ERREUR_RAFRAICHISSEMENT)).toBe(true);
+    expect(sessionInutilisable(ERREUR_AUTH_INDISPONIBLE)).toBe(true);
+  });
+
+  it("laisse passer une session saine", () => {
+    expect(sessionInutilisable(undefined)).toBe(false);
+    expect(sessionInutilisable("autre-chose")).toBe(false);
+  });
+
+  /**
+   * Les deux marqueurs doivent rester **distincts** : c'est toute la correction. Les confondre
+   * ramènerait le message « votre session a expiré » sur une panne de Keycloak, avec une consigne —
+   * se reconnecter — que le service à terre rend impossible à suivre.
+   */
+  it("les deux marqueurs ne sont pas interchangeables", () => {
+    expect(ERREUR_AUTH_INDISPONIBLE).not.toBe(ERREUR_RAFRAICHISSEMENT);
   });
 });
