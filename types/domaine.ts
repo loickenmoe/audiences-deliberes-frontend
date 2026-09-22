@@ -851,6 +851,11 @@ export interface ConfigurationSysteme {
   valeurMinimale: number | null;
   valeurMaximale: number | null;
   valeursPossibles: string[];
+  /**
+   * Une liste peut être entièrement décochée (backend Q-118) : réglages de notification, où
+   * « aucun canal » ou « aucun événement » est un choix, et non un oubli.
+   */
+  listeVideAutorisee: boolean;
 }
 
 /**

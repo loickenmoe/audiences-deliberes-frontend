@@ -4,7 +4,8 @@ import type { ConfigurationSysteme } from "@/types/domaine";
 /**
  * Paramètres système (#47, #48).
  *
- * La liste n'est pas paginée : sept clés, fixées par la migration `V2__donnees_reference.sql`.
+ * La liste n'est pas paginée : une quinzaine de clés, fixées par les migrations du backend (V2, puis
+ * V28 pour les réglages des notifications externes, Q-118).
  * Chaque entrée porte sa **règle de saisie** (backend Q-91), sur laquelle le formulaire se règle —
  * le frontend ne redéclare ni bornes ni valeurs acceptées.
  */

@@ -42,7 +42,7 @@ export function verifierValeurConfiguration(
   valeur: string,
 ): MotifRefusConfiguration | null {
   const saisie = valeur.trim();
-  if (saisie === "") return "obligatoire";
+  if (saisie === "") return configuration.listeVideAutorisee ? null : "obligatoire";
 
   if (configuration.typeValeur === "ENTIER") {
     if (!/^\d+$/.test(saisie)) return "entier";

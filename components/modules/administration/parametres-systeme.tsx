@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { EtatChargement, EtatErreur, EtatVide } from "@/components/global";
 import { PoidsFichier } from "@/components/metier";
+import { GrilleNotifications } from "@/components/modules/administration/grille-notifications";
 import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { useConfigurations, useModifierConfiguration } from "@/hooks/useConfigurations";
@@ -16,6 +17,7 @@ import {
   type MotifRefusConfiguration,
 } from "@/lib/alertes";
 import { messageErreur } from "@/lib/api/errors";
+import { CLES_CANAUX, estCleDeGrille } from "@/lib/notifications";
 import type { ConfigurationSysteme } from "@/types/domaine";
 
 /**
@@ -48,6 +50,8 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
   }
 
   const configurations = requete.data ?? [];
+  // Les colonnes de la grille des notifications (Q-118) se lisent ensemble, dans leur tableau.
+  const parametres = configurations.filter((configuration) => !estCleDeGrille(configuration.cle));
 
   return (
     <div className="flex flex-col gap-5">
@@ -61,17 +65,19 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
         ) : null}
       </header>
 
-      {configurations.length === 0 ? (
+      {parametres.length === 0 ? (
         <EtatVide titre={t("vide")} description={t("videTexte")} />
       ) : (
         <ul className="flex flex-col gap-4">
-          {configurations.map((configuration) => (
+          {parametres.map((configuration) => (
             <li key={configuration.cle}>
               <LigneParametre configuration={configuration} modifiable={modifiable} />
             </li>
           ))}
         </ul>
       )}
+
+      <GrilleNotifications configurations={configurations} modifiable={modifiable} />
     </div>
   );
 }
@@ -85,6 +91,7 @@ function LigneParametre({
 }) {
   const t = useTranslations("configurations");
   const tr = useTranslations("referentiels");
+  const td = useTranslations("domaine");
   const { nomUtilisateur } = useLibelles();
   const modifier = useModifierConfiguration();
   const [valeur, setValeur] = useState(configuration.valeur);
@@ -93,6 +100,9 @@ function LigneParametre({
   const modifie = valeur.trim() !== configuration.valeur;
   const identifiant = `configuration-${configuration.cle}`;
   const elements = valeur.split(",").map((item) => item.trim().toUpperCase());
+  // Les canaux s'affichent par leur nom (« Courriel personnel ») ; les autres listes, par leur code.
+  const enumCanaux = CLES_CANAUX[configuration.cle];
+  const libelleValeur = (code: string) => (enumCanaux ? td(`${enumCanaux}.${code}` as never) : code);
 
   // La description métier est traduite ; celle du backend reste le repli pour une clé inconnue.
   const messages = tr.raw("configurations") as Record<string, string | undefined>;
@@ -150,7 +160,7 @@ function LigneParametre({
                   }
                   className="size-4 accent-[color:var(--afb-anthracite)]"
                 />
-                {possible}
+                {libelleValeur(possible)}
               </label>
             ))}
           </div>

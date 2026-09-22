@@ -327,6 +327,53 @@ test("le backend refuse une valeur qui casserait un autre module (Q-91)", async 
 });
 
 /**
+ * Q-118 — la grille des notifications externes, de l'écran à la base. Une colonne entièrement
+ * décochée est un réglage (« rien par SMS ») : le backend doit l'accepter, et l'écran la relire vide.
+ */
+test("le DJ vide une colonne de la grille des notifications, puis la rétablit (Q-118)", async ({ browser }) => {
+  const jetonDj = await jeton("dj.test");
+  const avant = await json<{ cle: string; valeur: string }[]>("/configurations", jetonDj);
+  const initiale = avant.find((c) => c.cle === "GRILLE_NOTIFICATION_SMS")?.valeur ?? "";
+  expect(initiale).not.toBe("");
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  await expect(dj.getByRole("heading", { name: "Grille des notifications externes" })).toBeVisible();
+  // Les colonnes de la grille ne sont pas répétées dans la liste des paramètres.
+  await expect(dj.locator("article", { hasText: "GRILLE_NOTIFICATION_SMS" })).toHaveCount(0);
+
+  const casesSms = dj.getByRole("checkbox", { name: / par SMS$/ });
+  await expect(casesSms).toHaveCount(9);
+  for (const caseSms of await casesSms.all()) {
+    if (await caseSms.isChecked()) await caseSms.uncheck();
+  }
+  await dj.getByRole("button", { name: "Enregistrer la grille « Prestataires »" }).click();
+  await expect(dj.getByText("Grille des notifications enregistrée.")).toBeVisible();
+
+  const apres = await json<{ cle: string; valeur: string }[]>("/configurations", jetonDj);
+  expect(apres.find((c) => c.cle === "GRILLE_NOTIFICATION_SMS")?.valeur).toBe("");
+  await dj.reload();
+  await expect(dj.getByRole("checkbox", { name: "Rappel d’audience par SMS" })).not.toBeChecked();
+  await dj.context().close();
+
+  // Remise en état : les autres parcours partent de la grille initiale.
+  const retabli = await appel("/configurations/GRILLE_NOTIFICATION_SMS", jetonDj, {
+    method: "PUT",
+    body: JSON.stringify({ valeur: initiale }),
+  });
+  expect(retabli.status).toBe(200);
+});
+
+test("le backend refuse le vide là où il n'est pas un réglage (Q-118)", async () => {
+  const dj = await jeton("dj.test");
+  const formats = await appel("/configurations/FORMATS_GED", dj, {
+    method: "PUT",
+    body: JSON.stringify({ valeur: "" }),
+  });
+  expect(formats.status).toBe(400);
+});
+
+/**
  * Q-109 — le taux de délivrance du canal applicatif, mesuré **en conditions réelles**.
  *
  * Ce parcours vérifie ce qu'aucun test unitaire ne peut établir : que l'issue enregistrée

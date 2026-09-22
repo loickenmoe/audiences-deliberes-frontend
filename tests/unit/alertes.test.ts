@@ -86,6 +86,7 @@ function config(partiel: Partial<ConfigurationSysteme>): ConfigurationSysteme {
     valeurMinimale: 1,
     valeurMaximale: 1000,
     valeursPossibles: [],
+    listeVideAutorisee: false,
     ...partiel,
   };
 }
@@ -199,6 +200,11 @@ describe("saisie d'un paramètre système", () => {
 
     expect(verifierValeurConfiguration(sansRegle, "n'importe quoi")).toBeNull();
     expect(verifierValeurConfiguration(sansRegle, "  ")).toBe("obligatoire");
+  });
+
+  it("accepte une liste vide seulement quand le contrat l'autorise (Q-118)", () => {
+    expect(verifierValeurConfiguration(liste, "")).toBe("obligatoire");
+    expect(verifierValeurConfiguration({ ...liste, cle: "GRILLE_NOTIFICATION_SMS", listeVideAutorisee: true }, "  ")).toBeNull();
   });
 
   it("bascule un élément en conservant l'ordre des valeurs acceptées", () => {

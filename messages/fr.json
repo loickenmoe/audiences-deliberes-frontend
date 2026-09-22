@@ -270,6 +270,22 @@
       "DELIBERE_ATTENDU": "Délibéré attendu",
       "DOSSIER_INCOMPLET": "Dossier incomplet"
     },
+    "CanalPrestataire": {
+      "COURRIEL_PERSONNEL": "Courriel personnel",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp"
+    },
+    "EvenementPrestataire": {
+      "CONSTITUTION_VALIDEE": "Constitution validée",
+      "FRAIS_REJETES": "Frais rejetés",
+      "PAIEMENT_EFFECTUE": "Paiement effectué",
+      "PUBLICATION_ARBITREE": "Publication arbitrée",
+      "CORRESPONDANCE_TRANSMISE": "Correspondance transmise",
+      "RAPPEL_AUDIENCE": "Rappel d’audience",
+      "AFFECTATION_DOSSIER": "Affectation à un dossier",
+      "DELAI_RECOURS": "Délai de recours du délibéré",
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée"
+    },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "La banque est redevable",
       "TIERS_REDEVABLE": "Le tiers est redevable"
@@ -326,7 +342,8 @@
     "configurations": {
       "SEUIL_MONTANT_DEFAUT": "Montant à partir duquel une demande de frais requiert la validation conjointe du Directeur Juridique et de son Adjoint.",
       "SEUIL_PROROGATIONS": "Nombre de prorogations au-delà duquel une alerte est déclenchée.",
-      "CANAUX_NOTIFICATION_DEFAUT": "Canaux utilisés par défaut pour l’envoi des alertes.",
+      "CANAUX_NOTIFICATION_DEFAUT": "Canaux de notification des utilisateurs internes. L’application est toujours active ; Outlook et Teams sont optionnels.",
+      "CANAUX_NOTIFICATION_PRESTATAIRES": "Canaux de notification des avocats et autres prestataires. Aucune case cochée : aucun prestataire n’est notifié hors de l’application.",
       "DELAI_VALIDATION_CONJOINTE": "Délai maximal, en jours, pour la validation conjointe d’une demande de frais.",
       "TAILLE_MAX_GED": "Poids maximal d’un document chargé dans la gestion documentaire.",
       "FORMATS_GED": "Formats de fichiers acceptés dans la gestion documentaire.",
@@ -1145,7 +1162,7 @@
   },
   "configurations": {
     "titre": "Paramètres système",
-    "description": "Les sept paramètres qui pilotent les seuils, les délais et les contrôles de l’application. Une modification prend effet immédiatement.",
+    "description": "Les paramètres qui pilotent les seuils, les délais, les contrôles et les notifications de l’application. Une modification prend effet immédiatement.",
     "lectureSeule": "Consultation seule - seuls le Directeur Juridique et son Adjoint peuvent modifier ces paramètres.",
     "valeur": "Valeur",
     "valeurActuelle": "Valeur actuelle",
@@ -1167,6 +1184,20 @@
     "vide": "Aucun paramètre",
     "videTexte": "Les paramètres système sont créés à l’installation de l’application.",
     "modifieeParAuteur": "Modifiée le {date} par {auteur}"
+  },
+  "grilleNotifications": {
+    "titre": "Grille des notifications externes",
+    "description": "Pour chaque canal, les événements qui y sont envoyés. Un canal coupé garde sa colonne : elle s’applique dès qu’il est rallumé. Rien ne part tant que le Notification Engine n’est pas activé sur le serveur.",
+    "sections": {
+      "internes": "Utilisateurs internes",
+      "prestataires": "Prestataires"
+    },
+    "evenement": "Événement",
+    "canalCoupe": "Canal coupé",
+    "case": "{evenement} par {canal}",
+    "enregistrer": "Enregistrer la grille « {section} »",
+    "annuler": "Annuler",
+    "succes": "Grille des notifications enregistrée."
   },
   "tableauDeBord": {
     "titre": "Tableau de bord",
