@@ -81,6 +81,7 @@ function config(partiel: Partial<ConfigurationSysteme>): ConfigurationSysteme {
     description: null,
     modifiablePar: "ROLE_DJ",
     dateModification: null,
+    dernierAuteurId: null,
     typeValeur: "ENTIER",
     valeurMinimale: 1,
     valeurMaximale: 1000,

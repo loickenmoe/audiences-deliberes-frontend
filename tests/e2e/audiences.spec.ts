@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
@@ -50,8 +51,7 @@ async function dossierEnCours(page: Page) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-AUD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-AUD");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
@@ -72,8 +72,7 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 

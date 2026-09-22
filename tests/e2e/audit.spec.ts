@@ -1,0 +1,398 @@
+import { loadEnvConfig } from "@next/env";
+import { expect, test, type Browser, type Page } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
+
+/**
+ * Audit des actions historisées (écran 43) **contre le backend réel** — backend Q-112.
+ *
+ * Ces parcours reprennent ceux du journal de Q-110, qui a déménagé ici : la vérification n'a pas
+ * changé de nature, seulement d'écran. S'y ajoute ce que le journal ne pouvait pas couvrir — le
+ * périmètre transversal, le filtre par personne, et la trace que laisse toute consultation.
+ */
+
+loadEnvConfig(process.cwd());
+
+const MOT_DE_PASSE = "Password1!";
+
+async function seConnecter(page: Page, identifiant: string) {
+  await page.goto("/login");
+  await page.getByLabel("Identifiant", { exact: true }).fill(identifiant);
+  await page.getByLabel("Mot de passe", { exact: true }).fill(MOT_DE_PASSE);
+  await page.getByRole("button", { name: "Connexion" }).click();
+  await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
+}
+
+async function pageConnectee(browser: Browser, identifiant: string) {
+  const contexte = await browser.newContext({ locale: "fr-FR" });
+  const page = await contexte.newPage();
+  await seConnecter(page, identifiant);
+  return page;
+}
+
+async function ouvrirAudit(page: Page) {
+  await page.goto("/admin/audit");
+  await expect(page.getByRole("heading", { name: "Audit", level: 1 })).toBeVisible({ timeout: 60_000 });
+}
+
+/**
+ * Les messages de critères invalides se cherchent **dans la section des filtres**. Next pose à la
+ * racine du document son propre `role="alert"` pour annoncer les changements de route ; un sélecteur
+ * global les confondrait — défaut rencontré deux fois avant d'être corrigé à la source.
+ */
+function filtres(page: Page) {
+  return page.getByRole("region", { name: "Filtres de l’audit" });
+}
+
+test("l'audit couvre tout l'historique et se restreint à un périmètre choisi (Q-112)", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  /*
+   * On filtre sur une nature d'action plutôt que de chercher une ligne au hasard de la première
+   * page : l'audit se lit du plus récent au plus ancien, et les consultations que ce test provoque
+   * occupent aussitôt le haut du classement. Une première version supposait qu'une création de
+   * dossier figurerait en page 1 — hypothèse sur la donnée, pas sur le comportement.
+   */
+  const action = dj.getByLabel("Action", { exact: true });
+  await expect.poll(() => action.locator("option").count(), { timeout: 30_000 }).toBeGreaterThan(1);
+  await action.selectOption({ label: "Création du dossier" });
+
+  // Portée par défaut : tout l'historique, dossiers compris — ce que le journal ne montrait pas.
+  await expect(dj.getByRole("row", { name: /Création du dossier/ }).first()).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Restreinte aux actions système, la même nature ne renvoie plus rien : c'est le périmètre, et
+  // lui seul, qui a changé.
+  await dj.getByLabel("Portée", { exact: true }).selectOption("HORS_DOSSIER");
+  await expect(dj.getByRole("row", { name: /Création du dossier/ })).toHaveCount(0, { timeout: 30_000 });
+
+  await dj.context().close();
+});
+
+/**
+ * Le filtre par personne est ce qui donne sa valeur à l'écran, et ce qui le rend sensible : il est
+ * autorisé par NF-CONF-01, et c'est lui qui rend nécessaire de tracer les consultations.
+ */
+test("l'audit filtre par personne, et le dit à qui consulte (Q-112)", async ({ browser }) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await ouvrirAudit(dja);
+
+  // L'écran annonce lui-même que la consultation est enregistrée, plutôt que de le taire.
+  await expect(dja.getByText(/Votre consultation de cet écran est elle-même enregistrée/)).toBeVisible();
+  // Et il énonce ce qu'il ne couvre pas : les consultations ne sont pas tracées.
+  await expect(dja.getByText(/Les consultations ne sont pas tracées/)).toBeVisible();
+
+  /*
+   * L'annuaire arrive par une requête distincte : compter les options sans attendre mesurait la
+   * course, pas le contenu. `expect.poll` réessaie jusqu'à ce que la liste soit peuplée.
+   */
+  const auteur = dja.getByLabel("Auteur", { exact: true });
+  await expect.poll(() => auteur.locator("option").count(), { timeout: 30_000 }).toBeGreaterThan(1);
+  await auteur.selectOption({ index: 1 });
+  // Le tableau se recharge sans erreur : c'est la requête filtrée par personne qui est vérifiée.
+  await expect(filtres(dja).getByRole("alert")).toHaveCount(0);
+
+  await dja.context().close();
+});
+
+/**
+ * La trace de la consultation. Elle protège le DJ et la DJA autant que ceux qu'ils consultent : elle
+ * démontre qu'ils n'ont regardé que ce qu'ils devaient.
+ */
+test("consulter l'audit y laisse sa propre trace (Q-112)", async ({ browser }) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  // Par **valeur** et non par libelle : le code est stable d'une langue a l'autre, et insensible au
+  // style d'apostrophe. Une premiere version selectionnait « Consultation de l'audit » avec une
+  // apostrophe droite, quand la traduction porte une apostrophe typographique.
+  await dj.getByLabel("Action", { exact: true }).selectOption("AUDIT_CONSULTE");
+  const ligne = dj.getByRole("row", { name: /Consultation de l/ }).first();
+  await expect(ligne).toBeVisible({ timeout: 30_000 });
+  // Les critères employés figurent dans la trace : une trace sans critères ne dirait presque rien.
+  // La clé s'affiche traduite (« Portée ») et non brute : QF-24 vaut aussi pour la trace elle-même.
+  await expect(ligne).toContainText(/Portée/);
+
+  await dj.context().close();
+});
+
+test("une portée « un dossier » sans numéro est expliquée, pas renvoyée en erreur technique (Q-112)", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  await dj.getByLabel("Portée", { exact: true }).selectOption("UN_DOSSIER");
+  await expect(filtres(dj).getByRole("alert")).toContainText("numéro du dossier");
+
+  await dj.getByLabel("N° de dossier", { exact: true }).fill("1");
+  await expect(filtres(dj).getByRole("alert")).toHaveCount(0);
+
+  await dj.getByLabel("Du", { exact: true }).fill("2026-12-31");
+  await dj.getByLabel("Au", { exact: true }).fill("2026-01-01");
+  await expect(filtres(dj).getByRole("alert")).toContainText("date de début est postérieure");
+
+  await dj.context().close();
+});
+
+test("l'audit est fermé au juriste, à l'Assistante et au SH (Q-112)", async ({ browser }) => {
+  for (const profil of ["juriste.test", "assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, profil);
+    // Ni dans la navigation…
+    await expect(
+      page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Audit" }),
+    ).toHaveCount(0);
+    // …ni par l'URL forcée : masquer n'est pas sécuriser.
+    await page.goto("/admin/audit");
+    await expect(page).toHaveURL(/\/unauthorized/, { timeout: 30_000 });
+    await page.context().close();
+  }
+});
+
+/**
+ * Le journal a quitté l'écran des paramètres, mais la question qui naît en regardant un réglage —
+ * « qui l'a mis là ? » — y trouve désormais sa réponse sur place, rattachée à la ligne qui la pose.
+ */
+test("l'écran des paramètres porte l'auteur de la dernière modification (Q-112)", async ({
+  browser,
+}) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await dja.goto("/admin/configurations");
+  await expect(dja.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible({
+    timeout: 60_000,
+  });
+
+  // Le journal n'est plus là : deux endroits où chercher la même trace, c'est un de trop.
+  await expect(dja.getByRole("heading", { name: "Journal des actions système" })).toHaveCount(0);
+
+  const article = dja.locator("article", { hasText: "SEUIL_PROROGATIONS" });
+  const champ = article.locator("#configuration-SEUIL_PROROGATIONS");
+  const initiale = (await champ.inputValue()).trim();
+  const nouvelle = initiale === "12" ? "13" : "12";
+
+  try {
+    await champ.fill(nouvelle);
+    await article.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+    // Sans rien cliquer : la ligne porte désormais le nom de qui vient de la changer.
+    await expect(article).toContainText(/Modifiée le .* par /, { timeout: 30_000 });
+  } finally {
+    await champ.fill(initiale);
+    await article.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
+    await dja.context().close();
+  }
+});
+
+/**
+ * QF-24 — close par Q-112 : la colonne Action et les cles de details sont traduites.
+ *
+ * Signale par le porteur du projet en recette : en anglais, ces deux colonnes restaient en francais.
+ * C'etait un defaut connu et jusque-la insoluble — on ne traduit pas une phrase libre. Q-111 ayant
+ * pose un code type sur chaque ligne, la traduction est devenue une simple correspondance.
+ */
+test("en anglais, la nature de l'action et les cles de details sont traduites (QF-24)", async ({
+  browser,
+}) => {
+  const page = await pageConnectee(browser, "dj.test");
+
+  /*
+   * On se connecte **puis** on bascule, dans cet ordre. La langue vit dans un cookie posé par le
+   * sélecteur, pas dans la locale du navigateur : ouvrir un contexte en `en-US` ne traduit rien.
+   * Et basculer avant la connexion traduit le formulaire, que l'aide `seConnecter` cherche alors
+   * en français. C'est aussi le geste d'un vrai utilisateur : il bascule depuis l'application.
+   */
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  await page.goto("/admin/audit");
+  await expect(page.getByRole("heading", { name: "Audit", level: 1 })).toBeVisible({ timeout: 60_000 });
+
+  const action = page.getByLabel("Action", { exact: true });
+  await expect.poll(() => action.locator("option").count(), { timeout: 30_000 }).toBeGreaterThan(1);
+  // Le filtre lui-meme est traduit : choisir une entree en francais pour voir un tableau en anglais
+  // aurait ete le pire des deux mondes.
+  await action.selectOption("CONFIGURATION_MODIFIEE");
+
+  const ligne = page.getByRole("row", { name: /Setting changed/ }).first();
+  await expect(ligne).toBeVisible({ timeout: 30_000 });
+  // Et les cles de details, qui n'avaient jamais ete traduites nulle part.
+  await expect(ligne).toContainText(/Setting/);
+  await expect(ligne).toContainText(/Previous value/);
+  // Plus aucune trace du libelle francais du backend.
+  await expect(page.getByText("Modification de la configuration")).toHaveCount(0);
+
+  await page.context().close();
+});
+
+/**
+ * Extraction de l'audit (backend Q-113).
+ *
+ * Ce que ce parcours verifie n'est pas la mise en forme du fichier — un test ne sait pas si un PDF
+ * est lisible — mais la chaîne qui rend l'archive opposable : le fichier part, son empreinte
+ * revient jusqu'à l'écran, et l'archive apparaît dans la liste avec cette même empreinte.
+ */
+test("une extraction produit un fichier et une archive scellee (Q-113)", async ({ browser }) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  const extraction = dj.getByRole("region", { name: "Extraire l’audit" });
+  await expect(extraction).toBeVisible();
+
+  // Sans période, l'extraction est refusée à l'écran plutôt que par un 400 du backend.
+  await expect(extraction.getByRole("alert")).toContainText("Choisissez une période");
+  await expect(dj.getByRole("button", { name: "Extraire en PDF" })).toBeDisabled();
+
+  // Un raccourci pré-remplit la période : il ne lance pas d'extraction.
+  await extraction.getByRole("button", { name: "Ce mois-ci" }).click();
+  await expect(dj.getByLabel("Du", { exact: true })).not.toHaveValue("");
+  await expect(dj.getByLabel("Au", { exact: true })).not.toHaveValue("");
+  await expect(extraction.getByRole("alert")).toHaveCount(0);
+
+  const telechargement = dj.waitForEvent("download", { timeout: 60_000 });
+  await dj.getByRole("button", { name: "Extraire en PDF" }).click();
+  const fichier = await telechargement;
+  /*
+   * Le nom porte desormais la reference de l'archive (Q-114) : « aud-2026-0042-du-au.pdf ». C'est ce
+   * nom qu'on citera dans un courrier de transmission, et c'est donc lui qui doit etre stable.
+   */
+  expect(fichier.suggestedFilename()).toMatch(
+    /^aud-\d{4}-\d{4}-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.pdf$/,
+  );
+  const reference = fichier.suggestedFilename().slice(0, 13).toUpperCase();
+
+  /*
+   * L'empreinte remonte jusqu'à l'écran : sans elle, l'archive ne serait qu'une copie de plus. On
+   * exige ici les caractères eux-mêmes, et non la seule phrase d'accompagnement — la version
+   * précédente se contentait du libellé, et n'a donc pas vu que l'empreinte affichée était vide,
+   * l'en-tête n'étant pas exposé en CORS. Une assertion qui ne regarde pas la valeur ne garde rien.
+   */
+  await expect(dj.getByText(/Extraction produite et scellée \(empreinte [0-9a-f]{12}…\)/)).toBeVisible({
+    timeout: 30_000,
+  });
+
+  /*
+   * Et l'archive apparaît dans la liste, sans rien rafraîchir. On la désigne **par sa référence**,
+   * lue dans le nom du fichier, et non par « la première de la liste » : cette suite s'exécute sur
+   * deux workers, et l'extraction Excel du parcours voisin peut se glisser en tête au même instant.
+   * Un test qui prend la première ligne pour la sienne mesure l'ordonnancement, pas le produit.
+   */
+  const archives = extraction.getByRole("listitem").filter({ hasText: reference });
+  await expect(archives).toBeVisible({ timeout: 30_000 });
+  await expect(archives).toContainText(/PDF/);
+  // L'empreinte, elle, est groupée par blocs de huit pour être comparable à l'œil (Q-114).
+  await expect(archives.locator("code")).toHaveText(/^([0-9a-f]{8} ){3}[0-9a-f]{8}/);
+
+  await dj.context().close();
+});
+
+/** L'Excel sert un autre usage que le PDF : les deux doivent être offerts, et fonctionner. */
+test("l'extraction Excel produit un classeur (Q-113)", async ({ browser }) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await ouvrirAudit(dja);
+
+  const extraction = dja.getByRole("region", { name: "Extraire l’audit" });
+  await extraction.getByRole("button", { name: "Aujourd’hui" }).click();
+
+  const telechargement = dja.waitForEvent("download", { timeout: 60_000 });
+  await dja.getByRole("button", { name: "Extraire en Excel" }).click();
+  const fichier = await telechargement;
+  expect(fichier.suggestedFilename()).toMatch(/\.xlsx$/);
+
+  await dja.context().close();
+});
+
+/**
+ * Récupérer une archive déjà produite. Le chemin passe par l'application — seul endroit où la
+ * récupération est tracée — et non par la clé de stockage, que l'API n'expose pas.
+ */
+test("recuperer une archive laisse une trace (Q-113)", async ({ browser }) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  const extraction = dj.getByRole("region", { name: "Extraire l’audit" });
+  const premiere = extraction.getByRole("listitem").first();
+  await expect(premiere).toBeVisible({ timeout: 30_000 });
+
+  const onglet = dj.context().waitForEvent("page", { timeout: 60_000 });
+  await premiere.getByRole("button", { name: "Récupérer" }).click();
+  await (await onglet).close();
+
+  // La trace apparaît dans l'audit lui-même.
+  await dj.getByLabel("Action", { exact: true }).selectOption("ARCHIVE_TELECHARGEE");
+  await expect(dj.getByRole("row", { name: /archive/ }).first()).toBeVisible({ timeout: 30_000 });
+
+  await dj.context().close();
+});
+
+/**
+ * Vérification d'un fichier reçu (backend Q-114).
+ *
+ * L'empreinte existait depuis Q-113, mais rien ne permettait de s'en servir depuis l'application :
+ * il fallait ouvrir un terminal et comparer soixante-quatre caractères à l'œil. Ce parcours vérifie
+ * la boucle complète — un fichier produit ici est reconnu ici — parce que c'est cette boucle, et
+ * non l'empreinte seule, qui fait la valeur de la pièce.
+ */
+test("un fichier extrait est reconnu par le vérificateur (Q-114)", async ({ browser }, infos) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await ouvrirAudit(dj);
+
+  const extraction = dj.getByRole("region", { name: "Extraire l’audit" });
+  await extraction.getByRole("button", { name: "Ce mois-ci" }).click();
+
+  const telechargement = dj.waitForEvent("download", { timeout: 60_000 });
+  await dj.getByRole("button", { name: "Extraire en PDF" }).click();
+  const fichier = await telechargement;
+  const chemin = infos.outputPath(fichier.suggestedFilename());
+  await fichier.saveAs(chemin);
+
+  // La référence citée dans le nom du fichier est celle de l'archive : on doit pouvoir retrouver
+  // l'une à partir de l'autre, sans rien recouper à la main.
+  const reference = fichier.suggestedFilename().slice(0, 13).toUpperCase();
+  expect(reference).toMatch(/^AUD-\d{4}-\d{4}$/);
+
+  const verificateur = dj.getByRole("region", { name: "Vérifier un fichier" });
+  await expect(verificateur).toBeVisible();
+  await verificateur.locator("#verifier-fichier").setInputFiles(chemin);
+
+  // Reconnu, et nommé : « ce fichier est bien l'archive AUD-2026-0042 » est la phrase utile.
+  const reponse = verificateur.getByRole("status");
+  await expect(reponse).toContainText("Fichier reconnu", { timeout: 60_000 });
+  await expect(reponse).toContainText(reference);
+  // La portée est énoncée : l'application ne laisse pas croire qu'elle prouve plus qu'elle ne peut.
+  await expect(reponse).toContainText(/antériorité face à un tiers/);
+  // L'empreinte calculée sur le poste est montrée, groupée : c'est elle qu'on transmet.
+  await expect(reponse.locator("code")).toHaveText(/^([0-9a-f]{8} ){3}[0-9a-f]{8}/);
+
+  await dj.context().close();
+});
+
+/**
+ * Un fichier inconnu n'est pas une erreur : c'est une réponse. Le distinguer d'une panne est tout
+ * l'intérêt — « je ne reconnais pas ce document » et « la vérification a échoué » n'engagent pas
+ * du tout les mêmes suites.
+ */
+test("un fichier qui n'est pas une archive reçoit une réponse, pas une erreur (Q-114)", async ({
+  browser,
+}, infos) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await ouvrirAudit(dja);
+
+  const chemin = infos.outputPath("document-quelconque.pdf");
+  await writeFile(chemin, "Ceci n'a jamais ete scelle ici.");
+
+  const verificateur = dja.getByRole("region", { name: "Vérifier un fichier" });
+  await verificateur.locator("#verifier-fichier").setInputFiles(chemin);
+
+  const reponse = verificateur.getByRole("status");
+  await expect(reponse).toContainText("Aucune archive ne correspond", { timeout: 60_000 });
+  // Et l'empreinte calculée reste affichée : c'est précisément le moment où l'on en a besoin.
+  await expect(reponse.locator("code")).toHaveText(/^([0-9a-f]{8} ){3}[0-9a-f]{8}/);
+  // Rien d'alarmant : la réponse n'emprunte pas le canal des erreurs.
+  await expect(verificateur.getByRole("alert")).toHaveCount(0);
+
+  await dja.context().close();
+});

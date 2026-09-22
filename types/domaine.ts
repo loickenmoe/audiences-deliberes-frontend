@@ -84,6 +84,16 @@ export interface CreerClient {
 }
 
 /**
+ * `PUT /clients/{id}` — la référence n'y figure pas : elle est l'identifiant du client et reste
+ * figée (décision du 2026-09-22). Un champ facultatif vidé part en `null` et devient absent.
+ */
+export interface ModifierClient {
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+}
+
+/**
  * Vue consolidée d'un client (#11, US 8.6). Les dossiers sont **regroupés par catégorie** et la vue
  * est **indépendante de l'affectation du juriste** : elle montre tout ce que la banque porte contre
  * ce client, pas seulement ce que l'utilisateur suit.
@@ -155,29 +165,87 @@ export interface Dossier {
 export interface HistoriqueAction {
   id: number;
   utilisateurId: number | null;
+  /**
+   * Nature typée de l'action (backend Q-111). C'est elle qui fait foi et sur laquelle portent les
+   * filtres ; `action` n'en est que la formulation lisible, et ce qui variait autrefois dans la
+   * phrase — nom de l'étape, sens d'une décision, clé de configuration — se trouve dans `details`.
+   */
+  code: string;
   action: string;
   details: Record<string, unknown> | null;
   dateAction: string;
 }
 
 /**
- * Journal des actions historisées **hors dossier** (backend Q-110).
+ * Une page d'audit (backend Q-112).
  *
- * Même forme qu'une page, plus `actionsDisponibles` : les libellés réellement présents en base, qui
- * alimentent un filtre à **liste fermée**. Sans code d'action typé (QF-24), c'est le seul choix
- * honnête — une liste recopiée côté écran divergerait au premier libellé ajouté par le backend.
- * Cette liste est indépendante des filtres en cours, sinon choisir un libellé ferait disparaître les
+ * Même forme qu'une page, plus `actionsDisponibles` : les natures réellement présentes, qui
+ * alimentent un filtre à **liste fermée**. Depuis le typage des actions (Q-111) elle porte des codes
+ * et non des phrases, si bien qu'une clé de configuration ne produit plus une entrée par paramètre.
+ * Cette liste est indépendante des filtres en cours, sinon en choisir une ferait disparaître les
  * autres et l'on ne pourrait plus changer d'avis.
  *
- * ⚠ **Ce journal ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée :
- * l'absence de ligne ne prouve pas l'absence d'action. C'est pourquoi l'écran s'appelle un journal
- * et non un audit.
+ * ⚠ **L'audit ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée, à
+ * l'exception de celle de cet écran : l'absence de ligne ne prouve donc pas l'absence d'action.
  */
-export interface JournalSysteme {
+export interface PageAudit {
   content: HistoriqueAction[];
   totalPages: number;
   totalElements: number;
-  actionsDisponibles: string[];
+  actionsDisponibles: OptionActionAudit[];
+}
+
+/**
+ * Une entrée du filtre par nature d'action : le **code** part au serveur, le **libellé** s'affiche.
+ *
+ * Le libellé est dérivé de l'énumération côté backend plutôt que lu sur la ligne — les entrées
+ * reprises par la migration V18 portent encore leur ancienne phrase, et une même nature se serait
+ * alors présentée plusieurs fois dans la liste.
+ */
+export interface OptionActionAudit {
+  code: string;
+  libelle: string;
+}
+
+/**
+ * Une archive d'audit produite et scellée (backend Q-113).
+ *
+ * `empreinte` est le **SHA-256 du fichier déposé**. C'est lui qui permet de démontrer, des années
+ * plus tard, que le fichier produit est celui qui a été scellé — et donc de distinguer une archive
+ * d'une simple copie, qu'on peut rééditer en trois minutes.
+ *
+ * La clé de stockage n'est **pas** exposée : elle ne servirait qu'à contourner l'endpoint de
+ * téléchargement, seul endroit où la récupération est tracée.
+ */
+export interface ArchiveAudit {
+  id: number;
+  /**
+   * Référence lisible, `AUD-2026-0042` (backend Q-114). Elle **désigne** l'archive, là où
+   * l'empreinte la **prouve** : on l'écrit dans un courrier, on la dicte au téléphone, et c'est par
+   * elle qu'on retrouve l'empreinte. C'est aussi la seule chose identifiant l'archive que le fichier
+   * puisse porter — tout ce qui décrit son contenu changerait ses octets en y étant écrit.
+   */
+  reference: string;
+  utilisateurId: number | null;
+  dateExport: string;
+  dateDebut: string;
+  dateFin: string;
+  perimetre: string;
+  format: "PDF" | "EXCEL";
+  lignes: number;
+  empreinte: string;
+  tailleOctets: number;
+}
+
+/**
+ * Résultat d'une vérification d'empreinte (backend Q-114).
+ *
+ * `reconnue` à faux n'est **pas une erreur** : c'est une réponse, et souvent celle qu'on redoutait —
+ * le document qu'on vous a remis ne correspond à aucune archive.
+ */
+export interface VerificationArchive {
+  reconnue: boolean;
+  archive: ArchiveAudit | null;
 }
 
 /** Demande de dérogation de seuil et son arbitrage (#6, #7). */
@@ -494,6 +562,17 @@ export interface CreerIntervenant {
   notification?: boolean;
 }
 
+/**
+ * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
+ * figés, l'identité se gérant dans Keycloak. La notification ne concerne qu'un autre prestataire.
+ */
+export interface ModifierIntervenant {
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+  notification: boolean | null;
+}
+
 // ─────────────────────────────── Frais d'avocats ───────────────────────────────
 
 /** Une décision du circuit (Q-82 backend) : qui, à quelle étape, quoi, pourquoi, quand. */
@@ -586,6 +665,37 @@ export interface Publication {
 // ─────────────────────────────── Constitutions et répertoire ───────────────────────────────
 
 /** Demande de constitution d'un prestataire (#35, #36, #60), nommée depuis Q-86 backend. */
+/**
+ * Le contenu d'une lettre de constitution (backend Q-115 B2).
+ *
+ * **Le juriste rédige, le SH consulte.** C'est le même document lu par deux rôles : `modifiable` dit
+ * lequel des deux usages reste ouvert, plutôt que de laisser l'écran le déduire d'un statut.
+ *
+ * `numero` est **nul tant que la lettre est un brouillon** : il est attribué à la signature, pour ne
+ * pas brûler un numéro sur une demande sans suite — la série ne repart jamais à un, et les trous y
+ * resteraient.
+ */
+export interface LettreConstitution {
+  id: number;
+  demandeId: number;
+  numero: number | null;
+  numeroPropose: number | null;
+  /** `First Bank/DAJR/DR/CM/ABN/18` — l'écran le découpe sur « / », le serveur le stocke d'un bloc. */
+  suffixeNumero: string;
+  lieu: string;
+  destinataireNom: string | null;
+  destinataireQualite: string | null;
+  destinataireVille: string | null;
+  concerne: string | null;
+  objet: string;
+  corps: string;
+  signataire: string;
+  /** Faux dès que la lettre est signée : une pièce versée au dossier ne se retouche pas. */
+  modifiable: boolean;
+  dateGeneration: string | null;
+  dateModification: string | null;
+}
+
 export interface DemandeConstitution {
   id: number;
   dossierId: number;
@@ -732,6 +842,11 @@ export interface ConfigurationSysteme {
   description: string | null;
   modifiablePar: string;
   dateModification: string | null;
+  /**
+   * Auteur de la dernière modification (backend Q-112). Nul tant que le paramètre n'a jamais
+   * été modifié, ou si le compte de l'auteur a été supprimé depuis.
+   */
+  dernierAuteurId: number | null;
   typeValeur: TypeValeurConfiguration | null;
   valeurMinimale: number | null;
   valeurMaximale: number | null;

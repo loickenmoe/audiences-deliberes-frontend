@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Dialog } from "@/components/ui/dialog";
@@ -54,8 +54,27 @@ describe("Dialog", () => {
     const onFermeture = vi.fn();
     render(<Dialog ouvert onFermeture={onFermeture} titre="Affectation" />);
 
-    // Échap et `<form method="dialog">` ferment l'élément sans passer par le parent.
+    // Échap et le bouton de fermeture ferment l'élément sans passer par le parent.
     (screen.getByRole("dialog") as HTMLDialogElement).close();
+
+    expect(onFermeture).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * La modale est rendue dans des formulaires (l'aperçu d'une pièce, dans celui du dossier) : elle
+   * ne doit contenir aucun `<form>`, qu'HTML interdit d'imbriquer. Son bouton de fermeture passe
+   * par `close()`, donc par la même voie que ci-dessus.
+   */
+  it("se ferme par son bouton, sans formulaire qui s'imbriquerait dans celui du parent", () => {
+    const onFermeture = vi.fn();
+    render(
+      <form>
+        <Dialog ouvert onFermeture={onFermeture} titre="Aperçu" />
+      </form>,
+    );
+
+    expect(screen.getByRole("dialog").querySelector("form")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Fermer" }));
 
     expect(onFermeture).toHaveBeenCalledTimes(1);
   });

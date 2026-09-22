@@ -89,7 +89,7 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ✅ |
-| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ✅ |
+| 20 | Vue consolidée par client | `/clients/[id]` | CONS (modification : SAI) | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers`, `PUT /clients/{id}` | F5 · Q-116 | ✅ |
 | 21 | Création client | modale (écran 19) | SAI | `POST /clients` | F5 | ✅ |
 
 > **20** : la réponse regroupe les dossiers en `{recouvrement[], exploitationLitiges[]}` et est
@@ -162,7 +162,7 @@ notification applicative (Q-52).
 
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ✅ (fichier et dossier nommés, aperçu, rejet motivé, historique — Q-79) |
+| 36 | Demandes de suppression | `/ged/demandes-suppression` | DJ, DJA | `GET /ged/demandes-suppression?statut=`, `PUT /ged/documents/{id}/approbation-suppression` | F10 | ✅ (fichier et dossier nommés, aperçu, rejet motivé, historique — Q-79 ; paginée — QF-50) |
 | 37 | Rapport journalier | `/ged/rapport-journalier` | JUR, DJ, DJA, AST | `GET /ged/rapport-journalier?date=` | F10 | ✅ (état vide explicite ; ouvert à 4 profils — Q-80) |
 
 **`DELETE /ged/documents/{id}` a deux comportements** selon le profil résolu côté serveur :
@@ -213,7 +213,8 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
-| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
+| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants`, `PUT /intervenants/{id}` | F5 · Q-117 | ✅ |
+| 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.
@@ -225,6 +226,12 @@ refuse le champ `notification` ; un `AUTRE_PRESTATAIRE` refuse tout compte appli
 modification ni suppression** : non demandées par les user stories. Cet écran est indispensable en
 F5 — sans lui, aucun avocat n'existe, et `avocatsAffectes` est obligatoire à la création d'un
 dossier.
+
+**43** — trois blocs : la **consultation** filtrée (Q-112), l'**extraction scellée** avec la liste des
+archives produites (Q-113), et la **vérification d'un fichier reçu** (Q-114,
+`GET /historique/exports/verification`). L'empreinte du fichier déposé est calculée **par le
+navigateur** : seule sa valeur part au serveur. Chaque archive porte une référence lisible
+`AUD-2026-0042`, reprise dans le nom du fichier — l'empreinte prouve, la référence désigne.
 
 ---
 

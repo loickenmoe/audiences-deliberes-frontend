@@ -5,24 +5,24 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { GardeSaisie } from "@/components/metier";
+import { CasesACocher, GardeSaisie, SelecteurCherchable } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
 import { useClients } from "@/hooks/useClients";
 import { useCreerDossier } from "@/hooks/useDossiers";
-import { TAILLE_ANNUAIRE } from "@/hooks/const";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
+import type { TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
 
 /**
@@ -55,7 +55,12 @@ const CHAMPS = [
   "avocatsAffectes",
 ] as const;
 
-export function FormulaireDossier() {
+export function FormulaireDossier({
+  courrielUtilisateur = null,
+}: {
+  /** Courriel de l'utilisateur connecté : sert à le cocher d'office s'il est juriste. */
+  courrielUtilisateur?: string | null;
+} = {}) {
   const t = useTranslations("dossiers");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -69,7 +74,13 @@ export function FormulaireDossier() {
   const natures = useNaturesDossier();
   const typesSensibles = useTypesClientSensible();
   const juristes = useUtilisateurs("JURISTE");
-  const avocats = useIntervenants({ type: "AVOCAT", size: TAILLE_ANNUAIRE });
+  /*
+   * Q-105 — la recherche remplace le « charger une grande page » : le champ n'affiche que ce que le
+   * serveur renvoie pour la saisie en cours, et ne se tronque donc jamais en silence. C'est le même
+   * câblage que la modale « Modifier l'affectation » de la fiche.
+   */
+  const [rechercheAvocat, setRechercheAvocat] = useState("");
+  const avocats = useIntervenants({ type: "AVOCAT", nom: rechercheAvocat || undefined });
   // Les listes de sélection ne sont pas paginables : on charge une page large plutôt que d'imposer
   // une pagination dans un `<select>`. Si le volume devenait un problème, il faudrait un champ de
   // recherche côté serveur — pas un chargement plus gros.
@@ -152,9 +163,12 @@ export function FormulaireDossier() {
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setError,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<z.input<typeof schema>>({
     resolver: zodResolver(schema),
@@ -167,6 +181,22 @@ export function FormulaireDossier() {
       avocatsAffectes: [],
     },
   });
+
+  /*
+   * Le juriste qui crée le dossier en est affecté d'office — décision du porteur du projet
+   * (2026-09-22) ; sa case reste décochable. Il est reconnu par son courriel : c'est le seul champ
+   * commun à la session Keycloak et à la liste des juristes, et il y concorde par construction,
+   * l'utilisateur étant créé depuis son jeton à sa première connexion (QF-16). Sans correspondance,
+   * rien n'est coché : l'utilisateur coche lui-même. Le formulaire n'est pas marqué modifié — quitter
+   * une page à peine ouverte ne doit pas déclencher la garde de saisie.
+   */
+  const preselectionFaite = useRef(false);
+  useEffect(() => {
+    if (preselectionFaite.current || !courrielUtilisateur || !juristes.data) return;
+    preselectionFaite.current = true;
+    const moi = juristes.data.find((u) => u.email?.toLowerCase() === courrielUtilisateur.toLowerCase());
+    if (moi && getValues("juristesAffectes").length === 0) setValue("juristesAffectes", [moi.id]);
+  }, [courrielUtilisateur, juristes.data, getValues, setValue]);
 
   const natureChoisie = watch("nature");
   const estSensible = watch("estSensible");
@@ -255,6 +285,61 @@ export function FormulaireDossier() {
   const echec = natures.error ?? clients.error ?? juristes.error ?? avocats.error;
   if (echec) {
     return <EtatErreur message={messageErreur(echec)} />;
+  }
+
+
+  /**
+   * Le champ de référence d'une pièce attendue, rendu par le bloc des pièces en tête de sa ligne.
+   * Libellés, identifiants et validation sont ceux d'avant la fusion des deux blocs.
+   */
+  function champReference(type: TypeDocument) {
+    switch (type) {
+      case "DOSSIER_CREDIT":
+        return (
+          <Champ id="dossierCreditOrigine" label={t("champDossierCredit")} obligatoire erreur={errors.dossierCreditOrigine?.message}>
+            <Input id="dossierCreditOrigine" enErreur={!!errors.dossierCreditOrigine} {...register("dossierCreditOrigine")} />
+          </Champ>
+        );
+      case "PV_TRANSFERT":
+        return (
+          <Champ id="pvTransfert" label={t("champPvTransfert")} obligatoire erreur={errors.pvTransfert?.message}>
+            <Input id="pvTransfert" enErreur={!!errors.pvTransfert} {...register("pvTransfert")} />
+          </Champ>
+        );
+      case "INCIDENT_COMPTE":
+        return (
+          <Champ
+            id="incidentCompteReference"
+            label={t("champIncidentCompte")}
+            obligatoire
+            erreur={errors.incidentCompteReference?.message}
+          >
+            <Input
+              id="incidentCompteReference"
+              enErreur={!!errors.incidentCompteReference}
+              {...register("incidentCompteReference")}
+            />
+          </Champ>
+        );
+      case "ELEMENT_JUSTIFICATIF":
+        return (
+          <Champ
+            id="elementsJustificatifs"
+            label={t("champElementsJustificatifs")}
+            obligatoire
+            erreur={errors.elementsJustificatifs?.message}
+          >
+            <Textarea
+              id="elementsJustificatifs"
+              rows={3}
+              enErreur={!!errors.elementsJustificatifs}
+              {...register("elementsJustificatifs")}
+            />
+          </Champ>
+        );
+      default:
+        return null;
+    }
   }
 
   return (
@@ -368,6 +453,11 @@ export function FormulaireDossier() {
                 </p>
               </div>
             ) : null}
+
+            {/* Ce n'est pas une pièce : il siégeait à tort dans le bloc des pièces (2026-09-22). */}
+            <Champ id="champAlarme" label={t("champAlarme")}>
+              <Input id="champAlarme" {...register("champAlarme")} />
+            </Champ>
           </CardContent>
         </Card>
 
@@ -411,77 +501,13 @@ export function FormulaireDossier() {
                 {categorie === "RECOUVREMENT" ? t("aidePiecesRecouvrement") : t("aidePiecesLitiges")}
               </p>
 
-              {categorie === "RECOUVREMENT" ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Champ
-                    id="dossierCreditOrigine"
-                    label={t("champDossierCredit")}
-                    obligatoire
-                    erreur={errors.dossierCreditOrigine?.message}
-                  >
-                    <Input
-                      id="dossierCreditOrigine"
-                      enErreur={!!errors.dossierCreditOrigine}
-                      {...register("dossierCreditOrigine")}
-                    />
-                  </Champ>
-                  <Champ
-                    id="pvTransfert"
-                    label={t("champPvTransfert")}
-                    obligatoire
-                    erreur={errors.pvTransfert?.message}
-                  >
-                    <Input
-                      id="pvTransfert"
-                      enErreur={!!errors.pvTransfert}
-                      {...register("pvTransfert")}
-                    />
-                  </Champ>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <Champ
-                    id="incidentCompteReference"
-                    label={t("champIncidentCompte")}
-                    obligatoire
-                    erreur={errors.incidentCompteReference?.message}
-                  >
-                    <Input
-                      id="incidentCompteReference"
-                      enErreur={!!errors.incidentCompteReference}
-                      {...register("incidentCompteReference")}
-                    />
-                  </Champ>
-                  <Champ
-                    id="elementsJustificatifs"
-                    label={t("champElementsJustificatifs")}
-                    obligatoire
-                    erreur={errors.elementsJustificatifs?.message}
-                  >
-                    <Textarea
-                      id="elementsJustificatifs"
-                      rows={3}
-                      enErreur={!!errors.elementsJustificatifs}
-                      {...register("elementsJustificatifs")}
-                    />
-                  </Champ>
-                </div>
-              )}
-
-              <Champ id="champAlarme" label={t("champAlarme")}>
-                <Input id="champAlarme" {...register("champAlarme")} />
-              </Champ>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {categorie ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{tdoc("piecesTitre")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PiecesAJoindre categorie={categorie} onChangement={setPieces} />
+              {/*
+                Un seul bloc (2026-09-22) : chaque pièce réunit sa référence, obligatoire, et son
+                fichier, facultatif. Les références restent des champs de ce formulaire — enregistrés,
+                validés et envoyés à la création comme avant ; le bloc des pièces ne fait que les
+                placer. Les fichiers partent toujours après la création, dans la GED.
+              */}
+              <PiecesAJoindre categorie={categorie} onChangement={setPieces} reference={champReference} />
             </CardContent>
           </Card>
         ) : null}
@@ -494,52 +520,56 @@ export function FormulaireDossier() {
             <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
               {t("aideAffectation")}
             </p>
+            {/*
+              Cases à cocher pour les juristes — une liste courte, qu'on veut voir d'un coup d'œil —,
+              recherche avec jetons pour les avocats — un référentiel qui grandit (2026-09-22).
+              Chacun se choisit et se retire d'un clic, sans touche à maintenir.
+            */}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Champ
-                id="juristesAffectes"
-                label={t("champJuristes")}
-                obligatoire
-                aide={t("aideSelectionMultiple")}
-                erreur={errors.juristesAffectes?.message}
-              >
-                <Select
-                  id="juristesAffectes"
-                  multiple
-                  size={5}
-                  enErreur={!!errors.juristesAffectes}
-                  {...register("juristesAffectes")}
-                >
-                  {(juristes.data ?? []).map((utilisateur) => (
-                    <option key={utilisateur.id} value={utilisateur.id}>
-                      {[utilisateur.prenom, utilisateur.nom].filter(Boolean).join(" ") ||
+              <Controller
+                control={control}
+                name="juristesAffectes"
+                render={({ field }) => (
+                  <CasesACocher
+                    label={t("champJuristes")}
+                    obligatoire
+                    valeur={(field.value ?? []).map(Number)}
+                    onChangement={field.onChange}
+                    chargement={juristes.isLoading}
+                    erreur={errors.juristesAffectes?.message}
+                    options={(juristes.data ?? []).map((utilisateur) => ({
+                      id: utilisateur.id,
+                      libelle:
+                        [utilisateur.prenom, utilisateur.nom].filter(Boolean).join(" ") ||
                         utilisateur.email ||
-                        `#${utilisateur.id}`}
-                    </option>
-                  ))}
-                </Select>
-              </Champ>
+                        `#${utilisateur.id}`,
+                    }))}
+                  />
+                )}
+              />
 
-              <Champ
-                id="avocatsAffectes"
-                label={t("champAvocats")}
-                obligatoire
-                aide={t("aideSelectionMultiple")}
-                erreur={errors.avocatsAffectes?.message}
-              >
-                <Select
-                  id="avocatsAffectes"
-                  multiple
-                  size={5}
-                  enErreur={!!errors.avocatsAffectes}
-                  {...register("avocatsAffectes")}
-                >
-                  {(avocats.data?.content ?? []).map((avocat) => (
-                    <option key={avocat.id} value={avocat.id}>
-                      {avocat.nom}
-                    </option>
-                  ))}
-                </Select>
-              </Champ>
+              <Controller
+                control={control}
+                name="avocatsAffectes"
+                render={({ field }) => (
+                  <div className="flex flex-col gap-1">
+                    <SelecteurCherchable
+                      id="avocatsAffectes"
+                      label={t("champAvocats")}
+                      obligatoire
+                      multiple
+                      valeur={(field.value ?? []).map(Number)}
+                      onChangement={(valeur) => field.onChange(valeur as number[])}
+                      options={(avocats.data?.content ?? []).map((avocat) => ({ id: avocat.id, libelle: avocat.nom }))}
+                      onRecherche={setRechercheAvocat}
+                      chargement={avocats.isLoading}
+                    />
+                    {errors.avocatsAffectes?.message ? (
+                      <p className="text-[length:var(--taille-xs)] text-danger">{errors.avocatsAffectes.message}</p>
+                    ) : null}
+                  </div>
+                )}
+              />
             </div>
           </CardContent>
         </Card>

@@ -9,6 +9,7 @@ import { PoidsFichier } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { useConfigurations, useModifierConfiguration } from "@/hooks/useConfigurations";
+import { useLibelles } from "@/hooks/useLibelles";
 import {
   basculerElement,
   verifierValeurConfiguration,
@@ -84,6 +85,7 @@ function LigneParametre({
 }) {
   const t = useTranslations("configurations");
   const tr = useTranslations("referentiels");
+  const { nomUtilisateur } = useLibelles();
   const modifier = useModifierConfiguration();
   const [valeur, setValeur] = useState(configuration.valeur);
 
@@ -181,9 +183,21 @@ function LigneParametre({
           {configuration.typeValeur === "ENTIER" && configuration.cle === "TAILLE_MAX_GED" ? (
             <PoidsFichier valeur={Number(configuration.valeur)} />
           ) : null}
+          {/*
+            Q-112 : « modifié le … par … ». Le journal des actions système a déménagé vers l'écran
+            d'audit — un outil d'enquête n'avait pas sa place sous les paramètres. Mais la question
+            qui naît **en regardant un réglage** — « pourquoi vaut-il 14, et qui l'a mis là ? » —
+            mérite une réponse sur place, et non un changement d'écran. Elle est ici, rattachée à la
+            ligne qui la pose.
+          */}
           <span>
             {configuration.dateModification
-              ? t("modifiee", { date: new Date(configuration.dateModification).toLocaleDateString() })
+              ? configuration.dernierAuteurId !== null
+                ? t("modifieeParAuteur", {
+                    date: new Date(configuration.dateModification).toLocaleDateString(),
+                    auteur: nomUtilisateur(configuration.dernierAuteurId),
+                  })
+                : t("modifiee", { date: new Date(configuration.dateModification).toLocaleDateString() })
               : t("jamaisModifiee")}
           </span>
         </p>

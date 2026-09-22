@@ -1,5 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
+import { ligneDansLaFile } from "./files-de-travail";
 
 /**
  * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
@@ -74,14 +76,13 @@ async function ouvrirUnDossier(page: Page, marque: string) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill(`CRD-${marque}`);
   await page.getByLabel("PV de transfert", { exact: true }).fill(`PV-${marque}`);
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
   /*
    * L'avocat est choisi **par son nom**, jamais par son rang : `{ index: 0 }` désignait un avocat
    * arbitraire du référentiel, et le dossier n'appartenait donc pas à `avocat.test` — son portail
    * ne le proposait pas, et les parcours P2 et P6 restaient bloqués sur un sélecteur sans l'option
    * attendue. `Me Claire Avocat` est l'intervenant rattaché au compte `avocat.test` (Q-84).
    */
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ label: AVOCAT_DE_TEST });
+  await affecterParDefaut(page, { avocat: AVOCAT_DE_TEST });
   await page
     .locator('input[name="piece-PV_TRANSFERT"]')
     .setInputFiles({ name: `pv-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
@@ -160,7 +161,8 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   // L'Assistante la valide : elle devient alors consultable par le juriste (RG-INT-10).
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/publications");
-  const ligne = assistante.getByRole("row", { name: new RegExp(`DOS-${marque}`) }).first();
+  // File FIFO et paginée : la publication qu'on vient de déposer est en queue, pas en tête.
+  const ligne = await ligneDansLaFile(assistante, new RegExp(`DOS-${marque}`));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
 
   // Q-98 : la pièce du compte rendu s'ouvre depuis la publication elle-même — c'est ce qui
@@ -228,7 +230,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
   // Le DJ arbitre : la demande lui est parvenue, nommée par son fichier et son dossier (Q-79).
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/ged/demandes-suppression");
-  const ligne = dj.getByRole("row", { name: new RegExp(nom) });
+  const ligne = await ligneDansLaFile(dj, new RegExp(nom));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
   await expect(ligne).toContainText(`DOS-${marque}`);
   await dj.context().close();

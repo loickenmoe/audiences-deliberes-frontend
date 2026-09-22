@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { CLES, FRAICHEUR_REFERENTIEL, TAILLE_PAGE } from "@/hooks/const";
 import { intervenantService } from "@/services/intervenantService";
-import type { CreerIntervenant } from "@/types/domaine";
+import type { CreerIntervenant, ModifierIntervenant } from "@/types/domaine";
 import type { TypeIntervenant } from "@/types/enums";
 
 /**
@@ -44,6 +44,20 @@ export function useCreerIntervenant() {
       // bien dans la liste filtrée que dans les sélecteurs d'affectation d'un dossier.
       void queryClient.invalidateQueries({ queryKey: [CLES.intervenants] });
       toast.success(t("creationReussie"));
+    },
+  });
+}
+
+export function useModifierIntervenant(id: number) {
+  const queryClient = useQueryClient();
+  const t = useTranslations("intervenants");
+
+  return useMutation({
+    mutationFn: (corps: ModifierIntervenant) => intervenantService.modifier(id, corps),
+    onSuccess: () => {
+      // Le nom corrigé doit apparaître partout : référentiel, sélecteurs d'affectation, constitutions.
+      void queryClient.invalidateQueries({ queryKey: [CLES.intervenants] });
+      toast.success(t("modificationReussie"));
     },
   });
 }

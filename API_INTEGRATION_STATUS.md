@@ -103,10 +103,13 @@
 | 10 | GET | `/clients/{id}` | CONS | 20 | F5 | ✅ |
 | 11 | GET | `/clients/{clientId}/dossiers` | CONS | 20 | F5 | ✅ |
 | 12 | POST | `/clients` | SAI | 21 | F5 | ✅ |
+| 12 bis | PUT | `/clients/{id}` | SAI | 20 | Q-116 | ✅ |
 
 - **#11** — renvoie `{clientId, clientNom, recouvrement[], exploitationLitiges[]}`, indépendant de
   l'affectation du juriste. 404 si le client n'existe pas ; structure vide (200) sinon.
-- Pas de `PUT /clients/{id}` — non retenu par le backend (Q-23).
+- **#12 bis** (Q-116, 2026-09-22) — `PUT /clients/{id}` : nom, courriel, téléphone. **La référence est
+  figée** et ne part pas dans le corps ; un champ vidé part en `null`. Même modale que la création,
+  ouverte depuis la fiche (écran 20).
 
 ## 3. Audiences et alarmes
 
@@ -229,6 +232,7 @@ nuls tant que la décision n'est pas rendue.
 | 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ✅ |
 | 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ✅ (nommée — Q-86) |
 | 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
+| 61 bis | PUT | `/intervenants/{id}` | DJ, DJA | 42 | Q-117 | ✅ |
 | 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |
 
 - **#35** — `dossierId`, `prestataireId`, **motif obligatoire**. Notifie les SH.
@@ -278,7 +282,13 @@ nuls tant que la décision n'est pas rendue.
 | 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ✅ |
 | 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
 | — | GET | `/alertes/statistiques-diffusion?dateDebut&dateFin` 🆕 Q-109 | **DJ + DJA** | 41 (supervision) | F18 | ✅ |
-| — | GET | `/historique/systeme?utilisateurId&action&dateDebut&dateFin&page&size` 🆕 Q-110 | **DJ + DJA** | 41 (journal) | F18 | ✅ |
+| — | GET | `/historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin&page&size` 🆕 Q-112 | **DJ + DJA** | 43 (audit) | F18 | ✅ |
+| — | GET | `/historique/export?…&format=PDF|EXCEL` 🆕 Q-113 | **DJ + DJA** | 43 (audit) | F18 | ✅ |
+| — | GET | `/historique/exports?page&size` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
+| — | GET | `/historique/exports/{id}/telechargement` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
+| — | GET | `/historique/exports/verification?empreinte` 🆕 Q-114 | **DJ + DJA** | 43 (vérification) | F18 | ✅ |
+| — | GET | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **SH + JURISTE** | file des constitutions | F18 | ✅ |
+| — | PUT | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **JURISTE** | file des constitutions | F18 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la

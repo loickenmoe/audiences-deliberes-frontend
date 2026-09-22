@@ -70,6 +70,8 @@ export const CAPACITES = {
   consulterReferentiels: ["ROLE_CONSULTATION"],
   /** `POST /clients` — ROLE_SAISIE */
   creerClient: ["ROLE_SAISIE"],
+  /** `PUT /clients/{id}` — ROLE_SAISIE : qui peut créer un client peut en corriger une coquille. */
+  modifierClient: ["ROLE_SAISIE"],
   /** `POST /intervenants` — DJ, DJA */
   administrerIntervenants: ["ROLE_DJ", "ROLE_DJA"],
 
@@ -166,15 +168,15 @@ export const CAPACITES = {
    */
   superviserAlertes: ["ROLE_DJ", "ROLE_DJA"],
   /**
-   * `GET /historique/systeme` — DJ, DJA (backend Q-110).
+   * `GET /historique` — DJ, DJA (backend Q-112).
    *
-   * **Pourquoi pas `ROLE_CONSULTATION`**, alors que l'historique d'un dossier lui est ouvert : sur
-   * une fiche, on regarde un dossier, et voir l'action d'un collègue relève de la collaboration.
-   * Ici la lecture est agrégée et filtrable par auteur — même contenu, autre nature. La restreindre
-   * à l'administration est le minimum tant que NF-CONF-01 (RGPD, conservation) reste « à définir
-   * avec la DRH » dans les sources.
+   * **Distincte d'`administrerConfigurations` et de `superviserAlertes`**, bien qu'elle porte
+   * aujourd'hui les mêmes rôles : lire l'activité nommée d'un collègue n'est ni écrire un seuil ni
+   * lire un taux global. Les confondre ferait qu'un assouplissement futur de l'une déplacerait
+   * l'autre sans qu'on l'ait voulu — et ici, ce serait un assouplissement sur des données
+   * personnelles (NF-CONF-01).
    */
-  consulterJournalSysteme: ["ROLE_DJ", "ROLE_DJA"],
+  consulterAudit: ["ROLE_DJ", "ROLE_DJA"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Capacite = keyof typeof CAPACITES;

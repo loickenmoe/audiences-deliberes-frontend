@@ -73,6 +73,36 @@ async function avocatDuCompteTest(): Promise<number> {
   throw new Error(`POST /intervenants → ${creation.status}`);
 }
 
+/**
+ * Le seuil de validation conjointe, **lu dans la configuration** plutôt que supposé.
+ *
+ * `SEUIL_MONTANT_DEFAUT` (RG-INT-03) n’est pas une constante : le DJ le modifie à l’écran, et la
+ * valeur posée par les migrations n’est qu’un point de départ. Un montant écrit en dur finit
+ * donc par passer du mauvais côté du seuil — c’est arrivé le 2026-09-21, le test déposant
+ * 60 000 000 sur une base où le seuil valait 100 000 000 : il échouait en mesurant la
+ * configuration, pas le produit, et le bandeau qu’il réclamait avait raison de ne pas paraître.
+ */
+async function seuilValidationConjointe(): Promise<number> {
+  const configurations = await json<{ cle: string; valeur: string }[]>(
+    "/configurations",
+    await jeton("dj.test"),
+  );
+  const seuil = configurations.find((configuration) => configuration.cle === "SEUIL_MONTANT_DEFAUT");
+  if (!seuil) throw new Error("SEUIL_MONTANT_DEFAUT absent de la configuration");
+  return Number(seuil.valeur);
+}
+
+/**
+ * Un montant franchement **sous** le seuil, calculé lui aussi à partir de la configuration.
+ *
+ * Symétrique du précédent, et pour la même raison : un petit montant écrit en dur passerait du
+ * mauvais côté le jour où le seuil descendrait sous lui. Le dixième du seuil laisse une marge
+ * large dans les deux sens.
+ */
+async function montantSousLeSeuil(): Promise<number> {
+  return Math.max(1, Math.floor((await seuilValidationConjointe()) / 10));
+}
+
 /** Un dossier où `avocat.test` est affecté, et sa demande de frais déposée par l'API. */
 async function demandeDeposee(montant: number) {
   const juriste = await jeton("juriste.test");
@@ -139,7 +169,7 @@ async function confirmer(page: Page, action: string, titre: string, succes: stri
 test.setTimeout(240_000);
 
 test("circuit simple : conformité, opportunité par la DJA seule, paiement", async ({ browser }) => {
-  const { facture } = await demandeDeposee(1_000_000);
+  const { facture } = await demandeDeposee(await montantSousLeSeuil());
 
   const assistante = await pageConnectee(browser, "assistante.test");
   await ouvrirDepuisLaFile(assistante, facture);
@@ -166,7 +196,8 @@ test("circuit simple : conformité, opportunité par la DJA seule, paiement", as
 });
 
 test("validation conjointe : montant au-delà du seuil, deux accords, jamais deux votes du même profil", async ({ browser }) => {
-  const { id, facture } = await demandeDeposee(60_000_000);
+  // Franchement au-dessus du seuil courant, quel qu’il soit : c’est la condition que le test vérifie.
+  const { id, facture } = await demandeDeposee((await seuilValidationConjointe()) + 10_000_000);
   await json(`/frais/demandes/${id}/conformite`, await jeton("assistante.test"), {
     method: "PUT",
     body: JSON.stringify({ conforme: true }),
@@ -205,7 +236,7 @@ test("validation conjointe : montant au-delà du seuil, deux accords, jamais deu
 });
 
 test("un refus rejette la demande, et son motif est obligatoire", async ({ browser }) => {
-  const { facture } = await demandeDeposee(1_000_000);
+  const { facture } = await demandeDeposee(await montantSousLeSeuil());
 
   const assistante = await pageConnectee(browser, "assistante.test");
   await ouvrirDepuisLaFile(assistante, facture);
@@ -223,7 +254,7 @@ test("un refus rejette la demande, et son motif est obligatoire", async ({ brows
 });
 
 test("le paiement n'est jamais possible avant la validation ; chaque profil a sa file", async ({ browser }) => {
-  const { id, facture } = await demandeDeposee(1_000_000);
+  const { id, facture } = await demandeDeposee(await montantSousLeSeuil());
 
   const assistante = await pageConnectee(browser, "assistante.test");
   await expect(assistante.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Frais d’avocats" })).toBeVisible();

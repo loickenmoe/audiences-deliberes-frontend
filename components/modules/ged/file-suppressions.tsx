@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { StatutChip, type TonStatut } from "@/components/global/statut-chip";
-import { DateHeureValeur, DialogueConfirmation } from "@/components/metier";
+import { DateHeureValeur, DialogueConfirmation, Pagination } from "@/components/metier";
 import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Button } from "@/components/ui/button";
 import { Champ, Textarea } from "@/components/ui/champ";
@@ -46,7 +46,14 @@ export function FileSuppressions() {
   const t = useTranslations("suppressions");
   const tdoc = useTranslations("documents");
   const [vue, setVue] = useState<Vue>("EN_ATTENTE");
-  const requete = useDemandesSuppression(vue === "EN_ATTENTE" ? "EN_ATTENTE" : null);
+  /*
+   * La file est paginée **côté serveur**, dix lignes par page. Elle l'a toujours été : ce qui
+   * manquait, c'était le moyen d'atteindre les pages suivantes. L'écran n'en montrait donc que dix,
+   * et la vue « en attente » étant la plus ancienne d'abord, **les demandes les plus récentes
+   * étaient invisibles** — celles-là même qu'un juriste venait de déposer.
+   */
+  const [page, setPage] = useState(0);
+  const requete = useDemandesSuppression(vue === "EN_ATTENTE" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderSuppression();
   const { nomUtilisateur } = useLibelles();
   const [apercu, setApercu] = useState<DemandeSuppression | null>(null);
@@ -83,7 +90,7 @@ export function FileSuppressions() {
             key={valeur}
             type="button"
             aria-pressed={valeur === vue}
-            onClick={() => setVue(valeur)}
+            onClick={() => { setVue(valeur); setPage(0); }}
             className={cn(
               "px-3 py-1.5 text-[length:var(--taille-sm)] transition-colors first:rounded-l last:rounded-r",
               valeur === vue ? "bg-anthracite text-white" : "hover:bg-surface-attenuee",
@@ -201,6 +208,19 @@ export function FileSuppressions() {
           </table>
         </div>
       )}
+
+      {/*
+        Rendue dès qu'une page suivante existe : une file tronquée sans le dire est pire qu'une file
+        longue, car rien n'indique à qui décide qu'il lui manque quelque chose.
+      */}
+      {requete.data && requete.data.totalPages > 1 ? (
+        <Pagination
+          page={page}
+          totalPages={requete.data.totalPages}
+          totalElements={requete.data.totalElements}
+          onChangement={setPage}
+        />
+      ) : null}
 
       <ApercuFichier
         ouvert={apercu !== null}

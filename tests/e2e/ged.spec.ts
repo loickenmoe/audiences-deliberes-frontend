@@ -1,4 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
+import { ligneDansLaFile } from "./files-de-travail";
 
 /**
  * GED (écrans 36 et 37) **contre le backend réel et MinIO** : la file des demandes de suppression
@@ -47,8 +49,7 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   await juriste.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
-  await juriste.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await juriste.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(juriste);
   await juriste.locator('input[name="piece-PV_TRANSFERT"]').setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
   await juriste.getByRole("button", { name: "Enregistrer" }).click();
   await juriste.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
@@ -78,8 +79,9 @@ test("le DJ voit quoi supprimer, rejette avec un motif, puis approuve la demande
   await dj.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Demandes de suppression" }).click();
   await dj.waitForURL(/\/ged\/demandes-suppression/, { timeout: 60_000 });
 
-  // La demande nomme son fichier et son dossier (Q-79).
-  const ligne = dj.getByRole("row", { name: new RegExp(nom) });
+  // La demande nomme son fichier et son dossier (Q-79). La file « En attente » est FIFO : une
+  // demande qu'on vient de déposer est la dernière, pas la première — d'où le parcours des pages.
+  const ligne = await ligneDansLaFile(dj, new RegExp(nom));
   await expect(ligne).toContainText(reference);
 
   await dj.getByRole("button", { name: `Rejeter la demande - ${nom}` }).click();
@@ -98,7 +100,9 @@ test("le DJ voit quoi supprimer, rejette avec un motif, puis approuve la demande
   await redemander(browser, url, nom);
   await dj.getByRole("button", { name: "En attente" }).click();
   await dj.reload();
-  await dj.getByRole("button", { name: `Approuver la suppression - ${nom}` }).click();
+  // Le rechargement ramène en première page : la demande, à nouveau la plus récente, est en queue.
+  const redeposee = await ligneDansLaFile(dj, new RegExp(nom));
+  await redeposee.getByRole("button", { name: `Approuver la suppression - ${nom}` }).click();
   await dj.getByRole("dialog", { name: "Approuver la suppression ?" }).getByRole("button", { name: "Approuver" }).click();
   await expect(dj.getByRole("row", { name: new RegExp(nom) })).toHaveCount(0);
 

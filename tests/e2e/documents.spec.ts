@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 
 /**
  * Pièces d'un dossier (création, onglet Documents) **contre le backend réel et MinIO**.
@@ -47,8 +48,7 @@ async function remplirDossier(page: Page) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DOC");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DOC");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
 }
 
 async function creerAvecPv(page: Page) {
