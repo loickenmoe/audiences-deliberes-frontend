@@ -1,6 +1,6 @@
 import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
-import type { CreerIntervenant, Intervenant } from "@/types/domaine";
+import type { CreerIntervenant, Intervenant, ModifierIntervenant } from "@/types/domaine";
 import type { TypeIntervenant } from "@/types/enums";
 
 /**
@@ -41,6 +41,15 @@ export const intervenantService = {
   /** #61 — `ROLE_DJ`, `ROLE_DJA`. Voir les invariants sur {@link CreerIntervenant}. */
   creer: async (corps: CreerIntervenant): Promise<Intervenant> => {
     const { data } = await apiClient.post<Intervenant>(BASE, corps);
+    return data;
+  },
+
+  /**
+   * 🆕 `PUT /intervenants/{id}` (Q-117) — `ROLE_DJ`, `ROLE_DJA`. Le type et l'identifiant de connexion
+   * sont figés : seuls le nom, les coordonnées et la notification se corrigent.
+   */
+  modifier: async (id: number, corps: ModifierIntervenant): Promise<Intervenant> => {
+    const { data } = await apiClient.put<Intervenant>(`${BASE}/${id}`, corps);
     return data;
   },
 };

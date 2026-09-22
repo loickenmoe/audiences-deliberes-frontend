@@ -179,17 +179,18 @@ describe("libelles d'historique (QF-24)", () => {
 
   /**
    * Les valeurs de `TypeActionHistorique` (backend Q-111, plus AUDIT_CONSULTE en Q-112 et
-   * LETTRE_CONSTITUTION_REDIGEE en Q-115 B2, CLIENT_MODIFIE avec PUT /clients). Un ecart avec l'enumeration se verrait ici avant de
+   * LETTRE_CONSTITUTION_REDIGEE en Q-115 B2, CLIENT_MODIFIE avec PUT /clients, INTERVENANT_MODIFIE en Q-117). Un ecart avec l'enumeration se verrait ici avant de
    * se voir a l'ecran — et c'est ce garde-fou qui a rappele d'ajouter la traduction du code.
    */
-  it("traduit les 46 natures d'action dans les deux langues", () => {
-    expect(Object.keys(actionsFr)).toHaveLength(46);
+  it("traduit les 47 natures d'action dans les deux langues", () => {
+    expect(Object.keys(actionsFr)).toHaveLength(47);
     expect(Object.keys(actionsEn)).toEqual(Object.keys(actionsFr));
   });
 
-  it("traduit les 58 cles de details dans les deux langues", () => {
-    // PUT /clients : ancien/nouveau nom, e-mail et telephone.
-    expect(Object.keys(detailsFr)).toHaveLength(58);
+  it("traduit les 61 cles de details dans les deux langues", () => {
+    // PUT /clients : ancien/nouveau nom, e-mail et telephone. PUT /intervenants (Q-117) : intervenant,
+    // ancienne/nouvelle notification. L'identifiant Keycloak, fige, n'y figure pas.
+    expect(Object.keys(detailsFr)).toHaveLength(61);
     expect(Object.keys(detailsEn)).toEqual(Object.keys(detailsFr));
   });
 

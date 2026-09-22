@@ -562,6 +562,17 @@ export interface CreerIntervenant {
   notification?: boolean;
 }
 
+/**
+ * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
+ * figés, l'identité se gérant dans Keycloak. La notification ne concerne qu'un autre prestataire.
+ */
+export interface ModifierIntervenant {
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+  notification: boolean | null;
+}
+
 // ─────────────────────────────── Frais d'avocats ───────────────────────────────
 
 /** Une décision du circuit (Q-82 backend) : qui, à quelle étape, quoi, pourquoi, quand. */

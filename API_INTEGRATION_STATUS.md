@@ -232,6 +232,7 @@ nuls tant que la décision n'est pas rendue.
 | 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ✅ |
 | 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ✅ (nommée — Q-86) |
 | 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
+| 61 bis | PUT | `/intervenants/{id}` | DJ, DJA | 42 | Q-117 | ✅ |
 | 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |
 
 - **#35** — `dossierId`, `prestataireId`, **motif obligatoire**. Notifie les SH.

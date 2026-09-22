@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { ligneDansLaFile } from "./files-de-travail";
+
 /**
  * Parcours clients et intervenants **contre le backend réel**.
  *
@@ -151,7 +153,52 @@ test("le DJ crée un avocat, indispensable à toute création de dossier", async
   await page.getByLabel("Identifiant de connexion", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
-  await expect(page.getByRole("cell", { name: nom })).toBeVisible({ timeout: 30_000 });
+  /*
+   * Le référentiel est trié par nom et paginé : un avocat qu'on vient de créer n'est en première page
+   * que si son nom s'y range. Chaque exécution en ajoute : le jour où « Me Test 0…, 1…, 2… » ont
+   * rempli la première page, ce parcours est tombé sans qu'une ligne du produit ait changé. On
+   * parcourt donc les pages, comme pour les files de travail.
+   */
+  await expect(await ligneDansLaFile(page, nom)).toBeVisible();
+});
+
+/**
+ * Q-117 : le DJ corrige un avocat depuis sa ligne du référentiel. Le type et l'identifiant de
+ * connexion sont affichés mais figés — l'identité se gère dans Keycloak —, le nom et le courriel se
+ * corrigent, et la ligne reflète la correction sans rechargement.
+ */
+test("le DJ corrige un avocat, sans pouvoir changer ni son type ni son identifiant", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/admin/intervenants");
+
+  const marque = suffixe();
+  const nom = `Me Coquile ${marque}`;
+  await page.getByRole("button", { name: "Nouvel intervenant" }).click();
+  await page.getByLabel("Nom", { exact: true }).fill(nom);
+  const compte = `avocat.${marque.toLowerCase()}`;
+  await page.getByLabel("Identifiant de connexion", { exact: true }).fill(compte);
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  // Même raison que la création : on parcourt les pages plutôt que de supposer la première.
+  const ligneInitiale = await ligneDansLaFile(page, nom);
+  await ligneInitiale.getByRole("button", { name: `Modifier ${nom}` }).click();
+  const dialogue = page.getByRole("dialog", { name: "Modifier l’intervenant" });
+  await expect(dialogue.getByLabel("Type", { exact: true })).toBeDisabled();
+  await expect(dialogue.getByText("Le type ne se modifie pas")).toBeVisible();
+  const champCompte = dialogue.getByLabel("Identifiant de connexion", { exact: true });
+  await expect(champCompte).toBeDisabled();
+  await expect(champCompte).toHaveValue(compte);
+
+  const nomCorrige = `Me Corrigé ${marque}`;
+  await dialogue.getByLabel("Nom", { exact: true }).fill(nomCorrige);
+  await dialogue.getByLabel("Courriel", { exact: true }).fill("corrige@cabinet-e2e.cm");
+  await dialogue.getByRole("button", { name: "Enregistrer" }).click();
+
+  // Le nom corrigé change de place dans l'ordre alphabétique : on repart de la première page.
+  await expect(dialogue).toBeHidden({ timeout: 30_000 });
+  await page.goto("/admin/intervenants");
+  const ligne = await ligneDansLaFile(page, nomCorrige);
+  await expect(ligne.getByText("corrige@cabinet-e2e.cm", { exact: true })).toBeVisible();
+  await expect(ligne.getByText(compte, { exact: true })).toBeVisible();
 });
 
 test("le formulaire s'adapte au type d'intervenant", async ({ page }) => {

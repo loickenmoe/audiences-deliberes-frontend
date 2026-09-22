@@ -73,6 +73,21 @@ const serveur = setupServer(
     });
   }),
 
+  http.put(`${BASE}/intervenants/:id`, async ({ request, params }) => {
+    derniereUrl = new URL(request.url);
+    derniereEcriture = { methode: request.method, corps: await request.json() };
+    return HttpResponse.json({
+      id: Number(params.id),
+      type: "AVOCAT",
+      nom: "Me Fotso",
+      email: null,
+      telephone: null,
+      compteKeycloak: "avocat.fotso",
+      notification: null,
+      createdAt: "2026-09-01T10:00:00",
+    });
+  }),
+
   http.get(`${BASE}/intervenants`, ({ request }) => {
     derniereUrl = new URL(request.url);
     // Paginé depuis Q-100 : le référentiel était renvoyé en entier.
@@ -178,6 +193,25 @@ describe("clientService.modifier", () => {
     expect(derniereEcriture?.corps).toEqual({ nom: "SARL Bâtir et Fils", email: null, telephone: "+237 600 000 000" });
     expect(derniereEcriture?.corps).not.toHaveProperty("reference");
     expect(client.nom).toBe("SARL Bâtir et Fils");
+  });
+});
+
+describe("intervenantService.modifier", () => {
+  /** Le type et l'identifiant de connexion sont figés (Q-117) : ils ne partent pas dans le corps. */
+  it("envoie un PUT sans type ni identifiant de connexion", async () => {
+    const intervenant = await intervenantService.modifier(7, {
+      nom: "Me Fotso",
+      email: "fotso@cab.cm",
+      telephone: null,
+      notification: null,
+    });
+
+    expect(derniereEcriture?.methode).toBe("PUT");
+    expect(derniereUrl?.pathname).toBe("/api/v1/intervenants/7");
+    expect(derniereEcriture?.corps).not.toHaveProperty("type");
+    expect(derniereEcriture?.corps).not.toHaveProperty("compteKeycloak");
+    expect(derniereEcriture?.corps).toMatchObject({ email: "fotso@cab.cm", notification: null });
+    expect(intervenant.type).toBe("AVOCAT");
   });
 });
 

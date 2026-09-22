@@ -213,7 +213,7 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
-| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants` | F5 | ✅ |
+| 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants`, `PUT /intervenants/{id}` | F5 · Q-117 | ✅ |
 | 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
