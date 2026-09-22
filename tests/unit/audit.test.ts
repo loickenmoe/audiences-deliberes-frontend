@@ -179,16 +179,17 @@ describe("libelles d'historique (QF-24)", () => {
 
   /**
    * Les valeurs de `TypeActionHistorique` (backend Q-111, plus AUDIT_CONSULTE en Q-112 et
-   * LETTRE_CONSTITUTION_REDIGEE en Q-115 B2). Un ecart avec l'enumeration se verrait ici avant de
+   * LETTRE_CONSTITUTION_REDIGEE en Q-115 B2, CLIENT_MODIFIE avec PUT /clients). Un ecart avec l'enumeration se verrait ici avant de
    * se voir a l'ecran — et c'est ce garde-fou qui a rappele d'ajouter la traduction du code.
    */
-  it("traduit les 45 natures d'action dans les deux langues", () => {
-    expect(Object.keys(actionsFr)).toHaveLength(45);
+  it("traduit les 46 natures d'action dans les deux langues", () => {
+    expect(Object.keys(actionsFr)).toHaveLength(46);
     expect(Object.keys(actionsEn)).toEqual(Object.keys(actionsFr));
   });
 
-  it("traduit les 52 cles de details dans les deux langues", () => {
-    expect(Object.keys(detailsFr)).toHaveLength(52);
+  it("traduit les 58 cles de details dans les deux langues", () => {
+    // PUT /clients : ancien/nouveau nom, e-mail et telephone.
+    expect(Object.keys(detailsFr)).toHaveLength(58);
     expect(Object.keys(detailsEn)).toEqual(Object.keys(detailsFr));
   });
 

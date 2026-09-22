@@ -103,10 +103,13 @@
 | 10 | GET | `/clients/{id}` | CONS | 20 | F5 | ✅ |
 | 11 | GET | `/clients/{clientId}/dossiers` | CONS | 20 | F5 | ✅ |
 | 12 | POST | `/clients` | SAI | 21 | F5 | ✅ |
+| 12 bis | PUT | `/clients/{id}` | SAI | 20 | Q-116 | ✅ |
 
 - **#11** — renvoie `{clientId, clientNom, recouvrement[], exploitationLitiges[]}`, indépendant de
   l'affectation du juriste. 404 si le client n'existe pas ; structure vide (200) sinon.
-- Pas de `PUT /clients/{id}` — non retenu par le backend (Q-23).
+- **#12 bis** (Q-116, 2026-09-22) — `PUT /clients/{id}` : nom, courriel, téléphone. **La référence est
+  figée** et ne part pas dans le corps ; un champ vidé part en `null`. Même modale que la création,
+  ouverte depuis la fiche (écran 20).
 
 ## 3. Audiences et alarmes
 

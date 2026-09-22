@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { CLES } from "@/hooks/const";
 import { messageErreur } from "@/lib/api/errors";
 import { clientService } from "@/services/clientService";
-import type { CreerClient } from "@/types/domaine";
+import type { CreerClient, ModifierClient } from "@/types/domaine";
 
 export function useClients(params: { nom?: string; reference?: string; page: number; size?: number }) {
   return useQuery({
@@ -53,6 +53,26 @@ export function useCreerClient() {
     onError: (erreur) => {
       const message = messageErreur(erreur);
       if (message) console.error("Création de client refusée :", message);
+    },
+  });
+}
+
+export function useModifierClient(id: number) {
+  const queryClient = useQueryClient();
+  const t = useTranslations("clients");
+
+  return useMutation({
+    mutationFn: (corps: ModifierClient) => clientService.modifier(id, corps),
+    onSuccess: () => {
+      // La fiche et la liste affichent toutes deux le nom : les deux caches sont périmés.
+      void queryClient.invalidateQueries({ queryKey: [CLES.client, id] });
+      void queryClient.invalidateQueries({ queryKey: [CLES.clients] });
+      toast.success(t("modificationReussie"));
+    },
+    // Même principe qu'à la création : l'erreur va au champ, pas dans un toast en doublon.
+    onError: (erreur) => {
+      const message = messageErreur(erreur);
+      if (message) console.error("Modification de client refusée :", message);
     },
   });
 }

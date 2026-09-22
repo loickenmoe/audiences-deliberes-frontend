@@ -1,14 +1,18 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useState } from "react";
 
 import { CycleEtape, MontantFcfa } from "@/components/metier";
 import { EtatChargement, EtatErreur } from "@/components/global";
+import { FormulaireClient } from "@/components/modules/clients/formulaire-client";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useClient, useVueClientDossiers } from "@/hooks/useClients";
 import { messageErreur } from "@/lib/api/errors";
+import { peut } from "@/lib/rbac";
 import type { Dossier } from "@/types/domaine";
 
 /**
@@ -19,10 +23,12 @@ import type { Dossier } from "@/types/domaine";
  * · la vue est **indépendante de l'affectation du juriste** : elle montre l'exposition totale de la
  *   banque sur ce client, y compris les dossiers que l'utilisateur ne suit pas.
  */
-export function VueClient({ clientId }: { clientId: number }) {
+export function VueClient({ clientId, roles }: { clientId: number; roles: readonly string[] }) {
   const t = useTranslations("clients");
+  const tc = useTranslations("commun");
   const client = useClient(clientId);
   const vue = useVueClientDossiers(clientId);
+  const [edition, setEdition] = useState(false);
 
   if (client.isLoading || vue.isLoading) return <EtatChargement lignes={8} />;
 
@@ -51,14 +57,34 @@ export function VueClient({ clientId }: { clientId: number }) {
         </Link>
       </div>
 
-      <header className="flex flex-col gap-1">
-        <p className="font-mono text-[length:var(--taille-2xs)] uppercase tracking-[0.13em] text-texte-tertiaire">
-          {client.data?.reference}
-        </p>
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
-          {client.data?.nom}
-        </h1>
-        <p className="max-w-prose text-texte-secondaire">{t("vueDescription")}</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <p className="font-mono text-[length:var(--taille-2xs)] uppercase tracking-[0.13em] text-texte-tertiaire">
+            {client.data?.reference}
+          </p>
+          <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+            {client.data?.nom}
+          </h1>
+          {/* Les coordonnées sont visibles là où on les corrige : sans elles, une modification
+              d'e-mail ou de téléphone ne laisserait aucune trace à l'écran. */}
+          <dl className="flex flex-wrap gap-x-6 gap-y-1 text-[length:var(--taille-sm)]">
+            <div className="flex gap-1.5">
+              <dt className="text-texte-tertiaire">{t("colonneEmail")}</dt>
+              <dd>{client.data?.email || tc("aucuneValeur")}</dd>
+            </div>
+            <div className="flex gap-1.5">
+              <dt className="text-texte-tertiaire">{t("colonneTelephone")}</dt>
+              <dd>{client.data?.telephone || tc("aucuneValeur")}</dd>
+            </div>
+          </dl>
+          <p className="max-w-prose text-texte-secondaire">{t("vueDescription")}</p>
+        </div>
+        {peut(roles, "modifierClient") ? (
+          <Button variante="secondaire" onClick={() => setEdition(true)}>
+            <Pencil size={16} aria-hidden />
+            {t("modifier")}
+          </Button>
+        ) : null}
       </header>
 
       <div className="flex flex-col gap-5">
@@ -83,6 +109,10 @@ export function VueClient({ clientId }: { clientId: number }) {
           </Card>
         ))}
       </div>
+
+      {client.data ? (
+        <FormulaireClient ouvert={edition} onFermeture={() => setEdition(false)} client={client.data} />
+      ) : null}
     </div>
   );
 }

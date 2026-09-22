@@ -89,7 +89,7 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 | # | Écran | Route | Rôles | Endpoints | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 19 | Recherche clients | `/clients` | CONS | `GET /clients?nom&reference&page&size` | F5 | ✅ |
-| 20 | Vue consolidée par client | `/clients/[id]` | CONS | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers` | F5 | ✅ |
+| 20 | Vue consolidée par client | `/clients/[id]` | CONS (modification : SAI) | `GET /clients/{id}`, `GET /clients/{clientId}/dossiers`, `PUT /clients/{id}` | F5 · Q-116 | ✅ |
 | 21 | Création client | modale (écran 19) | SAI | `POST /clients` | F5 | ✅ |
 
 > **20** : la réponse regroupe les dossiers en `{recouvrement[], exploitationLitiges[]}` et est

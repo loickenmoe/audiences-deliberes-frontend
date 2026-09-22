@@ -84,6 +84,16 @@ export interface CreerClient {
 }
 
 /**
+ * `PUT /clients/{id}` — la référence n'y figure pas : elle est l'identifiant du client et reste
+ * figée (décision du 2026-09-22). Un champ facultatif vidé part en `null` et devient absent.
+ */
+export interface ModifierClient {
+  nom: string;
+  email: string | null;
+  telephone: string | null;
+}
+
+/**
  * Vue consolidée d'un client (#11, US 8.6). Les dossiers sont **regroupés par catégorie** et la vue
  * est **indépendante de l'affectation du juriste** : elle montre tout ce que la banque porte contre
  * ce client, pas seulement ce que l'utilisateur suit.

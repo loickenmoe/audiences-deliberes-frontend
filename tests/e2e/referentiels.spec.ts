@@ -86,6 +86,41 @@ test("une référence en doublon est signalée sur le champ concerné", async ({
   await expect(champ).toHaveAttribute("aria-invalid", "true", { timeout: 30_000 });
 });
 
+/**
+ * PUT /clients (2026-09-22) : un client se corrige depuis sa fiche. La référence reste figée — elle
+ * est l'identifiant du client — tandis que le nom et les coordonnées se modifient, et la fiche
+ * affiche les nouvelles valeurs sans rechargement.
+ */
+test("un juriste corrige un client depuis sa fiche, sans pouvoir toucher à sa référence", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/clients");
+
+  const reference = `CLI-MOD-${suffixe()}`;
+  await page.getByRole("button", { name: "Nouveau client" }).click();
+  await page.getByLabel("Référence", { exact: true }).fill(reference);
+  await page.getByLabel("Nom", { exact: true }).fill(`Nom avec coquile ${reference}`);
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await page.getByRole("link", { name: reference }).click({ timeout: 30_000 });
+  await page.waitForURL(/clients[/][0-9]+/, { timeout: 60_000 });
+
+  await page.getByRole("button", { name: "Modifier" }).click();
+  const dialogue = page.getByRole("dialog", { name: "Modifier le client" });
+  const champReference = dialogue.getByLabel("Référence", { exact: true });
+  await expect(champReference).toHaveValue(reference);
+  await expect(champReference).toBeDisabled();
+  await expect(dialogue.getByText("La référence identifie le client : elle ne se modifie pas.")).toBeVisible();
+
+  const nomCorrige = `Nom corrigé ${reference}`;
+  await dialogue.getByLabel("Nom", { exact: true }).fill(nomCorrige);
+  await dialogue.getByLabel("Courriel").fill("contact@client-e2e.cm");
+  await dialogue.getByRole("button", { name: "Enregistrer" }).click();
+
+  // La fiche se rafraîchit d'elle-même : son cache est invalidé après la modification.
+  await expect(page.getByRole("heading", { name: nomCorrige, level: 1 })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("contact@client-e2e.cm")).toBeVisible();
+  await expect(page.getByText(reference, { exact: true })).toBeVisible();
+});
+
 test("la vue consolidée regroupe les dossiers par catégorie", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/clients");

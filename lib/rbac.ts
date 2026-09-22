@@ -70,6 +70,8 @@ export const CAPACITES = {
   consulterReferentiels: ["ROLE_CONSULTATION"],
   /** `POST /clients` — ROLE_SAISIE */
   creerClient: ["ROLE_SAISIE"],
+  /** `PUT /clients/{id}` — ROLE_SAISIE : qui peut créer un client peut en corriger une coquille. */
+  modifierClient: ["ROLE_SAISIE"],
   /** `POST /intervenants` — DJ, DJA */
   administrerIntervenants: ["ROLE_DJ", "ROLE_DJA"],
 
