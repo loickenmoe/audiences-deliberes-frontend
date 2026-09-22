@@ -23,6 +23,7 @@ import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/ho
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
+import type { TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
 
 /**
@@ -257,6 +258,61 @@ export function FormulaireDossier() {
     return <EtatErreur message={messageErreur(echec)} />;
   }
 
+
+  /**
+   * Le champ de référence d'une pièce attendue, rendu par le bloc des pièces en tête de sa ligne.
+   * Libellés, identifiants et validation sont ceux d'avant la fusion des deux blocs.
+   */
+  function champReference(type: TypeDocument) {
+    switch (type) {
+      case "DOSSIER_CREDIT":
+        return (
+          <Champ id="dossierCreditOrigine" label={t("champDossierCredit")} obligatoire erreur={errors.dossierCreditOrigine?.message}>
+            <Input id="dossierCreditOrigine" enErreur={!!errors.dossierCreditOrigine} {...register("dossierCreditOrigine")} />
+          </Champ>
+        );
+      case "PV_TRANSFERT":
+        return (
+          <Champ id="pvTransfert" label={t("champPvTransfert")} obligatoire erreur={errors.pvTransfert?.message}>
+            <Input id="pvTransfert" enErreur={!!errors.pvTransfert} {...register("pvTransfert")} />
+          </Champ>
+        );
+      case "INCIDENT_COMPTE":
+        return (
+          <Champ
+            id="incidentCompteReference"
+            label={t("champIncidentCompte")}
+            obligatoire
+            erreur={errors.incidentCompteReference?.message}
+          >
+            <Input
+              id="incidentCompteReference"
+              enErreur={!!errors.incidentCompteReference}
+              {...register("incidentCompteReference")}
+            />
+          </Champ>
+        );
+      case "ELEMENT_JUSTIFICATIF":
+        return (
+          <Champ
+            id="elementsJustificatifs"
+            label={t("champElementsJustificatifs")}
+            obligatoire
+            erreur={errors.elementsJustificatifs?.message}
+          >
+            <Textarea
+              id="elementsJustificatifs"
+              rows={3}
+              enErreur={!!errors.elementsJustificatifs}
+              {...register("elementsJustificatifs")}
+            />
+          </Champ>
+        );
+      default:
+        return null;
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -368,6 +424,11 @@ export function FormulaireDossier() {
                 </p>
               </div>
             ) : null}
+
+            {/* Ce n'est pas une pièce : il siégeait à tort dans le bloc des pièces (2026-09-22). */}
+            <Champ id="champAlarme" label={t("champAlarme")}>
+              <Input id="champAlarme" {...register("champAlarme")} />
+            </Champ>
           </CardContent>
         </Card>
 
@@ -411,77 +472,13 @@ export function FormulaireDossier() {
                 {categorie === "RECOUVREMENT" ? t("aidePiecesRecouvrement") : t("aidePiecesLitiges")}
               </p>
 
-              {categorie === "RECOUVREMENT" ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Champ
-                    id="dossierCreditOrigine"
-                    label={t("champDossierCredit")}
-                    obligatoire
-                    erreur={errors.dossierCreditOrigine?.message}
-                  >
-                    <Input
-                      id="dossierCreditOrigine"
-                      enErreur={!!errors.dossierCreditOrigine}
-                      {...register("dossierCreditOrigine")}
-                    />
-                  </Champ>
-                  <Champ
-                    id="pvTransfert"
-                    label={t("champPvTransfert")}
-                    obligatoire
-                    erreur={errors.pvTransfert?.message}
-                  >
-                    <Input
-                      id="pvTransfert"
-                      enErreur={!!errors.pvTransfert}
-                      {...register("pvTransfert")}
-                    />
-                  </Champ>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <Champ
-                    id="incidentCompteReference"
-                    label={t("champIncidentCompte")}
-                    obligatoire
-                    erreur={errors.incidentCompteReference?.message}
-                  >
-                    <Input
-                      id="incidentCompteReference"
-                      enErreur={!!errors.incidentCompteReference}
-                      {...register("incidentCompteReference")}
-                    />
-                  </Champ>
-                  <Champ
-                    id="elementsJustificatifs"
-                    label={t("champElementsJustificatifs")}
-                    obligatoire
-                    erreur={errors.elementsJustificatifs?.message}
-                  >
-                    <Textarea
-                      id="elementsJustificatifs"
-                      rows={3}
-                      enErreur={!!errors.elementsJustificatifs}
-                      {...register("elementsJustificatifs")}
-                    />
-                  </Champ>
-                </div>
-              )}
-
-              <Champ id="champAlarme" label={t("champAlarme")}>
-                <Input id="champAlarme" {...register("champAlarme")} />
-              </Champ>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {categorie ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{tdoc("piecesTitre")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PiecesAJoindre categorie={categorie} onChangement={setPieces} />
+              {/*
+                Un seul bloc (2026-09-22) : chaque pièce réunit sa référence, obligatoire, et son
+                fichier, facultatif. Les références restent des champs de ce formulaire — enregistrés,
+                validés et envoyés à la création comme avant ; le bloc des pièces ne fait que les
+                placer. Les fichiers partent toujours après la création, dans la GED.
+              */}
+              <PiecesAJoindre categorie={categorie} onChangement={setPieces} reference={champReference} />
             </CardContent>
           </Card>
         ) : null}
