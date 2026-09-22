@@ -440,7 +440,8 @@
     "compteFige": "L’identifiant de connexion est géré dans Keycloak, qui crée et authentifie les comptes : il ne se modifie pas ici.",
     "compteObligatoire": "L’identifiant avec lequel l’avocat se connecte, par exemple avocat.dupont. Il en a besoin pour déposer ses demandes de frais et ses publications.",
     "comptePrestataire": "Un autre prestataire n’a pas de compte : il est notifié par courriel.",
-    "notification": "Notifier par courriel"
+    "notification": "Accepte les notifications hors de l’application",
+    "notificationAide": "SMS, WhatsApp et courriel personnel, vers les coordonnées de cette fiche. Les canaux réellement utilisés sont réglés par la Direction Juridique."
   },
   "dossiers": {
     "titre": "Dossiers",

@@ -210,10 +210,47 @@ test("le formulaire s'adapte au type d'intervenant", async ({ page }) => {
   // Un avocat exige un compte applicatif (RG-INT-01).
   await expect(page.getByLabel("Identifiant de connexion", { exact: true })).toBeVisible();
 
-  // Un autre prestataire n'en a pas : il est notifié par courriel (RG-INT-02).
+  // Q-119 : le consentement aux canaux externes vaut pour les deux types, coché par défaut pour un
+  // avocat, décoché pour un autre prestataire.
+  const consentement = page.getByLabel("Accepte les notifications hors de l’application");
+  await expect(consentement).toBeChecked();
+
+  // Un autre prestataire n'a pas de compte applicatif (RG-INT-02).
   await page.getByLabel("Type", { exact: true }).selectOption("AUTRE_PRESTATAIRE");
   await expect(page.getByLabel("Identifiant de connexion", { exact: true })).toBeHidden();
-  await expect(page.getByLabel("Notifier par courriel")).toBeVisible();
+  await expect(consentement).toBeVisible();
+});
+
+/**
+ * Q-119 : le consentement de l'avocat aux notifications externes se retire depuis sa fiche, et il
+ * est conservé. Sans lui, aucun SMS, WhatsApp ni courriel personnel ne part vers ses coordonnées.
+ */
+test("le DJ retire le consentement d'un avocat aux notifications externes (Q-119)", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/admin/intervenants");
+
+  const marque = suffixe();
+  const nom = `Me Consent ${marque}`;
+  await page.getByRole("button", { name: "Nouvel intervenant" }).click();
+  await page.getByLabel("Nom", { exact: true }).fill(nom);
+  await page.getByLabel("Identifiant de connexion", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = await ligneDansLaFile(page, nom);
+  await ligne.getByRole("button", { name: `Modifier ${nom}` }).click();
+  const dialogue = page.getByRole("dialog", { name: "Modifier l’intervenant" });
+  const consentement = dialogue.getByLabel("Accepte les notifications hors de l’application");
+  await expect(consentement).toBeChecked();
+
+  await consentement.uncheck();
+  await dialogue.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dialogue).toBeHidden({ timeout: 30_000 });
+
+  await page.goto("/admin/intervenants");
+  const relue = await ligneDansLaFile(page, nom);
+  await relue.getByRole("button", { name: `Modifier ${nom}` }).click();
+  await expect(page.getByRole("dialog", { name: "Modifier l’intervenant" })
+    .getByLabel("Accepte les notifications hors de l’application")).not.toBeChecked();
 });
 
 test("un juriste consulte le référentiel mais ne peut pas y créer", async ({ page }) => {

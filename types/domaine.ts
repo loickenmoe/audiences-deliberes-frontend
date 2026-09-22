@@ -549,9 +549,12 @@ export interface Intervenant {
 
 /**
  * Invariants portés par le backend (#61, RG-INT-01/02) :
- * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris —
- *   et refuse le champ `notification` ;
+ * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris ;
  * · un `AUTRE_PRESTATAIRE` refuse tout compte applicatif.
+ *
+ * `notification` vaut pour les deux depuis Q-119 : c'est le consentement du prestataire aux canaux
+ * externes (SMS, WhatsApp, courriel personnel). Absent, il vaut `true` pour un avocat et `false`
+ * pour un autre prestataire.
  */
 export interface CreerIntervenant {
   type: TypeIntervenant;
@@ -564,7 +567,8 @@ export interface CreerIntervenant {
 
 /**
  * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
- * figés, l'identité se gérant dans Keycloak. La notification ne concerne qu'un autre prestataire.
+ * figés, l'identité se gérant dans Keycloak. Le consentement aux notifications externes, lui, se
+ * corrige pour les deux types (Q-119).
  */
 export interface ModifierIntervenant {
   nom: string;

@@ -440,7 +440,8 @@
     "compteFige": "The login is managed in Keycloak, which creates and authenticates accounts: it cannot be changed here.",
     "compteObligatoire": "The username counsel signs in with, for example avocat.dupont. It is required to submit fee claims and filings.",
     "comptePrestataire": "Other providers have no account: they are notified by email.",
-    "notification": "Notify by email"
+    "notification": "Accepts notifications outside the application",
+    "notificationAide": "SMS, WhatsApp and personal email, to the contact details on this record. The channels actually used are set by the Legal Department."
   },
   "dossiers": {
     "titre": "Cases",
