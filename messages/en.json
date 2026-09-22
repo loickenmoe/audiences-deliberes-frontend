@@ -364,7 +364,8 @@
     "lignesParPage": "Rows per page",
     "rechercherPlaceholder": "Type to search…",
     "rechercheEnCours": "Searching…",
-    "retirer": "Remove"
+    "retirer": "Remove",
+    "selectionnes": "{nombre, plural, =0 {None selected} one {# selected} other {# selected}}"
   },
   "clients": {
     "titre": "Clients",
@@ -477,7 +478,6 @@
     "aidePiecesLitiges": "An operating dispute requires the account incident reference and the supporting evidence.",
     "aideAffectation": "At least one lawyer and at least one counsel are mandatory.",
     "aideSensibilite": "The threshold and client type are a proposal, subject to approval by the Legal Director or Deputy.",
-    "aideSelectionMultiple": "Hold Ctrl (or Cmd) to select several.",
     "categorieDeduite": "Derived category",
     "choisirNature": "Choose a nature",
     "choisirClient": "Choose a client",

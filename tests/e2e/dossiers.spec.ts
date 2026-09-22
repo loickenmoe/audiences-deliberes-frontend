@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 
 /**
  * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
@@ -32,8 +33,7 @@ async function remplirTroncCommun(page: Page, reference: string, nature: string)
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  await page.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await page.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(page);
 }
 
 test("un juriste atteint les dossiers depuis la navigation", async ({ page }) => {

@@ -15,6 +15,6 @@ export async function generateMetadata() {
  * laisser l'utilisateur remplir vingt champs pour se voir refuser à l'envoi.
  */
 export default async function PageNouveauDossier() {
-  await exigerCapacite("creerDossier");
-  return <FormulaireDossier />;
+  const session = await exigerCapacite("creerDossier");
+  return <FormulaireDossier courrielUtilisateur={session.user?.email ?? null} />;
 }

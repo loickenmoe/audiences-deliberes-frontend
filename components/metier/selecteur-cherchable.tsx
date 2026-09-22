@@ -156,10 +156,20 @@ export function SelecteurCherchable({
           aria-controls={idListe}
           aria-autocomplete="list"
           aria-activedescendant={ouvert && options[indexActif] ? `${idListe}-${options[indexActif].id}` : undefined}
-          required={obligatoire}
+          /*
+           * `aria-required` et non `required` : en choix multiple, la valeur du champ est la saisie en
+           * cours, presque toujours vide. Dans un vrai `<form>` — celui de création d'un dossier —, le
+           * contrôle natif bloquait l'envoi même avec des choix retenus, et avant la validation de
+           * l'application. L'obligation reste annoncée aux lecteurs d'écran ; c'est le formulaire qui
+           * la vérifie et la signale.
+           */
+          aria-required={obligatoire || undefined}
           value={ouvert || multiple ? saisie : (selection?.libelle ?? "")}
           placeholder={placeholder ?? t("rechercherPlaceholder")}
           onFocus={() => setOuvert(true)}
+          // Le focus seul ne suffit pas : fermée par Échap, la liste doit se rouvrir au clic suivant,
+          // alors que le champ a gardé le focus.
+          onClick={() => setOuvert(true)}
           onChange={(evenement) => {
             setSaisie(evenement.target.value);
             setIndexActif(0);

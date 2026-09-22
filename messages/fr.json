@@ -364,7 +364,8 @@
     "lignesParPage": "Lignes par page",
     "rechercherPlaceholder": "Taper pour rechercher…",
     "rechercheEnCours": "Recherche…",
-    "retirer": "Retirer"
+    "retirer": "Retirer",
+    "selectionnes": "{nombre, plural, =0 {Aucune sélection} one {# sélectionné} other {# sélectionnés}}"
   },
   "clients": {
     "titre": "Clients",
@@ -477,7 +478,6 @@
     "aidePiecesLitiges": "Un litige d’exploitation exige la référence de l’incident de compte et les éléments justificatifs.",
     "aideAffectation": "Au moins un juriste et au moins un avocat sont obligatoires.",
     "aideSensibilite": "Le seuil et le type de client constituent une proposition, soumise à la validation du DJ ou du DJA.",
-    "aideSelectionMultiple": "Maintenez Ctrl (ou Cmd) pour en sélectionner plusieurs.",
     "categorieDeduite": "Catégorie déduite",
     "choisirNature": "Choisissez une nature",
     "choisirClient": "Choisissez un client",

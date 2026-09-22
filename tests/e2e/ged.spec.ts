@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { affecterParDefaut } from "./affectation";
 import { ligneDansLaFile } from "./files-de-travail";
 
 /**
@@ -48,8 +49,7 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   await juriste.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
-  await juriste.getByLabel("Juristes affectés", { exact: true }).selectOption({ index: 0 });
-  await juriste.getByLabel("Avocats affectés", { exact: true }).selectOption({ index: 0 });
+  await affecterParDefaut(juriste);
   await juriste.locator('input[name="piece-PV_TRANSFERT"]').setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
   await juriste.getByRole("button", { name: "Enregistrer" }).click();
   await juriste.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
