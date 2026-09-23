@@ -11,6 +11,7 @@ import { Champ, Input, Select } from "@/components/ui/champ";
 import { Dialog } from "@/components/ui/dialog";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
+import { telephoneValide } from "@/lib/notifications";
 import { useCreerIntervenant, useModifierIntervenant } from "@/hooks/useIntervenants";
 import type { Intervenant } from "@/types/domaine";
 import { TypeIntervenant } from "@/types/enums";
@@ -67,7 +68,12 @@ export function FormulaireIntervenant({
       type: edition ? z.enum(TypeIntervenant).optional() : z.enum(TypeIntervenant),
       nom: z.string().trim().min(1, tm("champObligatoire")).max(100),
       email: z.union([z.string().email(), z.literal("")]).optional(),
-      telephone: z.string().max(20).optional(),
+      // Même règle que le backend : il refuserait la fiche, autant le dire ici (étape 11).
+      telephone: z
+        .string()
+        .max(20)
+        .refine((valeur) => telephoneValide(valeur ?? ""), { message: t("telephoneFormat") })
+        .optional(),
       compteKeycloak: z.string().max(255).optional(),
       notification: z.boolean().optional(),
     })
@@ -184,7 +190,12 @@ export function FormulaireIntervenant({
           <Input id={`${p}email`} type="email" enErreur={!!errors.email} {...register("email")} />
         </Champ>
 
-        <Champ id={`${p}telephone`} label={t("colonneTelephone")} erreur={errors.telephone?.message}>
+        <Champ
+          id={`${p}telephone`}
+          label={t("colonneTelephone")}
+          aide={t("telephoneAide")}
+          erreur={errors.telephone?.message}
+        >
           <Input id={`${p}telephone`} type="tel" {...register("telephone")} />
         </Champ>
 

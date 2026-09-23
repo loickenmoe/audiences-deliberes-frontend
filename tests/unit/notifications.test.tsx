@@ -10,6 +10,7 @@ import {
   lireListe,
   SECTIONS_GRILLE,
   saisieInitiale,
+  telephoneValide,
 } from "@/lib/notifications";
 import type { ConfigurationSysteme } from "@/types/domaine";
 import { EvenementPrestataire, TypeAlerte } from "@/types/enums";
@@ -141,5 +142,46 @@ describe("GrilleNotifications", () => {
     rendre(<GrilleNotifications configurations={CONFIGURATIONS} modifiable />, { langue: "en" });
     expect(screen.getByRole("heading", { name: "External notifications grid" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Assigned to a case by Personal email" })).toBeChecked();
+  });
+});
+
+describe("saisie d'un numéro de téléphone (étape 11)", () => {
+  it("accepte un numéro camerounais sous ses trois écritures, séparateurs compris", () => {
+    for (const saisie of ["650228936", "650 228 936", "650-228-936", "237650228936", "+237650228936", "+237 650 228 936"]) {
+      expect(telephoneValide(saisie)).toBe(true);
+    }
+  });
+
+  /** Les mobiles Camtel commencent eux aussi par 6 : 620 XX XX XX. */
+  it("accepte les mobiles Camtel", () => {
+    for (const saisie of ["620228936", "6 20 22 89 36", "+237 6 20 22 89 36"]) {
+      expect(telephoneValide(saisie)).toBe(true);
+    }
+  });
+
+  /** Les lignes fixes, en 2, ne reçoivent ni SMS ni WhatsApp. */
+  it("refuse les lignes fixes", () => {
+    for (const saisie of ["222228936", "+237 2 22 22 89 36"]) {
+      expect(telephoneValide(saisie)).toBe(false);
+    }
+  });
+
+  it("accepte un numéro étranger, indicatif obligatoire", () => {
+    expect(telephoneValide("+33 6 12 34 56 78")).toBe(true);
+    expect(telephoneValide("+241 01 23 45 67")).toBe(true);
+    // Sans indicatif, il faudrait le deviner.
+    expect(telephoneValide("33612345678")).toBe(false);
+  });
+
+  it("refuse un numéro camerounais trop court ou trop long, même avec l'indicatif", () => {
+    for (const saisie of ["65022893", "6502289361", "+23765022893", "+2376502289361", "0650228936", "750228936", "abc"]) {
+      expect(telephoneValide(saisie)).toBe(false);
+    }
+  });
+
+  /** Un prestataire sans téléphone reste permis : le champ n'est pas obligatoire. */
+  it("accepte l'absence de numéro", () => {
+    expect(telephoneValide("")).toBe(true);
+    expect(telephoneValide("   ")).toBe(true);
   });
 });

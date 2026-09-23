@@ -253,6 +253,36 @@ test("le DJ retire le consentement d'un avocat aux notifications externes (Q-119
     .getByLabel("Accepte les notifications hors de l’application")).not.toBeChecked();
 });
 
+/**
+ * Étape 11 — un numéro hors des trois écritures acceptées par le moteur est refusé à la saisie, et
+ * un numéro valide est enregistré mis en forme. Sans cela, la faute ne se voyait qu'à l'envoi, sous
+ * la forme d'une ligne « non joignable » en supervision.
+ */
+test("le DJ ne peut pas enregistrer un numéro hors format ; un numéro valide est mis en forme", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/admin/intervenants");
+
+  const marque = suffixe();
+  const nom = `Me Numero ${marque}`;
+  await page.getByRole("button", { name: "Nouvel intervenant" }).click();
+  await page.getByLabel("Nom", { exact: true }).fill(nom);
+  await page.getByLabel("Identifiant de connexion", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
+
+  // Le format attendu est annoncé sous le champ, avant toute erreur.
+  await expect(page.getByText(/Cameroun : mobile à neuf chiffres/)).toBeVisible();
+
+  await page.getByLabel("Téléphone", { exact: true }).fill("0699887766");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByText(/Numéro invalide/)).toBeVisible();
+
+  // Corrigé, il est accepté puis enregistré à la forme que le moteur attend.
+  await page.getByLabel("Téléphone", { exact: true }).fill("699 88 77 66");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = await ligneDansLaFile(page, nom);
+  await expect(ligne.getByText("+237699887766", { exact: true })).toBeVisible();
+});
+
 test("un juriste consulte le référentiel mais ne peut pas y créer", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/admin/intervenants");

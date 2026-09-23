@@ -421,6 +421,8 @@
     "colonneType": "Type",
     "colonneEmail": "Courriel",
     "colonneTelephone": "Téléphone",
+    "telephoneAide": "Cameroun : mobile à neuf chiffres, 6XX XXX XXX. Hors Cameroun : indicatif obligatoire, +33 X XX XX XX XX.",
+    "telephoneFormat": "Numéro invalide. Cameroun : neuf chiffres commençant par 6. Hors Cameroun : indicatif obligatoire (+33…).",
     "colonneCompte": "Identifiant de connexion",
     "sansCompte": "Aucun",
     "filtreType": "Type d’intervenant",

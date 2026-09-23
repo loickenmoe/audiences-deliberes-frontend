@@ -421,6 +421,8 @@
     "colonneType": "Type",
     "colonneEmail": "Email",
     "colonneTelephone": "Phone",
+    "telephoneAide": "Cameroon: nine-digit mobile, 6XX XXX XXX. Outside Cameroon: country code required, +33 X XX XX XX XX.",
+    "telephoneFormat": "Invalid number. Cameroon: nine digits starting with 6. Outside Cameroon: country code required (+33…).",
     "colonneCompte": "Login",
     "sansCompte": "None",
     "filtreType": "Provider type",

@@ -101,6 +101,27 @@ export function trouver(configurations: ConfigurationSysteme[], cle: string): Co
   return configurations.find((configuration) => configuration.cle === cle);
 }
 
+/**
+ * Numéros que le backend accepte (étape 11), même règle des deux côtés.
+ *
+ * **Cameroun** : exactement neuf chiffres commençant par 6, que l'indicatif soit écrit ou non. Ni
+ * plus, ni moins — un numéro amputé d'un chiffre partirait vers quelqu'un d'autre. Tous les mobiles
+ * du pays commencent par 6, Camtel compris ; les lignes fixes, en 2, ne reçoivent pas de SMS.
+ *
+ * **Hors Cameroun** : l'indicatif est obligatoire. Sans lui, il faudrait le deviner.
+ *
+ * Refuser à la saisie évite une ligne « non joignable » découverte bien plus tard en supervision,
+ * loin de la personne qui pouvait corriger la fiche.
+ */
+export function telephoneValide(saisie: string): boolean {
+  const numero = saisie.replace(/[\s.()-]/g, "");
+  if (numero === "") return true;
+  if (/^(\+?237)?6\d{8}$/.test(numero)) return true;
+  // Un numéro camerounais mal formé ne doit pas être rattrapé par la règle internationale.
+  if (numero.startsWith("+237") || numero.startsWith("237")) return false;
+  return /^\+[1-9]\d{7,14}$/.test(numero);
+}
+
 /** Les trente derniers jours, bornes incluses, au format ISO attendu par le backend. */
 export function fenetreParDefaut(): { debut: string; fin: string } {
   const aujourdHui = new Date();
