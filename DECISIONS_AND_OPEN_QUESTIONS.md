@@ -221,7 +221,7 @@ afficherait les deux.
 `ANNULEE`, rappels non envoyés) ; le report consistant alors à annuler puis replanifier, ou un
 endpoint de renvoi dédié qui fait les deux en gardant le lien. **Statut : soumis à l'utilisateur.**
 
-### 🟡 QF-31 — Le calendrier compte le premier jour de la période suivante
+### ✅ QF-31 — Le calendrier comptait le premier jour de la période suivante *(corrigée le 2026-09-23)*
 
 **Constat, vérifié dans le code.** `PeriodeCalendrier.dateFin` renvoie `début + 1 semaine / 1 mois /
 3 mois`, et la requête utilise `BETWEEN`, bornes **incluses**. Une semaine commençant un lundi
@@ -231,16 +231,31 @@ et les exports aussi.
 **Traitement en F8.** L'écran annonce la période réelle (« du 7 au 14 septembre ») et ne masque
 rien : l'écran doit dire la même chose que le document qu'on en exporte.
 
-**Recommandation (backend, non bloquante).** `dateFin` retranchée d'un jour. **Statut : ouvert.**
+**Correction appliquée (2026-09-23), arbitrée par le porteur du projet pendant la préparation de la
+recette.** `PeriodeCalendrier.dateFin` retranche un jour : une semaine du 1er s'arrête le 7, un mois
+de janvier le 31, un trimestre le 31 mars. Le frontend suit dans `finDePeriode` — l'écran, la
+requête et l'export doivent désigner la même fenêtre. Un test vérifie que deux périodes consécutives
+ne partagent plus aucun jour. **Statut : corrigée.**
 
-### 🟡 QF-32 — Une audience est dite « tenue » le jour où l'on saisit son compte rendu
+### ✅ QF-32 — Une audience était dite « tenue » le jour de la saisie du compte rendu *(corrigée le 2026-09-23)*
 
 **Constat, vérifié dans le code.** `enregistrerCompteRendu` pose `dateTenue = LocalDate.now()`.
 Un compte rendu saisi trois jours après l'audience la date donc de trois jours plus tard, et
 ressaisir un compte rendu la déplace encore.
 
-**Recommandation (backend, non bloquante).** `dateTenue = datePlanifiee`, ou une date saisie par le
-juriste. **Statut : ouvert.**
+**Ce que cela faussait.** Le rapport d'activité compte les audiences par
+`countByStatutAndDateTenueBetween` : une audience de mars dont le compte rendu était saisi en avril
+comptait pour avril. Le chiffre remis à la direction dépendait donc de la diligence de saisie.
+
+**Arbitrage du porteur du projet (2026-09-23), question posée en ces termes : « quand vous comptez
+vos audiences du mois, comptez-vous celles qui se sont tenues, ou celles dont vous avez reçu le
+compte rendu ? » — réponse : celles qui se sont tenues.** Entre une date saisie par le juriste et la
+date planifiée, c'est la seconde qui a été retenue : un renvoi s'enregistre déjà comme une annulation
+motivée suivie d'une replanification (Q-76), la date planifiée d'une audience non annulée est donc
+bien celle à laquelle elle s'est tenue. Aucun champ n'est ajouté à l'écran.
+
+**Correction appliquée.** `enregistrerCompteRendu` pose `dateTenue = datePlanifiee`. Un test vérifie
+qu'un compte rendu saisi deux mois plus tard ne déplace plus l'audience. **Statut : corrigée.**
 
 ### ✅ QF-33 — Prorogation et rabattement n'étaient possibles qu'après la décision *(résolue : Q-78 backend)*
 
