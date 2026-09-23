@@ -1165,6 +1165,7 @@
     "titre": "Notifications externes",
     "description": "Ce que chaque canal a produit sur la période : mises en file, remises au moteur, confirmées par lui, abandonnées. « Remise » ne veut pas dire « reçue » : seule une confirmation l’atteste.",
     "moteurCoupe": "Le Notification Engine est désactivé sur le serveur : les notifications sont préparées et journalisées, mais rien ne part.",
+    "suiviIndisponible": "Le moteur ne publie pas ses accusés de délivrance : une notification remise ne peut pas être confirmée ici. « Remise » est donc le dernier état connu d’un envoi réussi, et la colonne « Confirmées » reste vide sans signaler d’anomalie.",
     "dateDebut": "Du",
     "dateFin": "Au",
     "fenetreInversee": "La date de fin doit suivre la date de début.",

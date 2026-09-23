@@ -1165,6 +1165,7 @@
     "titre": "External notifications",
     "description": "What each channel produced over the period: queued, handed to the engine, confirmed by it, abandoned. “Handed over” does not mean “received”: only a confirmation proves that.",
     "moteurCoupe": "The Notification Engine is disabled on the server: notifications are prepared and logged, but nothing is sent.",
+    "suiviIndisponible": "The engine does not publish delivery receipts: a notification handed over cannot be confirmed here. “Handed over” is therefore the last known state of a successful send, and the “Confirmed” column stays empty without signalling a problem.",
     "dateDebut": "From",
     "dateFin": "To",
     "fenetreInversee": "The end date must follow the start date.",

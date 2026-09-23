@@ -901,6 +901,11 @@ export interface SupervisionNotifications {
   derniersEchecs: EnvoiNotificationEnDefaut[];
   /** Interrupteur du backend : à false, rien ne part et tout reste journalisé. */
   engineActif: boolean;
+  /**
+   * Le moteur publie-t-il ses accusés ? Sinon (backend Q-121), « remise » est le dernier état connu
+   * d'un envoi réussi, et la colonne des confirmations reste vide sans rien signaler.
+   */
+  suiviAccusesActif: boolean;
 }
 
 /**

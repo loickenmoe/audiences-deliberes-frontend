@@ -32,6 +32,7 @@ beforeEach(() => {
     dateDebut: "2026-09-01",
     dateFin: "2026-09-30",
     engineActif: false,
+    suiviAccusesActif: false,
     canaux: [
       ligne({ canal: "EMAIL", confirmees: 8, echecs: 2 }),
       ligne({ canal: "SMS", remises: 3, sansRetour: 1, nonJoignables: 4 }),
@@ -97,6 +98,12 @@ describe("SupervisionNotifications", () => {
     expect(screen.getByRole("cell", { name: "75 %" })).toBeInTheDocument();
     // WhatsApp n'a rien envoyé : pas de taux inventé.
     expect(screen.getAllByRole("cell", { name: "—" }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("explique que la confirmation est indisponible quand le moteur ne publie pas d'accusés", () => {
+    donnees = { ...donnees!, engineActif: true };
+    rendre(<SupervisionNotifications />);
+    expect(screen.getByText(/ne publie pas ses accusés/)).toBeInTheDocument();
   });
 
   it("dit que rien ne part tant que le moteur est coupé", () => {

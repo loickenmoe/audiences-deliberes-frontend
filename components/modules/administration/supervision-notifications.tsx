@@ -21,9 +21,11 @@ import type { LigneCanalNotification } from "@/types/domaine";
  * sans réponse, ou sans destinataire joignable. Les réunir donnerait un chiffre rassurant et faux —
  * « remise » ne veut pas dire « reçue », et c'est justement l'écart que cet écran doit montrer.
  *
- * **« Sans retour » est l'état le plus instructif.** Le moteur rejette sans rien dire un message mal
- * signé : ni accusé de succès, ni accusé d'échec. Une colonne qui se remplit là signale une
- * configuration en défaut, pas un incident de réseau.
+ * **« Sans retour » est l'état le plus instructif** — quand le moteur parle. Il rejette sans rien
+ * dire un message mal signé : ni accusé de succès, ni accusé d'échec. Mais tant que ses topics de
+ * suivi ne sont alimentés par personne (backend Q-121), le silence est la règle : la colonne des
+ * confirmations reste vide, l'écran le dit, et « remise » devient le dernier état connu d'un envoi
+ * réussi.
  *
  * **Les lignes sans coordonnée sortent du taux** : elles parlent d'une fiche à compléter, pas d'un
  * canal en panne.
@@ -52,6 +54,9 @@ export function SupervisionNotifications() {
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">{t("description")}</p>
         {requete.data && !requete.data.engineActif ? (
           <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">{t("moteurCoupe")}</p>
+        ) : null}
+        {requete.data?.engineActif && !requete.data.suiviAccusesActif ? (
+          <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">{t("suiviIndisponible")}</p>
         ) : null}
       </header>
 
