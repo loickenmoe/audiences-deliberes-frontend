@@ -126,6 +126,24 @@ export type StatutAlerte = (typeof StatutAlerte)[number];
 export const CanalAlerte = ["APPLICATIF", "OUTLOOK", "TEAMS"] as const;
 export type CanalAlerte = (typeof CanalAlerte)[number];
 
+/** Canaux externes des prestataires (backend Q-118) ; les internes passent par Outlook et Teams. */
+export const CanalPrestataire = ["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"] as const;
+export type CanalPrestataire = (typeof CanalPrestataire)[number];
+
+/** Les 9 événements notifiés aux prestataires par un canal externe (backend Q-118). */
+export const EvenementPrestataire = [
+  "CONSTITUTION_VALIDEE",
+  "FRAIS_REJETES",
+  "PAIEMENT_EFFECTUE",
+  "PUBLICATION_ARBITREE",
+  "CORRESPONDANCE_TRANSMISE",
+  "RAPPEL_AUDIENCE",
+  "AFFECTATION_DOSSIER",
+  "DELAI_RECOURS",
+  "SUPPRESSION_DOCUMENT_ARBITREE",
+] as const;
+export type EvenementPrestataire = (typeof EvenementPrestataire)[number];
+
 /** Les 17 types d'alerte (arbitrage backend Q-22). */
 export const TypeAlerte = [
   "RAPPEL_AUDIENCE",
@@ -249,6 +267,8 @@ export const ENUMERATIONS_TRADUITES = {
   StatutAlerte,
   CanalAlerte,
   TypeAlerte,
+  CanalPrestataire,
+  EvenementPrestataire,
   SensCondamnation,
   StatutPaiementCondamnation,
   TypeArchiveJurisprudence,

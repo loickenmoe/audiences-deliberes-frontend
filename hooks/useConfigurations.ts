@@ -14,7 +14,7 @@ import { configurationService } from "@/services/configurationService";
  */
 const CLE_SEUIL_ALERTE = "CHARGE_MAX_AVOCAT";
 
-/** #47 — sept clés fixes ; elles ne changent qu'à la suite d'une décision d'administration. */
+/** #47 — clés fixes (V2, V28) ; elles ne changent qu'à la suite d'une décision d'administration. */
 export function useConfigurations() {
   return useQuery({
     queryKey: [CLES.configurations],

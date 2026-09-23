@@ -549,9 +549,12 @@ export interface Intervenant {
 
 /**
  * Invariants portés par le backend (#61, RG-INT-01/02) :
- * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris —
- *   et refuse le champ `notification` ;
+ * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris ;
  * · un `AUTRE_PRESTATAIRE` refuse tout compte applicatif.
+ *
+ * `notification` vaut pour les deux depuis Q-119 : c'est le consentement du prestataire aux canaux
+ * externes (SMS, WhatsApp, courriel personnel). Absent, il vaut `true` pour un avocat et `false`
+ * pour un autre prestataire.
  */
 export interface CreerIntervenant {
   type: TypeIntervenant;
@@ -564,7 +567,8 @@ export interface CreerIntervenant {
 
 /**
  * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
- * figés, l'identité se gérant dans Keycloak. La notification ne concerne qu'un autre prestataire.
+ * figés, l'identité se gérant dans Keycloak. Le consentement aux notifications externes, lui, se
+ * corrige pour les deux types (Q-119).
  */
 export interface ModifierIntervenant {
   nom: string;
@@ -851,6 +855,57 @@ export interface ConfigurationSysteme {
   valeurMinimale: number | null;
   valeurMaximale: number | null;
   valeursPossibles: string[];
+  /**
+   * Une liste peut être entièrement décochée (backend Q-118) : réglages de notification, où
+   * « aucun canal » ou « aucun événement » est un choix, et non un oubli.
+   */
+  listeVideAutorisee: boolean;
+}
+
+/** Une ligne du tableau de supervision des notifications externes (backend D17). */
+export interface LigneCanalNotification {
+  canal: string;
+  /** En file, pas encore remises au moteur. */
+  enAttente: number;
+  /** Remises au moteur, sans confirmation encore reçue. */
+  remises: number;
+  /** Confirmées par un accusé du moteur. */
+  confirmees: number;
+  /** Abandonnées : tentatives épuisées, périmées, ou échec définitif du moteur. */
+  echecs: number;
+  /** Remises, mais restées sans aucun accusé au-delà du délai (backend Q-120). */
+  sansRetour: number;
+  /** Canal retenu pour un destinataire sans coordonnée utilisable (D14). */
+  nonJoignables: number;
+}
+
+/** Un envoi à examiner : abandonné, sans retour, ou destinataire injoignable. */
+export interface EnvoiNotificationEnDefaut {
+  id: number;
+  eventId: string;
+  typeEvenement: string;
+  canal: string;
+  statut: string;
+  destinataire: string | null;
+  /** Destinataire réel quand la redirection hors production l'a remplacé (backend D10). */
+  destinataireOrigine: string | null;
+  derniereErreur: string | null;
+  tentatives: number;
+  dateCreation: string | null;
+}
+
+export interface SupervisionNotifications {
+  dateDebut: string;
+  dateFin: string;
+  canaux: LigneCanalNotification[];
+  derniersEchecs: EnvoiNotificationEnDefaut[];
+  /** Interrupteur du backend : à false, rien ne part et tout reste journalisé. */
+  engineActif: boolean;
+  /**
+   * Le moteur publie-t-il ses accusés ? Sinon (backend Q-121), « remise » est le dernier état connu
+   * d'un envoi réussi, et la colonne des confirmations reste vide sans rien signaler.
+   */
+  suiviAccusesActif: boolean;
 }
 
 /**

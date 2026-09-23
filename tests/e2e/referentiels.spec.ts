@@ -210,10 +210,77 @@ test("le formulaire s'adapte au type d'intervenant", async ({ page }) => {
   // Un avocat exige un compte applicatif (RG-INT-01).
   await expect(page.getByLabel("Identifiant de connexion", { exact: true })).toBeVisible();
 
-  // Un autre prestataire n'en a pas : il est notifié par courriel (RG-INT-02).
+  // Q-119 : le consentement aux canaux externes vaut pour les deux types, coché par défaut pour un
+  // avocat, décoché pour un autre prestataire.
+  const consentement = page.getByLabel("Accepte les notifications hors de l’application");
+  await expect(consentement).toBeChecked();
+
+  // Un autre prestataire n'a pas de compte applicatif (RG-INT-02).
   await page.getByLabel("Type", { exact: true }).selectOption("AUTRE_PRESTATAIRE");
   await expect(page.getByLabel("Identifiant de connexion", { exact: true })).toBeHidden();
-  await expect(page.getByLabel("Notifier par courriel")).toBeVisible();
+  await expect(consentement).toBeVisible();
+});
+
+/**
+ * Q-119 : le consentement de l'avocat aux notifications externes se retire depuis sa fiche, et il
+ * est conservé. Sans lui, aucun SMS, WhatsApp ni courriel personnel ne part vers ses coordonnées.
+ */
+test("le DJ retire le consentement d'un avocat aux notifications externes (Q-119)", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/admin/intervenants");
+
+  const marque = suffixe();
+  const nom = `Me Consent ${marque}`;
+  await page.getByRole("button", { name: "Nouvel intervenant" }).click();
+  await page.getByLabel("Nom", { exact: true }).fill(nom);
+  await page.getByLabel("Identifiant de connexion", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = await ligneDansLaFile(page, nom);
+  await ligne.getByRole("button", { name: `Modifier ${nom}` }).click();
+  const dialogue = page.getByRole("dialog", { name: "Modifier l’intervenant" });
+  const consentement = dialogue.getByLabel("Accepte les notifications hors de l’application");
+  await expect(consentement).toBeChecked();
+
+  await consentement.uncheck();
+  await dialogue.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(dialogue).toBeHidden({ timeout: 30_000 });
+
+  await page.goto("/admin/intervenants");
+  const relue = await ligneDansLaFile(page, nom);
+  await relue.getByRole("button", { name: `Modifier ${nom}` }).click();
+  await expect(page.getByRole("dialog", { name: "Modifier l’intervenant" })
+    .getByLabel("Accepte les notifications hors de l’application")).not.toBeChecked();
+});
+
+/**
+ * Étape 11 — un numéro hors des trois écritures acceptées par le moteur est refusé à la saisie, et
+ * un numéro valide est enregistré mis en forme. Sans cela, la faute ne se voyait qu'à l'envoi, sous
+ * la forme d'une ligne « non joignable » en supervision.
+ */
+test("le DJ ne peut pas enregistrer un numéro hors format ; un numéro valide est mis en forme", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/admin/intervenants");
+
+  const marque = suffixe();
+  const nom = `Me Numero ${marque}`;
+  await page.getByRole("button", { name: "Nouvel intervenant" }).click();
+  await page.getByLabel("Nom", { exact: true }).fill(nom);
+  await page.getByLabel("Identifiant de connexion", { exact: true }).fill(`avocat.${marque.toLowerCase()}`);
+
+  // Le format attendu est annoncé sous le champ, avant toute erreur.
+  await expect(page.getByText(/Cameroun : mobile à neuf chiffres/)).toBeVisible();
+
+  await page.getByLabel("Téléphone", { exact: true }).fill("0699887766");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByText(/Numéro invalide/)).toBeVisible();
+
+  // Corrigé, il est accepté puis enregistré à la forme que le moteur attend.
+  await page.getByLabel("Téléphone", { exact: true }).fill("699 88 77 66");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = await ligneDansLaFile(page, nom);
+  await expect(ligne.getByText("+237699887766", { exact: true })).toBeVisible();
 });
 
 test("un juriste consulte le référentiel mais ne peut pas y créer", async ({ page }) => {

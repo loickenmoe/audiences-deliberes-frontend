@@ -270,6 +270,22 @@
       "DELIBERE_ATTENDU": "Judgment expected",
       "DOSSIER_INCOMPLET": "Incomplete case file"
     },
+    "CanalPrestataire": {
+      "COURRIEL_PERSONNEL": "Personal email",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp"
+    },
+    "EvenementPrestataire": {
+      "CONSTITUTION_VALIDEE": "Appointment approved",
+      "FRAIS_REJETES": "Fees rejected",
+      "PAIEMENT_EFFECTUE": "Payment made",
+      "PUBLICATION_ARBITREE": "Publication reviewed",
+      "CORRESPONDANCE_TRANSMISE": "Correspondence sent",
+      "RAPPEL_AUDIENCE": "Hearing reminder",
+      "AFFECTATION_DOSSIER": "Assigned to a case",
+      "DELAI_RECOURS": "Appeal deadline of the ruling",
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed"
+    },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "The bank is liable",
       "TIERS_REDEVABLE": "The third party is liable"
@@ -326,7 +342,8 @@
     "configurations": {
       "SEUIL_MONTANT_DEFAUT": "Amount above which a fee claim requires the joint approval of the Legal Director and the Deputy Legal Director.",
       "SEUIL_PROROGATIONS": "Number of extensions beyond which an alert is raised.",
-      "CANAUX_NOTIFICATION_DEFAUT": "Channels used by default to deliver alerts.",
+      "CANAUX_NOTIFICATION_DEFAUT": "Notification channels for internal users. In-app is always on; Outlook and Teams are optional.",
+      "CANAUX_NOTIFICATION_PRESTATAIRES": "Notification channels for lawyers and other providers. None ticked: no provider is notified outside the application.",
       "DELAI_VALIDATION_CONJOINTE": "Maximum number of days for the joint approval of a fee claim.",
       "TAILLE_MAX_GED": "Maximum size of a document uploaded to the document management system.",
       "FORMATS_GED": "File formats accepted by the document management system.",
@@ -404,6 +421,8 @@
     "colonneType": "Type",
     "colonneEmail": "Email",
     "colonneTelephone": "Phone",
+    "telephoneAide": "Cameroon: nine-digit mobile, 6XX XXX XXX. Outside Cameroon: country code required, +33 X XX XX XX XX.",
+    "telephoneFormat": "Invalid number. Cameroon: nine digits starting with 6. Outside Cameroon: country code required (+33…).",
     "colonneCompte": "Login",
     "sansCompte": "None",
     "filtreType": "Provider type",
@@ -423,7 +442,8 @@
     "compteFige": "The login is managed in Keycloak, which creates and authenticates accounts: it cannot be changed here.",
     "compteObligatoire": "The username counsel signs in with, for example avocat.dupont. It is required to submit fee claims and filings.",
     "comptePrestataire": "Other providers have no account: they are notified by email.",
-    "notification": "Notify by email"
+    "notification": "Accepts notifications outside the application",
+    "notificationAide": "SMS, WhatsApp and personal email, to the contact details on this record. The channels actually used are set by the Legal Department."
   },
   "dossiers": {
     "titre": "Cases",
@@ -1143,9 +1163,77 @@
     "echecs": "Failures",
     "nonTraitees": "{nombre} alert(s) from this period have not yet been opened by their recipient. This count feeds no rate: it says something other than delivery."
   },
+  "supervisionNotifications": {
+    "titre": "External notifications",
+    "description": "What each channel produced over the period: queued, handed to the engine, confirmed by it, abandoned. “Handed over” does not mean “received”: only a confirmation proves that.",
+    "moteurCoupe": "The Notification Engine is disabled on the server: notifications are prepared and logged, but nothing is sent.",
+    "suiviIndisponible": "The engine does not publish delivery receipts: a notification handed over cannot be confirmed here. “Handed over” is therefore the last known state of a successful send, and the “Confirmed” column stays empty without signalling a problem.",
+    "dateDebut": "From",
+    "dateFin": "To",
+    "fenetreInversee": "The end date must follow the start date.",
+    "tableauCanaux": "Notifications by channel",
+    "canal": "Channel",
+    "enAttente": "Queued",
+    "remises": "Handed over",
+    "confirmees": "Confirmed",
+    "echecs": "Failures",
+    "sansRetour": "No response",
+    "nonJoignables": "Unreachable",
+    "taux": "Completion",
+    "aExaminer": "Deliveries to review",
+    "aucunEchec": "Nothing to review",
+    "aucunEchecTexte": "Over this period, no delivery failed, went unanswered, or lacked a recipient.",
+    "evenement": "Event",
+    "statut": "Status",
+    "destinataire": "Recipient",
+    "destinataireReel": "Actual recipient: {destinataire}",
+    "sansDestinataire": "None",
+    "cause": "Cause",
+    "relancer": "Retry",
+    "relanceFaite": "Notification queued again.",
+    "canaux": {
+      "EMAIL": "Email",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp",
+      "TEAMS": "Teams"
+    },
+    "statuts": {
+      "ECHEC": "Failed",
+      "SANS_RETOUR": "No response",
+      "NON_JOIGNABLE": "Unreachable recipient",
+      "EN_ATTENTE": "Queued",
+      "PUBLIEE": "Handed over",
+      "ENVOYEE": "Confirmed"
+    },
+    "evenements": {
+      "RAPPEL_AUDIENCE": "Hearing reminder",
+      "DELAI_RECOURS": "Appeal deadline of the ruling",
+      "PROROGATION": "Repeated extensions",
+      "ALARME": "Reminder due",
+      "DOUBLON_AFFECTATION": "Duplicate assignment",
+      "DOUBLON_AUDIENCE": "Duplicate hearing",
+      "DOUBLON_FACTURE": "Duplicate invoice",
+      "NOUVELLE_DEMANDE_FRAIS": "New fee claim",
+      "VALIDATION_CONJOINTE_REQUISE": "Joint approval required",
+      "PAIEMENT_EFFECTUE": "Payment made",
+      "NOUVELLE_PUBLICATION": "New filing",
+      "DOCUMENT_CHARGE": "Document uploaded",
+      "SUPPRESSION_DOCUMENT": "Document deletion",
+      "CONSTITUTION_A_SIGNER": "Letter of engagement to sign",
+      "CHARGE_MAX_AVOCAT": "Counsel workload threshold",
+      "DELIBERE_ATTENDU": "Judgment expected",
+      "DOSSIER_INCOMPLET": "Incomplete case file",
+      "CONSTITUTION_VALIDEE": "Appointment approved",
+      "FRAIS_REJETES": "Fees rejected",
+      "PUBLICATION_ARBITREE": "Publication reviewed",
+      "CORRESPONDANCE_TRANSMISE": "Correspondence sent",
+      "AFFECTATION_DOSSIER": "Assigned to a case",
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed"
+    }
+  },
   "configurations": {
     "titre": "System settings",
-    "description": "The seven settings driving the thresholds, deadlines and checks of the application. A change takes effect immediately.",
+    "description": "The settings driving the thresholds, deadlines, checks and notifications of the application. A change takes effect immediately.",
     "lectureSeule": "Read only - only the Legal Director and Deputy Director may change these settings.",
     "valeur": "Value",
     "valeurActuelle": "Current value",
@@ -1167,6 +1255,20 @@
     "vide": "No setting",
     "videTexte": "System settings are created when the application is installed.",
     "modifieeParAuteur": "Changed on {date} by {auteur}"
+  },
+  "grilleNotifications": {
+    "titre": "External notifications grid",
+    "description": "For each channel, the events sent through it. A disabled channel keeps its column: it applies as soon as the channel is turned back on. Nothing is sent until the Notification Engine is enabled on the server.",
+    "sections": {
+      "internes": "Internal users",
+      "prestataires": "Providers"
+    },
+    "evenement": "Event",
+    "canalCoupe": "Channel off",
+    "case": "{evenement} by {canal}",
+    "enregistrer": "Save the “{section}” grid",
+    "annuler": "Cancel",
+    "succes": "Notifications grid saved."
   },
   "tableauDeBord": {
     "titre": "Dashboard",

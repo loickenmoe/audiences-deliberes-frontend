@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { PROFILS_METIER, Role, StatutCycleVie, TypeAlerte } from "@/types/enums";
+import {
+  CanalPrestataire,
+  EvenementPrestataire,
+  PROFILS_METIER,
+  Role,
+  StatutCycleVie,
+  TypeAlerte,
+} from "@/types/enums";
 
 /**
  * Ce fichier vérifie le **contrat** : les valeurs que le backend renvoie. Les libellés, eux, sont
@@ -9,6 +16,11 @@ import { PROFILS_METIER, Role, StatutCycleVie, TypeAlerte } from "@/types/enums"
 describe("énumérations du domaine", () => {
   it("couvre les 17 types d'alerte du backend (Q-22)", () => {
     expect(TypeAlerte).toHaveLength(17);
+  });
+
+  it("couvre les canaux et les 9 événements prestataires du backend (Q-118)", () => {
+    expect(CanalPrestataire).toEqual(["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"]);
+    expect(EvenementPrestataire).toHaveLength(9);
   });
 
   it("décrit le cycle de vie d'une étape dans l'ordre de progression", () => {

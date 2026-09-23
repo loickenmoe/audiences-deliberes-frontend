@@ -8,15 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { useStatistiquesDiffusion } from "@/hooks/useAlertes";
 import { messageErreur } from "@/lib/api/errors";
+import { fenetreParDefaut } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
-
-/** Bornes par défaut : les trente derniers jours, bornes incluses, au format ISO attendu. */
-function fenetreParDefaut(): { debut: string; fin: string } {
-  const aujourdHui = new Date();
-  const ilYATrenteJours = new Date(aujourdHui.getTime() - 29 * 86_400_000);
-  const iso = (date: Date) => date.toISOString().slice(0, 10);
-  return { debut: iso(ilYATrenteJours), fin: iso(aujourdHui) };
-}
 
 /**
  * Supervision du canal applicatif (backend Q-109, NF-ALR-02).

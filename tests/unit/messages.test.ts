@@ -121,9 +121,22 @@ describe("couverture du domaine", () => {
     expect(Object.keys(types)).toHaveLength(3);
   });
 
-  it.each(LANGUES)("les 7 clés de configuration sont décrites en %s", (langue) => {
+  /**
+   * Les 8 clés affichées une à une sur l'écran 41. Les six colonnes de la grille des notifications
+   * (Q-118) n'en font pas partie : elles se lisent dans leur tableau, par canal et par événement.
+   */
+  it.each(LANGUES)("les 8 clés de configuration de la liste sont décrites en %s", (langue) => {
     const config = lire(langue, "referentiels.configurations") as Record<string, string>;
-    expect(Object.keys(config)).toHaveLength(7);
+    expect(Object.keys(config)).toEqual([
+      "SEUIL_MONTANT_DEFAUT",
+      "SEUIL_PROROGATIONS",
+      "CANAUX_NOTIFICATION_DEFAUT",
+      "CANAUX_NOTIFICATION_PRESTATAIRES",
+      "DELAI_VALIDATION_CONJOINTE",
+      "TAILLE_MAX_GED",
+      "FORMATS_GED",
+      "CHARGE_MAX_AVOCAT",
+    ]);
   });
 });
 
