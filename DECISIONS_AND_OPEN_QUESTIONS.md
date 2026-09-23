@@ -423,6 +423,34 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ RG-AUD-07 amendée — une audience s'enregistre aussi le jour même et après coup *(2026-09-23)*
+
+**Constat, vérifié dans le code.** `AudienceService.planifierAudience` exigeait une date
+**strictement** future, et le formulaire bornait le champ à demain. Le compte rendu, lui, était déjà
+recevable dès le jour de l'audience.
+
+**Ce que cela empêchait.** Deux situations sans issue : l'audience apprise le matin pour le jour même
+— impossible à créer, donc impossible à relater ; et surtout l'audience tenue sans avoir été saisie,
+**perdue définitivement**, puisque le lendemain sa date était passée et qu'une date passée était
+refusée elle aussi. La règle protégeait la discipline de planification au prix d'un trou de
+traçabilité.
+
+**Arbitrage du porteur du projet (2026-09-23) : le jour même et le passé.** Discuté avec l'argument
+inverse — les rappels J-7/J-3/J-1 supposent une planification anticipée, et une saisie rétroactive
+banalisée ferait glisser l'outil du pilotage vers le registre. Tranché en faveur de la régularisation.
+
+**La borne retenue est l'ouverture du dossier**, plutôt qu'un délai en jours ou la création de
+l'étape : une audience ne peut pas précéder la procédure qui la porte. Elle arrête les fautes de
+frappe (une année erronée) sans imposer de durée arbitraire, et reste assez large pour régulariser
+une audience de recours dont l'étape a été ouverte tardivement dans l'outil.
+
+**Effet de bord assumé** : aucune alerte de rappel n'est émise pour une audience du jour ou passée.
+Le planificateur cherche chaque matin les audiences à J+1, J+3 et J+7 ; une date déjà atteinte n'y
+figure pas. Rien à coder, et rien à corriger : rappeler une audience passée n'aurait aucun sens.
+
+**Conjugué à QF-32**, corrigé le même jour : la date de tenue étant la date planifiée, une audience
+régularisée compte dans le mois où elle s'est réellement tenue, pas dans celui de sa saisie.
+
 ### ✅ QF-24 — L'historique était rédigé en français par le serveur *(résolue le 2026-09-17, complétée le 2026-09-23)*
 
 **Constat.** `HistoriqueActionResponse.action` est une phrase française (« Changement de statut de

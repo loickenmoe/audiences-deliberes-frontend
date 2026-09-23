@@ -1031,7 +1031,8 @@
     "traiterAria": "Marquer traitée - {objet}",
     "traiterTitre": "Marquer l’alarme comme traitée",
     "traiterMessage": "L’alarme « {objet} » est close, sans être remplacée. Pour la repousser, reprogrammez-la plutôt.",
-    "alarmeTraitee": "Alarme marquée traitée."
+    "alarmeTraitee": "Alarme marquée traitée.",
+    "dateAvantOuverture": "Cette date précède l’ouverture du dossier."
   },
   "deliberes": {
     "aucun": "Aucun délibéré.",

@@ -1031,7 +1031,8 @@
     "traiterAria": "Mark as handled - {objet}",
     "traiterTitre": "Mark the alarm as handled",
     "traiterMessage": "The alarm “{objet}” is closed without being replaced. To push it back, reschedule it instead.",
-    "alarmeTraitee": "Alarm marked as handled."
+    "alarmeTraitee": "Alarm marked as handled.",
+    "dateAvantOuverture": "This date precedes the case opening."
   },
   "deliberes": {
     "aucun": "No deliberation.",

@@ -4,10 +4,10 @@ import { affecterParDefaut } from "./affectation";
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
  *
- * Limite assumée : le backend n'accepte une audience qu'à une date **future**, et son compte rendu
- * qu'à partir du jour de l'audience. Aucun parcours ne peut donc saisir un compte rendu sans attendre
- * que la date passe ; on vérifie ici qu'il n'est **pas** proposé trop tôt. La saisie elle-même est
- * couverte par les tests du backend.
+ * Depuis l'amendement de RG-AUD-07 (2026-09-23), une audience s'enregistre **à la date du jour** et
+ * même après coup : le cycle complet — planifier, tenir, rendre compte — se joue donc entièrement
+ * ici, ce qu'aucun parcours ne pouvait faire tant que seule une date future était acceptée. On
+ * vérifie aussi qu'une audience **à venir** ne propose toujours pas son compte rendu.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -107,6 +107,49 @@ test("planifier une audience, puis confirmer un doublon (ERR-005)", async ({ pag
   await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(2);
   // Audience à venir : le compte rendu n'est pas encore recevable, donc pas proposé.
   await expect(page.getByRole("button", { name: "Saisir le compte rendu" })).toHaveCount(0);
+});
+
+/**
+ * RG-AUD-07 amendée : l'audience du jour s'enregistre, et son compte rendu suit immédiatement.
+ * C'est le besoin qui a motivé l'arbitrage — une audience apprise le matin pour le jour même.
+ */
+test("une audience du jour reçoit son compte rendu dans la foulée (RG-AUD-07 amendée)", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await dossierEnCours(page);
+  await page.getByRole("tab", { name: "Audiences" }).click();
+
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(0));
+  await page.getByRole("dialog", { name: "Planifier une audience" }).getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(1);
+
+  // Le compte rendu est recevable dès le jour de l'audience : l'action est proposée sans attendre.
+  await page.getByRole("button", { name: "Saisir le compte rendu" }).click();
+  const modale = page.getByRole("dialog", { name: "Compte rendu d’audience" });
+  await modale.getByLabel("Compte rendu", { exact: true }).fill("Affaire appelée, renvoi contradictoire.");
+  await modale.getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(page.getByText("Compte rendu enregistré.")).toBeVisible();
+  // Viser la cellule de statut, non la ligne : l'en-tête porte une colonne « Tenue le ».
+  const cellulesTenue = page.getByRole("cell", { name: "Tenue", exact: true });
+  await expect(cellulesTenue).toHaveCount(1);
+  // QF-32 : l'audience est datée du jour où elle s'est tenue, ici celui de la saisie.
+  const ligneTenue = page.getByRole("row").filter({ has: cellulesTenue });
+  await expect(ligneTenue).toContainText(String(new Date().getDate()));
+});
+
+/** Une audience ne peut pas avoir eu lieu avant que le dossier existe : la borne est là, et là seulement. */
+test("une audience antérieure à l'ouverture du dossier est refusée", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await dossierEnCours(page);
+  await page.getByRole("tab", { name: "Audiences" }).click();
+
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(-30));
+  await page.getByRole("dialog", { name: "Planifier une audience" }).getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(page.getByText("Cette date précède l’ouverture du dossier.")).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(0);
 });
 
 test("annuler une audience avec son motif, puis la replanifier à la même date sans doublon (QF-30)", async ({ page }) => {

@@ -22,7 +22,7 @@ import {
 } from "@/hooks/useAudiences";
 import type { Langue } from "@/i18n/config";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";
-import { aujourdhui, demain } from "@/lib/calendrier";
+import { aujourdhui } from "@/lib/calendrier";
 import { peut } from "@/lib/rbac";
 import { formaterDate } from "@/lib/utils";
 import type { Audience, Dossier, PlanifierAudience } from "@/types/domaine";
@@ -154,6 +154,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
         <>
           <ModalePlanification
             dossierId={dossier.id}
+            ouvertureDossier={dossier.createdAt.slice(0, 10)}
             etapes={etapesEnCours.map((etape) => ({ id: etape.id, libelle: libelleEtape(etape.id) }))}
             ouvert={planification}
             onFermeture={() => setPlanification(false)}
@@ -168,11 +169,14 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
 
 function ModalePlanification({
   dossierId,
+  ouvertureDossier,
   etapes,
   ouvert,
   onFermeture,
 }: {
   dossierId: number;
+  /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-07). */
+  ouvertureDossier: string;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
@@ -187,16 +191,20 @@ function ModalePlanification({
   const [confirmation, setConfirmation] = useState<PlanifierAudience | null>(null);
   const etapeParDefaut = etapes[0]?.id;
 
+  // RG-AUD-07 amendée (2026-09-23) : une audience s'enregistre le jour même et après coup — une
+  // audience tenue sans avoir été saisie doit pouvoir être régularisée. La seule borne est
+  // l'ouverture du dossier, comme côté serveur : les deux doivent refuser la même chose.
   const schema = useMemo(
     () =>
       z.object({
         etapeId: z.coerce.number().int().positive(tm("champObligatoire")),
         // Comparaison de chaînes `YYYY-MM-DD` : l'ordre lexical est l'ordre chronologique.
-        datePlanifiee: z.string().min(1, tm("champObligatoire")).refine((date) => date >= demain(), {
-          message: tm("champObligatoire"),
-        }),
+        datePlanifiee: z
+          .string()
+          .min(1, tm("champObligatoire"))
+          .refine((date) => date >= ouvertureDossier, { message: t("dateAvantOuverture") }),
       }),
-    [tm],
+    [tm, t, ouvertureDossier],
   );
 
   const {
@@ -272,7 +280,7 @@ function ModalePlanification({
             <Input
               id="audience-date"
               type="date"
-              min={demain()}
+              min={ouvertureDossier}
               enErreur={!!errors.datePlanifiee}
               {...register("datePlanifiee")}
             />
