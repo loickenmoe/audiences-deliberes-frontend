@@ -1476,7 +1476,9 @@
       "CLIENT_MODIFIE": "Client updated",
       "INTERVENANT_MODIFIE": "Provider updated",
       "AUDIT_CONSULTE": "Audit consulted",
-      "NON_CLASSEE": "Unclassified action"
+      "NON_CLASSEE": "Unclassified action",
+      "AUDIT_EXPORTE": "Audit export",
+      "ARCHIVE_TELECHARGEE": "Audit archive downloaded"
     },
     "details": {
       "accord": "Approval",
@@ -1539,7 +1541,11 @@
       "statut": "Status",
       "statutPaiement": "Payment status",
       "typeArchive": "Archive type",
-      "typeDocument": "Document type"
+      "typeDocument": "Document type",
+      "exportId": "Archive",
+      "empreinte": "Fingerprint",
+      "format": "Format",
+      "lignes": "Rows"
     }
   }
 }

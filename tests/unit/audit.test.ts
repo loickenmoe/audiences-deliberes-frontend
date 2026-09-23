@@ -178,20 +178,35 @@ describe("libelles d'historique (QF-24)", () => {
   const detailsEn = en.historique.details;
 
   /**
-   * Les valeurs de `TypeActionHistorique` (backend Q-111, plus AUDIT_CONSULTE en Q-112 et
-   * LETTRE_CONSTITUTION_REDIGEE en Q-115 B2, CLIENT_MODIFIE avec PUT /clients, INTERVENANT_MODIFIE en Q-117). Un ecart avec l'enumeration se verrait ici avant de
-   * se voir a l'ecran — et c'est ce garde-fou qui a rappele d'ajouter la traduction du code.
+   * Les valeurs de `TypeActionHistorique` (backend Q-111, enrichie au fil des jalons : AUDIT_CONSULTE
+   * en Q-112, LETTRE_CONSTITUTION_REDIGEE en Q-115 B2, CLIENT_MODIFIE avec PUT /clients,
+   * INTERVENANT_MODIFIE en Q-117, AUDIT_EXPORTE et ARCHIVE_TELECHARGEE avec l'extraction scellee).
+   *
+   * <b>Ce test ne compte plus.</b> Il figeait un nombre — 47 actions, 61 cles — qu'il fallait
+   * corriger a chaque ajout, sans que l'echec ne dise rien de la couverture reelle : deux codes
+   * ajoutes en francais et oublies en anglais l'auraient laisse vert. C'est la **parite** entre les
+   * deux langues qui protege, et elle ne se perime pas.
    */
-  it("traduit les 47 natures d'action dans les deux langues", () => {
-    expect(Object.keys(actionsFr)).toHaveLength(47);
-    expect(Object.keys(actionsEn)).toEqual(Object.keys(actionsFr));
+  it("traduit les memes natures d'action dans les deux langues", () => {
+    expect(Object.keys(actionsFr).sort()).toEqual(Object.keys(actionsEn).sort());
+    expect(Object.keys(actionsFr).length).toBeGreaterThanOrEqual(49);
   });
 
-  it("traduit les 61 cles de details dans les deux langues", () => {
-    // PUT /clients : ancien/nouveau nom, e-mail et telephone. PUT /intervenants (Q-117) : intervenant,
-    // ancienne/nouvelle notification. L'identifiant Keycloak, fige, n'y figure pas.
-    expect(Object.keys(detailsFr)).toHaveLength(61);
-    expect(Object.keys(detailsEn)).toEqual(Object.keys(detailsFr));
+  it("traduit les memes cles de details dans les deux langues", () => {
+    expect(Object.keys(detailsFr).sort()).toEqual(Object.keys(detailsEn).sort());
+    expect(Object.keys(detailsFr).length).toBeGreaterThanOrEqual(65);
+  });
+
+  /** Les deux dernieres natures ajoutees : l'extraction d'audit et la reprise d'une archive. */
+  it("couvre l'extraction scellee de l'audit", () => {
+    for (const messages of [actionsFr, actionsEn]) {
+      expect(messages).toHaveProperty("AUDIT_EXPORTE");
+      expect(messages).toHaveProperty("ARCHIVE_TELECHARGEE");
+    }
+    for (const messages of [detailsFr, detailsEn]) {
+      expect(messages).toHaveProperty("exportId");
+      expect(messages).toHaveProperty("empreinte");
+    }
   });
 
   /** Une traduction vide serait pire qu'une absente : elle afficherait un blanc, sans repli. */

@@ -1476,7 +1476,9 @@
       "CLIENT_MODIFIE": "Modification d’un client",
       "INTERVENANT_MODIFIE": "Modification d’un intervenant",
       "AUDIT_CONSULTE": "Consultation de l’audit",
-      "NON_CLASSEE": "Action non classée"
+      "NON_CLASSEE": "Action non classée",
+      "AUDIT_EXPORTE": "Export de l’audit",
+      "ARCHIVE_TELECHARGEE": "Téléchargement d’une archive d’audit"
     },
     "details": {
       "accord": "Accord",
@@ -1539,7 +1541,11 @@
       "statut": "Statut",
       "statutPaiement": "Statut de paiement",
       "typeArchive": "Type d’archive",
-      "typeDocument": "Type de document"
+      "typeDocument": "Type de document",
+      "exportId": "Archive",
+      "empreinte": "Empreinte",
+      "format": "Format",
+      "lignes": "Lignes"
     }
   }
 }

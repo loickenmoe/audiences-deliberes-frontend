@@ -388,9 +388,16 @@ Une date d'audience **dans le futur**, puis une date **du jour** pour le compte 
 | 8 | JUR | Saisir `Doublon de saisie` → confirmer | L'audience passe à **Annulée** et le motif s'affiche sur sa ligne | | ☐ |
 | 9 | JUR | Replanifier une audience **à la même date** que celle qui vient d'être annulée | Acceptée **sans alerte de doublon** : une audience annulée ne compte plus | | ☐ |
 | 10 | JUR | Sur une audience dont la date est **future**, chercher « Saisir le compte rendu » | L'action n'est pas proposée : elle ne l'est qu'à partir du jour de l'audience | | ☐ |
-| 11 | JUR | Planifier une audience **datée d'aujourd'hui**, puis « Saisir le compte rendu » | La fenêtre s'ouvre | | ☐ |
-| 12 | JUR | Enregistrer un compte rendu **vide** | Refus : le compte rendu ne peut pas être vide | | ☐ |
-| 13 | JUR | Saisir un texte → « Enregistrer » | L'audience passe à **Tenue** ; le compte rendu est consultable sur sa ligne | | ☐ |
+| 11 | JUR | Tenter de planifier une audience **datée d'aujourd'hui** | Refus : la date doit être **strictement future**. Le champ est d'ailleurs borné à demain | | ☐ |
+| 12 | JUR | Sur une audience planifiée **hier ou avant** (voir la note ci-dessous), cliquer « Saisir le compte rendu » | La fenêtre s'ouvre | | ☐ |
+| 13 | JUR | Enregistrer un compte rendu **vide** | Refus : le compte rendu ne peut pas être vide | | ☐ |
+| 14 | JUR | Saisir un texte → « Enregistrer » | L'audience passe à **Tenue** ; le compte rendu est consultable sur sa ligne, daté du jour de l'audience | | ☐ |
+
+> **Comment obtenir une audience dont la date est passée ?** Elle ne peut pas être créée telle
+> quelle : la planification exige une date strictement future. Deux voies pour l'étape 12 — utiliser
+> une audience planifiée lors d'une campagne précédente, ou planifier aujourd'hui pour demain et
+> reprendre l'étape 12 le lendemain. Cette contrainte est signalée au §8 : elle empêche aussi
+> d'enregistrer après coup une audience qui s'est tenue sans avoir été saisie.
 
 ### Résultat final attendu
 Le dossier porte au moins une audience tenue avec son compte rendu, une audience annulée motivée et
@@ -398,6 +405,7 @@ une audience planifiée à venir.
 
 ### Points de contrôle
 - Planifier exige une étape au statut **En cours** : sinon le bouton est absent et l'écran l'explique.
+- La date doit être **strictement future** : ni aujourd'hui, ni une date passée (RG-AUD-07).
 - Trois rappels sont programmés automatiquement à J-7, J-3 et J-1 (vérifiables en REC-E2E-022).
 - Depuis la correction du 2026-09-23 (QF-32), une audience est « tenue » **à sa date planifiée**,
   quelle que soit la date de saisie du compte rendu : c'est cette date que comptent les rapports.
@@ -1340,6 +1348,22 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
     passe, ni authentification multifacteur, ni connexion unique (QF-18). C'est une décision du
     projet, à rappeler au métier pour éviter une attente déçue.
 
+### Une contrainte à arbitrer : aucune audience ne peut être enregistrée pour aujourd'hui ni pour le passé
+
+**Constat, vérifié dans le code.** `AudienceService.planifier` refuse toute date qui n'est pas
+**strictement** future (`!datePlanifiee.isAfter(LocalDate.now())`, RG-AUD-07), et le formulaire borne
+le champ à demain. Le compte rendu, lui, est accepté **dès le jour de l'audience**
+(`datePlanifiee.isAfter(now)` seul le refuse).
+
+**Ce que cela empêche.** Deux situations métier n'ont aucune issue dans l'application :
+- une audience apprise le matin pour le jour même ne peut pas être créée, donc son compte rendu ne
+  peut pas être saisi ;
+- une audience qui s'est tenue sans avoir été saisie ne peut **jamais** être régularisée : demain,
+  sa date sera passée, et une date passée est refusée elle aussi.
+
+**À arbitrer avec le métier**, en deux questions distinctes : faut-il accepter une audience datée
+**du jour** ? Faut-il accepter une **régularisation** dans le passé, et dans quelle limite ?
+
 ### Comportements à confirmer avec le métier
 
 11. ~~Le calendrier compte le premier jour de la période suivante (QF-31).~~ **Corrigé le
@@ -1347,8 +1371,13 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 12. ~~Une audience est dite « tenue » le jour où l'on saisit son compte rendu (QF-32).~~ **Corrigé
     le 2026-09-23**, sur arbitrage du métier : la date de tenue est la date planifiée. Le rapport
     d'activité ne dépend donc plus de la date de saisie.
-13. **L'historique d'un dossier n'est pas traduit (QF-24)** : il est rédigé en français par le
-    serveur, y compris quand l'interface est en anglais.
+13. ~~L'historique d'un dossier n'est pas traduit (QF-24).~~ **Faux — vérifié dans le code.** La
+    traduction existe depuis Q-111/Q-112 : le backend renvoie un code typé et des détails
+    structurés, `useLibellesHistorique` les traduit sur l'onglet Historique comme sur l'audit. Seuls
+    deux codes récents (`AUDIT_EXPORTE`, `ARCHIVE_TELECHARGEE`) et quatre clés de détails
+    manquaient : **ajoutés le 2026-09-23**. La ligne QF-24 de `RAPPORT_DE_RECETTE.md` §5.2 était
+    périmée, comme l'était celle de QF-03. À vérifier en séance : basculer en `EN` sur l'onglet
+    Historique d'un dossier et sur l'écran Audit — plus aucun libellé français ne doit subsister.
 14. ~~Alarme à échéance passée : la règle n'est portée que par l'interface.~~ **Corrigé le
     2026-09-23** : `CreerAlarmeRequest` et `ReprogrammerAlarmeRequest` portent désormais la
     contrainte côté serveur. La règle ne vit plus seulement dans le navigateur. L'étape 5 de

@@ -423,7 +423,7 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
-### 🟡 QF-24 — L'historique est rédigé en français par le serveur
+### ✅ QF-24 — L'historique était rédigé en français par le serveur *(résolue le 2026-09-17, complétée le 2026-09-23)*
 
 **Constat.** `HistoriqueActionResponse.action` est une phrase française (« Changement de statut de
 l'étape INSTANCE ») et non un code. C'est la seule donnée du backend qui contredise le principe sur
@@ -432,9 +432,20 @@ lequel repose le bilinguisme : *le backend ne renvoie que des codes stables*.
 **Conséquence.** En anglais, l'onglet Historique affiche des libellés français. La fiche le signale
 explicitement plutôt que de laisser croire à un oubli de traduction.
 
-**Recommandation (évolution backend, non bloquante).** Ajouter un code d'action stable
-(`CREATION_DOSSIER`, `CHANGEMENT_STATUT_ETAPE`…) à côté du libellé, que le frontend traduirait.
-**Statut : ouvert, non bloquant.**
+**Résolu par Q-111 puis Q-112 (2026-09-17)**, exactement par la voie recommandée :
+`HistoriqueActionResponse` porte désormais un `code` typé et des `details` structurés à côté de la
+phrase, et `useLibellesHistorique` traduit les deux sur l'onglet Historique comme sur l'audit. La
+phrase du backend ne sert plus que de repli pour un code non encore traduit — jamais le code brut.
+
+**Complété le 2026-09-23.** Deux natures ajoutées depuis avec l'extraction scellée
+(`AUDIT_EXPORTE`, `ARCHIVE_TELECHARGEE`) et quatre clés de détails (`exportId`, `empreinte`,
+`format`, `lignes`) n'avaient pas leurs libellés : elles retombaient sur la phrase française, en
+anglais comme en français. Ajoutées dans les deux langues — **49 natures et 65 clés couvertes**.
+
+**Le garde-fou a été refait au passage.** Le test qui protégeait la couverture figeait un *nombre*
+(« 47 natures, 61 clés ») : il fallait le corriger à chaque ajout, et surtout il serait resté vert
+si deux codes avaient été traduits en français et oubliés en anglais. Il vérifie désormais la
+**parité entre les deux langues**, qui ne se périme pas. **Statut : close.**
 
 ### ✅ QF-25 — L'affectation pouvait vider un dossier de ses juristes *(résolue le 2026-09-10)*
 
