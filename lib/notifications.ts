@@ -1,4 +1,4 @@
-import type { ConfigurationSysteme } from "@/types/domaine";
+import type { ConfigurationSysteme, LigneCanalNotification } from "@/types/domaine";
 
 /**
  * Réglages des notifications externes (backend Q-118).
@@ -99,4 +99,27 @@ export function canalActif(section: SectionGrille, canal: string, configurations
 
 export function trouver(configurations: ConfigurationSysteme[], cle: string): ConfigurationSysteme | undefined {
   return configurations.find((configuration) => configuration.cle === cle);
+}
+
+/** Les trente derniers jours, bornes incluses, au format ISO attendu par le backend. */
+export function fenetreParDefaut(): { debut: string; fin: string } {
+  const aujourdHui = new Date();
+  const ilYATrenteJours = new Date(aujourdHui.getTime() - 29 * 86_400_000);
+  const iso = (date: Date) => date.toISOString().slice(0, 10);
+  return { debut: iso(ilYATrenteJours), fin: iso(aujourdHui) };
+}
+
+/**
+ * Part de ce qui est parti ou en passe de partir, en pourcentage à une décimale.
+ *
+ * Les lignes sans coordonnée sont **exclues du calcul** : elles signalent une fiche à compléter, pas
+ * un canal défaillant. Un canal sans aucun envoi ne rend aucun taux — afficher « 0 % » laisserait
+ * croire à un échec là où il ne s'est rien passé.
+ */
+export function tauxAboutissement(ligne: LigneCanalNotification): number | null {
+  const total =
+    ligne.enAttente + ligne.remises + ligne.confirmees + ligne.echecs + ligne.sansRetour + ligne.nonJoignables;
+  const denominateur = total - ligne.nonJoignables;
+  if (denominateur === 0) return null;
+  return Math.round(((ligne.confirmees + ligne.remises + ligne.enAttente) / denominateur) * 1000) / 10;
 }

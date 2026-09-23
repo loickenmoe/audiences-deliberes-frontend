@@ -364,6 +364,41 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
   expect(retabli.status).toBe(200);
 });
 
+/**
+ * D17 — la supervision des notifications externes, sur l'écran 41. Elle distingue ce que
+ * l'application a remis au moteur de ce qu'il a confirmé : « remise » n'est pas « reçue ».
+ */
+test("le DJ supervise les notifications externes ; le juriste n'y a pas accès (D17)", async ({ browser }) => {
+  const jetonDj = await jeton("dj.test");
+  const aujourdHui = new Date().toISOString().slice(0, 10);
+  const debut = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10);
+
+  // Le contrat d'abord : la lecture est réservée au DJ et à la DJA.
+  const refus = await appel(`/notifications/supervision?dateDebut=${debut}&dateFin=${aujourdHui}`, await jeton("juriste.test"));
+  expect(refus.status).toBe(403);
+
+  const supervision = await json<{ canaux: { canal: string }[]; engineActif: boolean }>(
+    `/notifications/supervision?dateDebut=${debut}&dateFin=${aujourdHui}`, jetonDj);
+  expect(supervision.canaux.map((c) => c.canal)).toEqual(["EMAIL", "SMS", "WHATSAPP", "TEAMS"]);
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  // Comparaison exacte : « Grille des notifications externes » contiendrait ce fragment.
+  await expect(dj.getByRole("heading", { name: "Notifications externes", exact: true })).toBeVisible();
+  await expect(dj.getByRole("table", { name: "Notifications par canal" })).toBeVisible();
+  // Le moteur est coupé sur le serveur : l'écran doit le dire plutôt que laisser croire aux envois.
+  if (!supervision.engineActif) {
+    await expect(dj.getByText(/Notification Engine est désactivé/)).toBeVisible();
+  }
+  await dj.context().close();
+
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/admin/configurations");
+  await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
+  await expect(juriste.getByRole("heading", { name: "Notifications externes", exact: true })).toHaveCount(0);
+  await juriste.context().close();
+});
+
 test("le backend refuse le vide là où il n'est pas un réglage (Q-118)", async () => {
   const dj = await jeton("dj.test");
   const formats = await appel("/configurations/FORMATS_GED", dj, {

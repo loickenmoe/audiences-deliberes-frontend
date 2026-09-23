@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { ParametresSysteme } from "@/components/modules/administration/parametres-systeme";
 import { SupervisionAlertes } from "@/components/modules/administration/supervision-alertes";
+import { SupervisionNotifications } from "@/components/modules/administration/supervision-notifications";
 import { peut } from "@/lib/rbac";
 import { exigerCapacite } from "@/lib/serverAuth";
 
@@ -27,6 +28,12 @@ export default async function PageConfigurations() {
         ouverts à `ROLE_CONSULTATION` ; ce bloc ne l'est pas.
       */}
       {peut(session.roles, "superviserAlertes") ? <SupervisionAlertes /> : null}
+      {/*
+        Supervision des notifications externes (D17). Même garde que ci-dessus : ces lignes portent
+        les coordonnées des destinataires et les erreurs des fournisseurs, que le backend réserve au
+        DJ et à la DJA.
+      */}
+      {peut(session.roles, "superviserAlertes") ? <SupervisionNotifications /> : null}
     </div>
   );
 }

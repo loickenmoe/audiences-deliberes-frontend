@@ -862,6 +862,47 @@ export interface ConfigurationSysteme {
   listeVideAutorisee: boolean;
 }
 
+/** Une ligne du tableau de supervision des notifications externes (backend D17). */
+export interface LigneCanalNotification {
+  canal: string;
+  /** En file, pas encore remises au moteur. */
+  enAttente: number;
+  /** Remises au moteur, sans confirmation encore reçue. */
+  remises: number;
+  /** Confirmées par un accusé du moteur. */
+  confirmees: number;
+  /** Abandonnées : tentatives épuisées, périmées, ou échec définitif du moteur. */
+  echecs: number;
+  /** Remises, mais restées sans aucun accusé au-delà du délai (backend Q-120). */
+  sansRetour: number;
+  /** Canal retenu pour un destinataire sans coordonnée utilisable (D14). */
+  nonJoignables: number;
+}
+
+/** Un envoi à examiner : abandonné, sans retour, ou destinataire injoignable. */
+export interface EnvoiNotificationEnDefaut {
+  id: number;
+  eventId: string;
+  typeEvenement: string;
+  canal: string;
+  statut: string;
+  destinataire: string | null;
+  /** Destinataire réel quand la redirection hors production l'a remplacé (backend D10). */
+  destinataireOrigine: string | null;
+  derniereErreur: string | null;
+  tentatives: number;
+  dateCreation: string | null;
+}
+
+export interface SupervisionNotifications {
+  dateDebut: string;
+  dateFin: string;
+  canaux: LigneCanalNotification[];
+  derniersEchecs: EnvoiNotificationEnDefaut[];
+  /** Interrupteur du backend : à false, rien ne part et tout reste journalisé. */
+  engineActif: boolean;
+}
+
 /**
  * Supervision du canal applicatif sur une fenêtre (backend Q-109, NF-ALR-02).
  *
