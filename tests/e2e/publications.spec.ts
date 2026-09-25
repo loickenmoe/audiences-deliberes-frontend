@@ -1,5 +1,6 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
 
 /**
@@ -257,7 +258,8 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   const modale = juriste.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(modale.getByText(/obligatoire/i).first()).toBeVisible();
-  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: "Me Claire Avocat - Avocat" });
+  const avocat = (await avocatDeTest()).nom;
+  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: `${avocat} - Avocat` });
   await modale.getByLabel("Motif de la demande", { exact: true }).fill("Représentation devant le TGI de Douala");
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
@@ -267,7 +269,7 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   await sh.waitForURL(/\/constitutions/, { timeout: 60_000 });
   await expect(sh.getByRole("button", { name: "À signer" })).toHaveAttribute("aria-pressed", "true");
   const ligne = sh.getByRole("row", { name: new RegExp(reference) });
-  await ligne.getByRole("button", { name: "Signer la constitution - Me Claire Avocat" }).click();
+  await ligne.getByRole("button", { name: `Signer la constitution - ${avocat}` }).click();
   await sh.getByRole("dialog", { name: "Signer la constitution ?" }).getByRole("button", { name: "Signer" }).click();
   await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
   await sh.getByRole("button", { name: "Toutes" }).click();
@@ -276,6 +278,23 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
 
   await juriste.goto(`/dossiers/${dossierId}?onglet=documents`);
   await expect(juriste.getByText(/lettre-constitution-\d+\.pdf/)).toBeVisible();
+
+  /*
+   * Le tirage pour papier préimprimé (observation métier du 2026-09-25). Sa seule présence prouve
+   * que le type de pièce posé par le backend — un texte libre — est bien celui que l'interface
+   * attend : aucun typage ne peut garantir cet accord, seul un parcours réel le peut.
+   */
+  const ligneLettre = juriste.getByRole("row", { name: /lettre-constitution-\d+\.pdf/ });
+  const sansEntete = ligneLettre.getByRole("button", { name: /^Sans en-tête - lettre-constitution/ });
+  await expect(sansEntete).toBeVisible();
+
+  const telechargement = juriste.waitForEvent("download");
+  await sansEntete.click();
+  const fichier = await telechargement;
+  expect(fichier.suggestedFilename()).toMatch(/^lettre-constitution-\d+-sans-entete\.pdf$/);
+
+  // La pièce archivée reste téléchargeable telle quelle : le tirage s'ajoute, il ne remplace rien.
+  await expect(ligneLettre.getByRole("button", { name: /^Télécharger - lettre-constitution/ })).toBeVisible();
   await juriste.context().close();
 });
 
@@ -319,7 +338,8 @@ test("le juriste rédige la lettre, le SH la consulte, puis elle est figée (Q-1
   await juriste.goto(`/dossiers/${dossierId}`);
   await juriste.getByRole("button", { name: "Solliciter un prestataire" }).click();
   const modale = juriste.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
-  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: "Me Claire Avocat - Avocat" });
+  const avocatRattache = (await avocatDeTest()).nom;
+  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: `${avocatRattache} - Avocat` });
   await modale.getByLabel("Motif de la demande", { exact: true }).fill("Saisie-attribution urgente");
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
@@ -356,7 +376,7 @@ test("le juriste rédige la lettre, le SH la consulte, puis elle est figée (Q-1
   await lue.getByRole("button", { name: "Fermer" }).last().click();
 
   // ── La signature fige la lettre ─────────────────────────────────────────────
-  await ligneSh.getByRole("button", { name: `Signer la constitution - Me Claire Avocat` }).click();
+  await ligneSh.getByRole("button", { name: `Signer la constitution - ${avocatRattache}` }).click();
   await sh.getByRole("dialog", { name: "Signer la constitution ?" }).getByRole("button", { name: "Signer" }).click();
   await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
   await sh.context().close();

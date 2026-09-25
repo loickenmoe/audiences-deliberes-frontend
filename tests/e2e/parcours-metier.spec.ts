@@ -1,6 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
 
 /**
@@ -41,8 +42,10 @@ function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-/** L'intervenant du référentiel rattaché au compte `avocat.test` (Q-84). */
-const AVOCAT_DE_TEST = "Me Claire Avocat";
+/*
+ * L'intervenant rattaché au compte `avocat.test` (Q-84) est **lu** au référentiel, et non supposé :
+ * son nom appartient aux données, qu'un DJ peut changer — voir `avocat-de-test.ts`.
+ */
 
 const PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
 
@@ -80,9 +83,9 @@ async function ouvrirUnDossier(page: Page, marque: string) {
    * L'avocat est choisi **par son nom**, jamais par son rang : `{ index: 0 }` désignait un avocat
    * arbitraire du référentiel, et le dossier n'appartenait donc pas à `avocat.test` — son portail
    * ne le proposait pas, et les parcours P2 et P6 restaient bloqués sur un sélecteur sans l'option
-   * attendue. `Me Claire Avocat` est l'intervenant rattaché au compte `avocat.test` (Q-84).
+   * attendue.
    */
-  await affecterParDefaut(page, { avocat: AVOCAT_DE_TEST });
+  await affecterParDefaut(page, { avocat: (await avocatDeTest()).nom });
   await page
     .locator('input[name="piece-PV_TRANSFERT"]')
     .setInputFiles({ name: `pv-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });

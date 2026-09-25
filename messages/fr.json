@@ -626,7 +626,9 @@
     "demandeSuppressionTitre": "Demander la suppression ?",
     "demandeSuppressionMessage": "Le document « {nom} » restera visible jusqu’à la décision du DJ ou du DJA.",
     "documentSupprime": "Document supprimé.",
-    "demandeEnvoyee": "Demande de suppression envoyée au DJ et au DJA."
+    "demandeEnvoyee": "Demande de suppression envoyée au DJ et au DJA.",
+    "telechargerSansEntete": "Sans en-tête",
+    "telechargerSansEnteteAide": "Tirage pour le papier préimprimé de la banque : le contenu seul, sans logo ni mentions légales."
   },
   "suppressions": {
     "titre": "Demandes de suppression",

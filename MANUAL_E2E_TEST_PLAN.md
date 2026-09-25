@@ -785,6 +785,10 @@ Motif de la demande `Constitution pour l'audience du mois prochain` ; corps de l
 | 6 | SH | Cliquer « Consulter la lettre » | La lettre s'affiche, nommée d'après le dossier | | ☐ |
 | 7 | SH | Cliquer « Signer », confirmer dans « Signer la constitution ? » | La constitution passe à **Validée** ; la lettre est générée en PDF | | ☐ |
 | 8 | JUR | Fiche du dossier → onglet « Documents » | La lettre de constitution figure parmi les pièces du dossier | | ☐ |
+| 8 bis | JUR | Sur la ligne de la lettre, cliquer **« Sans en-tête »** | Un second PDF est téléchargé, nommé `…-sans-entete.pdf` | | ☐ |
+| 8 ter | JUR | Ouvrir les **deux** PDF côte à côte | Même texte, aux mêmes emplacements ; le second n'a ni logo, ni bande latérale grise, ni mentions légales | | ☐ |
+| 8 quater | JUR | **Imprimer le second sur une feuille à en-tête de la banque** | Le texte tombe dans les zones libres : rien ne chevauche le logo ni la colonne | | ☐ |
+| 8 quinquies | JUR | Cliquer « Télécharger » sur la même ligne | L'exemplaire archivé est inchangé, **avec** son en-tête : c'est lui qui fait foi | | ☐ |
 | 9 | AVO | Si le prestataire constitué est `avocat.test` : ouvrir « Mon espace » | La lettre apparaît sous « Mes lettres de constitution » | | ☐ |
 
 ### Résultat final attendu
@@ -793,6 +797,9 @@ lorsqu'il dispose d'un compte.
 
 ### Points de contrôle
 - Un juriste ne peut pas signer : l'action est réservée au SH.
+- Le bouton « Sans en-tête » n'apparaît **que** sur les lettres de constitution, pas sur les autres
+  pièces du dossier : le tirage se régénère depuis la lettre enregistrée, ce qu'aucune autre pièce
+  ne permet.
 - Un autre prestataire (sans compte) n'a pas d'espace applicatif : il est notifié hors application —
   ce qui, moteur coupé, reste journalisé sans envoi.
 

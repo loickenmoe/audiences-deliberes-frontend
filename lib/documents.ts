@@ -18,6 +18,16 @@ export const TypesDocument = [
 ] as const;
 export type TypeDocument = (typeof TypesDocument)[number];
 
+/**
+ * Le type porté par une lettre de constitution signée, versée à la GED par le backend
+ * (`ConstitutionService.TYPE_DOCUMENT_LETTRE`). C'est lui qui fait apparaître le tirage sur papier
+ * préimprimé dans l'onglet « Documents ».
+ *
+ * `typeDocument` étant un texte libre côté serveur, l'alignement des deux côtés ne peut pas être
+ * garanti par le typage : un parcours de bout en bout le vérifie contre le vrai backend.
+ */
+export const TYPE_LETTRE_CONSTITUTION = "Lettre de constitution";
+
 export function estTypeConnu(valeur: string | null | undefined): valeur is TypeDocument {
   return !!valeur && (TypesDocument as readonly string[]).includes(valeur);
 }

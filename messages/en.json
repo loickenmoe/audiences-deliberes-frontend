@@ -626,7 +626,9 @@
     "demandeSuppressionTitre": "Request deletion?",
     "demandeSuppressionMessage": "The document “{nom}” will remain visible until the Legal Director or Deputy decides.",
     "documentSupprime": "Document deleted.",
-    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy."
+    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy.",
+    "telechargerSansEntete": "No letterhead",
+    "telechargerSansEnteteAide": "Print-ready copy for the bank preprinted paper: content only, without logo or legal notices."
   },
   "suppressions": {
     "titre": "Deletion requests",
