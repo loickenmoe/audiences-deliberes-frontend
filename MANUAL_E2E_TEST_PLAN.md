@@ -578,13 +578,15 @@ Référence de facture `FAC-REC-011`, montant `1 200 000`, un PDF en pièce just
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
 | 1 | AVO | Menu « Déposer une demande » | L'écran « Déposer une demande de frais » s'ouvre | | ☐ |
-| 2 | AVO | Ouvrir la liste « Dossier » | **Seuls** les dossiers où l'avocat est affecté apparaissent, avec leur référence, nature et juridiction — ni client, ni montant en jeu | | ☐ |
+| 2 | AVO | Cliquer le champ « Dossier » et **taper une partie de la référence** | La liste se réduit à ce que le serveur renvoie. **Seuls** les dossiers où l'avocat est affecté apparaissent, avec leur référence, nature et juridiction — ni client, ni montant en jeu | | ☐ |
+| 2 bis | AVO | Chercher un dossier **ancien**, créé avant beaucoup d'autres | Il est trouvé, casse indifférente. Le champ cherche sur le serveur et ne se limite plus aux dossiers récents (corrigé le 2026-09-28) | | ☐ |
 | 3 | AVO | Choisir le dossier, saisir « Référence de la facture » = `FAC-REC-011` et « Montant (FCFA) » = `1200000` | Les champs sont acceptés | | ☐ |
 | 4 | AVO | Charger le PDF dans « Pièces justificatives » | Le nom du fichier s'affiche ; il peut être retiré avant l'envoi | | ☐ |
 | 5 | AVO | Cliquer « Déposer » | Message « Demande de frais déposée. » ; la demande figure dans « Mon espace » | | ☐ |
 | 6 | AST | Se connecter, ouvrir l'accueil | La carte « Frais à contrôler » porte la demande | | ☐ |
 | 7 | AST | Menu « Frais d'avocats » → file « À contrôler » → ouvrir `FAC-REC-011` | Le détail affiche le circuit, l'action attendue et la pièce jointe | | ☐ |
-| 8 | AST | Ouvrir la pièce justificative | Le PDF s'affiche ou se télécharge : le contrôle porte sur le document | | ☐ |
+| 8 | AST | Sur la ligne de la pièce, cliquer **« Consulter »** (œil) | Le document s'ouvre à l'écran, sans quitter la page. Le nom affiché est celui du fichier — jamais un chemin de stockage | | ☐ |
+| 8 bis | AST | Cliquer **« Télécharger »** sur la même ligne | Le fichier est enregistré sous son nom d'origine | | ☐ |
 | 9 | AST | Cliquer « Valider » → confirmer | La demande passe au contrôle d'opportunité ; l'Assistante n'a plus d'action | | ☐ |
 | 10 | DJA | Se connecter, ouvrir « Frais d'avocats » → la demande | Le bloc « Action attendue » propose la décision d'opportunité | | ☐ |
 | 11 | DJA | Cliquer « Valider » → confirmer | La demande passe à **Validée** ; l'écran indique que la DJA valide seule (sous le seuil) | | ☐ |
@@ -705,13 +707,16 @@ document `Conclusions`.
 | 2 | AVO | Choisir « Compte rendu d'audience », puis choisir le dossier | La liste « Audience » se remplit avec les audiences **de ce dossier** | | ☐ |
 | 3 | AVO | Choisir un dossier **sans audience** | Message « Aucune audience n'est encore planifiée sur ce dossier. » | | ☐ |
 | 4 | AVO | Revenir au dossier avec audience, choisir l'audience, laisser le compte rendu **vide** → « Déposer le compte rendu » | Refus : le récit est obligatoire | | ☐ |
-| 5 | AVO | Saisir le récit, joindre le PDF (facultatif) → « Déposer le compte rendu » | Message « Publication déposée. Elle sera visible après validation. » | | ☐ |
+| 5 | AVO | Joindre le PDF, puis cliquer **« Consulter »** (œil) à côté du fichier | Le document s'ouvre sans quitter le formulaire : la pièce se relit **avant** l'envoi | | ☐ |
+| 5 bis | AVO | Saisir le récit → « Déposer le compte rendu » | Message « Publication déposée. Elle sera visible après validation. » | | ☐ |
 | 6 | AVO | Choisir cette fois « Document du dossier », sans joindre de fichier → « Déposer » | Refus : pour un document, le fichier est obligatoire | | ☐ |
 | 7 | AVO | Renseigner « Type de document » = `Conclusions`, joindre le PDF → « Déposer » | Publication déposée | | ☐ |
 | 8 | JUR | Menu « Publications » | La publication **n'apparaît pas** : elle n'est pas encore validée | | ☐ |
 | 9 | AST | Menu « Publications » → file « À valider » → ouvrir la publication | Le récit et la pièce jointe sont consultables sans quitter la page | | ☐ |
 | 10 | AST | Cliquer « Valider » → confirmer | La publication passe à **Validée** et quitte la file | | ☐ |
 | 11 | JUR | Menu « Publications » (ou onglet « Publications » du dossier) | La publication validée est désormais visible, avec sa pièce | | ☐ |
+| 11 bis | JUR | Fiche du dossier → onglet **« Audiences »**, ligne de l'audience relatée | Un lien **« Compte rendu de l'avocat »** y figure, à côté du compte rendu du juriste | | ☐ |
+| 11 ter | JUR | Cliquer ce lien | La publication s'ouvre : le récit de l'avocat et sa pièce | | ☐ |
 | 12 | AST | Ouvrir une autre publication → « Rejeter », saisir un motif → confirmer | La publication est rejetée ; l'avocat voit le motif dans « Mon espace » | | ☐ |
 
 ### Résultat final attendu

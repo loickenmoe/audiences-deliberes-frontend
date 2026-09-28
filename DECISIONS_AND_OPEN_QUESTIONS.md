@@ -423,6 +423,100 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Le compte rendu de l'avocat, invisible depuis son audience *(corrigé le 2026-09-28)*
+
+**Deux manques signalés en recette**, de part et d'autre du même dépôt.
+
+**1. L'avocat ne relisait pas sa pièce avant d'envoyer.** Le fichier d'un compte rendu — plumitif,
+note d'audience — ne se vérifiait qu'après le dépôt, quand le corriger suppose de redéposer. Un œil
+l'ouvre désormais sans quitter le formulaire. Le fichier n'étant pas encore parti, l'aperçu lit
+celui que le navigateur tient en mémoire : aucun aller-retour avec le serveur, et rien de nouveau
+côté stockage.
+
+**2. Une fois la publication validée, le compte rendu restait introuvable depuis l'audience.** Il
+vit dans les **publications**, rattaché à l'audience mais pas porté par elle : l'onglet « Audiences »
+n'affichait que le récit du juriste, et une audience dont l'avocat avait rendu compte paraissait
+muette. Personne ne savait où chercher.
+
+**Corrigé par un croisement, sans rien ajouter au modèle.** L'onglet charge les publications
+validées du dossier et rattache chaque compte rendu à son audience. Aucun champ nouveau, aucune
+migration : l'information existait, elle n'était simplement reliée nulle part.
+
+**Deux garde-fous, posés avec la correction :**
+- seules les publications **validées** sont rattachées — un dépôt en attente n'est lisible d'aucun
+  juriste, et le montrer ici ferait croire à une information disponible ;
+- la liste des publications n'est demandée que si le profil y a droit. L'onglet « Audiences » est
+  ouvert à tous les profils internes, la liste des publications ne l'est pas : sans ce garde-fou, le
+  SH aurait reçu un 403 sur un écran qui lui est permis.
+
+**Un enseignement de test.** Le parcours de bout en bout validait la publication puis naviguait
+aussitôt : en suite complète, la navigation devançait la validation, et l'audience paraissait — à
+juste titre — sans compte rendu. Attendre la **confirmation** plutôt que le clic suffit ; un test qui
+mesure la charge de la machine ne mesure pas l'application.
+
+### ✅ Les pièces justificatives ne s'ouvraient pas *(corrigé le 2026-09-28)*
+
+**Signalé en recette.** L'avocat dépose une pièce, elle arrive bien dans le stockage — mais ni lui
+avant d'envoyer, ni l'Assistante, le juriste, le DJ ou la DJA ensuite ne pouvaient l'ouvrir.
+
+**Le backend n'était pas en cause.** `DemandeFraisResponse.piecesTelechargeables` porte depuis Q-97,
+pour chaque pièce réellement stockée, son **nom d'origine** et une **URL signée**. Le défaut était
+entièrement à l'écran : `detail-frais.tsx` ignorait ce champ et affichait le contenu brut de
+`piecesJustificatives` — le chemin de stockage, `frais/<uuid>-facture.pdf`, une chaîne technique que
+personne ne peut ouvrir.
+
+**Ce que cela empêchait.** Le contrôle de conformité de l'Assistante porte sur les documents. Elle
+devait donc statuer sans les voir. Le guide utilisateur l'affirmait déjà au §6 : « Les pièces
+justificatives s'ouvrent depuis le détail de la demande : le contrôle de conformité porte sur les
+documents, pas sur leurs noms. » **La documentation décrivait le comportement attendu, le code ne le
+tenait pas** — c'est le genre d'écart qu'aucune relecture de spécification ne rattrape, seule la
+recette le voit.
+
+**Corrigé des deux côtés de la chaîne :**
+- **chez l'avocat, avant l'envoi** : chaque pièce chargée porte un œil qui l'ouvre sans quitter le
+  formulaire. Une pièce ne se vérifiait qu'après le dépôt, quand la remplacer supposait une nouvelle
+  demande ;
+- **chez l'instructeur** : le **nom d'origine**, un œil et un téléchargement, comme en GED.
+
+**Trois cas distingués**, parce qu'ils ne disent pas la même chose :
+- une pièce **stockée** : nom lisible, consultable, téléchargeable ;
+- une entrée **sans fichier** — libellé saisi avant que le téléversement n'existe — affichée en
+  texte, sans bouton : la taire ferait croire qu'aucune pièce n'a été déclarée, la rendre cliquable
+  promettrait un document qui n'existe pas ;
+- **aucune pièce** : l'écran le dit, au lieu d'une liste vide.
+
+**Le chemin de stockage ne s'affiche plus jamais** : un test le vérifie explicitement.
+
+### ✅ Le sélecteur de dossiers du portail avocat tronquait sa liste *(corrigé le 2026-09-28)*
+
+**Signalé en recette.** Un dossier « dss1 », affecté à l'avocat et portant une audience planifiée,
+n'apparaissait pas dans sa liste déroulante : impossible pour lui d'y déposer un compte rendu.
+
+**Ce n'était pas l'affectation.** Vérifié en base : le dossier, l'affectation et les audiences
+existaient. Le sélecteur chargeait **une page de cent dossiers**, triés du plus récent au plus
+ancien ; l'avocat en suivait **427**, et « dss1 » — le premier dossier jamais créé dans cette base —
+occupait le rang 427. Il était hors de la page, et rien ne le disait.
+
+**Une liste tronquée en silence est pire qu'une erreur** : l'avocat conclut qu'on lui a retiré son
+dossier, et personne ne cherche un défaut là où l'écran paraît fonctionner. C'est exactement le
+piège déjà rencontré sur l'annuaire des avocats (Q-105) — « une liste déroulante qui demandait une
+grande page cassait silencieusement dès que l'annuaire la dépassait » — et la réponse est la même :
+**chercher sur le serveur** plutôt que charger plus gros.
+
+**Corrigé** : `GET /avocat/mes-dossiers?reference=` cherche par fragment de référence, sans tenir
+compte de la casse, et le sélecteur du portail devient un champ cherchable qui interroge le serveur
+au fil de la frappe. La restriction à l'avocat reste portée par la requête elle-même, jamais
+ajoutée après coup : un prestataire externe ne peut pas sonder le portefeuille de la banque en
+tâtonnant sur les références.
+
+**Un détail qui compte** : « aucun dossier » ne se déduit désormais que d'une liste **non filtrée**.
+Une recherche sans résultat dit qu'aucun dossier ne porte cette référence, pas que l'avocat n'a plus
+d'affectation — confondre les deux lui ferait croire qu'on l'a retiré de ses dossiers.
+
+**Les 426 dossiers surnuméraires** de la base de recette viennent des campagnes e2e, qui en créent à
+chaque exécution. Le défaut, lui, se serait produit en production dès qu'un avocat aurait dépassé
+cent dossiers.
+
 ### ✅ Journal des audiences et comptes rendus attendus *(2026-09-28)*
 
 **Ce que le métier a demandé.** « Avoir les comptes rendus de toutes les audiences tenues un jour

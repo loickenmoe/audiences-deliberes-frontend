@@ -3,12 +3,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarPlus, FileText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
+import { usePublications } from "@/hooks/usePublications";
+import type { Publication } from "@/types/domaine";
 import { StatutChip, type TonStatut } from "@/components/global/statut-chip";
 import { DateValeur, DialogueConfirmation } from "@/components/metier";
 import { Button } from "@/components/ui/button";
@@ -47,6 +50,26 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
   const tdom = useTranslations("domaine");
   const requete = useAudiencesDossier(dossier.id);
   const peutGerer = peut(roles, "gererAudiences");
+
+  /*
+   * Le compte rendu de l'avocat vit dans les **publications**, rattaché à l'audience mais pas porté
+   * par elle. Sans ce croisement, l'onglet n'affichait que le récit du juriste : une audience dont
+   * l'avocat avait rendu compte paraissait muette, et personne ne savait où chercher.
+   *
+   * Seules les publications **validées** comptent : un dépôt en attente n'est lisible d'aucun
+   * juriste, et le montrer ici ferait croire à une information disponible.
+   */
+  const peutVoirPublications = peut(roles, "consulterPublications");
+  const publications = usePublications(
+    { dossierId: dossier.id, statut: "VALIDE", size: 200 },
+    peutVoirPublications,
+  );
+  const compteRenduAvocatParAudience = new Map<number, Publication>();
+  for (const publication of publications.data?.content ?? []) {
+    if (publication.type === "CR_AUDIENCE" && publication.audienceId !== null) {
+      compteRenduAvocatParAudience.set(publication.audienceId, publication);
+    }
+  }
   const [planification, setPlanification] = useState(false);
   const [compteRendu, setCompteRendu] = useState<Audience | null>(null);
   const [annulation, setAnnulation] = useState<Audience | null>(null);
@@ -113,22 +136,33 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                       <DateValeur valeur={audience.dateTenue} />
                     </td>
                     <td className="max-w-md px-4 py-2">
-                      {audience.compteRendu ? (
-                        <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
-                          {audience.compteRendu}
-                        </p>
-                      ) : audience.statut === "ANNULEE" && audience.motifAnnulation ? (
-                        <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
-                          {t("motifAnnulation", { motif: audience.motifAnnulation })}
-                        </p>
-                      ) : compteRenduPossible ? (
-                        <Button variante="secondaire" taille="sm" onClick={() => setCompteRendu(audience)}>
-                          <FileText size={14} aria-hidden />
-                          {t("saisirCompteRendu")}
-                        </Button>
-                      ) : (
-                        "—"
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {audience.compteRendu ? (
+                          <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
+                            {audience.compteRendu}
+                          </p>
+                        ) : audience.statut === "ANNULEE" && audience.motifAnnulation ? (
+                          <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
+                            {t("motifAnnulation", { motif: audience.motifAnnulation })}
+                          </p>
+                        ) : compteRenduPossible ? (
+                          <Button variante="secondaire" taille="sm" onClick={() => setCompteRendu(audience)}>
+                            <FileText size={14} aria-hidden />
+                            {t("saisirCompteRendu")}
+                          </Button>
+                        ) : !compteRenduAvocatParAudience.has(audience.id) ? (
+                          "—"
+                        ) : null}
+
+                        {compteRenduAvocatParAudience.has(audience.id) ? (
+                          <Link
+                            href={`/publications/${compteRenduAvocatParAudience.get(audience.id)!.id}`}
+                            className="text-[length:var(--taille-xs)] text-texte-secondaire underline underline-offset-2"
+                          >
+                            {t("compteRenduAvocat")}
+                          </Link>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-2 text-right">
                       {peutGerer && audience.statut === "PLANIFIEE" ? (

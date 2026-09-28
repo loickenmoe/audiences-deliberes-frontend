@@ -105,8 +105,12 @@ describe("journal des audiences", () => {
     expect(screen.getByText("Aucune audience ce jour-là.")).toBeInTheDocument();
   });
 
-  /** Une seule page : pas de commandes de navigation, qui n'auraient rien à faire. */
-  it("n'affiche pas la pagination quand tout tient sur une page", () => {
+  /**
+   * Sur une page unique, la barre **reste affichée** : c'est elle qui porte le nombre total et le
+   * choix du nombre de lignes. Savoir qu'on voit « 1 élément » et non une liste tronquée fait
+   * partie de l'information. Seules les commandes de navigation sont alors inertes.
+   */
+  it("garde la barre de pagination sur une page unique, mais sans navigation possible", () => {
     journal.mockReturnValue({
       data: { content: [audience()], totalPages: 1, totalElements: 1 },
       isLoading: false,
@@ -115,7 +119,9 @@ describe("journal des audiences", () => {
 
     rendre(<JournalAudiences />);
 
-    expect(screen.queryByRole("button", { name: "Page suivante" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Page suivante" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Page précédente" })).toBeDisabled();
+    expect(screen.getAllByLabelText("Lignes par page").length).toBeGreaterThan(0);
   });
 
   /** La pièce que l'avocat joint — plumitif, note d'audience — se consulte depuis le journal. */

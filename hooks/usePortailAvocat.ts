@@ -10,14 +10,18 @@ import type { DeposerCompteRendu, DeposerFrais } from "@/types/domaine";
 import type { TypeAutrePublication } from "@/types/enums";
 
 /**
- * Ses dossiers. Cache long : la liste alimente un sélecteur et ne change qu'au rythme d'une
- * décision d'affectation, pas d'une session de travail.
+ * Ses dossiers, éventuellement cherchés par référence. Cache long : la liste alimente un sélecteur
+ * et ne change qu'au rythme d'une décision d'affectation, pas d'une session de travail.
+ *
+ * La recherche entre dans la clé de cache : deux saisies différentes sont deux listes différentes,
+ * et la précédente reste affichée pendant que la suivante arrive.
  */
-export function useMesDossiers() {
+export function useMesDossiers(reference?: string) {
   return useQuery({
-    queryKey: [CLES.mesDossiers],
-    queryFn: () => portailAvocatService.mesDossiers(),
+    queryKey: [CLES.mesDossiers, reference ?? ""],
+    queryFn: () => portailAvocatService.mesDossiers(reference),
     staleTime: FRAICHEUR_REFERENTIEL,
+    placeholderData: (precedent) => precedent,
   });
 }
 

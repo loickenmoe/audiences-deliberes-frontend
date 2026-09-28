@@ -984,7 +984,8 @@
     "payer": "Mark as paid",
     "payerTitre": "Mark the request as paid?",
     "payerMessage": "Only once the payment has been confirmed through the Bank’s channels. The lawyer and the Legal Department will be notified.",
-    "payee": "Payment recorded: the lawyer and the Legal Department have been notified."
+    "payee": "Payment recorded: the lawyer and the Legal Department have been notified.",
+    "aucunePiece": "No attachment on this claim."
   },
   "audiences": {
     "aucune": "No hearing scheduled.",
@@ -1036,7 +1037,8 @@
     "traiterTitre": "Mark the alarm as handled",
     "traiterMessage": "The alarm “{objet}” is closed without being replaced. To push it back, reschedule it instead.",
     "alarmeTraitee": "Alarm marked as handled.",
-    "dateAvantOuverture": "This date precedes the case opening."
+    "dateAvantOuverture": "This date precedes the case opening.",
+    "compteRenduAvocat": "Counsel report"
   },
   "deliberes": {
     "aucun": "No deliberation.",

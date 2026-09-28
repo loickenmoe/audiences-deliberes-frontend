@@ -595,8 +595,24 @@ export interface ValidationFrais {
  * règle RG-INT-03 (dossier sensible **ou** montant > `seuilApplicable`) — pour une demande qui n'a
  * pas encore atteint l'opportunité, c'est ce qui l'attend.
  *
- * `piecesJustificatives` : des **noms** déclarés par l'avocat, pas des fichiers (QF-26).
+ * **Deux listes, et c'est voulu.** `piecesJustificatives` est le tableau brut du dictionnaire des
+ * données : il peut contenir d'anciens libellés, saisis avant que le téléversement n'existe, qui ne
+ * désignent aucun fichier. `piecesTelechargeables` ne porte que les pièces **réellement stockées**,
+ * avec le nom d'origine et une URL signée de courte durée — renseignée sur le **détail** seulement,
+ * jamais sur la liste, comme l'URL d'un document de la GED.
+ *
+ * L'écran doit préférer la seconde : c'est sur les documents que porte le contrôle de conformité,
+ * pas sur leurs noms.
  */
+/** Une pièce justificative stockée, telle que le détail d'une demande de frais la rend. */
+export interface PieceTelechargeable {
+  /** Chemin de stockage ; sert de clé stable, jamais montré à l'utilisateur. */
+  cle: string;
+  nomFichier: string;
+  /** URL signée, de courte durée : à utiliser tout de suite, pas à conserver. */
+  urlTelechargement: string;
+}
+
 export interface DemandeFrais {
   id: number;
   dossierId: number;
@@ -605,6 +621,8 @@ export interface DemandeFrais {
   avocatNom: string;
   montant: number;
   piecesJustificatives: string[];
+  /** Vide sur la liste ; renseignée sur le détail, pour les pièces réellement stockées. */
+  piecesTelechargeables: PieceTelechargeable[];
   statutCircuit: StatutCircuitFrais;
   motifRejet: string | null;
   statutPaiement: StatutPaiementFrais;

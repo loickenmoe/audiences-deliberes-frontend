@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Banknote, Check, X } from "lucide-react";
+import { ArrowLeft, Banknote, Check, Download, Eye, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
@@ -9,10 +9,14 @@ import { toast } from "sonner";
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { StatutChip } from "@/components/global/statut-chip";
 import { DateHeureValeur, DialogueConfirmation, MontantFcfa } from "@/components/metier";
+import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Button } from "@/components/ui/button";
 import { Champ, Textarea } from "@/components/ui/champ";
 import { Dialog } from "@/components/ui/dialog";
 import { useDecisionFrais, useDemandeFrais, usePaiementFrais, type EtapeDecision } from "@/hooks/useFrais";
+import { telechargerBlob } from "@/lib/documents";
+import { gedService } from "@/services/gedService";
+import type { PieceTelechargeable } from "@/types/domaine";
 import type { Langue } from "@/i18n/config";
 import { messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_FRAIS, aDonneSonAccord, etapeConjointeDe } from "@/lib/frais";
@@ -39,13 +43,29 @@ const EN_COURS: readonly StatutCircuitFrais[] = ["DEPOSEE", "CONFORMITE", "OPPOR
 export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: readonly string[] }) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
+  const tdoc = useTranslations("documents");
   const langue = useLocale() as Langue;
   const requete = useDemandeFrais(demandeId);
+  const [apercu, setApercu] = useState<PieceTelechargeable | null>(null);
 
   if (requete.isLoading) return <EtatChargement lignes={6} />;
   if (requete.error || !requete.data) return <EtatErreur message={messageErreur(requete.error)} />;
 
   const demande = requete.data;
+
+  /*
+   * Les pièces réellement stockées portent leur propre entrée dans `piecesJustificatives` : on
+   * retire ces clés pour ne pas afficher deux fois la même pièce, une fois lisible et une fois sous
+   * sa forme technique.
+   */
+  const clesStockees = new Set(demande.piecesTelechargeables.map((piece) => piece.cle));
+  const piecesSansFichier = demande.piecesJustificatives.filter((piece) => !clesStockees.has(piece));
+
+  /** L'URL est signée et de courte durée : on la suit tout de suite, on ne la conserve pas. */
+  async function telechargerPiece(piece: PieceTelechargeable) {
+    const contenu = await gedService.recupererContenu(piece.urlTelechargement);
+    telechargerBlob(contenu, piece.nomFichier);
+  }
   const seuil = formaterFcfa(demande.seuilApplicable, langue);
   const raison = !demande.validationConjointeRequise
     ? t("sousSeuil", { seuil })
@@ -103,11 +123,57 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
 
           <div className="flex flex-col gap-2">
             <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("pieces")}</h3>
-            <ul className="list-inside list-disc text-[length:var(--taille-sm)]">
-              {demande.piecesJustificatives.map((piece) => (
-                <li key={piece}>{piece}</li>
-              ))}
-            </ul>
+
+            {/*
+              Le contrôle de conformité porte sur les **documents**, pas sur leurs noms : chaque
+              pièce s'ouvre à l'écran ou se télécharge. L'écran n'affichait jusqu'ici que le chemin
+              de stockage, une chaîne technique que personne ne pouvait ouvrir — alors que le
+              backend rend l'adresse signée depuis Q-97.
+            */}
+            {demande.piecesTelechargeables.length > 0 ? (
+              <ul className="flex flex-col gap-1 text-[length:var(--taille-sm)]">
+                {demande.piecesTelechargeables.map((piece) => (
+                  <li key={piece.cle} className="flex flex-wrap items-center gap-2">
+                    <span className="truncate">{piece.nomFichier}</span>
+                    <Button
+                      variante="secondaire"
+                      taille="sm"
+                      onClick={() => setApercu(piece)}
+                      aria-label={`${tdoc("consulter")} - ${piece.nomFichier}`}
+                    >
+                      <Eye size={14} aria-hidden />
+                      {tdoc("consulter")}
+                    </Button>
+                    <Button
+                      variante="secondaire"
+                      taille="sm"
+                      onClick={() => void telechargerPiece(piece)}
+                      aria-label={`${tdoc("telecharger")} - ${piece.nomFichier}`}
+                    >
+                      <Download size={14} aria-hidden />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {/*
+              Les entrées qui ne désignent aucun fichier stocké — libellés saisis avant que le
+              téléversement n'existe — restent affichées telles quelles : les taire ferait croire
+              qu'aucune pièce n'a été déclarée.
+            */}
+            {piecesSansFichier.length > 0 ? (
+              <ul className="list-inside list-disc text-[length:var(--taille-sm)] text-texte-secondaire">
+                {piecesSansFichier.map((piece) => (
+                  <li key={piece}>{piece}</li>
+                ))}
+              </ul>
+            ) : null}
+
+            {demande.piecesTelechargeables.length === 0 && piecesSansFichier.length === 0 ? (
+              <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucunePiece")}</p>
+            ) : null}
+
             <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("piecesAide")}</p>
           </div>
         </section>
@@ -128,6 +194,16 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
           <PanneauActions demande={demande} roles={roles} />
         </div>
       </div>
+
+      {/* L'aperçu ouvre la pièce sans quitter l'écran : le contrôle se fait là où la décision se prend. */}
+      {apercu ? (
+        <ApercuFichier
+          ouvert
+          onFermeture={() => setApercu(null)}
+          nomFichier={apercu.nomFichier}
+          obtenir={() => gedService.recupererContenu(apercu.urlTelechargement)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -114,6 +114,10 @@ ou si le montant dépasse le seuil → enregistrement du **paiement** par l'Assi
 Chaque profil ouvre l'application sur la file dont il a la charge. Un rejet exige toujours un motif,
 et l'avocat en est notifié.
 
+**Vérifiez vos pièces avant d'envoyer.** Chaque fichier chargé porte un œil : il s'ouvre sans
+quitter le formulaire. Une fois la demande déposée, remplacer une pièce suppose une nouvelle
+demande.
+
 **Les pièces justificatives s'ouvrent** depuis le détail de la demande : le contrôle de conformité
 porte sur les documents, pas sur leurs noms.
 
@@ -135,8 +139,13 @@ fois ce qu'il fait. Les formats admis et le poids maximal sont les mêmes que po
 Toute publication passe par la validation de l'Assistante avant d'être visible des juristes. En cas
 de rejet, le motif s'affiche dans *Mon espace*, avec le dépôt concerné.
 
-**Pour l'Assistante et les juristes.** La fiche d'une publication montre le récit et, s'il y en a
-une, la **pièce jointe** — consultable à l'écran ou téléchargeable, sans quitter la page. Un compte
+**Vérifiez votre fichier avant de déposer.** Un œil l'ouvre sans quitter le formulaire : une
+publication déposée ne se corrige pas, elle se redépose.
+
+**Pour l'Assistante et les juristes.** Une fois la publication validée, le compte rendu se retrouve
+**depuis l'audience** : l'onglet *Audiences* du dossier porte un lien vers lui, à côté du compte
+rendu du juriste. La fiche d'une publication montre le récit et, s'il y en a une, la **pièce
+jointe** — consultable à l'écran ou téléchargeable, sans quitter la page. Un compte
 rendu sans pièce n'affiche simplement pas ce bloc.
 
 **Correspondance.** Un juriste commente une publication ; le DJ ou la DJA consolide ces commentaires
