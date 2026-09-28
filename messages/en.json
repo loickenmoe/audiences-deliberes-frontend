@@ -1038,7 +1038,9 @@
     "traiterMessage": "The alarm “{objet}” is closed without being replaced. To push it back, reschedule it instead.",
     "alarmeTraitee": "Alarm marked as handled.",
     "dateAvantOuverture": "This date precedes the case opening.",
-    "compteRenduAvocat": "Counsel report"
+    "compteRenduAvocat": "Counsel report",
+    "champJuridiction": "Court",
+    "champJuridictionAide": "Where the hearing will be held. The case court by default; change it for an appeal."
   },
   "deliberes": {
     "aucun": "No deliberation.",

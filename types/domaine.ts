@@ -404,8 +404,14 @@ export interface Audience {
   dossierId: number;
   etapeId: number;
   datePlanifiee: string;
-  /** ⚠ Posée par le backend au jour de la **saisie** du compte rendu, pas au jour de l'audience (QF-32). */
+  /** Posée par le backend à la **date planifiée** de l'audience, quel que soit le jour de saisie (QF-32). */
   dateTenue: string | null;
+  /**
+   * Là où l'audience se tient — distincte de `juridictionSaisie` du dossier, qui est celle de la
+   * saisine. Une audience d'appel ne siège pas devant le tribunal qui a jugé. Héritée du dossier à
+   * la planification faute d'indication contraire.
+   */
+  juridiction: string | null;
   compteRendu: string | null;
   statut: StatutAudience;
   createdAt: string;
@@ -449,8 +455,10 @@ export interface EntreeCalendrier {
 
 export interface PlanifierAudience {
   etapeId: number;
-  /** `YYYY-MM-DD`, strictement future (RG-AUD-07). */
+  /** `YYYY-MM-DD`, non antérieure à l'ouverture du dossier (RG-AUD-07 amendée). */
   datePlanifiee: string;
+  /** Facultative : vide, elle reprend la juridiction du dossier — le cas du premier degré. */
+  juridiction?: string;
 }
 
 export interface CreerAlarme {

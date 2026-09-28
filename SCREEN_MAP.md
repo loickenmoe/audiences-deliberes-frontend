@@ -101,7 +101,7 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 |---|---|---|---|---|---|---|
 | 22 | Calendrier des audiences | `/audiences/calendrier` | JUR, DJ | `GET /audiences/calendrier?periode&dateDebut&format` | F8 | ✅ (agenda par jour, exports PDF et Excel) |
 | 44 | **Journal des audiences** | `/audiences/journal` | **JUR, DJ, DJA** | `GET /audiences/journal?date&page&size`, `GET /audiences/comptes-rendus-attendus?dateDebut&dateFin&page&size` | 2026-09-28 | ✅ (les deux comptes rendus côte à côte, pièce jointe de l'avocat consultable ; audiences passées sans compte rendu ; les deux tableaux paginés) |
-| 23 | Planifier une audience | modale (fiche 09) | JUR | `POST /dossiers/{id}/audiences[?forcer=true]` | F8 | ✅ (doublon confirmable, ERR-005) |
+| 23 | Planifier une audience | modale (fiche 09) | JUR | `POST /dossiers/{id}/audiences[?forcer=true]` | F8 | ✅ (doublon confirmable, ERR-005 ; **juridiction de l'audience**, pré-remplie avec celle du dossier — 2026-09-28) |
 | 24 | Saisie du compte rendu | modale | JUR | `PUT /audiences/{id}/compte-rendu` | F8 | ✅ (proposé à partir du jour de l'audience) |
 | 25 | Créer / reprogrammer une alarme | modale (fiche 11) | JUR | `POST /dossiers/{id}/alarmes`, `PUT /alarmes/{id}/reprogrammer` | F8 | ✅ |
 

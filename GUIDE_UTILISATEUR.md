@@ -84,7 +84,9 @@ sur une étape **en cours** : si le bouton n'apparaît pas, commencez par ouvrir
 
 ## 5. Audiences et délibérés
 
-**Planifier une audience** depuis l'onglet *Audiences*. Le système programme les rappels à J-7, J-3
+**Planifier une audience** depuis l'onglet *Audiences*. Le champ *Juridiction* propose celle du
+dossier ; changez-la pour un appel ou un pourvoi, qui ne se tiennent pas devant le tribunal qui a
+jugé. C'est ce lieu qu'annoncent ensuite le calendrier et le journal des audiences. Le système programme les rappels à J-7, J-3
 et J-1. Une audience en double sur la même étape et la même date est signalée avant l'enregistrement
 — vous pouvez confirmer si le doublon est voulu.
 

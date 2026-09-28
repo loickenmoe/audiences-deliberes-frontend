@@ -126,7 +126,15 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     <td className="px-4 py-2 font-medium">
                       <DateValeur valeur={audience.datePlanifiee} />
                     </td>
-                    <td className="px-4 py-2">{libelleEtape(audience.etapeId)}</td>
+                    <td className="px-4 py-2">
+                      {libelleEtape(audience.etapeId)}
+                      {/* Là où elle se tient : un appel ne siège pas devant le tribunal qui a jugé. */}
+                      {audience.juridiction ? (
+                        <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
+                          {audience.juridiction}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2">
                       <StatutChip ton={TON[audience.statut]}>
                         {tdom(`StatutAudience.${audience.statut}` as never)}
@@ -189,6 +197,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
           <ModalePlanification
             dossierId={dossier.id}
             ouvertureDossier={dossier.createdAt.slice(0, 10)}
+            juridictionDuDossier={dossier.juridictionSaisie}
             etapes={etapesEnCours.map((etape) => ({ id: etape.id, libelle: libelleEtape(etape.id) }))}
             ouvert={planification}
             onFermeture={() => setPlanification(false)}
@@ -204,6 +213,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
 function ModalePlanification({
   dossierId,
   ouvertureDossier,
+  juridictionDuDossier,
   etapes,
   ouvert,
   onFermeture,
@@ -211,6 +221,8 @@ function ModalePlanification({
   dossierId: number;
   /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-07). */
   ouvertureDossier: string;
+  /** Juridiction de la saisine : ce que la planification propose par défaut. */
+  juridictionDuDossier: string;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
@@ -237,6 +249,8 @@ function ModalePlanification({
           .string()
           .min(1, tm("champObligatoire"))
           .refine((date) => date >= ouvertureDossier, { message: t("dateAvantOuverture") }),
+        // Facultative : laissée vide, le serveur reprend la juridiction du dossier.
+        juridiction: z.string().trim().max(100).optional(),
       }),
     [tm, t, ouvertureDossier],
   );
@@ -253,10 +267,10 @@ function ModalePlanification({
   // chaque rendu du parent — effaçait la saisie à chaque rechargement du dossier.
   useEffect(() => {
     if (ouvert) {
-      reset({ etapeId: etapeParDefaut, datePlanifiee: "" });
+      reset({ etapeId: etapeParDefaut, datePlanifiee: "", juridiction: juridictionDuDossier });
       setConfirmation(null);
     }
-  }, [ouvert, etapeParDefaut, reset]);
+  }, [ouvert, etapeParDefaut, juridictionDuDossier, reset]);
 
   async function envoyer(audience: PlanifierAudience, forcer: boolean) {
     try {
@@ -309,6 +323,19 @@ function ModalePlanification({
                 </option>
               ))}
             </Select>
+          </Champ>
+          <Champ
+            id="audience-juridiction"
+            label={t("champJuridiction")}
+            aide={t("champJuridictionAide")}
+            erreur={errors.juridiction?.message}
+          >
+            <Input
+              id="audience-juridiction"
+              maxLength={100}
+              enErreur={!!errors.juridiction}
+              {...register("juridiction")}
+            />
           </Champ>
           <Champ id="audience-date" label={t("champDate")} obligatoire erreur={errors.datePlanifiee?.message}>
             <Input

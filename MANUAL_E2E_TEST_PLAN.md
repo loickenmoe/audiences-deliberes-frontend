@@ -383,6 +383,8 @@ Une date d'audience **dans le futur**, puis une date **du jour** pour le compte 
 | 1 | JUR | Fiche du dossier → onglet « Audiences » → « Planifier une audience » | La fenêtre « Planifier une audience » s'ouvre et propose l'étape en cours | | ☐ |
 | 2 | JUR | Choisir une **date passée** → « Enregistrer » | Refus : la date doit être future | | ☐ |
 | 3 | JUR | Choisir une date future (par exemple dans 20 jours) → « Enregistrer » | L'audience est créée au statut **Planifiée** et apparaît dans le tableau | | ☐ |
+| 3 bis | JUR | Rouvrir « Planifier une audience » et lire le champ **« Juridiction »** | Il propose la juridiction du dossier | | ☐ |
+| 3 ter | JUR | La remplacer par « Cour d'appel du Littoral », choisir une date, enregistrer | La ligne de l'audience porte cette juridiction, sous l'étape. Le **calendrier** l'annonce au même endroit | | ☐ |
 | 4 | JUR | Replanifier une audience **sur la même étape et la même date** | Une fenêtre « Confirmer l'audience » signale le doublon **avant** d'enregistrer | | ☐ |
 | 5 | JUR | Confirmer le doublon | La seconde audience est créée : le doublon est possible, mais jamais silencieux | | ☐ |
 | 6 | JUR | Sur cette seconde audience, cliquer « Annuler l'audience » | La fenêtre « Annuler l'audience » demande un motif | | ☐ |

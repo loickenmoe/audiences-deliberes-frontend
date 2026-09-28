@@ -423,6 +423,35 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ La juridiction propre à l'audience *(2026-09-28)*
+
+**Le constat.** Le dossier porte `juridictionSaisie` : la juridiction **de la saisine**, celle du
+premier degré. Le calendrier, ses exports et le journal des audiences l'affichaient pour **toutes**
+les audiences du dossier — une audience d'appel était donc annoncée devant le tribunal qui avait
+jugé. L'information n'était pas absente : **elle était fausse**, ce qui est pire, car rien n'invitait
+à la vérifier.
+
+Le défaut devenait d'autant plus visible que les étapes portent désormais leur vrai nom : un dossier
+affiché « Appel » annonçait ses audiences au tribunal de première instance.
+
+**La correction.** L'audience porte sa propre juridiction (V34). À la planification, le champ est
+**pré-rempli avec celle du dossier** — le cas courant du premier degré, et ce qui était affiché
+jusqu'ici — et se modifie pour un appel ou un pourvoi, qui se tiennent ailleurs.
+
+**Les audiences existantes héritent de la juridiction de leur dossier.** C'est ce qui était affiché
+avant la migration, et c'est exact pour toutes celles de première instance — l'immense majorité.
+Les corriger relève du métier, dossier par dossier ; inventer une autre valeur aurait été pire que
+de reconduire celle qui s'affichait déjà.
+
+**Ce qui en découle sans autre travail** : le calendrier et ses exports PDF/Excel, le journal des
+audiences et les comptes rendus attendus annoncent désormais le bon lieu, et l'avocat voit dans son
+portail où se tiendra l'audience qu'il doit relater — il s'y rend, il lui faut mieux que la
+juridiction de saisine.
+
+**Une saisie vide vaut absence**, non effacement : elle reprend la juridiction du dossier. Les
+espaces de saisie sont retirés — « Cour d'appel » et « Cour d'appel  » désignent le même lieu, et
+deux écritures d'une même juridiction fausseraient tout regroupement ultérieur.
+
 ### ✅ Le compte rendu de l'avocat, invisible depuis son audience *(corrigé le 2026-09-28)*
 
 **Deux manques signalés en recette**, de part et d'autre du même dépôt.

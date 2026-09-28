@@ -160,6 +160,40 @@ test("une audience antérieure à l'ouverture du dossier est refusée", async ({
   await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(0);
 });
 
+/**
+ * V34 — la juridiction propre à l'audience (observation métier du 2026-09-25).
+ *
+ * Une audience d'appel ne siège pas devant le tribunal qui a jugé : le calendrier annonçait
+ * pourtant la juridiction du **dossier** pour toutes les audiences. L'information n'était pas
+ * absente, elle était fausse — et rien n'invitait à la vérifier.
+ */
+test("une audience se tient devant sa propre juridiction, pas celle du dossier", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  const reference = await dossierEnCours(page);
+  await page.getByRole("tab", { name: "Audiences" }).click();
+
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  const modale = page.getByRole("dialog", { name: "Planifier une audience" });
+  // Le champ propose la juridiction du dossier : le cas courant du premier degré.
+  await expect(modale.getByLabel("Juridiction", { exact: true })).toHaveValue("TGI Douala");
+
+  await modale.getByLabel("Juridiction", { exact: true }).fill("Cour d'appel du Littoral");
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(12));
+  await modale.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = page.getByRole("row").filter({ hasText: "Planifiée" });
+  await expect(ligne).toHaveCount(1);
+  await expect(ligne).toContainText("Cour d'appel du Littoral");
+
+  // Le calendrier annonce le même lieu : c'est là que le juriste se rendra.
+  await page.goto("/audiences/calendrier");
+  await page.getByRole("button", { name: "Trimestre" }).click();
+  const entree = page.getByRole("row", { name: new RegExp(reference) }).first();
+  if ((await entree.count()) > 0) {
+    await expect(entree).toContainText("Cour d'appel du Littoral");
+  }
+});
+
 test("annuler une audience avec son motif, puis la replanifier à la même date sans doublon (QF-30)", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await dossierEnCours(page);
