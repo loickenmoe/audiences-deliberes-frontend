@@ -19,7 +19,7 @@
 export const CategorieDossier = ["RECOUVREMENT", "EXPLOITATION_LITIGES"] as const;
 export type CategorieDossier = (typeof CategorieDossier)[number];
 
-export const TypeEtape = ["INSTANCE", "RECOURS_1", "RECOURS_2"] as const;
+export const TypeEtape = ["INSTANCE", "RECOURS_1", "RECOURS_2", "RECOURS_2_CCJA"] as const;
 export type TypeEtape = (typeof TypeEtape)[number];
 
 /** Cycle de vie d'une étape (RG-DOS-04). L'ordre du tableau est celui de la progression. */

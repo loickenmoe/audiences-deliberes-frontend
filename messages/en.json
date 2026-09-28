@@ -132,8 +132,9 @@
     },
     "TypeEtape": {
       "INSTANCE": "First instance",
-      "RECOURS_1": "First appeal",
-      "RECOURS_2": "Second appeal"
+      "RECOURS_1": "Appeal",
+      "RECOURS_2": "Supreme Court appeal",
+      "RECOURS_2_CCJA": "CCJA appeal"
     },
     "StatutCycleVie": {
       "OUVERTURE": "Opened",

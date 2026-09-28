@@ -131,9 +131,10 @@
       "EXPLOITATION_LITIGES": "Litiges d’exploitation"
     },
     "TypeEtape": {
-      "INSTANCE": "Instance",
-      "RECOURS_1": "Premier recours",
-      "RECOURS_2": "Second recours"
+      "INSTANCE": "Première instance",
+      "RECOURS_1": "Appel",
+      "RECOURS_2": "Pourvoi en cassation",
+      "RECOURS_2_CCJA": "Pourvoi CCJA"
     },
     "StatutCycleVie": {
       "OUVERTURE": "Ouverture",

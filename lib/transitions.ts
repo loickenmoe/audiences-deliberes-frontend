@@ -36,7 +36,24 @@ export function estExerciceDeRecours(de: StatutCycleVie, vers: StatutCycleVie): 
   return de === "DELIBERE_VIDE" && vers === "EN_COURS";
 }
 
-const ORDRE_ETAPES: readonly TypeEtape[] = ["INSTANCE", "RECOURS_1", "RECOURS_2"];
+/** Ordre d'affichage et de proposition des étapes, du premier degré aux deux cassations. */
+const ORDRE_ETAPES: readonly TypeEtape[] = ["INSTANCE", "RECOURS_1", "RECOURS_2", "RECOURS_2_CCJA"];
+
+/**
+ * Ce que le **backend** crée en plus lors d'un positionnement direct
+ * (`DossierService.etapesPrecedentes`). Écrit ici comme une table, et non déduit d'un rang : le
+ * pourvoi CCJA a les mêmes antécédents que le pourvoi national — l'instance et l'appel — et **non**
+ * la Cour Suprême, puisque les deux cassations sont concurrentes.
+ *
+ * Un calcul par rang aurait annoncé à l'écran la création d'une étape Cour Suprême que le serveur
+ * ne crée pas : l'utilisateur aurait confirmé un effet de bord imaginaire.
+ */
+const ETAPES_PRECEDENTES: Record<TypeEtape, readonly TypeEtape[]> = {
+  INSTANCE: [],
+  RECOURS_1: ["INSTANCE"],
+  RECOURS_2: ["INSTANCE", "RECOURS_1"],
+  RECOURS_2_CCJA: ["INSTANCE", "RECOURS_1"],
+};
 
 /**
  * Étapes qu'un positionnement direct créerait en plus de celle demandée.
@@ -49,8 +66,7 @@ export function etapesIntermediairesCreees(
   demandee: TypeEtape,
   existantes: readonly TypeEtape[],
 ): TypeEtape[] {
-  const rang = ORDRE_ETAPES.indexOf(demandee);
-  return ORDRE_ETAPES.slice(0, rang).filter((type) => !existantes.includes(type));
+  return ETAPES_PRECEDENTES[demandee].filter((type) => !existantes.includes(type));
 }
 
 /** Étapes encore absentes du dossier, donc créables. */

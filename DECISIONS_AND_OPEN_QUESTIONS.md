@@ -423,6 +423,46 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Les deux pourvois en cassation — Cour Suprême et CCJA *(2026-09-28)*
+
+**Ce que le métier a dit.** Un même dossier peut être porté devant la **Cour Suprême et devant la
+CCJA en même temps**. Ce ne sont pas deux degrés successifs : ce sont deux ordres juridictionnels,
+national et supranational OHADA, saisis par des pourvois distincts, chacun avec ses audiences, son
+délibéré et sa décision.
+
+**La proposition initiale du porteur du projet** — deux lignes `RECOURS_2` sur le même dossier —
+butait sur trois obstacles relevés dans l'existant :
+- **deux lignes du même type sont indiscernables à l'écran** : le libellé d'une étape se déduit de
+  son seul type, et le sélecteur « Choisissez une étape » aurait affiché « Second recours » deux
+  fois, au moment précis où le juriste planifie une audience ;
+- **le code suppose l'unicité** : `findByDossierIdAndType` rend un `Optional` — deux lignes le font
+  lever une `NonUniqueResultException` — et `creerEtape` refuse explicitement un type déjà présent ;
+- **le tri des étapes est alphabétique** sur la colonne `type` (`@Enumerated(STRING)`), et l'ordre
+  procédural n'est respecté que parce que `'INSTANCE' < 'RECOURS_1' < 'RECOURS_2'`. C'est ce tri qui
+  décide de l'étape courante affichée dans la liste des dossiers.
+
+**Tranché : une quatrième valeur, `RECOURS_2_CCJA`.** Elle préserve l'unicité du type par dossier —
+donc toutes les requêtes existantes gardent leur sens — et donne des libellés distincts sans rien
+retoucher aux sélecteurs. Son nom est choisi pour que `'RECOURS_2' < 'RECOURS_2_CCJA'` : l'ordre
+d'affichage et le calcul de l'étape courante restent justes. Une valeur nommée `CCJA` ou
+`CASSATION` se serait rangée **avant** `INSTANCE`, sans que rien n'échoue.
+
+**Trois conséquences, écrites pour ne pas être redécouvertes :**
+- `RECOURS_2_CCJA` a pour antécédents l'instance et l'appel, **jamais** `RECOURS_2` : positionner un
+  dossier directement en CCJA ne doit pas faire naître une étape Cour Suprême fantôme. Le frontend
+  porte la même table (`ETAPES_PRECEDENTES`), sans quoi l'écran annoncerait un effet de bord que le
+  serveur ne produit pas ;
+- le pourvoi CCJA **ne s'ouvre jamais automatiquement** : il ne suit aucune étape, il se décide ;
+- la colonne « Étape » de la liste montre **les deux** cassations quand elles coexistent. N'en
+  afficher qu'une aurait caché la moitié de la procédure, et laquelle aurait dépendu d'un tri.
+
+**Libellés revus au passage**, à la demande du métier : Première instance, Appel, Pourvoi en
+cassation, Pourvoi CCJA — au lieu d'Instance, Premier recours, Second recours.
+
+**Limite assumée.** Ce modèle ne permet pas deux procédures simultanées de **même nature** — deux
+appels, par exemple. Le métier n'en a pas fait état ; si le cas se présente, il faudra alors
+plusieurs étapes de même type distinguées par leur juridiction, avec la reprise que cela suppose.
+
 ### ✅ RG-AUD-07 amendée — une audience s'enregistre aussi le jour même et après coup *(2026-09-23)*
 
 **Constat, vérifié dans le code.** `AudienceService.planifierAudience` exigeait une date

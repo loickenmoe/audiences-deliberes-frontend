@@ -51,7 +51,19 @@ describe("positionnement direct", () => {
   });
 
   it("ne propose que les étapes encore absentes", () => {
-    expect(etapesCreables(["INSTANCE"])).toEqual(["RECOURS_1", "RECOURS_2"]);
-    expect(etapesCreables(["INSTANCE", "RECOURS_1", "RECOURS_2"])).toEqual([]);
+    expect(etapesCreables(["INSTANCE"])).toEqual(["RECOURS_1", "RECOURS_2", "RECOURS_2_CCJA"]);
+    expect(etapesCreables(["INSTANCE", "RECOURS_1", "RECOURS_2"])).toEqual(["RECOURS_2_CCJA"]);
+    expect(etapesCreables(["INSTANCE", "RECOURS_1", "RECOURS_2", "RECOURS_2_CCJA"])).toEqual([]);
+  });
+
+  /**
+   * Le pourvoi CCJA a les mêmes antécédents que le pourvoi national, et **non** la Cour Suprême :
+   * les deux cassations sont concurrentes. Annoncer la création d'une étape Cour Suprême aurait
+   * fait confirmer à l'utilisateur un effet de bord que le backend ne produit pas.
+   */
+  it("n'annonce pas la Cour Suprême quand on positionne directement en CCJA", () => {
+    expect(etapesIntermediairesCreees("RECOURS_2_CCJA", ["INSTANCE"])).toEqual(["RECOURS_1"]);
+    expect(etapesIntermediairesCreees("RECOURS_2_CCJA", ["INSTANCE", "RECOURS_1"])).toEqual([]);
+    expect(etapesIntermediairesCreees("RECOURS_2_CCJA", [])).not.toContain("RECOURS_2");
   });
 });

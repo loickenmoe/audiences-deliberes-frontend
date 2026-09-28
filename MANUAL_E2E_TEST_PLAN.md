@@ -128,6 +128,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-017 | GED : dépôt, aperçu, demande de suppression, arbitrage | JUR → DJ | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-018 | Rapport journalier GED | AST ou JUR | Basse | REC-E2E-017 | ☐ |
 | REC-E2E-019 | Décisions définitives : adjudication et condamnation | JUR | Moyenne | Une étape au statut `CLOTURE` | ☐ |
+| REC-E2E-027 | Les deux pourvois : Cour Suprême et CCJA sur le même dossier | JUR | Moyenne | REC-E2E-003 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -265,7 +266,7 @@ Référence `DOS-REC-003`, nature de catégorie **Recouvrement**, client `CLI-RE
 | 6 | JUR | Joindre le PDF dans la zone des pièces, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
 | 7 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés | | ☐ |
 | 8 | JUR | Onglet « Documents » | Le PDF déposé est listé avec son nom | | ☐ |
-| 9 | JUR | Onglet « Étapes » | Une étape **Instance** existe, au statut **Ouverture** | | ☐ |
+| 9 | JUR | Onglet « Étapes » | Une étape **Première instance** existe, au statut **Ouverture** | | ☐ |
 | 10 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
 | 11 | JUR | Onglet « Historique » | La création et le changement de statut sont tracés, en français, avec l'auteur et l'heure | | ☐ |
 | 12 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
@@ -1185,6 +1186,43 @@ La fiche client donne une vue complète des procédures du client, quelle que so
 
 ### Points de contrôle
 - La vue consolidée ignore volontairement l'affectation du juriste connecté.
+
+---
+
+## REC-E2E-027 — Les deux pourvois : Cour Suprême et CCJA
+
+### Objectif
+Valider qu'un dossier peut être porté devant les deux juridictions de cassation en même temps, que
+chacune suit sa propre vie, et qu'ouvrir l'une ne fait pas naître l'autre.
+
+### Acteurs
+Juriste (`juriste.test`).
+
+### Préconditions
+Un dossier existe (REC-E2E-003).
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | JUR | Fiche du dossier → onglet « Étapes » → liste « Choisissez une étape » | Quatre valeurs : Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA | | ☐ |
+| 2 | JUR | Choisir **Pourvoi CCJA** → « Positionner » | La confirmation annonce la création de l'**Appel**, et **ne mentionne pas** le Pourvoi en cassation | | ☐ |
+| 3 | JUR | Confirmer | Le dossier porte Première instance, Appel et **Pourvoi CCJA**. Aucune étape Cour Suprême n'a été créée | | ☐ |
+| 4 | JUR | Choisir **Pourvoi en cassation** → « Positionner » → confirmer | Les deux cassations coexistent désormais sur le dossier | | ☐ |
+| 5 | JUR | Lire le message sous la liste des étapes | « Toutes les étapes existent déjà. » | | ☐ |
+| 6 | JUR | Passer le **Pourvoi en cassation** à « En cours », et laisser le Pourvoi CCJA en « Ouverture » | Les deux statuts sont indépendants : l'un avance sans l'autre | | ☐ |
+| 7 | JUR | Onglet « Audiences » → « Planifier une audience » | La liste des étapes distingue clairement les deux pourvois par leur libellé | | ☐ |
+| 8 | JUR | Menu « Dossiers », rechercher le dossier | La colonne « Étape » montre **les deux** pastilles, avec leurs statuts respectifs | | ☐ |
+
+### Résultat final attendu
+Le dossier porte quatre étapes, dont deux cassations concurrentes aux statuts indépendants, visibles
+l'une et l'autre depuis la liste des dossiers.
+
+### Points de contrôle
+- Le pourvoi CCJA **ne s'ouvre jamais tout seul** : exercer un recours depuis l'appel ouvre la
+  cassation nationale, jamais la CCJA — celle-ci se décide et se positionne à la main.
+- Les libellés sont ceux du métier : Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA.
+- Aucune étape Cour Suprême fantôme n'apparaît quand on positionne directement en CCJA.
 
 ---
 

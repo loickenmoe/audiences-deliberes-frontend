@@ -89,13 +89,25 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       {
         id: "etape",
         header: t("colonneEtape"),
-        // La dernière étape ouverte est l'étape courante : les étapes arrivent triées par type.
+        /*
+         * L'étape la plus avancée — les étapes arrivent triées par type — **et** le pourvoi CCJA
+         * s'il existe, car les deux cassations sont concurrentes : un dossier peut être devant la
+         * Cour Suprême et devant la CCJA en même temps, l'une en délibéré et l'autre clôturée.
+         * N'en montrer qu'une reviendrait à cacher la moitié de la procédure, et laquelle serait
+         * cachée dépendrait d'un ordre de tri.
+         */
         cell: ({ row }) => {
-          const courante = row.original.etapes.at(-1);
-          return courante ? (
-            <CycleEtape statut={courante.statutCycleVie} type={courante.type} compact />
-          ) : (
-            "—"
+          const etapes = row.original.etapes;
+          const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
+          const principale = etapes.filter((etape) => etape.type !== "RECOURS_2_CCJA").at(-1);
+          const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
+          if (aMontrer.length === 0) return "—";
+          return (
+            <div className="flex flex-wrap gap-1">
+              {aMontrer.map((etape) => (
+                <CycleEtape key={etape.id} statut={etape.statutCycleVie} type={etape.type} compact />
+              ))}
+            </div>
           );
         },
       },
