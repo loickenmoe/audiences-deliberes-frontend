@@ -495,7 +495,6 @@
     "champPvTransfert": "Transfer record",
     "champIncidentCompte": "Account incident reference",
     "champElementsJustificatifs": "Supporting evidence",
-    "champAlarme": "Alarm field",
     "champJuristes": "Assigned lawyers",
     "champAvocats": "Assigned counsel",
     "champEstSensible": "Sensitive case",
@@ -519,7 +518,9 @@
     "filtreStatutEtape": "Stage status",
     "filtreAudienceDebut": "Hearing from",
     "filtreAudienceFin": "Hearing to",
-    "filtreTri": "Sort by"
+    "filtreTri": "Sort by",
+    "renvoiAlarmes": "Follow-up alarms are set from the case file, under “Alarms”: they carry a due date and notify their author on the day.",
+    "champAlarmeHerite": "Note entered at creation (field removed)"
   },
   "fiche": {
     "retour": "Back to cases",

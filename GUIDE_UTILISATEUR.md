@@ -105,6 +105,11 @@ et J-1. Une audience en double sur la même étape et la même date est signalé
 **Le calendrier** (*Calendrier*) présente les audiences par semaine, mois ou trimestre, et s'exporte
 en PDF ou Excel.
 
+**Les alarmes** sont vos rappels de suivi : fiche du dossier, onglet *Alarmes*. Une alarme porte un
+objet et une échéance, et prévient son auteur le jour dit ; la reprogrammer clôt l'ancienne et en
+crée une nouvelle. C'est le seul mécanisme de rappel : aucun champ du formulaire de création n'en
+produit.
+
 **Un délibéré** s'enregistre à l'issue de l'audience. Il peut être **prorogé** — au-delà du seuil
 configuré, une alerte part au DJ et à la DJA — ou **rabattu**, ce qui rouvre l'étape et permet de
 planifier de nouvelles audiences. Le résultat rendu clôt le délibéré.

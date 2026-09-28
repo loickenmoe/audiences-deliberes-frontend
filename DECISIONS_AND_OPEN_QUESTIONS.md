@@ -423,6 +423,43 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Le « champ d'alarme » retiré du formulaire de création *(2026-09-28)*
+
+**La question du porteur du projet.** « Sur le formulaire de création de dossier, il y a un champ
+alarme. J'aimerais savoir son rôle, s'il est important ou pas. »
+
+**Vérification faite : il ne faisait rien.** `dossier.champ_alarme` est un texte libre hérité du
+dictionnaire de données initial (`V1__schema_initial.sql`). Son cycle de vie complet : saisi à la
+création, stocké, réaffiché en synthèse. **Aucun planificateur ne le lit, aucune alerte n'en naît,
+aucune recherche ne le traverse**, et il n'est même pas modifiable après coup — il n'apparaît que
+dans `CreerDossierRequest`.
+
+Le backend le disait déjà (Q-04) : la colonne est **« vestigiale, supplantée par la table `alarme`
+en M6 »**, parce qu'un champ unique en texte libre est « incapable de porter plusieurs alarmes ni
+une échéance exploitable par un planificateur ».
+
+**Le danger n'était pas le champ, c'était son nom.** Un juriste qui lisait « Champ d'alarme » à la
+création et y écrivait « relancer l'avocat avant le 15 mars » repartait convaincu d'avoir posé un
+rappel. Rien ne se serait déclenché. Deux choses portaient le même mot, une seule agissait, et le
+champ n'avait même pas de texte d'aide pour les distinguer. C'est le genre d'écart qu'une recette ne
+voit pas : l'écran fonctionne, il enregistre bien ce qu'on lui donne.
+
+**Vérifié en base avant d'agir** : sur les 253 dossiers de l'environnement de recette, **aucun** ne
+portait de valeur. Personne ne s'en servait — le retrait ne prive personne de rien.
+
+**Retiré du formulaire**, remplacé par un renvoi d'une ligne vers les alarmes de la fiche, qui
+portent une échéance et préviennent leur auteur le jour dit. **La colonne reste en base** : aucune
+migration, aucune donnée perdue, le backend n'est pas touché — il accepte toujours `champAlarme`,
+l'écran ne l'envoie simplement plus.
+
+**En synthèse, la ligne ne s'affiche plus que si elle porte une valeur**, sous le libellé « Note
+saisie à la création (champ retiré) ». Elle affichait « — » sur les 253 dossiers ; et laisser le mot
+« alarme » sur une donnée héritée aurait reconduit la promesse trompeuse.
+
+**Ce qui n'a pas été fait**, faute de demande : supprimer la colonne. Une migration `DROP COLUMN`
+est irréversible et ne gagnerait rien — la colonne ne coûte rien et pourrait porter des données
+dans un autre environnement que celui de recette.
+
 ### ✅ Filtrer et trier la liste des dossiers *(2026-09-28)*
 
 **Ce que le métier a demandé.** « On doit être capable de trier les dossiers en fonction de leur

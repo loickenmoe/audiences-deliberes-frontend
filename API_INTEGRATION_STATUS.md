@@ -75,6 +75,9 @@
     un 400 si elle diverge : le frontend ne l'envoie pas ;
   · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), désormais validé
     contre le référentiel (Q-73).
+  · `champAlarme` **n'est plus envoyé** depuis le 2026-09-28 : le champ ne déclenchait rien et son
+    nom promettait un rappel. Le backend l'accepte toujours ; les alarmes qui agissent passent par
+    `POST /dossiers/{id}/alarmes`.
 - **#2** — `reference` (partielle, insensible à la casse), `clientId` et `mesDossiers` ont été
   ajoutés au backend en M16 (Q-72, QF-07). `mesDossiers` se résout sur **l'utilisateur
   authentifié** : il ne permet pas de consulter le portefeuille d'un collègue.

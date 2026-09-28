@@ -495,7 +495,6 @@
     "champPvTransfert": "PV de transfert",
     "champIncidentCompte": "Référence de l’incident de compte",
     "champElementsJustificatifs": "Éléments justificatifs",
-    "champAlarme": "Champ d’alarme",
     "champJuristes": "Juristes affectés",
     "champAvocats": "Avocats affectés",
     "champEstSensible": "Dossier sensible",
@@ -519,7 +518,9 @@
     "filtreStatutEtape": "Statut de l'étape",
     "filtreAudienceDebut": "Audience du",
     "filtreAudienceFin": "Audience au",
-    "filtreTri": "Trier par"
+    "filtreTri": "Trier par",
+    "renvoiAlarmes": "Les alarmes de suivi se posent depuis la fiche du dossier, onglet « Alarmes » : elles portent une échéance et préviennent leur auteur le jour dit.",
+    "champAlarmeHerite": "Note saisie à la création (champ retiré)"
   },
   "fiche": {
     "retour": "Retour aux dossiers",

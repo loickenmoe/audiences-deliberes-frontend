@@ -441,12 +441,15 @@ Objet `Relancer le greffe`, échéance dans 2 jours ; puis objet `Appeler l'huis
 | 3 | JUR | Cliquer « Reprogrammer » sur cette alarme, choisir une nouvelle échéance → enregistrer | L'échéance est mise à jour ; l'alarme d'origine est close et remplacée | | ☐ |
 | 4 | JUR | Cliquer « Marquer traitée » | Une confirmation s'affiche ; l'alarme quitte les alarmes actives | | ☐ |
 | 5 | JUR | Créer une alarme avec une **échéance passée** | Refus : l'échéance doit être future. Depuis le 2026-09-23, la règle est tenue par l'écran **et** par le serveur | | ☐ |
+| 6 | JUR | Ouvrir *Dossiers* → *Nouveau dossier* et chercher un champ « alarme » | Il n'y en a plus : à sa place, une phrase renvoie à l'onglet « Alarmes » de la fiche. Ce champ n'a jamais rien déclenché (retiré le 2026-09-28) | | ☐ |
 
 ### Résultat final attendu
 Le dossier porte au moins une alarme traitée et une alarme active à échéance future.
 
 ### Points de contrôle
 - Marquer traitée **clôt** l'alarme sans en créer une nouvelle ; reprogrammer **remplace**.
+- **L'onglet « Alarmes » de la fiche est le seul mécanisme de rappel.** Aucun champ du formulaire de
+  création n'en produit — celui qui en portait le nom a été retiré le 2026-09-28.
 - Les alarmes échues remontent dans les files de l'accueil du juriste.
 
 ---

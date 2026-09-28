@@ -105,7 +105,6 @@ export function FormulaireDossier({
           pvTransfert: z.string().max(255).optional(),
           incidentCompteReference: z.string().max(50).optional(),
           elementsJustificatifs: z.string().optional(),
-          champAlarme: z.string().optional(),
           estSensible: z.boolean().optional(),
           seuilMontant: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
           typeClientSensible: z.string().optional(),
@@ -227,7 +226,6 @@ export function FormulaireDossier({
           categorie === "EXPLOITATION_LITIGES" ? valeurs.incidentCompteReference || undefined : undefined,
         elementsJustificatifs:
           categorie === "EXPLOITATION_LITIGES" ? valeurs.elementsJustificatifs || undefined : undefined,
-        champAlarme: valeurs.champAlarme || undefined,
         estSensible: valeurs.estSensible ?? false,
         seuilMontant: valeurs.estSensible ? Number(valeurs.seuilMontant) : undefined,
         typeClientSensible: valeurs.estSensible ? valeurs.typeClientSensible || undefined : undefined,
@@ -454,10 +452,16 @@ export function FormulaireDossier({
               </div>
             ) : null}
 
-            {/* Ce n'est pas une pièce : il siégeait à tort dans le bloc des pièces (2026-09-22). */}
-            <Champ id="champAlarme" label={t("champAlarme")}>
-              <Input id="champAlarme" {...register("champAlarme")} />
-            </Champ>
+            {/*
+              Le « champ d'alarme » a été retiré d'ici (2026-09-28). C'était un texte libre que
+              **rien ne lisait** : ni planificateur, ni alerte, ni recherche. Un juriste qui y
+              écrivait « relancer l'avocat avant le 15 mars » repartait convaincu d'avoir posé un
+              rappel, et rien ne se déclenchait. Les alarmes qui agissent vivent dans la table
+              `alarme` depuis M6 (Q-04), avec une échéance et un destinataire.
+            */}
+            <p className="text-[length:var(--taille-xs)] text-texte-tertiaire sm:col-span-2">
+              {t("renvoiAlarmes")}
+            </p>
           </CardContent>
         </Card>
 
