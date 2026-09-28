@@ -423,6 +423,52 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Journal des audiences et comptes rendus attendus *(2026-09-28)*
+
+**Ce que le métier a demandé.** « Avoir les comptes rendus de toutes les audiences tenues un jour
+précis, pour une vue d'ensemble, et établir les responsabilités — quel responsable d'un dossier n'a
+pas fait de compte rendu. » Interrogé sur le compte rendu qui compte, le métier a répondu : **les
+deux**, celui du juriste et celui de l'avocat.
+
+**Aucune donnée n'a été ajoutée.** Le statut `TENUE` n'est posé qu'à la saisie du compte rendu : une
+audience dont la date est passée et qui reste `PLANIFIEE` est donc, sans ambiguïté, une audience
+dont le compte rendu manque. Créer un indicateur « compte rendu manquant » aurait dupliqué une
+vérité que le statut porte déjà, avec le risque ordinaire des duplications : diverger.
+
+**Deux lectures, pas une.** Ce qui s'est passé tel jour, et ce qui n'a toujours pas été rapporté :
+la première se regarde chaque matin, la seconde de loin en loin. Les mêler aurait obligé à choisir
+une date pour voir des retards qui n'en dépendent pas.
+
+**Trois décisions de fond :**
+- les deux comptes rendus sont montrés **côte à côte**, jamais l'un à la place de l'autre. Élire
+  celui du juriste ferait reprocher un manquement là où l'avocat a déjà rendu compte ; élire celui
+  de l'avocat masquerait que la banque n'a rien consigné ;
+- seuls les dépôts d'avocat **validés** comptent : un dépôt en attente n'est lisible d'aucun
+  juriste, et le compter comme rendu ferait croire à une information disponible ;
+- **la journée en cours n'est jamais un retard.** La borne haute des comptes rendus attendus
+  s'arrête à hier, quelle que soit la fenêtre demandée — sans quoi chaque matin aurait fait
+  apparaître des manquements imaginaires.
+
+**Ouvert aux juristes, au DJ et à la DJA.** Je l'avais d'abord réservé à la direction, par prudence :
+l'écran nomme des personnes et mesure ce qu'elles ont rapporté, et NF-CONF-01 (confidentialité,
+« à définir avec la DRH ») n'est pas tranchée. Le porteur du projet a élargi l'accès le 2026-09-28 :
+savoir ce qui s'est dit aux audiences du jour fait partie du métier du juriste, et le compte rendu
+attendu est le sien. La réserve NF-CONF-01 demeure, et elle porte désormais sur un écran visible de
+tous les profils internes.
+
+**Trois ajustements du 2026-09-28**, à la relecture du porteur du projet :
+- **la pièce jointe au compte rendu de l'avocat** — plumitif, note d'audience — est consultable
+  depuis le journal, par une adresse signée. Le modèle la portait déjà (`CompteRenduAudience.
+  cheminStockage`) ; l'écran l'ignorait, et affichait donc le récit en taisant le document qui
+  l'appuie ;
+- **les deux tableaux sont paginés**, comme les autres listes du système. Ils ne l'étaient pas :
+  une journée chargée ou un mois de retards auraient produit une page interminable ;
+- l'accès est élargi aux juristes, ci-dessus.
+
+**Limite connue.** L'écran nomme les juristes **affectés au dossier**, non un responsable de
+l'audience : cette notion n'existe pas dans le modèle. Un dossier suivi à deux porte donc deux noms,
+sans que le journal désigne lequel devait écrire. Le métier tranchera s'il veut aller plus loin.
+
 ### ✅ Les deux pourvois en cassation — Cour Suprême et CCJA *(2026-09-28)*
 
 **Ce que le métier a dit.** Un même dossier peut être porté devant la **Cour Suprême et devant la

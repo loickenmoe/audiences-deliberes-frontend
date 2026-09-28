@@ -129,6 +129,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-018 | Rapport journalier GED | AST ou JUR | Basse | REC-E2E-017 | ☐ |
 | REC-E2E-019 | Décisions définitives : adjudication et condamnation | JUR | Moyenne | Une étape au statut `CLOTURE` | ☐ |
 | REC-E2E-027 | Les deux pourvois : Cour Suprême et CCJA sur le même dossier | JUR | Moyenne | REC-E2E-003 | ☐ |
+| REC-E2E-028 | Journal des audiences et comptes rendus attendus | JUR → DJ | Haute | REC-E2E-006 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1223,6 +1224,48 @@ l'une et l'autre depuis la liste des dossiers.
   cassation nationale, jamais la CCJA — celle-ci se décide et se positionne à la main.
 - Les libellés sont ceux du métier : Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA.
 - Aucune étape Cour Suprême fantôme n'apparaît quand on positionne directement en CCJA.
+
+---
+
+## REC-E2E-028 — Journal des audiences et comptes rendus attendus
+
+### Objectif
+Valider que la direction voit, pour une journée donnée, ce qui a été rapporté de chaque audience —
+par le juriste comme par l'avocat — et retrouve les comptes rendus qui manquent encore.
+
+### Acteurs
+Juriste (`juriste.test`), avocat (`avocat.test`), puis DJ (`dj.test`).
+
+### Préconditions
+Un dossier avec un avocat affecté (REC-E2E-003).
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | JUR | Planifier une audience **datée d'aujourd'hui** sur le dossier | L'audience apparaît, au statut Planifiée | | ☐ |
+| 2 | DJ | Menu « Journal des audiences » → date du jour | L'audience figure, colonne « Compte rendu du juriste » marquée **Manquant** en rouge, colonne avocat **Non déposé** | | ☐ |
+| 3 | JUR | Saisir le compte rendu de l'audience | Message de confirmation | | ☐ |
+| 4 | DJ | Recharger le journal | Le texte du compte rendu s'affiche à la place de « Manquant » | | ☐ |
+| 5 | AVO | Déposer un **compte rendu d'audience** sur cette même audience | Dépôt confirmé | | ☐ |
+| 6 | DJ | Recharger le journal | La colonne avocat affiche toujours **Non déposé** : le dépôt n'est pas encore validé | | ☐ |
+| 7 | AST | Valider la publication | Publication validée | | ☐ |
+| 8 | DJ | Recharger le journal | Les **deux** comptes rendus s'affichent côte à côte | | ☐ |
+| 9 | DJ | Bloc « Comptes rendus attendus », fenêtre du dernier mois | Les audiences passées sans compte rendu y figurent, avec leur ancienneté en jours | | ☐ |
+| 10 | DJ | Vérifier qu'une audience **du jour** sans compte rendu n'y figure pas | Absente : la journée n'est pas finie, elle n'est pas en retard | | ☐ |
+| 11 | DJ | Saisir une date de début **postérieure** à la date de fin | Message explicite à l'écran, pas d'erreur technique | | ☐ |
+| 12 | JUR | Ouvrir `http://172.21.10.151:3000/audiences/journal` avec le compte juriste | Écran « Vous n'avez pas les droits nécessaires » | | ☐ |
+
+### Résultat final attendu
+La direction dispose d'une vue quotidienne des audiences et de leurs comptes rendus, et d'une liste
+des comptes rendus qui manquent, avec leur ancienneté.
+
+### Points de contrôle
+- Un compte rendu **manquant** (rouge) et un dépôt d'avocat **non fait** (gris) ne se confondent pas.
+- Un dépôt d'avocat **non validé** ne compte pas comme rapporté.
+- L'écran nomme les juristes **affectés au dossier**, pas un responsable de l'audience : un dossier
+  suivi à deux affiche deux noms. C'est une limite connue, pas un défaut.
+- L'écran est réservé au DJ et à la DJA, comme l'audit.
 
 ---
 

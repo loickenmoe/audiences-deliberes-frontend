@@ -57,7 +57,8 @@
     "monEspace": "My workspace",
     "deposerFrais": "File a claim",
     "deposerPublication": "Submit a publication",
-    "audit": "Audit"
+    "audit": "Audit",
+    "journalAudiences": "Hearing log"
   },
   "accueil": {
     "titre": "Home",
@@ -1551,5 +1552,31 @@
       "format": "Format",
       "lignes": "Rows"
     }
+  },
+  "journalAudiences": {
+    "titre": "Hearing log",
+    "description": "What was reported from a day’s hearings, and what is still missing.",
+    "journalTitre": "Hearings of the day",
+    "journalVide": "No hearing on that day.",
+    "champDate": "Date",
+    "colonneDossier": "Case",
+    "colonneEtape": "Stage",
+    "colonneJuristes": "Assigned lawyers",
+    "colonneCompteRenduJuriste": "In-house report",
+    "colonneCompteRenduAvocat": "Counsel report",
+    "manquant": "Missing",
+    "nonDepose": "Not filed",
+    "attendusTitre": "Outstanding reports",
+    "attendusAide": "Past hearings whose in-house report has not been entered. Today is never listed: it is not late.",
+    "attendusVide": "No outstanding report over this period.",
+    "du": "From",
+    "au": "To",
+    "fenetreInversee": "The start date is after the end date.",
+    "colonneDate": "Hearing date",
+    "colonneRetard": "Delay",
+    "colonneAvocat": "Counsel side",
+    "joursDeRetard": "{jours} day(s)",
+    "avocatARendu": "Counsel reported",
+    "consulterPiece": "View attachment"
   }
 }

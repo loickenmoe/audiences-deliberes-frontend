@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 
 /**
@@ -18,6 +18,14 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.getByLabel("Mot de passe", { exact: true }).fill(MOT_DE_PASSE);
   await page.getByRole("button", { name: "Connexion" }).click();
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
+}
+
+/** Une session à part, pour les parcours qui font travailler deux rôles l'un après l'autre. */
+async function pageConnectee(browser: Browser, identifiant: string) {
+  const contexte = await browser.newContext({ locale: "fr-FR" });
+  const page = await contexte.newPage();
+  await seConnecter(page, identifiant);
+  return page;
 }
 
 function suffixe() {
@@ -261,6 +269,70 @@ test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel
   const excel = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exporter en Excel" }).click();
   expect((await excel).suggestedFilename()).toMatch(/\.xlsx$/);
+});
+
+/**
+ * Écran 44 — journal des audiences (observation métier du 2026-09-25).
+ *
+ * Le parcours crée une audience du jour, saisit son compte rendu, puis vérifie que le journal du
+ * DJ la rapporte. C'est la chaîne complète : ce qu'un juriste écrit doit se lire dans la vue
+ * d'ensemble de la direction, sans autre geste.
+ */
+test("le journal du jour rapporte le compte rendu que le juriste vient de saisir", async ({ browser }) => {
+  const juriste = await pageConnectee(browser, "juriste.test");
+  const reference = await dossierEnCours(juriste);
+  await juriste.getByRole("tab", { name: "Audiences" }).click();
+  await juriste.getByRole("button", { name: "Planifier une audience" }).click();
+  await juriste.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(0));
+  await juriste
+    .getByRole("dialog", { name: "Planifier une audience" })
+    .getByRole("button", { name: "Enregistrer" })
+    .click();
+  await expect(juriste.getByRole("cell", { name: "Planifiée", exact: true })).toHaveCount(1);
+
+  await juriste.getByRole("button", { name: "Saisir le compte rendu" }).click();
+  const modale = juriste.getByRole("dialog", { name: "Compte rendu d’audience" });
+  await modale.getByLabel("Compte rendu", { exact: true }).fill("Renvoi contradictoire au mois prochain.");
+  await modale.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(juriste.getByText("Compte rendu enregistré.")).toBeVisible();
+  await juriste.context().close();
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/audiences/journal");
+  await expect(dj.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
+
+  /*
+   * Le journal est paginé, et une journée de recette accumule les audiences des exécutions
+   * précédentes : on élargit la page comme le ferait la personne qui cherche son dossier, plutôt
+   * que d'avancer page par page — la donnée précédente restant affichée pendant le chargement, une
+   * boucle de clics dépasserait la bonne page sans la voir.
+   */
+  const sectionJournal = dj.getByRole("region", { name: "Audiences du jour" });
+  await sectionJournal.getByLabel("Lignes par page").selectOption("50");
+
+  const ligne = sectionJournal.getByRole("row", { name: new RegExp(reference) });
+  await expect(ligne).toContainText("Renvoi contradictoire au mois prochain.");
+  // L'avocat n'a rien déposé : l'écran le dit, sans le confondre avec un compte rendu manquant.
+  await expect(ligne).toContainText("Non déposé");
+  await dj.context().close();
+});
+
+/**
+ * Le journal est ouvert aux juristes depuis le 2026-09-28 : savoir ce qui s'est dit aux audiences
+ * du jour fait partie de leur métier. Il reste fermé aux profils qui n'écrivent pas de compte rendu.
+ */
+test("le journal des audiences est ouvert aux juristes, fermé à l'Assistante", async ({ browser }) => {
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/audiences/journal");
+  await expect(juriste.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
+  await juriste.context().close();
+
+  const assistante = await pageConnectee(browser, "assistante.test");
+  await assistante.goto("/audiences/journal");
+  await expect(
+    assistante.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" }),
+  ).toBeVisible();
+  await assistante.context().close();
 });
 
 test("le calendrier est réservé au juriste et au DJ", async ({ page }) => {

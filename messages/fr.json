@@ -57,7 +57,8 @@
     "monEspace": "Mon espace",
     "deposerFrais": "Déposer une demande",
     "deposerPublication": "Déposer une publication",
-    "audit": "Audit"
+    "audit": "Audit",
+    "journalAudiences": "Journal des audiences"
   },
   "accueil": {
     "titre": "Accueil",
@@ -1551,5 +1552,31 @@
       "format": "Format",
       "lignes": "Lignes"
     }
+  },
+  "journalAudiences": {
+    "titre": "Journal des audiences",
+    "description": "Ce qui s’est dit aux audiences d’une journée, et ce qui n’a pas encore été rapporté.",
+    "journalTitre": "Audiences du jour",
+    "journalVide": "Aucune audience ce jour-là.",
+    "champDate": "Date",
+    "colonneDossier": "Dossier",
+    "colonneEtape": "Étape",
+    "colonneJuristes": "Juristes affectés",
+    "colonneCompteRenduJuriste": "Compte rendu du juriste",
+    "colonneCompteRenduAvocat": "Compte rendu de l’avocat",
+    "manquant": "Manquant",
+    "nonDepose": "Non déposé",
+    "attendusTitre": "Comptes rendus attendus",
+    "attendusAide": "Audiences passées dont le compte rendu du juriste n’a pas été saisi. La journée en cours n’y figure jamais : elle n’est pas en retard.",
+    "attendusVide": "Aucun compte rendu en attente sur cette période.",
+    "du": "Du",
+    "au": "Au",
+    "fenetreInversee": "La date de début est postérieure à la date de fin.",
+    "colonneDate": "Date de l’audience",
+    "colonneRetard": "Retard",
+    "colonneAvocat": "Côté avocat",
+    "joursDeRetard": "{jours} jour(s)",
+    "avocatARendu": "L’avocat a rapporté",
+    "consulterPiece": "Consulter la pièce"
   }
 }

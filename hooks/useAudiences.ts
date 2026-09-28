@@ -23,6 +23,30 @@ export function useAlarmesDossier(dossierId: number, page = 0, size = TAILLE_PAG
   });
 }
 
+/**
+ * Écran 44 — le journal d'une journée. La donnée précédente reste affichée pendant le chargement
+ * d'une autre date : sans cela, changer de jour vide le tableau puis le remplit, ce qui donne
+ * l'impression d'une journée sans audience.
+ */
+export function useJournalAudiences(date: string, page = 0, size = TAILLE_PAGE) {
+  return useQuery({
+    queryKey: [CLES.journalAudiences, date, page, size],
+    queryFn: () => audienceService.journal(date, page, size),
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(date),
+    placeholderData: (precedent) => precedent,
+  });
+}
+
+/** Écran 44 — les comptes rendus qui manquent encore, sur une fenêtre choisie. */
+export function useComptesRendusAttendus(dateDebut: string, dateFin: string, page = 0, size = TAILLE_PAGE) {
+  return useQuery({
+    queryKey: [CLES.comptesRendusAttendus, dateDebut, dateFin, page, size],
+    queryFn: () => audienceService.comptesRendusAttendus(dateDebut, dateFin, page, size),
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(dateDebut) && /^\d{4}-\d{2}-\d{2}$/.test(dateFin),
+    placeholderData: (precedent) => precedent,
+  });
+}
+
 export function useCalendrier(periode: PeriodeCalendrier, dateDebut: string) {
   return useQuery({
     queryKey: [CLES.calendrier, periode, dateDebut],

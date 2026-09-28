@@ -863,6 +863,52 @@ export interface ConfigurationSysteme {
 }
 
 /** Une ligne du tableau de supervision des notifications externes (backend D17). */
+/**
+ * Une audience d'une journée donnée, avec ce qui en a été rapporté (backend, écran 44).
+ *
+ * Les deux comptes rendus sont rendus côte à côte : celui du juriste, saisi sur l'audience, et
+ * celui de l'avocat, déposé en publication **et validé**. C'est leur écart qui renseigne sur ce
+ * qui reste à faire.
+ */
+export interface AudienceDuJour {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string | null;
+  etape: TypeEtape | null;
+  statut: StatutAudience;
+  /** Identifiants des juristes affectés au dossier ; l'écran les nomme. */
+  juristesAffectes: number[];
+  compteRenduJuriste: string | null;
+  compteRenduAvocat: string | null;
+  avocatDuCompteRendu: number | null;
+  /**
+   * Adresse signée de la pièce accompagnant le compte rendu de l'avocat — plumitif, note
+   * d'audience —, ou `null` s'il n'en a pas joint. Le compte rendu du juriste est un texte : il
+   * n'a jamais de pièce.
+   */
+  urlPieceJointeAvocat: string | null;
+}
+
+/**
+ * Une audience passée dont le compte rendu du juriste manque encore.
+ *
+ * Le statut « tenue » n'étant posé qu'à la saisie, une audience passée restée « planifiée » est
+ * exactement une audience sans compte rendu : aucune donnée supplémentaire n'est nécessaire.
+ */
+export interface CompteRenduAttendu {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string | null;
+  etape: TypeEtape | null;
+  datePlanifiee: string;
+  joursDeRetard: number;
+  juristesAffectes: number[];
+  /** L'avocat a rapporté : reste à consigner côté banque. */
+  compteRenduAvocatDepose: boolean;
+}
+
 export interface LigneCanalNotification {
   canal: string;
   /** En file, pas encore remises au moteur. */

@@ -3,6 +3,8 @@ import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
   Alarme,
   Audience,
+  AudienceDuJour,
+  CompteRenduAttendu,
   CreerAlarme,
   EntreeCalendrier,
   PlanifierAudience,
@@ -81,6 +83,33 @@ export const audienceService = {
   calendrier: async (periode: PeriodeCalendrier, dateDebut: string): Promise<EntreeCalendrier[]> => {
     const { data } = await apiClient.get<EntreeCalendrier[]>("/audiences/calendrier", {
       params: { periode, dateDebut, format: "JSON" },
+    });
+    return data;
+  },
+
+  /** Écran 44 — les audiences d'une journée, avec les deux comptes rendus. */
+  journal: async (date: string, page = 0, size = TAILLE_PAGE): Promise<PageReponse<AudienceDuJour>> => {
+    const { data } = await apiClient.get<PageReponse<AudienceDuJour>>("/audiences/journal", {
+      params: { date, page, size },
+    });
+    return data;
+  },
+
+  /**
+   * Écran 44 — les audiences passées dont le compte rendu du juriste manque.
+   *
+   * La fenêtre est explicite : sans bornes, la liste grossirait sans fin et cesserait d'être un
+   * outil de rappel. Le backend ramène de lui-même la borne haute à hier — une audience du jour
+   * n'est pas en retard, elle est en cours.
+   */
+  comptesRendusAttendus: async (
+    dateDebut: string,
+    dateFin: string,
+    page = 0,
+    size = TAILLE_PAGE,
+  ): Promise<PageReponse<CompteRenduAttendu>> => {
+    const { data } = await apiClient.get<PageReponse<CompteRenduAttendu>>("/audiences/comptes-rendus-attendus", {
+      params: { dateDebut, dateFin, page, size },
     });
     return data;
   },
