@@ -80,6 +80,18 @@ l'onglet ouvert, un collègue retrouvera exactement la même vue.
 **Étapes.** Un dossier suit un cycle — instance, recours, exécution. Une audience ne se planifie que
 sur une étape **en cours** : si le bouton n'apparaît pas, commencez par ouvrir l'étape.
 
+**Retrouver des dossiers.** La barre de filtres croise la référence, le client, la juridiction, la
+nature, la sensibilité, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
+lisent ensemble : « Appel » + « En cours » donne les appels en cours, et non les dossiers dont
+l'appel est clôturé mais qui ont autre chose en cours. La période porte sur les **audiences** — les
+dossiers passés devant un juge entre ces deux dates, les audiences annulées exclues — et non sur la
+date d'ouverture. Un dossier porté à la fois devant la Cour Suprême et devant la CCJA remonte dans
+les deux filtres : les deux procédures existent.
+
+*Trier par* réordonne sans rien retirer : ouverture récente ou ancienne, référence, risque encouru.
+Tous ces critères s'inscrivent dans l'adresse : une recherche se transmet par copier-coller, et
+*Effacer* les remet à zéro d'un coup.
+
 ---
 
 ## 5. Audiences et délibérés

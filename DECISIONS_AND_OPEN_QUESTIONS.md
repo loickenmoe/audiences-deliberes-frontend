@@ -423,6 +423,61 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Filtrer et trier la liste des dossiers *(2026-09-28)*
+
+**Ce que le métier a demandé.** « On doit être capable de trier les dossiers en fonction de leur
+étape et pendant une période donnée. » Interrogé, il a précisé : **filtrer *et* trier** ; par **type**
+d'étape **et** par **statut** d'étape ; et la période porte sur les **audiences** — « les dossiers
+qui ont eu une audience entre telle et telle date », non ceux ouverts pendant cette période.
+
+**Le filtre d'étape porte sur une même étape.** Choisir « Appel » et « En cours » donne les appels
+en cours. L'alternative — un dossier ayant *un* appel, et par ailleurs *quelque chose* en cours —
+répond à une question que personne ne pose, et remonte des dossiers dont l'appel est clôturé depuis
+deux ans. Un test le vérifie sur un dossier piège, porteur des deux critères sur deux étapes
+différentes.
+
+**J'avais d'abord penché pour « l'étape la plus avancée »**, celle qu'affiche la colonne « Étape ».
+Le code m'a fait changer d'avis : les **deux cassations sont concurrentes** (Cour Suprême et CCJA),
+et « la plus avancée » suppose d'en élire une. Le filtre aurait alors caché un dossier selon un
+arbitrage invisible — exactement le défaut corrigé quelques jours plus tôt sur cette même colonne.
+Avec un `EXISTS`, un dossier porté devant les deux juridictions remonte dans les deux filtres :
+les deux procédures existent, et c'est ce qu'il faut dire.
+
+**Les audiences annulées sont exclues.** Une audience annulée ne s'est pas tenue ; la compter ferait
+remonter, dans « les dossiers passés devant un juge en mars », des dossiers restés muets tout le
+mois.
+
+**Deux sous-requêtes `EXISTS`, pas des jointures.** C'est le patron déjà posé pour « mes dossiers »,
+et pour la même raison : une jointure ferait remonter un dossier autant de fois qu'il a d'étapes ou
+d'audiences, et **fausserait le total de la pagination**. Deux tests le vérifient en base — un
+dossier à trois étapes, un dossier à trois audiences — parce qu'un test à mocks ne pourrait
+constater que l'appel à `cb.exists`, jamais le total.
+
+**Le tri est un vocabulaire fermé** (`TriDossiers` : ouverture récente, ouverture ancienne,
+référence, risque encouru). Spring Data sait construire un tri à partir d'une chaîne reçue du
+client, mais cela reviendrait à laisser le navigateur nommer les champs de l'entité : une propriété
+inconnue produit une erreur 500, et les noms acceptés dessinent le schéma pour qui les essaie.
+Chaque tri se termine par l'identifiant — sans quoi deux dossiers ouverts la même seconde, ce qui
+arrive à la reprise de données, peuvent changer de place entre deux pages, et une ligne s'affiche
+alors deux fois ou jamais. Un test le vérifie sur chacune des quatre valeurs.
+
+**Pas de tri par étape**, bien que le métier l'ait formulé ainsi. Il demande en réalité de
+regrouper, et le filtre y répond mieux : une fois « appel en cours » choisi, la liste ne contient
+plus que des appels en cours, et les trier entre eux par étape n'apprendrait rien. Trier sur
+l'étape supposerait en outre d'en élire une par dossier — le même écueil que ci-dessus. **Si le
+métier tient au tri par étape, il faudra lui donner un sens explicite** ; je ne l'ai pas inventé.
+
+**Tout passe par l'URL**, comme les filtres existants : une recherche se partage par copier-coller.
+Le tri par défaut n'y est pas écrit — c'est déjà celui du serveur.
+
+**Un défaut préexistant corrigé au passage.** « Effacer » vidait l'URL mais pas les champs
+*Référence* et *Juridiction* : le mot restait affiché sous un filtre qui n'agissait plus, et l'écran
+annonçait donc une recherche qui n'avait pas lieu. Ces deux champs restent non contrôlés — écrire
+dans l'URL à chaque frappe produirait une requête par caractère — mais une `key` les remonte quand
+l'URL change ; le remontage n'intervient qu'au `blur`, jamais pendant la frappe, puisque c'est le
+`blur` qui écrit. Les deux champs de date, eux, sont contrôlés : un champ date n'émet son
+changement qu'une fois la date complète.
+
 ### ✅ La juridiction propre à l'audience *(2026-09-28)*
 
 **Le constat.** Le dossier porte `juridictionSaisie` : la juridiction **de la saisine**, celle du

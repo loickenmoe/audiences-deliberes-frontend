@@ -33,6 +33,13 @@ export const StatutCycleVie = [
 ] as const;
 export type StatutCycleVie = (typeof StatutCycleVie)[number];
 
+/**
+ * Les tris offerts sur la liste des dossiers. Vocabulaire fermé, miroir de l'énuméré serveur : le
+ * navigateur ne nomme jamais une colonne, il choisit un tri.
+ */
+export const TriDossiers = ["RECENT", "ANCIEN", "REFERENCE", "RISQUE"] as const;
+export type TriDossiers = (typeof TriDossiers)[number];
+
 export const StatutValidation = ["EN_ATTENTE", "VALIDEE", "REJETEE"] as const;
 export type StatutValidation = (typeof StatutValidation)[number];
 

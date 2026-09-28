@@ -314,6 +314,12 @@
       "PDF": "PDF",
       "EXCEL": "Excel",
       "CSV": "CSV"
+    },
+    "TriDossiers": {
+      "RECENT": "Opening date, most recent first",
+      "ANCIEN": "Opening date, oldest first",
+      "REFERENCE": "Reference (A → Z)",
+      "RISQUE": "Exposure, highest first"
     }
   },
   "referentiels": {
@@ -508,7 +514,12 @@
     "non": "No",
     "filtreSensibiliteStatut": "Sensitivity",
     "filtreSensiblesSeuls": "Sensitive case files only",
-    "filtreTous": "All"
+    "filtreTous": "All",
+    "filtreTypeEtape": "Stage",
+    "filtreStatutEtape": "Stage status",
+    "filtreAudienceDebut": "Hearing from",
+    "filtreAudienceFin": "Hearing to",
+    "filtreTri": "Sort by"
   },
   "fiche": {
     "retour": "Back to cases",

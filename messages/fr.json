@@ -314,6 +314,12 @@
       "PDF": "PDF",
       "EXCEL": "Excel",
       "CSV": "CSV"
+    },
+    "TriDossiers": {
+      "RECENT": "Ouverture, plus récente d'abord",
+      "ANCIEN": "Ouverture, plus ancienne d'abord",
+      "REFERENCE": "Référence (A → Z)",
+      "RISQUE": "Risque encouru, du plus élevé"
     }
   },
   "referentiels": {
@@ -508,7 +514,12 @@
     "non": "Non",
     "filtreSensibiliteStatut": "Sensibilité",
     "filtreSensiblesSeuls": "Dossiers sensibles seulement",
-    "filtreTous": "Tous"
+    "filtreTous": "Tous",
+    "filtreTypeEtape": "Étape",
+    "filtreStatutEtape": "Statut de l'étape",
+    "filtreAudienceDebut": "Audience du",
+    "filtreAudienceFin": "Audience au",
+    "filtreTri": "Trier par"
   },
   "fiche": {
     "retour": "Retour aux dossiers",

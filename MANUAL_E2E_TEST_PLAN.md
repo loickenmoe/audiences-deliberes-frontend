@@ -130,6 +130,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-019 | Décisions définitives : adjudication et condamnation | JUR | Moyenne | Une étape au statut `CLOTURE` | ☐ |
 | REC-E2E-027 | Les deux pourvois : Cour Suprême et CCJA sur le même dossier | JUR | Moyenne | REC-E2E-003 | ☐ |
 | REC-E2E-028 | Journal des audiences et comptes rendus attendus | JUR → DJ | Haute | REC-E2E-006 | ☐ |
+| REC-E2E-029 | Filtrer et trier la liste des dossiers | JUR | Haute | REC-E2E-006 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1261,7 +1262,8 @@ Un dossier avec un avocat affecté (REC-E2E-003).
 | 9 | DJ | Bloc « Comptes rendus attendus », fenêtre du dernier mois | Les audiences passées sans compte rendu y figurent, avec leur ancienneté en jours | | ☐ |
 | 10 | DJ | Vérifier qu'une audience **du jour** sans compte rendu n'y figure pas | Absente : la journée n'est pas finie, elle n'est pas en retard | | ☐ |
 | 11 | DJ | Saisir une date de début **postérieure** à la date de fin | Message explicite à l'écran, pas d'erreur technique | | ☐ |
-| 12 | JUR | Ouvrir `http://172.21.10.151:3000/audiences/journal` avec le compte juriste | Écran « Vous n'avez pas les droits nécessaires » | | ☐ |
+| 12 | JUR | Ouvrir `http://172.21.10.151:3000/audiences/journal` avec le compte juriste | L'écran s'affiche : il a été ouvert aux juristes le 2026-09-28 | | ☐ |
+| 13 | AVO | Ouvrir la même adresse avec le compte avocat | Écran « Vous n'avez pas les droits nécessaires » | | ☐ |
 
 ### Résultat final attendu
 La direction dispose d'une vue quotidienne des audiences et de leurs comptes rendus, et d'une liste
@@ -1272,7 +1274,56 @@ des comptes rendus qui manquent, avec leur ancienneté.
 - Un dépôt d'avocat **non validé** ne compte pas comme rapporté.
 - L'écran nomme les juristes **affectés au dossier**, pas un responsable de l'audience : un dossier
   suivi à deux affiche deux noms. C'est une limite connue, pas un défaut.
-- L'écran est réservé au DJ et à la DJA, comme l'audit.
+- L'écran est ouvert à **tous les profils internes**, juristes compris, sur décision du porteur du
+  projet du 2026-09-28 — et fermé aux prestataires externes. La réserve NF-CONF-01
+  (confidentialité, « à définir avec la DRH ») demeure et porte désormais sur un écran largement
+  visible.
+
+---
+
+## REC-E2E-029 — Filtrer et trier la liste des dossiers
+
+### Objectif
+Valider que la liste des dossiers se filtre par étape et par période d'audience, se trie, et que
+chaque recherche reste partageable par son adresse.
+
+### Acteurs
+Juriste (`juriste.test`).
+
+### Préconditions
+Au moins deux dossiers à des étapes différentes, dont un portant une audience passée (REC-E2E-006),
+et si possible un dossier porté devant les **deux** cassations (REC-E2E-027).
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | JUR | Menu « Dossiers » | La barre de filtres porte Étape, Statut de l'étape, Audience du, Audience au, Trier par | | ☐ |
+| 2 | JUR | Filtre **Étape** = Appel | Seuls les dossiers ayant une étape d'appel restent ; l'adresse contient `typeEtape=RECOURS_1` | | ☐ |
+| 3 | JUR | Ajouter **Statut de l'étape** = En cours | Seuls les dossiers dont **l'appel** est en cours restent — pas ceux dont l'appel est clôturé et qui ont autre chose en cours | | ☐ |
+| 4 | JUR | Copier l'adresse, la rouvrir dans un nouvel onglet | La même liste s'affiche, filtres pré-remplis | | ☐ |
+| 5 | JUR | Effacer les filtres, puis **Audience du** = premier jour du mois d'une audience connue, **Audience au** = dernier jour | Seuls les dossiers ayant eu une audience dans cette fenêtre restent | | ☐ |
+| 6 | JUR | Vérifier qu'un dossier dont l'audience de la période a été **annulée** n'y figure pas | Absent : une audience annulée ne s'est pas tenue | | ☐ |
+| 7 | JUR | Ne renseigner que **Audience du** | La borne haute reste ouverte : toutes les audiences à partir de cette date | | ☐ |
+| 8 | JUR | **Trier par** = Référence (A → Z) | Les lignes se réordonnent ; l'adresse contient `tri=REFERENCE` | | ☐ |
+| 9 | JUR | **Trier par** = Risque encouru, du plus élevé | Le montant le plus fort en tête | | ☐ |
+| 10 | JUR | Revenir à **Ouverture, plus récente d'abord** | L'ordre initial revient et `tri=` **disparaît** de l'adresse : c'est déjà le défaut | | ☐ |
+| 11 | JUR | Sur un dossier aux deux cassations : filtrer **Étape** = Pourvoi en cassation, puis = Pourvoi CCJA | Le dossier remonte **dans les deux cas** : les deux procédures existent | | ☐ |
+| 12 | JUR | Saisir aussi **Référence** et **Juridiction**, puis « Effacer » | Tous les critères sont remis à zéro et **les champs se vident à l'écran** — aucun mot ne reste affiché sous un filtre qui n'agit plus | | ☐ |
+| 13 | JUR | Parcourir plusieurs pages avec un filtre actif | Aucune ligne répétée d'une page à l'autre, aucune manquante ; le total annoncé reste constant | | ☐ |
+
+### Résultat final attendu
+Le juriste retrouve « les dossiers en appel, en cours, passés devant un juge en mars », par une
+adresse qu'il peut transmettre.
+
+### Points de contrôle
+- **Le type et le statut portent sur une même étape.** C'est le point du parcours 3, et le seul qui
+  distingue un filtre juste d'un filtre qui ratisse.
+- **Le total paginé reste juste** (parcours 13) quand un dossier a plusieurs étapes ou plusieurs
+  audiences dans la fenêtre.
+- **Le tri n'est pas un filtre** : il ne retire aucune ligne.
+- Le tri par étape n'existe pas, volontairement : une fois filtrée, la liste ne contient plus qu'une
+  étape. Si le métier y tient, il devra dire quel ordre il attend sur un dossier aux deux cassations.
 
 ---
 

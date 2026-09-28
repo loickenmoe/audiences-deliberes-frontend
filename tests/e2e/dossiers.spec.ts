@@ -154,6 +154,40 @@ test("le filtre « mes dossiers » ne montre que le portefeuille de l'utilisateu
   await expect(page.getByText("Aucun dossier", { exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
+/*
+ * Observation métier du 2026-09-25 : filtrer par étape et par période d'audience, et trier.
+ * Ce parcours vérifie la chaîne écran → URL → requête, sans dépendre du jeu de données : que les
+ * bons dossiers en ressortent est vérifié en base par `DossierFiltresIntegrationTest`.
+ */
+test("les filtres d'étape et de tri passent par l'URL et restent partageables", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  await page.getByLabel("Étape", { exact: true }).selectOption("RECOURS_1");
+  await page.getByLabel("Statut de l'étape", { exact: true }).selectOption("EN_COURS");
+
+  await expect(page).toHaveURL(/typeEtape=RECOURS_1/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/statutEtape=EN_COURS/, { timeout: 30_000 });
+
+  await page.getByLabel("Trier par", { exact: true }).selectOption("REFERENCE");
+  await expect(page).toHaveURL(/tri=REFERENCE/, { timeout: 30_000 });
+
+  // `RECENT` est le défaut du serveur : le rechoisir doit retirer le paramètre, et non l'écrire.
+  await page.getByLabel("Trier par", { exact: true }).selectOption("");
+  await expect(page).not.toHaveURL(/tri=/, { timeout: 30_000 });
+});
+
+test("la période porte sur les audiences et reste dans l'URL", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  await page.getByLabel("Audience du", { exact: true }).fill("2026-03-01");
+  await page.getByLabel("Audience au", { exact: true }).fill("2026-03-31");
+
+  await expect(page).toHaveURL(/dateDebut=2026-03-01/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/dateFin=2026-03-31/, { timeout: 30_000 });
+});
+
 test("un avocat n'accède pas aux dossiers", async ({ page }) => {
   await seConnecter(page, "avocat.test");
   await page.goto("/dossiers");

@@ -22,6 +22,7 @@ import type {
   StatutValidation,
   TypeAutrePublication,
   TypeAlerte,
+  TriDossiers,
   TypeEtape,
   TypeRapport,
   TypeIntervenant,
@@ -392,6 +393,13 @@ export interface FiltresDossiers {
   estSensible?: boolean;
   /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
   sensibiliteStatut?: StatutValidation;
+  /** Les deux critères d'étape portent sur une **même** étape : « un appel en cours ». */
+  typeEtape?: TypeEtape;
+  statutEtape?: StatutCycleVie;
+  /** La période porte sur les **audiences** : « les dossiers ayant eu une audience entre… ». */
+  dateDebut?: string;
+  dateFin?: string;
+  tri?: TriDossiers;
   page?: number;
   size?: number;
 }
