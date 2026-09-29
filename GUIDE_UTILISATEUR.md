@@ -66,8 +66,9 @@ tard dans la minute : **aucune notification n'est perdue**, seul l'affichage imm
 
 ## 4. Dossiers
 
-**Créer un dossier** (juriste) : *Dossiers* → *Nouveau dossier*. La référence doit être unique ; si
-elle existe déjà, le message s'affiche sous le champ concerné.
+**Créer un dossier** (juriste) : *Dossiers* → *Nouveau dossier*. **La référence est attribuée par le
+système** : vous ne la saisissez pas. À l'enregistrement, un message la nomme — « Dossier
+DOS-2026-0001 créé. » — et la fiche s'ouvre sur ce dossier. Le numéro repart à 1 chaque 1er janvier.
 
 **Les pièces se joignent à la création, et elles sont obligatoires** (depuis le 2026-09-29) : le
 dossier de crédit d'origine et le PV de transfert pour un recouvrement, l'incident de compte et les

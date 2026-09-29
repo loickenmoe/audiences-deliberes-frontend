@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { ligneDansLaFile } from "./files-de-travail";
+import { referenceDuClient } from "./reference-attribuee";
 
 /**
  * Parcours clients et intervenants **contre le backend réel**.
@@ -41,16 +42,19 @@ test("un juriste crée un client et le retrouve par sa référence", async ({ pa
   await seConnecter(page, "juriste.test");
   await page.goto("/clients");
 
-  const reference = `CLI-E2E-${suffixe()}`;
-  const nom = `Client de test ${reference}`;
+  const nom = `Client de test ${suffixe()}`;
 
   await page.getByRole("button", { name: "Nouveau client" }).click();
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
   await page.getByLabel("Nom", { exact: true }).fill(nom);
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
   // La liste se rafraîchit toute seule : la clé de cache est invalidée après la création.
-  await expect(page.getByRole("link", { name: reference })).toBeVisible({ timeout: 30_000 });
+  const ligne = page.getByRole("row", { name: new RegExp(nom) });
+  await expect(ligne).toBeVisible({ timeout: 30_000 });
+
+  // La référence est attribuée par le système (2026-09-29) : on la lit au lieu de la choisir.
+  const reference = await referenceDuClient(ligne);
+  expect(reference).toMatch(/^CLI-\d{4}-\d{4,}$/);
 
   // Le filtre passe par l'URL : le lien de recherche doit être partageable.
   await page.getByLabel("Référence client").fill(reference);
@@ -59,33 +63,32 @@ test("un juriste crée un client et le retrouve par sa référence", async ({ pa
   await expect(page.getByRole("link", { name: reference })).toBeVisible();
 });
 
-test("une référence en doublon est signalée sur le champ concerné", async ({ page }) => {
+/*
+ * Le doublon de référence client n'existe plus : le système l'attribue depuis le 2026-09-29. Ce
+ * parcours vérifie ce qui remplace la garantie perdue — deux clients créés à la suite portent deux
+ * références distinctes, et la seconde suit la première.
+ */
+test("deux clients créés à la suite reçoivent deux références distinctes", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/clients");
 
-  const reference = `CLI-DUP-${suffixe()}`;
-
-  for (const tentative of [1, 2]) {
+  const references: string[] = [];
+  for (const rang of [1, 2]) {
+    const nom = `Client suite ${rang} ${suffixe()}`;
     await page.getByRole("button", { name: "Nouveau client" }).click();
-    await page.getByLabel("Référence", { exact: true }).fill(reference);
-    await page.getByLabel("Nom", { exact: true }).fill(`Doublon ${tentative}`);
+    await page.getByLabel("Nom", { exact: true }).fill(nom);
     await page.getByRole("button", { name: "Enregistrer" }).click();
 
-    if (tentative === 1) {
-      await expect(page.getByRole("link", { name: reference })).toBeVisible({ timeout: 30_000 });
-    }
+    const ligne = page.getByRole("row", { name: new RegExp(nom) });
+    await expect(ligne).toBeVisible({ timeout: 30_000 });
+    references.push(await referenceDuClient(ligne));
   }
 
-  /**
-   * Le doublon doit s'afficher **sur le champ référence**, pas dans un bandeau générique : sur un
-   * formulaire de vingt champs, l'utilisateur doit savoir lequel corriger.
-   *
-   * Le backend renvoie ici `ERR-CONFLICT` — et non `ERR-002`, réservé aux dossiers — en nommant le
-   * champ fautif dans `champ` (QF-21). Ce parcours vérifie la chaîne complète : nom du champ produit
-   * par le backend, transporté par `ErreurApi`, posé sur le bon contrôle par `appliquerErreurApi`.
-   */
-  const champ = page.getByLabel("Référence", { exact: true });
-  await expect(champ).toHaveAttribute("aria-invalid", "true", { timeout: 30_000 });
+  expect(references[0]).not.toEqual(references[1]);
+
+  // Et elles se suivent : le compteur avance d'un, il ne saute pas et ne recule pas.
+  const numero = (reference: string) => Number(reference.split("-")[2]);
+  expect(numero(references[1])).toEqual(numero(references[0]) + 1);
 });
 
 /**
@@ -97,19 +100,26 @@ test("un juriste corrige un client depuis sa fiche, sans pouvoir toucher à sa r
   await seConnecter(page, "juriste.test");
   await page.goto("/clients");
 
-  const reference = `CLI-MOD-${suffixe()}`;
+  const nomInitial = `Nom avec coquile ${suffixe()}`;
   await page.getByRole("button", { name: "Nouveau client" }).click();
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
-  await page.getByLabel("Nom", { exact: true }).fill(`Nom avec coquile ${reference}`);
+  await page.getByLabel("Nom", { exact: true }).fill(nomInitial);
   await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = page.getByRole("row", { name: new RegExp(nomInitial) });
+  await expect(ligne).toBeVisible({ timeout: 30_000 });
+  const reference = await referenceDuClient(ligne);
   await page.getByRole("link", { name: reference }).click({ timeout: 30_000 });
   await page.waitForURL(/clients[/][0-9]+/, { timeout: 60_000 });
 
   await page.getByRole("button", { name: "Modifier" }).click();
   const dialogue = page.getByRole("dialog", { name: "Modifier le client" });
-  const champReference = dialogue.getByLabel("Référence", { exact: true });
-  await expect(champReference).toHaveValue(reference);
-  await expect(champReference).toBeDisabled();
+  /*
+    Depuis le 2026-09-29 la référence n'est plus un champ de ce formulaire : elle est attribuée à la
+    création et affichée en texte. Elle reste montrée — savoir lequel on modifie en dépend — mais
+    rien ne la saisit, et il n'y a donc plus de contrôle à trouver désactivé.
+  */
+  await expect(dialogue.getByLabel("Référence", { exact: true })).toHaveCount(0);
+  await expect(dialogue.getByText(reference, { exact: true })).toBeVisible();
   await expect(dialogue.getByText("La référence identifie le client : elle ne se modifie pas.")).toBeVisible();
 
   const nomCorrige = `Nom corrigé ${reference}`;

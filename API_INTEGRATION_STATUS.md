@@ -75,6 +75,9 @@
     un 400 si elle diverge : le frontend ne l'envoie pas ;
   · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), désormais validé
     contre le référentiel (Q-73).
+  · `reference` **n'est plus envoyée** depuis le 2026-09-29 : le serveur l'attribue
+    (`DOS-2026-0001`) et elle a quitté le corps de la requête. Elle se lit dans la réponse de
+    création. Idem pour `POST /clients` (`CLI-2026-0001`).
   · `champAlarme` **n'est plus envoyé** depuis le 2026-09-28 : le champ ne déclenchait rien et son
     nom promettait un rappel. Le backend l'accepte toujours ; les alarmes qui agissent passent par
     `POST /dossiers/{id}/alarmes`.

@@ -146,9 +146,16 @@ s'appuient sur les données créées par les trois premières.
 
 # 5. Recettes End-to-End détaillées
 
-> **Convention.** Les libellés entre guillemets sont ceux de l'interface en français. `REF` désigne
-> une référence que vous choisissez et notez : utilisez un suffixe unique, par exemple
-> `REC-001-<vos initiales>`, pour retrouver vos données parmi celles des autres testeurs.
+> **Convention.** Les libellés entre guillemets sont ceux de l'interface en français.
+>
+> **Les références sont attribuées par le système** depuis le 2026-09-29 : vous ne les saisissez
+> plus. À chaque création, le message de confirmation la nomme — « Dossier DOS-2026-0007 créé. » —
+> et c'est cette valeur qu'il faut **noter au passage** : les fiches suivantes en auront besoin.
+>
+> Les identifiants du type `DOS-REC-003` ou `CLI-REC-001` employés dans ce document **ne sont plus
+> des références à saisir** : ce sont des noms de commodité désignant l'objet créé par la fiche de
+> même numéro. Là où une fiche vous demande de rechercher `DOS-REC-003`, cherchez la référence que
+> le système a attribuée au dossier de REC-E2E-003.
 
 ## REC-E2E-001 — Connexion, accueil, langue et déconnexion
 
@@ -207,7 +214,8 @@ est réservée au DJ et à la DJA.
 Aucune.
 
 ### Données de test
-- Client : référence `CLI-REC-001`, nom `Société de recette`.
+- Client : nom `Société de recette`. **Sa référence est attribuée** ; notez-la, les fiches
+  suivantes y renvoient sous le nom de commodité `CLI-REC-001`.
 - Avocat : nom `Me Recette`, identifiant de connexion `avocat.test` **si aucune fiche ne le porte
   déjà** — sinon, créez `Me Recette 2` sans réutiliser un identifiant déjà pris.
 - Autre prestataire : nom `Notaire Recette`, courriel `notaire.recette@example.cm`, téléphone
@@ -218,8 +226,8 @@ Aucune.
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
 | 1 | DJ | Menu « Clients » → bouton « Nouveau client » | Une fenêtre de création s'ouvre | | ☐ |
-| 2 | DJ | Renseigner « Référence client » = `CLI-REC-001`, « Nom du client » = `Société de recette` → « Enregistrer » | Le client apparaît dans la liste ; message de succès | | ☐ |
-| 3 | DJ | Cliquer de nouveau « Nouveau client », ressaisir la **même référence** → « Enregistrer » | Refus explicite du doublon, **sous le champ Référence** | | ☐ |
+| 2 | DJ | Renseigner « Nom du client » = `Société de recette` → « Enregistrer ». **Aucun champ Référence n'est proposé** | Le client apparaît dans la liste ; le message nomme la référence attribuée, de la forme `CLI-2026-0001`. **Notez-la** | | ☐ |
+| 3 | DJ | Créer un second client, nom `Société de recette 2` | Sa référence **suit la précédente** : `CLI-2026-0002`. Deux clients ne peuvent pas porter le même numéro | | ☐ |
 | 4 | DJ | Menu « Intervenants » → « Nouvel intervenant » | Le formulaire s'ouvre, champ « Type » en premier | | ☐ |
 | 5 | DJ | Type = **Avocat**, Nom = `Me Recette`, Courriel = `me.recette@example.cm`, Téléphone = `650 228 936`, « Identifiant de connexion » = un identifiant Keycloak libre → « Enregistrer » | La fiche apparaît sous « Avocats » ; le téléphone est **réaffiché au format international** | | ☐ |
 | 6 | DJ | Créer un second intervenant, Type = **Avocat**, **sans** identifiant de connexion → « Enregistrer » | Refus : l'identifiant est obligatoire pour un avocat | | ☐ |
@@ -253,7 +261,7 @@ Juriste (`juriste.test`).
 REC-E2E-002 faite : au moins un client et un avocat existent.
 
 ### Données de test
-Référence `DOS-REC-003`, nature de catégorie **Recouvrement**, client `CLI-REC-001`, risque encouru
+Nature de catégorie **Recouvrement**, client créé en REC-E2E-002, risque encouru
 `5 000 000`, **deux PDF** (un par pièce attendue). Les références `CRD-REC-003` et `PV-REC-003` sont
 facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides pour le vérifier.
 
@@ -265,7 +273,7 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 2 | JUR | Choisir une « Nature du dossier » de catégorie Recouvrement | Les champs conditionnels **« Dossier de crédit d'origine »** et **« PV de transfert »** apparaissent | | ☐ |
 | 3 | JUR | Choisir une nature de catégorie Litiges d'exploitation | Les champs changent : « Référence de l'incident de compte » et « Éléments justificatifs ». Revenir à Recouvrement | | ☐ |
 | 4 | JUR | Cliquer « Enregistrer » **sans rien renseigner d'autre** | Refus : chaque champ obligatoire porte son message, dont les affectations | | ☐ |
-| 5 | JUR | Renseigner Référence, Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides** | Aucun message sur ces deux champs : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
+| 5 | JUR | Renseigner Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides**. **Aucun champ Référence de dossier n'est proposé** | Aucun message sur les deux champs laissés vides : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
 | 6 | JUR | Cliquer « Enregistrer » **sans joindre de fichier** | Refus, avec un message **sous chaque pièce manquante** : « Cette pièce est obligatoire : joignez son fichier. » Rien n'est créé | | ☐ |
 | 7 | JUR | Joindre un PDF sur **chacune** des deux pièces, relire l'un d'eux avec l'œil, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
 | 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés. Les deux références laissées vides s'affichent « — » | | ☐ |
@@ -274,7 +282,7 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 11 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
 | 12 | JUR | Onglet « Historique » | La création et le changement de statut sont tracés, en français, avec l'auteur et l'heure | | ☐ |
 | 13 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
-| 14 | JUR | Menu « Dossiers », rechercher `DOS-REC-003` | Le dossier apparaît dans la liste avec sa référence et sa catégorie | | ☐ |
+| 14 | JUR | Menu « Dossiers », rechercher la référence notée à l'étape 7 | Le dossier apparaît dans la liste avec sa référence et sa catégorie | | ☐ |
 | 14 | JUR | Copier l'URL de la fiche avec l'onglet ouvert, la coller dans un nouvel onglet | La même vue se rouvre, **sur le même onglet** de la fiche | | ☐ |
 
 ### Résultat final attendu
@@ -282,7 +290,8 @@ Un dossier `DOS-REC-003` existe, affecté à un juriste et un avocat, avec une p
 étape Instance au statut `EN_COURS` — état requis pour planifier une audience.
 
 ### Points de contrôle
-- La référence est unique : un second dossier de même référence est refusé (REC-NEG-002).
+- La référence est **attribuée** et jamais servie deux fois : deux dossiers créés à la suite portent
+  deux numéros qui se suivent (REC-NEG-002).
 - Les champs conditionnels suivent la **catégorie déduite de la nature**, pas un choix séparé.
 - `juristesAffectes` et `avocatsAffectes` sont obligatoires et non vides.
 - L'étape Instance est créée automatiquement au statut `OUVERTURE`.
@@ -1341,9 +1350,9 @@ autant de garanties métier.
 |---|---|---|---|---|---|
 | REC-NEG-001 | Champs obligatoires manquants | JUR | Créer un dossier en cliquant « Enregistrer » sur un formulaire vide | Chaque champ obligatoire porte son propre message ; rien n'est créé | ☐ |
 | REC-NEG-016 | Pièce obligatoire manquante | JUR | Remplir tout le formulaire de création **sauf un des deux fichiers**, puis « Enregistrer » | Refus, message sous la pièce sans fichier ; rien n'est créé. Les références, elles, peuvent rester vides | ☐ |
-| REC-NEG-002 | Référence de dossier en doublon | JUR | Créer un dossier avec la référence de `DOS-REC-003` | Refus **sous le champ Référence**, pas un message technique | ☐ |
+| REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
-| REC-NEG-004 | Référence client en doublon | DJ | Créer deux clients de même référence | Refus sur le champ concerné | ☐ |
+| REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
 | REC-NEG-005 | Audience sur une étape non ouverte | JUR | Tenter de planifier sur une étape au statut `OUVERTURE` | L'action n'est pas proposée ; l'écran explique qu'il faut ouvrir l'étape | ☐ |
 | REC-NEG-006 | Arbitrage par un rôle non autorisé | JUR | Chercher « Statuer sur la sensibilité » sur un dossier sensible | Le bouton n'existe pas pour ce profil | ☐ |
 | REC-NEG-007 | Accès direct par URL à un écran interdit | AVO | Saisir `/dossiers`, `/clients`, `/admin/audit` | Écran « Vous n'avez pas les droits nécessaires » à chaque fois | ☐ |

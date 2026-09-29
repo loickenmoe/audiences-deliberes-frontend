@@ -42,7 +42,6 @@ function suffixe() {
 /** Remplit un dossier de recouvrement, sans l'envoyer. */
 async function remplirDossier(page: Page) {
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-DOC-${suffixe()}`);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });

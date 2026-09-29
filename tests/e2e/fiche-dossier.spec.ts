@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { referenceDuDossier } from "./reference-attribuee";
 
 /**
  * Parcours de la fiche dossier (écrans 07, 08, 15, 16, 18) **contre le backend réel**.
@@ -33,9 +34,7 @@ function suffixe() {
 
 /** Crée un dossier par l'interface et renvoie l'URL de sa fiche. */
 async function creerDossier(page: Page, { sensible = false } = {}) {
-  const reference = `DOS-FICHE-${suffixe()}`;
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE);
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
@@ -51,7 +50,8 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   }
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  return { url: page.url(), reference };
+  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  return { url: page.url(), reference: await referenceDuDossier(page) };
 }
 
 test("la création mène à la fiche, qui présente le dossier créé", async ({ page }) => {

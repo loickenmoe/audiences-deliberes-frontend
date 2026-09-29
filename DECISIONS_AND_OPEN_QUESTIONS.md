@@ -423,6 +423,79 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Les références sont attribuées par le système *(2026-09-29)*
+
+**Ce que le métier a demandé.** « Les champs Référence doivent être automatiquement remplis par le
+système. »
+
+**Quatre champs portaient ce nom, de deux natures différentes.** Deux sont des identifiants que le
+système attribue désormais — `dossier.reference` et `client.reference`. Les deux autres sont des
+identifiants **externes** : la référence de facture est celle de la facture de l'avocat, la
+référence d'incident de compte vient du SI bancaire. Les générer reviendrait à fabriquer une donnée
+qui existe ailleurs, et dont le seul intérêt est de permettre le rapprochement avec cet ailleurs.
+Elles restent saisies.
+
+**Trois raisons, tirées du système lui-même :**
+- **une coquille est définitive.** Q-116 l'écrit : « le revers est assumé, une coquille dans la
+  référence reste définitive ». La saisie garantissait qu'il y en aurait ;
+- **le doublon était un mur.** Le juriste devait *deviner* une référence libre et découvrait le
+  conflit à l'enregistrement ;
+- **la confidentialité.** Le plan du Notification Engine laissait ouverte la question « la référence
+  du dossier peut-elle contenir un nom de client ? ». Elle part dans les SMS et les WhatsApp. Une
+  référence saisie *peut* en contenir un ; une référence attribuée ne le peut pas. **La question est
+  close par construction.**
+
+**Le format : `DOS-2026-0001`, `CLI-2026-0001`.** Celui des archives d'audit (`AUD-2026-0042`,
+V21) plutôt qu'un format inventé pour l'occasion : deux conventions dans la même application
+obligeraient à se demander laquelle on lit.
+
+**Un écart assumé avec V21 : le compteur est annuel.** V21 numérote avec une séquence globale —
+`AUD-2026-0042` puis `AUD-2027-0043`. Pour une archive, personne ne le remarque. Pour un dossier,
+`DOS-2027-0158` se lirait « le 158e dossier de 2027 » alors qu'il serait le 158e depuis toujours :
+la référence dirait quelque chose de faux, tous les jours. V21 écartait le compteur annuel parce
+qu'il « exigerait un verrou, pour un gain nul » — ici le gain n'est pas nul, et le verrou n'est pas
+nécessaire : `INSERT … ON CONFLICT DO UPDATE … RETURNING` (V36) est atomique et ne verrouille que
+la ligne de l'année en cours.
+
+**Deux décisions qui ne se voient pas et qui comptent :**
+- **le numéro est demandé après les refus** — client introuvable, catégorie incohérente. Un numéro
+  servi n'est jamais rendu ; le demander plus tôt en consommerait un à chaque échec, et la suite
+  présenterait des trous que personne ne saurait expliquer ;
+- **`REQUIRES_NEW` sur l'attribution.** Sans cela le numéro serait servi dans la transaction de
+  création : un dossier refusé plus loin annulerait l'incrément, et le numéro repartirait à un
+  suivant déjà promis ailleurs. Deux créations concurrentes dont l'une échoue produiraient la même
+  référence.
+
+**Le champ quitte le corps des requêtes** plutôt que d'y rester ignoré — un champ qu'on accepte sans
+l'utiliser laisse croire qu'il sert. C'est ce que Q-116 faisait déjà pour la modification d'un
+client.
+
+**À l'écran**, le champ disparaît des deux formulaires et la confirmation nomme l'objet créé :
+« Dossier DOS-2026-0001 créé. » C'est la seule occasion pour son auteur de connaître le numéro
+attribué. En correction d'un client, la référence **reste affichée en texte** : savoir lequel on
+modifie en dépend.
+
+**Ce que les tests ont dû devenir.** Deux parcours vérifiaient qu'une référence en doublon était
+signalée sur le bon champ ; ce conflit ne peut plus se produire. Ils vérifient désormais ce qui
+remplace la garantie perdue : **deux créations successives portent deux références distinctes, et la
+seconde suit la première**. L'unicité elle-même est prouvée en base, par cinquante demandes
+simultanées.
+
+**Deux réserves consignées, non tranchées :**
+- **la reprise des dossiers papier.** Un dossier déjà référencé hors application ne peut plus porter
+  sa référence d'origine. Si le besoin apparaît, la réponse est un **champ distinct** (« référence
+  d'origine »), informatif et non unique — mélanger les deux ramènerait toutes les coquilles ;
+- **INT-05.** US §11.3 prévoit des clients venus d'un référentiel externe, qui portent une référence
+  **imposée** ; Q-116 veut que la nôtre reste « la clé d'un futur référentiel externe ». Le jour où
+  ce raccordement se fera, il faudra un second champ pour la clé externe, plutôt que de rouvrir la
+  saisie.
+
+**Un défaut corrigé au passage.** Le parcours e2e ajouté la veille portait deux expressions
+régulières dont les antislashs avaient été perdus à l'écriture : `//dossiers/nouveau/` ouvre un
+commentaire, le fichier était syntaxiquement invalide. Ni `tsc` ni ESLint ne l'ont vu — `tests/e2e`
+est **exclu de `tsconfig.json`**. La vérification qui l'aurait montré est `playwright test --list`,
+qui analyse les fichiers sans les exécuter ; elle fait désormais partie de ce que je lance.
+
 ### ✅ Les pièces deviennent obligatoires, leurs références ne le sont plus — Q-11 amendée *(2026-09-29)*
 
 **Ce que le métier a dit.** « Sur le formulaire de création d'un dossier, ce sont les pièces jointes
