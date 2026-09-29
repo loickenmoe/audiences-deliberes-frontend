@@ -3,6 +3,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
@@ -79,6 +80,7 @@ async function ouvrirUnDossier(page: Page, marque: string) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill(`CRD-${marque}`);
   await page.getByLabel("PV de transfert", { exact: true }).fill(`PV-${marque}`);
+  await deposerPiecesDeCreation(page, { marque });
   /*
    * L'avocat est choisi **par son nom**, jamais par son rang : `{ index: 0 }` désignait un avocat
    * arbitraire du référentiel, et le dossier n'appartenait donc pas à `avocat.test` — son portail

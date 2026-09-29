@@ -67,8 +67,14 @@ tard dans la minute : **aucune notification n'est perdue**, seul l'affichage imm
 ## 4. Dossiers
 
 **Créer un dossier** (juriste) : *Dossiers* → *Nouveau dossier*. La référence doit être unique ; si
-elle existe déjà, le message s'affiche sous le champ concerné. Les pièces exigées dépendent de la
-catégorie — recouvrement ou litiges d'exploitation — et se joignent dès la création.
+elle existe déjà, le message s'affiche sous le champ concerné.
+
+**Les pièces se joignent à la création, et elles sont obligatoires** (depuis le 2026-09-29) : le
+dossier de crédit d'origine et le PV de transfert pour un recouvrement, l'incident de compte et les
+éléments justificatifs pour un litige d'exploitation. Tant qu'un fichier manque, l'enregistrement
+est refusé et la pièce en cause est signalée. Les références qui les nomment, elles, sont
+**facultatives** : c'est le document qui fait foi. Chaque fichier se relit d'un clic sur l'œil avant
+l'envoi.
 
 **Un dossier sensible** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.

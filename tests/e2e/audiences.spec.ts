@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
@@ -59,6 +60,7 @@ async function dossierEnCours(page: Page) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-AUD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-AUD");
+  await deposerPiecesDeCreation(page, { marque: "aud" });
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
@@ -80,6 +82,7 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV");
+  await deposerPiecesDeCreation(page, { marque: "aud2" });
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
@@ -54,7 +55,8 @@ test("la catégorie est déduite de la nature et commande les pièces exigées",
 
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LONGUE);
 
-  // Recouvrement : dossier de crédit d'origine ET PV de transfert (Q-11, en ET).
+  // Recouvrement : le dossier de crédit d'origine et le PV de transfert. Depuis le 2026-09-29,
+  // ce sont leurs **fichiers** qui sont obligatoires ; ces références ne le sont plus (Q-11 amendée).
   await expect(page.getByText("Recouvrement", { exact: true }).first()).toBeVisible({
     timeout: 30_000,
   });
@@ -81,6 +83,36 @@ test("la sensibilité n'exige seuil et type qu'une fois cochée", async ({ page 
   await expect(page.getByLabel("Type de client", { exact: true })).toBeVisible();
 });
 
+/*
+ * Amendement de Q-11 (métier, 2026-09-29) : « ce sont les pièces jointes qui sont obligatoires, pas
+ * leur texte associé ». Ce parcours vérifie les deux moitiés de la bascule — le refus sans fichier,
+ * et l'acceptation sans référence — parce qu'une seule des deux laisserait passer une règle à
+ * moitié appliquée.
+ */
+test("les pièces sont obligatoires, leurs références ne le sont plus", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  const reference = `DOS-PIECE-${suffixe()}`;
+  await remplirTroncCommun(page, reference, NATURE_LONGUE);
+
+  // Ni fichiers ni références : l'écran doit refuser, et nommer la pièce en cause.
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(
+    page.getByText("Cette pièce est obligatoire : joignez son fichier.").first(),
+  ).toBeVisible({ timeout: 30_000 });
+  // Rien n'a été créé : on est toujours sur le formulaire.
+  await expect(page).toHaveURL(//dossiers/nouveau/);
+
+  // Les fichiers seuls suffisent : les références restent vides.
+  await deposerPiecesDeCreation(page, { marque: "sans-references" });
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  await page.waitForURL(//dossiers/d+$/, { timeout: 60_000 });
+  await expect(page.getByText(reference, { exact: true })).toBeVisible({ timeout: 30_000 });
+});
+
 test("un juriste crée un dossier dont la nature dépasse 50 caractères", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
@@ -89,6 +121,7 @@ test("un juriste crée un dossier dont la nature dépasse 50 caractères", async
   await remplirTroncCommun(page, reference, NATURE_LONGUE);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-E2E");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-E2E");
+  await deposerPiecesDeCreation(page, { marque: "dos" });
 
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
@@ -112,6 +145,7 @@ test("une référence de dossier en doublon est signalée sur le champ concerné
     await remplirTroncCommun(page, reference, NATURE_LONGUE);
     await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DUP");
     await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DUP");
+    await deposerPiecesDeCreation(page, { marque: "dup" });
     await page.getByRole("button", { name: "Enregistrer" }).click();
 
     if (tentative === 1) {

@@ -33,9 +33,16 @@ export function estTypeConnu(valeur: string | null | undefined): valeur is TypeD
 }
 
 /**
- * Pièces qui accompagnent les références exigées par la catégorie (Q-11). Les références restent
- * obligatoires côté backend ; les pièces, elles, sont **facultatives** à la création : le dossier
- * de crédit est remis manuellement par le GFC (RG-GED-01) et peut arriver après l'ouverture.
+ * Pièces qu'exige la catégorie du dossier.
+ *
+ * **L'obligation a changé d'objet le 2026-09-29**, sur arbitrage du métier : « ce sont les pièces
+ * jointes qui sont obligatoires, pas leur texte associé ». Ces deux fichiers sont donc exigés à la
+ * création, et les références qui les nomment sont devenues facultatives — l'inverse exact de
+ * Q-11. Le constat qui l'a motivé : sur 254 dossiers, les deux références étaient remplies partout
+ * et 51 seulement portaient un document.
+ *
+ * **Seul l'écran tient cette règle** : une pièce se dépose en GED après la création, qui seule
+ * produit l'identifiant du dossier. Le serveur ne peut pas exiger un fichier qu'il n'a pas reçu.
  */
 export function piecesDeCategorie(categorie: CategorieDossier): TypeDocument[] {
   return categorie === "RECOUVREMENT"

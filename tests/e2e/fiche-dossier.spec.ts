@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Parcours de la fiche dossier (écrans 07, 08, 15, 16, 18) **contre le backend réel**.
@@ -41,6 +42,7 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-FICHE");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-FICHE");
+  await deposerPiecesDeCreation(page, { marque: "fiche" });
   await affecterParDefaut(page);
   if (sensible) {
     await page.getByLabel("Dossier sensible", { exact: true }).check();

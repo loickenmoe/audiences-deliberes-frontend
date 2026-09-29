@@ -423,6 +423,54 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Les pièces deviennent obligatoires, leurs références ne le sont plus — Q-11 amendée *(2026-09-29)*
+
+**Ce que le métier a dit.** « Sur le formulaire de création d'un dossier, ce sont les pièces jointes
+(dossier crédit d'origine et PV de transfert) qui sont obligatoires, pas leur texte associé. »
+
+**Ce que la base racontait.** Sur les 254 dossiers de l'environnement de recette, les deux
+références étaient remplies **partout** — elles étaient exigées — et **51 seulement** portaient un
+document. Quatre dossiers sur cinq n'avaient aucune pièce. Le système réclamait le nom de la pièce
+et se passait de la pièce. (À nuancer : les campagnes e2e créent des dossiers sans fichier et
+gonflent ce chiffre — pas la conclusion.)
+
+**L'obligation n'a pas disparu, elle a changé d'objet.** Les quatre références restent saisissables
+et facultatives : elles nomment la pièce et servent à retrouver un dossier. Les 254 valeurs
+existantes sont conservées.
+
+**Trois couches à retourner**, car la règle d'origine y était écrite trois fois :
+- l'écran exigeait les deux références et annonçait « Fichier (facultatif) » sous chaque zone ;
+- `DossierService.validerChampsConditionnels` les exigeait en **ET** ;
+- `chk_categorie_coherence` (V1) en exigeait au moins une, en **OU**, comme filet.
+
+Sans lever la contrainte SQL, une création sans référence aurait échoué en **erreur technique** :
+c'est pourquoi la migration **V35** l'accompagne. Les colonnes, elles, restent.
+
+**Seul l'écran peut tenir la nouvelle règle, et c'est une limite assumée.** Une pièce se dépose en
+GED **après** la création, qui seule produit l'identifiant du dossier : le serveur ne peut pas
+exiger un fichier qu'il n'a pas reçu. Une création par l'API resterait donc possible sans pièce. Le
+métier a tranché en connaissance de cause le 2026-09-29 ; l'alternative était de refondre la
+création pour que le dossier naisse avec ses pièces — envoi en une seule requête, ou état brouillon.
+
+**Le contrôle a lieu avant la création**, pas après : inutile de créer un dossier pour découvrir
+qu'il lui manque ce que le métier exige. L'erreur se pose **sur la pièce concernée**, jamais dans un
+bandeau — sur un formulaire de vingt champs, un message global laisse chercher lequel est en cause.
+Le cas du dépôt qui échoue *après* la création était déjà traité et ne change pas : le dossier
+existe, l'écran nomme les pièces à redéposer et ouvre sa fiche sur ses documents.
+
+**Une contradiction signalée, non tranchée par moi.** `lib/documents.ts` justifiait jusqu'ici le
+caractère facultatif des fichiers par RG-GED-01 : « le dossier de crédit est remis manuellement par
+le GFC et peut arriver après l'ouverture ». **Q-21 reste ouverte** (P2) sur ce point — « le GFC n'a
+pas de compte ; c'est le juriste qui charge ces pièces, à confirmer avec la Direction Juridique ».
+Exiger le dossier de crédit dès la création suppose que le juriste l'a **en main** à ce moment. Le
+métier a nommé cette pièce explicitement ; sa demande prime sur une note d'équipe non tranchée, et
+elle tranche Q-21 de fait. **Si un juriste se trouve un jour bloqué faute d'avoir reçu le dossier de
+crédit du GFC, c'est ici qu'il faudra revenir** — et n'exiger alors que le PV de transfert.
+
+**Portée** : les deux catégories. Recouvrement (dossier de crédit + PV de transfert) et
+Exploitation/Litiges (incident de compte + éléments justificatifs). Aucun dossier de la seconde
+n'existe aujourd'hui, mais lui laisser l'ancienne règle aurait créé deux comportements sans raison.
+
 ### ✅ Le « champ d'alarme » retiré du formulaire de création *(2026-09-28)*
 
 **La question du porteur du projet.** « Sur le formulaire de création de dossier, il y a un champ

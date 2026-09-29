@@ -254,7 +254,8 @@ REC-E2E-002 faite : au moins un client et un avocat existent.
 
 ### Données de test
 Référence `DOS-REC-003`, nature de catégorie **Recouvrement**, client `CLI-REC-001`, risque encouru
-`5 000 000`, dossier de crédit d'origine `CRD-REC-003`, PV de transfert `PV-REC-003`, un PDF.
+`5 000 000`, **deux PDF** (un par pièce attendue). Les références `CRD-REC-003` et `PV-REC-003` sont
+facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides pour le vérifier.
 
 ### Parcours
 
@@ -264,15 +265,16 @@ Référence `DOS-REC-003`, nature de catégorie **Recouvrement**, client `CLI-RE
 | 2 | JUR | Choisir une « Nature du dossier » de catégorie Recouvrement | Les champs conditionnels **« Dossier de crédit d'origine »** et **« PV de transfert »** apparaissent | | ☐ |
 | 3 | JUR | Choisir une nature de catégorie Litiges d'exploitation | Les champs changent : « Référence de l'incident de compte » et « Éléments justificatifs ». Revenir à Recouvrement | | ☐ |
 | 4 | JUR | Cliquer « Enregistrer » **sans rien renseigner d'autre** | Refus : chaque champ obligatoire porte son message, dont les affectations | | ☐ |
-| 5 | JUR | Renseigner Référence, Client, Juridiction saisie, Risque encouru, les deux champs de recouvrement ; affecter **soi-même** comme juriste et un avocat | Le formulaire est complet | | ☐ |
-| 6 | JUR | Joindre le PDF dans la zone des pièces, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
-| 7 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés | | ☐ |
-| 8 | JUR | Onglet « Documents » | Le PDF déposé est listé avec son nom | | ☐ |
-| 9 | JUR | Onglet « Étapes » | Une étape **Première instance** existe, au statut **Ouverture** | | ☐ |
-| 10 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
-| 11 | JUR | Onglet « Historique » | La création et le changement de statut sont tracés, en français, avec l'auteur et l'heure | | ☐ |
-| 12 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
-| 13 | JUR | Menu « Dossiers », rechercher `DOS-REC-003` | Le dossier apparaît dans la liste avec sa référence et sa catégorie | | ☐ |
+| 5 | JUR | Renseigner Référence, Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides** | Aucun message sur ces deux champs : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
+| 6 | JUR | Cliquer « Enregistrer » **sans joindre de fichier** | Refus, avec un message **sous chaque pièce manquante** : « Cette pièce est obligatoire : joignez son fichier. » Rien n'est créé | | ☐ |
+| 7 | JUR | Joindre un PDF sur **chacune** des deux pièces, relire l'un d'eux avec l'œil, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
+| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés. Les deux références laissées vides s'affichent « — » | | ☐ |
+| 9 | JUR | Onglet « Documents » | **Les deux PDF** déposés sont listés avec leur nom | | ☐ |
+| 10 | JUR | Onglet « Étapes » | Une étape **Première instance** existe, au statut **Ouverture** | | ☐ |
+| 11 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
+| 12 | JUR | Onglet « Historique » | La création et le changement de statut sont tracés, en français, avec l'auteur et l'heure | | ☐ |
+| 13 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
+| 14 | JUR | Menu « Dossiers », rechercher `DOS-REC-003` | Le dossier apparaît dans la liste avec sa référence et sa catégorie | | ☐ |
 | 14 | JUR | Copier l'URL de la fiche avec l'onglet ouvert, la coller dans un nouvel onglet | La même vue se rouvre, **sur le même onglet** de la fiche | | ☐ |
 
 ### Résultat final attendu
@@ -1338,6 +1340,7 @@ autant de garanties métier.
 | ID | Cas | Rôle | Mode opératoire | Résultat attendu | Statut |
 |---|---|---|---|---|---|
 | REC-NEG-001 | Champs obligatoires manquants | JUR | Créer un dossier en cliquant « Enregistrer » sur un formulaire vide | Chaque champ obligatoire porte son propre message ; rien n'est créé | ☐ |
+| REC-NEG-016 | Pièce obligatoire manquante | JUR | Remplir tout le formulaire de création **sauf un des deux fichiers**, puis « Enregistrer » | Refus, message sous la pièce sans fichier ; rien n'est créé. Les références, elles, peuvent rester vides | ☐ |
 | REC-NEG-002 | Référence de dossier en doublon | JUR | Créer un dossier avec la référence de `DOS-REC-003` | Refus **sous le champ Référence**, pas un message technique | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Référence client en doublon | DJ | Créer deux clients de même référence | Refus sur le champ concerné | ☐ |

@@ -78,6 +78,10 @@
   · `champAlarme` **n'est plus envoyé** depuis le 2026-09-28 : le champ ne déclenchait rien et son
     nom promettait un rappel. Le backend l'accepte toujours ; les alarmes qui agissent passent par
     `POST /dossiers/{id}/alarmes`.
+  · `dossierCreditOrigine`, `pvTransfert`, `incidentCompteReference` et `elementsJustificatifs`
+    sont **facultatifs depuis le 2026-09-29** (Q-11 amendée, migration V35) : le serveur ne les
+    exige plus. L'obligation porte sur les **fichiers**, déposés par `POST /ged/documents` après la
+    création — le serveur ne peut donc pas la tenir, seul l'écran le fait.
 - **#2** — `reference` (partielle, insensible à la casse), `clientId` et `mesDossiers` ont été
   ajoutés au backend en M16 (Q-72, QF-07). `mesDossiers` se résout sur **l'utilisateur
   authentifié** : il ne permet pas de consulter le portefeuille d'un collègue.
