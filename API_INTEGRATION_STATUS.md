@@ -50,7 +50,7 @@
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 1 | POST | `/dossiers` | SAI | 06 | F6 | ✅ |
-| 2 | GET | `/dossiers?reference&clientId&mesDossiers&nature&categorie&juridiction&page&size` | CONS | 05 | F6 | ✅ |
+| 2 | GET | `/dossiers?reference&clientId&mesDossiers&nature&categorie&juridiction&estSensible&sensibiliteStatut&typeEtape&statutEtape&dateDebut&dateFin&tri&page&size` | CONS | 05 | F6 | ✅ |
 | 3 | GET | `/dossiers/{id}` | CONS | 07, 15 | F7 | ✅ |
 | 4 | PUT | `/dossiers/{id}/affectation?forcer=` | JUR, DJ | 16 | F7 | ✅ |
 | 5 | PATCH | `/dossiers/{id}/etapes/{etapeId}/statut` | JUR | 08 | F7 | ✅ |
@@ -75,9 +75,24 @@
     un 400 si elle diverge : le frontend ne l'envoie pas ;
   · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), désormais validé
     contre le référentiel (Q-73).
+  · `champAlarme` **n'est plus envoyé** depuis le 2026-09-28 : le champ ne déclenchait rien et son
+    nom promettait un rappel. Le backend l'accepte toujours ; les alarmes qui agissent passent par
+    `POST /dossiers/{id}/alarmes`.
+  · `dossierCreditOrigine`, `pvTransfert`, `incidentCompteReference` et `elementsJustificatifs`
+    sont **facultatifs depuis le 2026-09-29** (Q-11 amendée, migration V35) : le serveur ne les
+    exige plus. L'obligation porte sur les **fichiers**, déposés par `POST /ged/documents` après la
+    création — le serveur ne peut donc pas la tenir, seul l'écran le fait.
 - **#2** — `reference` (partielle, insensible à la casse), `clientId` et `mesDossiers` ont été
   ajoutés au backend en M16 (Q-72, QF-07). `mesDossiers` se résout sur **l'utilisateur
   authentifié** : il ne permet pas de consulter le portefeuille d'un collègue.
+  · `estSensible` et `sensibiliteStatut` datent de Q-101 ; `estSensible=false` est un filtre
+    légitime, à ne pas confondre avec « non renseigné ».
+  · `typeEtape` et `statutEtape` (2026-09-28) portent sur une **même** étape : les envoyer
+    ensemble donne « les appels en cours », non « un appel, et par ailleurs quelque chose en cours ».
+  · `dateDebut`/`dateFin` (ISO, bornes incluses) portent sur les **audiences** du dossier, les
+    annulées exclues — pas sur sa date d'ouverture.
+  · `tri` est un énuméré fermé : `RECENT` (défaut, inutile à transmettre), `ANCIEN`,
+    `REFERENCE`, `RISQUE`. Une autre valeur est refusée par le serveur.
 - **#3** — `documents[]` est **vide par construction** (Q-67 backend) : ne pas le consommer, passer
   par #43. `historique[]` et `etapes[]` sont en revanche renseignés.
 - **#4** — 409 `ERR-003` en cas de doublon → dialogue de confirmation, rejeu avec `?forcer=true`.

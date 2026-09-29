@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Q-81 / QF-36 — le DJ et la DJA ont « tous les droits d'un juriste, plus les leurs » : le realm leur
@@ -42,6 +43,7 @@ test("le DJ agit en juriste — étape et audience — sans cesser d'être DJ", 
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DJ");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DJ");
+  await deposerPiecesDeCreation(page, { marque: "dj" });
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });

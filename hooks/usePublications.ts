@@ -6,15 +6,25 @@ import { CLES } from "@/hooks/const";
 import { publicationService, type DecisionPublication } from "@/services/publicationService";
 import type { StatutPublication } from "@/types/enums";
 
-export function usePublications(filtres: {
-  dossierId?: number;
-  statut?: StatutPublication | null;
-  page?: number;
-  size?: number;
-}) {
+/**
+ * @param actif à passer à `false` quand l'appelant n'a pas la capacité `consulterPublications` —
+ *              l'onglet « Audiences » est ouvert à tous les profils internes, la liste des
+ *              publications ne l'est pas. Sans ce garde-fou, le SH verrait une erreur 403 sur un
+ *              écran qui lui est pourtant permis.
+ */
+export function usePublications(
+  filtres: {
+    dossierId?: number;
+    statut?: StatutPublication | null;
+    page?: number;
+    size?: number;
+  },
+  actif = true,
+) {
   return useQuery({
     queryKey: [CLES.publications, filtres],
     queryFn: () => publicationService.lister(filtres),
+    enabled: actif,
   });
 }
 

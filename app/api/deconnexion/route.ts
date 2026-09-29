@@ -56,8 +56,11 @@ export async function POST(requete: Request) {
 
   await signOut({ redirect: false });
 
-  const origine = new URL(requete.url).origin;
-  const reponse = NextResponse.redirect(`${origine}/login`, { status: 303 });
+  // Redirection **relative** : le navigateur la résout contre l'adresse qu'il a réellement utilisée.
+  // Dériver l'origine de `requete.url` renvoyait `localhost` dès que le serveur écoute sur toutes les
+  // interfaces (`next start`) — un testeur arrivé par l'adresse IP du poste était renvoyé chez lui.
+  // Le même raisonnement écarte l'en-tête `Host`, que le client contrôle.
+  const reponse = new NextResponse(null, { status: 303, headers: { Location: "/login" } });
   reponse.cookies.set(MARQUEUR_DECONNEXION, "1", {
     httpOnly: true,
     sameSite: "lax",

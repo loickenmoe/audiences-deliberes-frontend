@@ -22,6 +22,7 @@ import type {
   StatutValidation,
   TypeAutrePublication,
   TypeAlerte,
+  TriDossiers,
   TypeEtape,
   TypeRapport,
   TypeIntervenant,
@@ -392,6 +393,13 @@ export interface FiltresDossiers {
   estSensible?: boolean;
   /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
   sensibiliteStatut?: StatutValidation;
+  /** Les deux critères d'étape portent sur une **même** étape : « un appel en cours ». */
+  typeEtape?: TypeEtape;
+  statutEtape?: StatutCycleVie;
+  /** La période porte sur les **audiences** : « les dossiers ayant eu une audience entre… ». */
+  dateDebut?: string;
+  dateFin?: string;
+  tri?: TriDossiers;
   page?: number;
   size?: number;
 }
@@ -404,8 +412,14 @@ export interface Audience {
   dossierId: number;
   etapeId: number;
   datePlanifiee: string;
-  /** ⚠ Posée par le backend au jour de la **saisie** du compte rendu, pas au jour de l'audience (QF-32). */
+  /** Posée par le backend à la **date planifiée** de l'audience, quel que soit le jour de saisie (QF-32). */
   dateTenue: string | null;
+  /**
+   * Là où l'audience se tient — distincte de `juridictionSaisie` du dossier, qui est celle de la
+   * saisine. Une audience d'appel ne siège pas devant le tribunal qui a jugé. Héritée du dossier à
+   * la planification faute d'indication contraire.
+   */
+  juridiction: string | null;
   compteRendu: string | null;
   statut: StatutAudience;
   createdAt: string;
@@ -449,8 +463,10 @@ export interface EntreeCalendrier {
 
 export interface PlanifierAudience {
   etapeId: number;
-  /** `YYYY-MM-DD`, strictement future (RG-AUD-07). */
+  /** `YYYY-MM-DD`, non antérieure à l'ouverture du dossier (RG-AUD-07 amendée). */
   datePlanifiee: string;
+  /** Facultative : vide, elle reprend la juridiction du dossier — le cas du premier degré. */
+  juridiction?: string;
 }
 
 export interface CreerAlarme {
@@ -595,8 +611,24 @@ export interface ValidationFrais {
  * règle RG-INT-03 (dossier sensible **ou** montant > `seuilApplicable`) — pour une demande qui n'a
  * pas encore atteint l'opportunité, c'est ce qui l'attend.
  *
- * `piecesJustificatives` : des **noms** déclarés par l'avocat, pas des fichiers (QF-26).
+ * **Deux listes, et c'est voulu.** `piecesJustificatives` est le tableau brut du dictionnaire des
+ * données : il peut contenir d'anciens libellés, saisis avant que le téléversement n'existe, qui ne
+ * désignent aucun fichier. `piecesTelechargeables` ne porte que les pièces **réellement stockées**,
+ * avec le nom d'origine et une URL signée de courte durée — renseignée sur le **détail** seulement,
+ * jamais sur la liste, comme l'URL d'un document de la GED.
+ *
+ * L'écran doit préférer la seconde : c'est sur les documents que porte le contrôle de conformité,
+ * pas sur leurs noms.
  */
+/** Une pièce justificative stockée, telle que le détail d'une demande de frais la rend. */
+export interface PieceTelechargeable {
+  /** Chemin de stockage ; sert de clé stable, jamais montré à l'utilisateur. */
+  cle: string;
+  nomFichier: string;
+  /** URL signée, de courte durée : à utiliser tout de suite, pas à conserver. */
+  urlTelechargement: string;
+}
+
 export interface DemandeFrais {
   id: number;
   dossierId: number;
@@ -605,6 +637,8 @@ export interface DemandeFrais {
   avocatNom: string;
   montant: number;
   piecesJustificatives: string[];
+  /** Vide sur la liste ; renseignée sur le détail, pour les pièces réellement stockées. */
+  piecesTelechargeables: PieceTelechargeable[];
   statutCircuit: StatutCircuitFrais;
   motifRejet: string | null;
   statutPaiement: StatutPaiementFrais;
@@ -863,6 +897,52 @@ export interface ConfigurationSysteme {
 }
 
 /** Une ligne du tableau de supervision des notifications externes (backend D17). */
+/**
+ * Une audience d'une journée donnée, avec ce qui en a été rapporté (backend, écran 44).
+ *
+ * Les deux comptes rendus sont rendus côte à côte : celui du juriste, saisi sur l'audience, et
+ * celui de l'avocat, déposé en publication **et validé**. C'est leur écart qui renseigne sur ce
+ * qui reste à faire.
+ */
+export interface AudienceDuJour {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string | null;
+  etape: TypeEtape | null;
+  statut: StatutAudience;
+  /** Identifiants des juristes affectés au dossier ; l'écran les nomme. */
+  juristesAffectes: number[];
+  compteRenduJuriste: string | null;
+  compteRenduAvocat: string | null;
+  avocatDuCompteRendu: number | null;
+  /**
+   * Adresse signée de la pièce accompagnant le compte rendu de l'avocat — plumitif, note
+   * d'audience —, ou `null` s'il n'en a pas joint. Le compte rendu du juriste est un texte : il
+   * n'a jamais de pièce.
+   */
+  urlPieceJointeAvocat: string | null;
+}
+
+/**
+ * Une audience passée dont le compte rendu du juriste manque encore.
+ *
+ * Le statut « tenue » n'étant posé qu'à la saisie, une audience passée restée « planifiée » est
+ * exactement une audience sans compte rendu : aucune donnée supplémentaire n'est nécessaire.
+ */
+export interface CompteRenduAttendu {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string | null;
+  etape: TypeEtape | null;
+  datePlanifiee: string;
+  joursDeRetard: number;
+  juristesAffectes: number[];
+  /** L'avocat a rapporté : reste à consigner côté banque. */
+  compteRenduAvocatDepose: boolean;
+}
+
 export interface LigneCanalNotification {
   canal: string;
   /** En file, pas encore remises au moteur. */

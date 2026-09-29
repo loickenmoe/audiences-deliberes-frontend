@@ -221,7 +221,7 @@ afficherait les deux.
 `ANNULEE`, rappels non envoyés) ; le report consistant alors à annuler puis replanifier, ou un
 endpoint de renvoi dédié qui fait les deux en gardant le lien. **Statut : soumis à l'utilisateur.**
 
-### 🟡 QF-31 — Le calendrier compte le premier jour de la période suivante
+### ✅ QF-31 — Le calendrier comptait le premier jour de la période suivante *(corrigée le 2026-09-23)*
 
 **Constat, vérifié dans le code.** `PeriodeCalendrier.dateFin` renvoie `début + 1 semaine / 1 mois /
 3 mois`, et la requête utilise `BETWEEN`, bornes **incluses**. Une semaine commençant un lundi
@@ -231,16 +231,31 @@ et les exports aussi.
 **Traitement en F8.** L'écran annonce la période réelle (« du 7 au 14 septembre ») et ne masque
 rien : l'écran doit dire la même chose que le document qu'on en exporte.
 
-**Recommandation (backend, non bloquante).** `dateFin` retranchée d'un jour. **Statut : ouvert.**
+**Correction appliquée (2026-09-23), arbitrée par le porteur du projet pendant la préparation de la
+recette.** `PeriodeCalendrier.dateFin` retranche un jour : une semaine du 1er s'arrête le 7, un mois
+de janvier le 31, un trimestre le 31 mars. Le frontend suit dans `finDePeriode` — l'écran, la
+requête et l'export doivent désigner la même fenêtre. Un test vérifie que deux périodes consécutives
+ne partagent plus aucun jour. **Statut : corrigée.**
 
-### 🟡 QF-32 — Une audience est dite « tenue » le jour où l'on saisit son compte rendu
+### ✅ QF-32 — Une audience était dite « tenue » le jour de la saisie du compte rendu *(corrigée le 2026-09-23)*
 
 **Constat, vérifié dans le code.** `enregistrerCompteRendu` pose `dateTenue = LocalDate.now()`.
 Un compte rendu saisi trois jours après l'audience la date donc de trois jours plus tard, et
 ressaisir un compte rendu la déplace encore.
 
-**Recommandation (backend, non bloquante).** `dateTenue = datePlanifiee`, ou une date saisie par le
-juriste. **Statut : ouvert.**
+**Ce que cela faussait.** Le rapport d'activité compte les audiences par
+`countByStatutAndDateTenueBetween` : une audience de mars dont le compte rendu était saisi en avril
+comptait pour avril. Le chiffre remis à la direction dépendait donc de la diligence de saisie.
+
+**Arbitrage du porteur du projet (2026-09-23), question posée en ces termes : « quand vous comptez
+vos audiences du mois, comptez-vous celles qui se sont tenues, ou celles dont vous avez reçu le
+compte rendu ? » — réponse : celles qui se sont tenues.** Entre une date saisie par le juriste et la
+date planifiée, c'est la seconde qui a été retenue : un renvoi s'enregistre déjà comme une annulation
+motivée suivie d'une replanification (Q-76), la date planifiée d'une audience non annulée est donc
+bien celle à laquelle elle s'est tenue. Aucun champ n'est ajouté à l'écran.
+
+**Correction appliquée.** `enregistrerCompteRendu` pose `dateTenue = datePlanifiee`. Un test vérifie
+qu'un compte rendu saisi deux mois plus tard ne déplace plus l'audience. **Statut : corrigée.**
 
 ### ✅ QF-33 — Prorogation et rabattement n'étaient possibles qu'après la décision *(résolue : Q-78 backend)*
 
@@ -408,7 +423,384 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
-### 🟡 QF-24 — L'historique est rédigé en français par le serveur
+### ✅ Les pièces deviennent obligatoires, leurs références ne le sont plus — Q-11 amendée *(2026-09-29)*
+
+**Ce que le métier a dit.** « Sur le formulaire de création d'un dossier, ce sont les pièces jointes
+(dossier crédit d'origine et PV de transfert) qui sont obligatoires, pas leur texte associé. »
+
+**Ce que la base racontait.** Sur les 254 dossiers de l'environnement de recette, les deux
+références étaient remplies **partout** — elles étaient exigées — et **51 seulement** portaient un
+document. Quatre dossiers sur cinq n'avaient aucune pièce. Le système réclamait le nom de la pièce
+et se passait de la pièce. (À nuancer : les campagnes e2e créent des dossiers sans fichier et
+gonflent ce chiffre — pas la conclusion.)
+
+**L'obligation n'a pas disparu, elle a changé d'objet.** Les quatre références restent saisissables
+et facultatives : elles nomment la pièce et servent à retrouver un dossier. Les 254 valeurs
+existantes sont conservées.
+
+**Trois couches à retourner**, car la règle d'origine y était écrite trois fois :
+- l'écran exigeait les deux références et annonçait « Fichier (facultatif) » sous chaque zone ;
+- `DossierService.validerChampsConditionnels` les exigeait en **ET** ;
+- `chk_categorie_coherence` (V1) en exigeait au moins une, en **OU**, comme filet.
+
+Sans lever la contrainte SQL, une création sans référence aurait échoué en **erreur technique** :
+c'est pourquoi la migration **V35** l'accompagne. Les colonnes, elles, restent.
+
+**Seul l'écran peut tenir la nouvelle règle, et c'est une limite assumée.** Une pièce se dépose en
+GED **après** la création, qui seule produit l'identifiant du dossier : le serveur ne peut pas
+exiger un fichier qu'il n'a pas reçu. Une création par l'API resterait donc possible sans pièce. Le
+métier a tranché en connaissance de cause le 2026-09-29 ; l'alternative était de refondre la
+création pour que le dossier naisse avec ses pièces — envoi en une seule requête, ou état brouillon.
+
+**Le contrôle a lieu avant la création**, pas après : inutile de créer un dossier pour découvrir
+qu'il lui manque ce que le métier exige. L'erreur se pose **sur la pièce concernée**, jamais dans un
+bandeau — sur un formulaire de vingt champs, un message global laisse chercher lequel est en cause.
+Le cas du dépôt qui échoue *après* la création était déjà traité et ne change pas : le dossier
+existe, l'écran nomme les pièces à redéposer et ouvre sa fiche sur ses documents.
+
+**Une contradiction signalée, non tranchée par moi.** `lib/documents.ts` justifiait jusqu'ici le
+caractère facultatif des fichiers par RG-GED-01 : « le dossier de crédit est remis manuellement par
+le GFC et peut arriver après l'ouverture ». **Q-21 reste ouverte** (P2) sur ce point — « le GFC n'a
+pas de compte ; c'est le juriste qui charge ces pièces, à confirmer avec la Direction Juridique ».
+Exiger le dossier de crédit dès la création suppose que le juriste l'a **en main** à ce moment. Le
+métier a nommé cette pièce explicitement ; sa demande prime sur une note d'équipe non tranchée, et
+elle tranche Q-21 de fait. **Si un juriste se trouve un jour bloqué faute d'avoir reçu le dossier de
+crédit du GFC, c'est ici qu'il faudra revenir** — et n'exiger alors que le PV de transfert.
+
+**Portée** : les deux catégories. Recouvrement (dossier de crédit + PV de transfert) et
+Exploitation/Litiges (incident de compte + éléments justificatifs). Aucun dossier de la seconde
+n'existe aujourd'hui, mais lui laisser l'ancienne règle aurait créé deux comportements sans raison.
+
+### ✅ Le « champ d'alarme » retiré du formulaire de création *(2026-09-28)*
+
+**La question du porteur du projet.** « Sur le formulaire de création de dossier, il y a un champ
+alarme. J'aimerais savoir son rôle, s'il est important ou pas. »
+
+**Vérification faite : il ne faisait rien.** `dossier.champ_alarme` est un texte libre hérité du
+dictionnaire de données initial (`V1__schema_initial.sql`). Son cycle de vie complet : saisi à la
+création, stocké, réaffiché en synthèse. **Aucun planificateur ne le lit, aucune alerte n'en naît,
+aucune recherche ne le traverse**, et il n'est même pas modifiable après coup — il n'apparaît que
+dans `CreerDossierRequest`.
+
+Le backend le disait déjà (Q-04) : la colonne est **« vestigiale, supplantée par la table `alarme`
+en M6 »**, parce qu'un champ unique en texte libre est « incapable de porter plusieurs alarmes ni
+une échéance exploitable par un planificateur ».
+
+**Le danger n'était pas le champ, c'était son nom.** Un juriste qui lisait « Champ d'alarme » à la
+création et y écrivait « relancer l'avocat avant le 15 mars » repartait convaincu d'avoir posé un
+rappel. Rien ne se serait déclenché. Deux choses portaient le même mot, une seule agissait, et le
+champ n'avait même pas de texte d'aide pour les distinguer. C'est le genre d'écart qu'une recette ne
+voit pas : l'écran fonctionne, il enregistre bien ce qu'on lui donne.
+
+**Vérifié en base avant d'agir** : sur les 253 dossiers de l'environnement de recette, **aucun** ne
+portait de valeur. Personne ne s'en servait — le retrait ne prive personne de rien.
+
+**Retiré du formulaire**, remplacé par un renvoi d'une ligne vers les alarmes de la fiche, qui
+portent une échéance et préviennent leur auteur le jour dit. **La colonne reste en base** : aucune
+migration, aucune donnée perdue, le backend n'est pas touché — il accepte toujours `champAlarme`,
+l'écran ne l'envoie simplement plus.
+
+**En synthèse, la ligne ne s'affiche plus que si elle porte une valeur**, sous le libellé « Note
+saisie à la création (champ retiré) ». Elle affichait « — » sur les 253 dossiers ; et laisser le mot
+« alarme » sur une donnée héritée aurait reconduit la promesse trompeuse.
+
+**Ce qui n'a pas été fait**, faute de demande : supprimer la colonne. Une migration `DROP COLUMN`
+est irréversible et ne gagnerait rien — la colonne ne coûte rien et pourrait porter des données
+dans un autre environnement que celui de recette.
+
+### ✅ Filtrer et trier la liste des dossiers *(2026-09-28)*
+
+**Ce que le métier a demandé.** « On doit être capable de trier les dossiers en fonction de leur
+étape et pendant une période donnée. » Interrogé, il a précisé : **filtrer *et* trier** ; par **type**
+d'étape **et** par **statut** d'étape ; et la période porte sur les **audiences** — « les dossiers
+qui ont eu une audience entre telle et telle date », non ceux ouverts pendant cette période.
+
+**Le filtre d'étape porte sur une même étape.** Choisir « Appel » et « En cours » donne les appels
+en cours. L'alternative — un dossier ayant *un* appel, et par ailleurs *quelque chose* en cours —
+répond à une question que personne ne pose, et remonte des dossiers dont l'appel est clôturé depuis
+deux ans. Un test le vérifie sur un dossier piège, porteur des deux critères sur deux étapes
+différentes.
+
+**J'avais d'abord penché pour « l'étape la plus avancée »**, celle qu'affiche la colonne « Étape ».
+Le code m'a fait changer d'avis : les **deux cassations sont concurrentes** (Cour Suprême et CCJA),
+et « la plus avancée » suppose d'en élire une. Le filtre aurait alors caché un dossier selon un
+arbitrage invisible — exactement le défaut corrigé quelques jours plus tôt sur cette même colonne.
+Avec un `EXISTS`, un dossier porté devant les deux juridictions remonte dans les deux filtres :
+les deux procédures existent, et c'est ce qu'il faut dire.
+
+**Les audiences annulées sont exclues.** Une audience annulée ne s'est pas tenue ; la compter ferait
+remonter, dans « les dossiers passés devant un juge en mars », des dossiers restés muets tout le
+mois.
+
+**Deux sous-requêtes `EXISTS`, pas des jointures.** C'est le patron déjà posé pour « mes dossiers »,
+et pour la même raison : une jointure ferait remonter un dossier autant de fois qu'il a d'étapes ou
+d'audiences, et **fausserait le total de la pagination**. Deux tests le vérifient en base — un
+dossier à trois étapes, un dossier à trois audiences — parce qu'un test à mocks ne pourrait
+constater que l'appel à `cb.exists`, jamais le total.
+
+**Le tri est un vocabulaire fermé** (`TriDossiers` : ouverture récente, ouverture ancienne,
+référence, risque encouru). Spring Data sait construire un tri à partir d'une chaîne reçue du
+client, mais cela reviendrait à laisser le navigateur nommer les champs de l'entité : une propriété
+inconnue produit une erreur 500, et les noms acceptés dessinent le schéma pour qui les essaie.
+Chaque tri se termine par l'identifiant — sans quoi deux dossiers ouverts la même seconde, ce qui
+arrive à la reprise de données, peuvent changer de place entre deux pages, et une ligne s'affiche
+alors deux fois ou jamais. Un test le vérifie sur chacune des quatre valeurs.
+
+**Pas de tri par étape**, bien que le métier l'ait formulé ainsi. Il demande en réalité de
+regrouper, et le filtre y répond mieux : une fois « appel en cours » choisi, la liste ne contient
+plus que des appels en cours, et les trier entre eux par étape n'apprendrait rien. Trier sur
+l'étape supposerait en outre d'en élire une par dossier — le même écueil que ci-dessus. **Si le
+métier tient au tri par étape, il faudra lui donner un sens explicite** ; je ne l'ai pas inventé.
+
+**Tout passe par l'URL**, comme les filtres existants : une recherche se partage par copier-coller.
+Le tri par défaut n'y est pas écrit — c'est déjà celui du serveur.
+
+**Un défaut préexistant corrigé au passage.** « Effacer » vidait l'URL mais pas les champs
+*Référence* et *Juridiction* : le mot restait affiché sous un filtre qui n'agissait plus, et l'écran
+annonçait donc une recherche qui n'avait pas lieu. Ces deux champs restent non contrôlés — écrire
+dans l'URL à chaque frappe produirait une requête par caractère — mais une `key` les remonte quand
+l'URL change ; le remontage n'intervient qu'au `blur`, jamais pendant la frappe, puisque c'est le
+`blur` qui écrit. Les deux champs de date, eux, sont contrôlés : un champ date n'émet son
+changement qu'une fois la date complète.
+
+### ✅ La juridiction propre à l'audience *(2026-09-28)*
+
+**Le constat.** Le dossier porte `juridictionSaisie` : la juridiction **de la saisine**, celle du
+premier degré. Le calendrier, ses exports et le journal des audiences l'affichaient pour **toutes**
+les audiences du dossier — une audience d'appel était donc annoncée devant le tribunal qui avait
+jugé. L'information n'était pas absente : **elle était fausse**, ce qui est pire, car rien n'invitait
+à la vérifier.
+
+Le défaut devenait d'autant plus visible que les étapes portent désormais leur vrai nom : un dossier
+affiché « Appel » annonçait ses audiences au tribunal de première instance.
+
+**La correction.** L'audience porte sa propre juridiction (V34). À la planification, le champ est
+**pré-rempli avec celle du dossier** — le cas courant du premier degré, et ce qui était affiché
+jusqu'ici — et se modifie pour un appel ou un pourvoi, qui se tiennent ailleurs.
+
+**Les audiences existantes héritent de la juridiction de leur dossier.** C'est ce qui était affiché
+avant la migration, et c'est exact pour toutes celles de première instance — l'immense majorité.
+Les corriger relève du métier, dossier par dossier ; inventer une autre valeur aurait été pire que
+de reconduire celle qui s'affichait déjà.
+
+**Ce qui en découle sans autre travail** : le calendrier et ses exports PDF/Excel, le journal des
+audiences et les comptes rendus attendus annoncent désormais le bon lieu, et l'avocat voit dans son
+portail où se tiendra l'audience qu'il doit relater — il s'y rend, il lui faut mieux que la
+juridiction de saisine.
+
+**Une saisie vide vaut absence**, non effacement : elle reprend la juridiction du dossier. Les
+espaces de saisie sont retirés — « Cour d'appel » et « Cour d'appel  » désignent le même lieu, et
+deux écritures d'une même juridiction fausseraient tout regroupement ultérieur.
+
+### ✅ Le compte rendu de l'avocat, invisible depuis son audience *(corrigé le 2026-09-28)*
+
+**Deux manques signalés en recette**, de part et d'autre du même dépôt.
+
+**1. L'avocat ne relisait pas sa pièce avant d'envoyer.** Le fichier d'un compte rendu — plumitif,
+note d'audience — ne se vérifiait qu'après le dépôt, quand le corriger suppose de redéposer. Un œil
+l'ouvre désormais sans quitter le formulaire. Le fichier n'étant pas encore parti, l'aperçu lit
+celui que le navigateur tient en mémoire : aucun aller-retour avec le serveur, et rien de nouveau
+côté stockage.
+
+**2. Une fois la publication validée, le compte rendu restait introuvable depuis l'audience.** Il
+vit dans les **publications**, rattaché à l'audience mais pas porté par elle : l'onglet « Audiences »
+n'affichait que le récit du juriste, et une audience dont l'avocat avait rendu compte paraissait
+muette. Personne ne savait où chercher.
+
+**Corrigé par un croisement, sans rien ajouter au modèle.** L'onglet charge les publications
+validées du dossier et rattache chaque compte rendu à son audience. Aucun champ nouveau, aucune
+migration : l'information existait, elle n'était simplement reliée nulle part.
+
+**Deux garde-fous, posés avec la correction :**
+- seules les publications **validées** sont rattachées — un dépôt en attente n'est lisible d'aucun
+  juriste, et le montrer ici ferait croire à une information disponible ;
+- la liste des publications n'est demandée que si le profil y a droit. L'onglet « Audiences » est
+  ouvert à tous les profils internes, la liste des publications ne l'est pas : sans ce garde-fou, le
+  SH aurait reçu un 403 sur un écran qui lui est permis.
+
+**Un enseignement de test.** Le parcours de bout en bout validait la publication puis naviguait
+aussitôt : en suite complète, la navigation devançait la validation, et l'audience paraissait — à
+juste titre — sans compte rendu. Attendre la **confirmation** plutôt que le clic suffit ; un test qui
+mesure la charge de la machine ne mesure pas l'application.
+
+### ✅ Les pièces justificatives ne s'ouvraient pas *(corrigé le 2026-09-28)*
+
+**Signalé en recette.** L'avocat dépose une pièce, elle arrive bien dans le stockage — mais ni lui
+avant d'envoyer, ni l'Assistante, le juriste, le DJ ou la DJA ensuite ne pouvaient l'ouvrir.
+
+**Le backend n'était pas en cause.** `DemandeFraisResponse.piecesTelechargeables` porte depuis Q-97,
+pour chaque pièce réellement stockée, son **nom d'origine** et une **URL signée**. Le défaut était
+entièrement à l'écran : `detail-frais.tsx` ignorait ce champ et affichait le contenu brut de
+`piecesJustificatives` — le chemin de stockage, `frais/<uuid>-facture.pdf`, une chaîne technique que
+personne ne peut ouvrir.
+
+**Ce que cela empêchait.** Le contrôle de conformité de l'Assistante porte sur les documents. Elle
+devait donc statuer sans les voir. Le guide utilisateur l'affirmait déjà au §6 : « Les pièces
+justificatives s'ouvrent depuis le détail de la demande : le contrôle de conformité porte sur les
+documents, pas sur leurs noms. » **La documentation décrivait le comportement attendu, le code ne le
+tenait pas** — c'est le genre d'écart qu'aucune relecture de spécification ne rattrape, seule la
+recette le voit.
+
+**Corrigé des deux côtés de la chaîne :**
+- **chez l'avocat, avant l'envoi** : chaque pièce chargée porte un œil qui l'ouvre sans quitter le
+  formulaire. Une pièce ne se vérifiait qu'après le dépôt, quand la remplacer supposait une nouvelle
+  demande ;
+- **chez l'instructeur** : le **nom d'origine**, un œil et un téléchargement, comme en GED.
+
+**Trois cas distingués**, parce qu'ils ne disent pas la même chose :
+- une pièce **stockée** : nom lisible, consultable, téléchargeable ;
+- une entrée **sans fichier** — libellé saisi avant que le téléversement n'existe — affichée en
+  texte, sans bouton : la taire ferait croire qu'aucune pièce n'a été déclarée, la rendre cliquable
+  promettrait un document qui n'existe pas ;
+- **aucune pièce** : l'écran le dit, au lieu d'une liste vide.
+
+**Le chemin de stockage ne s'affiche plus jamais** : un test le vérifie explicitement.
+
+### ✅ Le sélecteur de dossiers du portail avocat tronquait sa liste *(corrigé le 2026-09-28)*
+
+**Signalé en recette.** Un dossier « dss1 », affecté à l'avocat et portant une audience planifiée,
+n'apparaissait pas dans sa liste déroulante : impossible pour lui d'y déposer un compte rendu.
+
+**Ce n'était pas l'affectation.** Vérifié en base : le dossier, l'affectation et les audiences
+existaient. Le sélecteur chargeait **une page de cent dossiers**, triés du plus récent au plus
+ancien ; l'avocat en suivait **427**, et « dss1 » — le premier dossier jamais créé dans cette base —
+occupait le rang 427. Il était hors de la page, et rien ne le disait.
+
+**Une liste tronquée en silence est pire qu'une erreur** : l'avocat conclut qu'on lui a retiré son
+dossier, et personne ne cherche un défaut là où l'écran paraît fonctionner. C'est exactement le
+piège déjà rencontré sur l'annuaire des avocats (Q-105) — « une liste déroulante qui demandait une
+grande page cassait silencieusement dès que l'annuaire la dépassait » — et la réponse est la même :
+**chercher sur le serveur** plutôt que charger plus gros.
+
+**Corrigé** : `GET /avocat/mes-dossiers?reference=` cherche par fragment de référence, sans tenir
+compte de la casse, et le sélecteur du portail devient un champ cherchable qui interroge le serveur
+au fil de la frappe. La restriction à l'avocat reste portée par la requête elle-même, jamais
+ajoutée après coup : un prestataire externe ne peut pas sonder le portefeuille de la banque en
+tâtonnant sur les références.
+
+**Un détail qui compte** : « aucun dossier » ne se déduit désormais que d'une liste **non filtrée**.
+Une recherche sans résultat dit qu'aucun dossier ne porte cette référence, pas que l'avocat n'a plus
+d'affectation — confondre les deux lui ferait croire qu'on l'a retiré de ses dossiers.
+
+**Les 426 dossiers surnuméraires** de la base de recette viennent des campagnes e2e, qui en créent à
+chaque exécution. Le défaut, lui, se serait produit en production dès qu'un avocat aurait dépassé
+cent dossiers.
+
+### ✅ Journal des audiences et comptes rendus attendus *(2026-09-28)*
+
+**Ce que le métier a demandé.** « Avoir les comptes rendus de toutes les audiences tenues un jour
+précis, pour une vue d'ensemble, et établir les responsabilités — quel responsable d'un dossier n'a
+pas fait de compte rendu. » Interrogé sur le compte rendu qui compte, le métier a répondu : **les
+deux**, celui du juriste et celui de l'avocat.
+
+**Aucune donnée n'a été ajoutée.** Le statut `TENUE` n'est posé qu'à la saisie du compte rendu : une
+audience dont la date est passée et qui reste `PLANIFIEE` est donc, sans ambiguïté, une audience
+dont le compte rendu manque. Créer un indicateur « compte rendu manquant » aurait dupliqué une
+vérité que le statut porte déjà, avec le risque ordinaire des duplications : diverger.
+
+**Deux lectures, pas une.** Ce qui s'est passé tel jour, et ce qui n'a toujours pas été rapporté :
+la première se regarde chaque matin, la seconde de loin en loin. Les mêler aurait obligé à choisir
+une date pour voir des retards qui n'en dépendent pas.
+
+**Trois décisions de fond :**
+- les deux comptes rendus sont montrés **côte à côte**, jamais l'un à la place de l'autre. Élire
+  celui du juriste ferait reprocher un manquement là où l'avocat a déjà rendu compte ; élire celui
+  de l'avocat masquerait que la banque n'a rien consigné ;
+- seuls les dépôts d'avocat **validés** comptent : un dépôt en attente n'est lisible d'aucun
+  juriste, et le compter comme rendu ferait croire à une information disponible ;
+- **la journée en cours n'est jamais un retard.** La borne haute des comptes rendus attendus
+  s'arrête à hier, quelle que soit la fenêtre demandée — sans quoi chaque matin aurait fait
+  apparaître des manquements imaginaires.
+
+**Ouvert aux juristes, au DJ et à la DJA.** Je l'avais d'abord réservé à la direction, par prudence :
+l'écran nomme des personnes et mesure ce qu'elles ont rapporté, et NF-CONF-01 (confidentialité,
+« à définir avec la DRH ») n'est pas tranchée. Le porteur du projet a élargi l'accès le 2026-09-28 :
+savoir ce qui s'est dit aux audiences du jour fait partie du métier du juriste, et le compte rendu
+attendu est le sien. La réserve NF-CONF-01 demeure, et elle porte désormais sur un écran visible de
+tous les profils internes.
+
+**Trois ajustements du 2026-09-28**, à la relecture du porteur du projet :
+- **la pièce jointe au compte rendu de l'avocat** — plumitif, note d'audience — est consultable
+  depuis le journal, par une adresse signée. Le modèle la portait déjà (`CompteRenduAudience.
+  cheminStockage`) ; l'écran l'ignorait, et affichait donc le récit en taisant le document qui
+  l'appuie ;
+- **les deux tableaux sont paginés**, comme les autres listes du système. Ils ne l'étaient pas :
+  une journée chargée ou un mois de retards auraient produit une page interminable ;
+- l'accès est élargi aux juristes, ci-dessus.
+
+**Limite connue.** L'écran nomme les juristes **affectés au dossier**, non un responsable de
+l'audience : cette notion n'existe pas dans le modèle. Un dossier suivi à deux porte donc deux noms,
+sans que le journal désigne lequel devait écrire. Le métier tranchera s'il veut aller plus loin.
+
+### ✅ Les deux pourvois en cassation — Cour Suprême et CCJA *(2026-09-28)*
+
+**Ce que le métier a dit.** Un même dossier peut être porté devant la **Cour Suprême et devant la
+CCJA en même temps**. Ce ne sont pas deux degrés successifs : ce sont deux ordres juridictionnels,
+national et supranational OHADA, saisis par des pourvois distincts, chacun avec ses audiences, son
+délibéré et sa décision.
+
+**La proposition initiale du porteur du projet** — deux lignes `RECOURS_2` sur le même dossier —
+butait sur trois obstacles relevés dans l'existant :
+- **deux lignes du même type sont indiscernables à l'écran** : le libellé d'une étape se déduit de
+  son seul type, et le sélecteur « Choisissez une étape » aurait affiché « Second recours » deux
+  fois, au moment précis où le juriste planifie une audience ;
+- **le code suppose l'unicité** : `findByDossierIdAndType` rend un `Optional` — deux lignes le font
+  lever une `NonUniqueResultException` — et `creerEtape` refuse explicitement un type déjà présent ;
+- **le tri des étapes est alphabétique** sur la colonne `type` (`@Enumerated(STRING)`), et l'ordre
+  procédural n'est respecté que parce que `'INSTANCE' < 'RECOURS_1' < 'RECOURS_2'`. C'est ce tri qui
+  décide de l'étape courante affichée dans la liste des dossiers.
+
+**Tranché : une quatrième valeur, `RECOURS_2_CCJA`.** Elle préserve l'unicité du type par dossier —
+donc toutes les requêtes existantes gardent leur sens — et donne des libellés distincts sans rien
+retoucher aux sélecteurs. Son nom est choisi pour que `'RECOURS_2' < 'RECOURS_2_CCJA'` : l'ordre
+d'affichage et le calcul de l'étape courante restent justes. Une valeur nommée `CCJA` ou
+`CASSATION` se serait rangée **avant** `INSTANCE`, sans que rien n'échoue.
+
+**Trois conséquences, écrites pour ne pas être redécouvertes :**
+- `RECOURS_2_CCJA` a pour antécédents l'instance et l'appel, **jamais** `RECOURS_2` : positionner un
+  dossier directement en CCJA ne doit pas faire naître une étape Cour Suprême fantôme. Le frontend
+  porte la même table (`ETAPES_PRECEDENTES`), sans quoi l'écran annoncerait un effet de bord que le
+  serveur ne produit pas ;
+- le pourvoi CCJA **ne s'ouvre jamais automatiquement** : il ne suit aucune étape, il se décide ;
+- la colonne « Étape » de la liste montre **les deux** cassations quand elles coexistent. N'en
+  afficher qu'une aurait caché la moitié de la procédure, et laquelle aurait dépendu d'un tri.
+
+**Libellés revus au passage**, à la demande du métier : Première instance, Appel, Pourvoi en
+cassation, Pourvoi CCJA — au lieu d'Instance, Premier recours, Second recours.
+
+**Limite assumée.** Ce modèle ne permet pas deux procédures simultanées de **même nature** — deux
+appels, par exemple. Le métier n'en a pas fait état ; si le cas se présente, il faudra alors
+plusieurs étapes de même type distinguées par leur juridiction, avec la reprise que cela suppose.
+
+### ✅ RG-AUD-07 amendée — une audience s'enregistre aussi le jour même et après coup *(2026-09-23)*
+
+**Constat, vérifié dans le code.** `AudienceService.planifierAudience` exigeait une date
+**strictement** future, et le formulaire bornait le champ à demain. Le compte rendu, lui, était déjà
+recevable dès le jour de l'audience.
+
+**Ce que cela empêchait.** Deux situations sans issue : l'audience apprise le matin pour le jour même
+— impossible à créer, donc impossible à relater ; et surtout l'audience tenue sans avoir été saisie,
+**perdue définitivement**, puisque le lendemain sa date était passée et qu'une date passée était
+refusée elle aussi. La règle protégeait la discipline de planification au prix d'un trou de
+traçabilité.
+
+**Arbitrage du porteur du projet (2026-09-23) : le jour même et le passé.** Discuté avec l'argument
+inverse — les rappels J-7/J-3/J-1 supposent une planification anticipée, et une saisie rétroactive
+banalisée ferait glisser l'outil du pilotage vers le registre. Tranché en faveur de la régularisation.
+
+**La borne retenue est l'ouverture du dossier**, plutôt qu'un délai en jours ou la création de
+l'étape : une audience ne peut pas précéder la procédure qui la porte. Elle arrête les fautes de
+frappe (une année erronée) sans imposer de durée arbitraire, et reste assez large pour régulariser
+une audience de recours dont l'étape a été ouverte tardivement dans l'outil.
+
+**Effet de bord assumé** : aucune alerte de rappel n'est émise pour une audience du jour ou passée.
+Le planificateur cherche chaque matin les audiences à J+1, J+3 et J+7 ; une date déjà atteinte n'y
+figure pas. Rien à coder, et rien à corriger : rappeler une audience passée n'aurait aucun sens.
+
+**Conjugué à QF-32**, corrigé le même jour : la date de tenue étant la date planifiée, une audience
+régularisée compte dans le mois où elle s'est réellement tenue, pas dans celui de sa saisie.
+
+### ✅ QF-24 — L'historique était rédigé en français par le serveur *(résolue le 2026-09-17, complétée le 2026-09-23)*
 
 **Constat.** `HistoriqueActionResponse.action` est une phrase française (« Changement de statut de
 l'étape INSTANCE ») et non un code. C'est la seule donnée du backend qui contredise le principe sur
@@ -417,9 +809,20 @@ lequel repose le bilinguisme : *le backend ne renvoie que des codes stables*.
 **Conséquence.** En anglais, l'onglet Historique affiche des libellés français. La fiche le signale
 explicitement plutôt que de laisser croire à un oubli de traduction.
 
-**Recommandation (évolution backend, non bloquante).** Ajouter un code d'action stable
-(`CREATION_DOSSIER`, `CHANGEMENT_STATUT_ETAPE`…) à côté du libellé, que le frontend traduirait.
-**Statut : ouvert, non bloquant.**
+**Résolu par Q-111 puis Q-112 (2026-09-17)**, exactement par la voie recommandée :
+`HistoriqueActionResponse` porte désormais un `code` typé et des `details` structurés à côté de la
+phrase, et `useLibellesHistorique` traduit les deux sur l'onglet Historique comme sur l'audit. La
+phrase du backend ne sert plus que de repli pour un code non encore traduit — jamais le code brut.
+
+**Complété le 2026-09-23.** Deux natures ajoutées depuis avec l'extraction scellée
+(`AUDIT_EXPORTE`, `ARCHIVE_TELECHARGEE`) et quatre clés de détails (`exportId`, `empreinte`,
+`format`, `lignes`) n'avaient pas leurs libellés : elles retombaient sur la phrase française, en
+anglais comme en français. Ajoutées dans les deux langues — **49 natures et 65 clés couvertes**.
+
+**Le garde-fou a été refait au passage.** Le test qui protégeait la couverture figeait un *nombre*
+(« 47 natures, 61 clés ») : il fallait le corriger à chaque ajout, et surtout il serait resté vert
+si deux codes avaient été traduits en français et oubliés en anglais. Il vérifie désormais la
+**parité entre les deux langues**, qui ne se périme pas. **Statut : close.**
 
 ### ✅ QF-25 — L'affectation pouvait vider un dossier de ses juristes *(résolue le 2026-09-10)*
 

@@ -84,6 +84,17 @@ export const CAPACITES = {
    * Assistante » : c'était faux, et vérifié faux en exécution. La liste ci-dessous n'a jamais changé.
    */
   consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ"],
+
+  /**
+   * Écran 44 — journal des audiences et comptes rendus attendus.
+   *
+   * Ouvert aux **juristes** comme à la direction (arbitrage du porteur du projet, 2026-09-28).
+   * D'abord réservé au DJ et à la DJA par prudence — l'écran nomme des personnes et mesure ce
+   * qu'elles ont rapporté, et NF-CONF-01 reste « à définir avec la DRH » —, il s'est avéré que les
+   * juristes en ont l'usage quotidien : savoir ce qui s'est dit aux audiences du jour fait partie
+   * de leur métier, et le compte rendu attendu est le leur.
+   */
+  consulterJournalAudiences: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
   /** `POST .../deliberes`, prorogations, rabattement, expédition, recours — JURISTE */
   gererDeliberes: ["ROLE_JURISTE"],
 

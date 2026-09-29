@@ -1,7 +1,9 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
@@ -41,8 +43,10 @@ function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-/** L'intervenant du référentiel rattaché au compte `avocat.test` (Q-84). */
-const AVOCAT_DE_TEST = "Me Claire Avocat";
+/*
+ * L'intervenant rattaché au compte `avocat.test` (Q-84) est **lu** au référentiel, et non supposé :
+ * son nom appartient aux données, qu'un DJ peut changer — voir `avocat-de-test.ts`.
+ */
 
 const PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
 
@@ -76,19 +80,40 @@ async function ouvrirUnDossier(page: Page, marque: string) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill(`CRD-${marque}`);
   await page.getByLabel("PV de transfert", { exact: true }).fill(`PV-${marque}`);
+  await deposerPiecesDeCreation(page, { marque });
   /*
    * L'avocat est choisi **par son nom**, jamais par son rang : `{ index: 0 }` désignait un avocat
    * arbitraire du référentiel, et le dossier n'appartenait donc pas à `avocat.test` — son portail
    * ne le proposait pas, et les parcours P2 et P6 restaient bloqués sur un sélecteur sans l'option
-   * attendue. `Me Claire Avocat` est l'intervenant rattaché au compte `avocat.test` (Q-84).
+   * attendue.
    */
-  await affecterParDefaut(page, { avocat: AVOCAT_DE_TEST });
+  await affecterParDefaut(page, { avocat: (await avocatDeTest()).nom });
   await page
     .locator('input[name="piece-PV_TRANSFERT"]')
     .setInputFiles({ name: `pv-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
   return { reference, url: page.url() };
+}
+
+/**
+ * Choisit un dossier dans le portail avocat, par sa référence.
+ *
+ * Le champ est un combobox cherchable depuis le 2026-09-28 : il interroge le serveur au fil de la
+ * frappe, au lieu de charger une page des dossiers les plus récents — dans laquelle les anciens
+ * manquaient, sans que rien ne le dise.
+ */
+async function choisirDossierAvocat(page: Page, reference: string) {
+  const champ = page.getByRole("combobox", { name: "Dossier" });
+  await champ.click();
+  await champ.fill(reference);
+  const option = page
+    .getByRole("listbox", { name: "Dossier" })
+    .getByRole("option", { name: new RegExp(reference) })
+    .first();
+  await expect(option).toBeVisible({ timeout: 30_000 });
+  await option.click();
+  await champ.press("Escape");
 }
 
 test("P1 — un dossier de recouvrement s'ouvre, avec ses affectations et sa pièce", async ({ page }) => {
@@ -141,13 +166,10 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   // L'avocat dépose son compte rendu sur cette audience (US 5.1).
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/publications/nouvelle");
-  // Le libellé de l'option est construit par `SelecteurDossier` : référence, nature, juridiction.
-  await avocat
-    .locator("#publication-dossier")
-    .selectOption({ label: `DOS-${marque} - Assignation en paiement (TGI Douala)` });
+  await choisirDossierAvocat(avocat, `DOS-${marque}`);
   await expect(avocat.locator("#publication-audience")).toBeEnabled({ timeout: 30_000 });
   await avocat.locator("#publication-audience").selectOption({ index: 1 });
-  await avocat.locator("#publication-contenu").fill(`Audience renvoyée — ${marque}`);
+  await avocat.locator("#publication-contenu").fill(`Audience renvoyée - ${marque}`);
   // Q-98 : le plumitif accompagne le récit, en un seul dépôt.
   await avocat
     .locator('input[name="piece-jointe"]')
@@ -188,9 +210,7 @@ test("P6 — une demande de frais traverse tout son circuit, de l'avocat au paie
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/frais/nouvelle");
   const facture = `FAC-${marque}`;
-  await avocat
-    .locator("#frais-dossier")
-    .selectOption({ label: `DOS-${marque} - Assignation en paiement (TGI Douala)` });
+  await choisirDossierAvocat(avocat, `DOS-${marque}`);
   await avocat.locator("#frais-reference").fill(facture);
   await avocat.locator("#frais-montant").fill("400000");
   await avocat

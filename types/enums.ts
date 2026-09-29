@@ -19,7 +19,7 @@
 export const CategorieDossier = ["RECOUVREMENT", "EXPLOITATION_LITIGES"] as const;
 export type CategorieDossier = (typeof CategorieDossier)[number];
 
-export const TypeEtape = ["INSTANCE", "RECOURS_1", "RECOURS_2"] as const;
+export const TypeEtape = ["INSTANCE", "RECOURS_1", "RECOURS_2", "RECOURS_2_CCJA"] as const;
 export type TypeEtape = (typeof TypeEtape)[number];
 
 /** Cycle de vie d'une étape (RG-DOS-04). L'ordre du tableau est celui de la progression. */
@@ -32,6 +32,13 @@ export const StatutCycleVie = [
   "ARCHIVE",
 ] as const;
 export type StatutCycleVie = (typeof StatutCycleVie)[number];
+
+/**
+ * Les tris offerts sur la liste des dossiers. Vocabulaire fermé, miroir de l'énuméré serveur : le
+ * navigateur ne nomme jamais une colonne, il choisit un tri.
+ */
+export const TriDossiers = ["RECENT", "ANCIEN", "REFERENCE", "RISQUE"] as const;
+export type TriDossiers = (typeof TriDossiers)[number];
 
 export const StatutValidation = ["EN_ATTENTE", "VALIDEE", "REJETEE"] as const;
 export type StatutValidation = (typeof StatutValidation)[number];

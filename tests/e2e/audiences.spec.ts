@@ -1,13 +1,14 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
  *
- * Limite assumée : le backend n'accepte une audience qu'à une date **future**, et son compte rendu
- * qu'à partir du jour de l'audience. Aucun parcours ne peut donc saisir un compte rendu sans attendre
- * que la date passe ; on vérifie ici qu'il n'est **pas** proposé trop tôt. La saisie elle-même est
- * couverte par les tests du backend.
+ * Depuis l'amendement de RG-AUD-07 (2026-09-23), une audience s'enregistre **à la date du jour** et
+ * même après coup : le cycle complet — planifier, tenir, rendre compte — se joue donc entièrement
+ * ici, ce qu'aucun parcours ne pouvait faire tant que seule une date future était acceptée. On
+ * vérifie aussi qu'une audience **à venir** ne propose toujours pas son compte rendu.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -18,6 +19,14 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.getByLabel("Mot de passe", { exact: true }).fill(MOT_DE_PASSE);
   await page.getByRole("button", { name: "Connexion" }).click();
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
+}
+
+/** Une session à part, pour les parcours qui font travailler deux rôles l'un après l'autre. */
+async function pageConnectee(browser: Browser, identifiant: string) {
+  const contexte = await browser.newContext({ locale: "fr-FR" });
+  const page = await contexte.newPage();
+  await seConnecter(page, identifiant);
+  return page;
 }
 
 function suffixe() {
@@ -51,6 +60,7 @@ async function dossierEnCours(page: Page) {
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-AUD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-AUD");
+  await deposerPiecesDeCreation(page, { marque: "aud" });
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
@@ -72,6 +82,7 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV");
+  await deposerPiecesDeCreation(page, { marque: "aud2" });
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
@@ -107,6 +118,83 @@ test("planifier une audience, puis confirmer un doublon (ERR-005)", async ({ pag
   await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(2);
   // Audience à venir : le compte rendu n'est pas encore recevable, donc pas proposé.
   await expect(page.getByRole("button", { name: "Saisir le compte rendu" })).toHaveCount(0);
+});
+
+/**
+ * RG-AUD-07 amendée : l'audience du jour s'enregistre, et son compte rendu suit immédiatement.
+ * C'est le besoin qui a motivé l'arbitrage — une audience apprise le matin pour le jour même.
+ */
+test("une audience du jour reçoit son compte rendu dans la foulée (RG-AUD-07 amendée)", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await dossierEnCours(page);
+  await page.getByRole("tab", { name: "Audiences" }).click();
+
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(0));
+  await page.getByRole("dialog", { name: "Planifier une audience" }).getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(1);
+
+  // Le compte rendu est recevable dès le jour de l'audience : l'action est proposée sans attendre.
+  await page.getByRole("button", { name: "Saisir le compte rendu" }).click();
+  const modale = page.getByRole("dialog", { name: "Compte rendu d’audience" });
+  await modale.getByLabel("Compte rendu", { exact: true }).fill("Affaire appelée, renvoi contradictoire.");
+  await modale.getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(page.getByText("Compte rendu enregistré.")).toBeVisible();
+  // Viser la cellule de statut, non la ligne : l'en-tête porte une colonne « Tenue le ».
+  const cellulesTenue = page.getByRole("cell", { name: "Tenue", exact: true });
+  await expect(cellulesTenue).toHaveCount(1);
+  // QF-32 : l'audience est datée du jour où elle s'est tenue, ici celui de la saisie.
+  const ligneTenue = page.getByRole("row").filter({ has: cellulesTenue });
+  await expect(ligneTenue).toContainText(String(new Date().getDate()));
+});
+
+/** Une audience ne peut pas avoir eu lieu avant que le dossier existe : la borne est là, et là seulement. */
+test("une audience antérieure à l'ouverture du dossier est refusée", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await dossierEnCours(page);
+  await page.getByRole("tab", { name: "Audiences" }).click();
+
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(-30));
+  await page.getByRole("dialog", { name: "Planifier une audience" }).getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(page.getByText("Cette date précède l’ouverture du dossier.")).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(0);
+});
+
+/**
+ * V34 — la juridiction propre à l'audience (observation métier du 2026-09-25).
+ *
+ * Une audience d'appel ne siège pas devant le tribunal qui a jugé : le calendrier annonçait
+ * pourtant la juridiction du **dossier** pour toutes les audiences. L'information n'était pas
+ * absente, elle était fausse — et rien n'invitait à la vérifier.
+ */
+test("une audience se tient devant sa propre juridiction, pas celle du dossier", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  const reference = await dossierEnCours(page);
+  await page.getByRole("tab", { name: "Audiences" }).click();
+
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  const modale = page.getByRole("dialog", { name: "Planifier une audience" });
+  // Le champ propose la juridiction du dossier : le cas courant du premier degré.
+  await expect(modale.getByLabel("Juridiction", { exact: true })).toHaveValue("TGI Douala");
+
+  await modale.getByLabel("Juridiction", { exact: true }).fill("Cour d'appel du Littoral");
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(12));
+  await modale.getByRole("button", { name: "Enregistrer" }).click();
+
+  const ligne = page.getByRole("row").filter({ hasText: "Planifiée" });
+  await expect(ligne).toHaveCount(1);
+  await expect(ligne).toContainText("Cour d'appel du Littoral");
+
+  // Le calendrier annonce le même lieu : c'est là que le juriste se rendra.
+  await page.goto("/audiences/calendrier");
+  await page.getByRole("button", { name: "Trimestre" }).click();
+  const entree = page.getByRole("row", { name: new RegExp(reference) }).first();
+  if ((await entree.count()) > 0) {
+    await expect(entree).toContainText("Cour d'appel du Littoral");
+  }
 });
 
 test("annuler une audience avec son motif, puis la replanifier à la même date sans doublon (QF-30)", async ({ page }) => {
@@ -218,6 +306,70 @@ test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel
   const excel = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exporter en Excel" }).click();
   expect((await excel).suggestedFilename()).toMatch(/\.xlsx$/);
+});
+
+/**
+ * Écran 44 — journal des audiences (observation métier du 2026-09-25).
+ *
+ * Le parcours crée une audience du jour, saisit son compte rendu, puis vérifie que le journal du
+ * DJ la rapporte. C'est la chaîne complète : ce qu'un juriste écrit doit se lire dans la vue
+ * d'ensemble de la direction, sans autre geste.
+ */
+test("le journal du jour rapporte le compte rendu que le juriste vient de saisir", async ({ browser }) => {
+  const juriste = await pageConnectee(browser, "juriste.test");
+  const reference = await dossierEnCours(juriste);
+  await juriste.getByRole("tab", { name: "Audiences" }).click();
+  await juriste.getByRole("button", { name: "Planifier une audience" }).click();
+  await juriste.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(0));
+  await juriste
+    .getByRole("dialog", { name: "Planifier une audience" })
+    .getByRole("button", { name: "Enregistrer" })
+    .click();
+  await expect(juriste.getByRole("cell", { name: "Planifiée", exact: true })).toHaveCount(1);
+
+  await juriste.getByRole("button", { name: "Saisir le compte rendu" }).click();
+  const modale = juriste.getByRole("dialog", { name: "Compte rendu d’audience" });
+  await modale.getByLabel("Compte rendu", { exact: true }).fill("Renvoi contradictoire au mois prochain.");
+  await modale.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(juriste.getByText("Compte rendu enregistré.")).toBeVisible();
+  await juriste.context().close();
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/audiences/journal");
+  await expect(dj.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
+
+  /*
+   * Le journal est paginé, et une journée de recette accumule les audiences des exécutions
+   * précédentes : on élargit la page comme le ferait la personne qui cherche son dossier, plutôt
+   * que d'avancer page par page — la donnée précédente restant affichée pendant le chargement, une
+   * boucle de clics dépasserait la bonne page sans la voir.
+   */
+  const sectionJournal = dj.getByRole("region", { name: "Audiences du jour" });
+  await sectionJournal.getByLabel("Lignes par page").selectOption("50");
+
+  const ligne = sectionJournal.getByRole("row", { name: new RegExp(reference) });
+  await expect(ligne).toContainText("Renvoi contradictoire au mois prochain.");
+  // L'avocat n'a rien déposé : l'écran le dit, sans le confondre avec un compte rendu manquant.
+  await expect(ligne).toContainText("Non déposé");
+  await dj.context().close();
+});
+
+/**
+ * Le journal est ouvert aux juristes depuis le 2026-09-28 : savoir ce qui s'est dit aux audiences
+ * du jour fait partie de leur métier. Il reste fermé aux profils qui n'écrivent pas de compte rendu.
+ */
+test("le journal des audiences est ouvert aux juristes, fermé à l'Assistante", async ({ browser }) => {
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/audiences/journal");
+  await expect(juriste.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
+  await juriste.context().close();
+
+  const assistante = await pageConnectee(browser, "assistante.test");
+  await assistante.goto("/audiences/journal");
+  await expect(
+    assistante.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" }),
+  ).toBeVisible();
+  await assistante.context().close();
 });
 
 test("le calendrier est réservé au juriste et au DJ", async ({ page }) => {

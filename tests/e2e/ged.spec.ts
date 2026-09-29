@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { ligneDansLaFile } from "./files-de-travail";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * GED (écrans 36 et 37) **contre le backend réel et MinIO** : la file des demandes de suppression
@@ -49,6 +50,7 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   await juriste.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
+  await deposerPiecesDeCreation(juriste, { marque: "ged" });
   await affecterParDefaut(juriste);
   await juriste.locator('input[name="piece-PV_TRANSFERT"]').setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
   await juriste.getByRole("button", { name: "Enregistrer" }).click();

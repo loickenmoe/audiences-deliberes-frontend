@@ -22,7 +22,7 @@ import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/ho
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
-import type { TypeDocument } from "@/lib/documents";
+import { piecesDeCategorie, type TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
 
 /**
@@ -68,6 +68,11 @@ export function FormulaireDossier({
   const tdoc = useTranslations("documents");
   const routeur = useRouter();
   const [pieces, setPieces] = useState<PieceAJoindre[]>([]);
+  /*
+   * Les pièces attendues restées sans fichier. Signalées **après** une tentative d'enregistrement,
+   * pas avant : un formulaire qui crie au rouge avant qu'on l'ait rempli ne se lit plus.
+   */
+  const [piecesManquantes, setPiecesManquantes] = useState<readonly TypeDocument[]>([]);
   const [envoiPieces, setEnvoiPieces] = useState(false);
   const creer = useCreerDossier();
 
@@ -105,7 +110,6 @@ export function FormulaireDossier({
           pvTransfert: z.string().max(255).optional(),
           incidentCompteReference: z.string().max(50).optional(),
           elementsJustificatifs: z.string().optional(),
-          champAlarme: z.string().optional(),
           estSensible: z.boolean().optional(),
           seuilMontant: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
           typeClientSensible: z.string().optional(),
@@ -113,35 +117,12 @@ export function FormulaireDossier({
           avocatsAffectes: z.array(z.coerce.number()).min(1, tm("champObligatoire")),
         })
         .superRefine((valeurs, contexte) => {
-          const categorie = natures.data?.find((n) => n.libelle === valeurs.nature)?.categorie;
-
-          if (categorie === "RECOUVREMENT") {
-            if (!valeurs.dossierCreditOrigine?.trim()) {
-              contexte.addIssue({
-                code: "custom",
-                path: ["dossierCreditOrigine"],
-                message: tm("champObligatoire"),
-              });
-            }
-            if (!valeurs.pvTransfert?.trim()) {
-              contexte.addIssue({ code: "custom", path: ["pvTransfert"], message: tm("champObligatoire") });
-            }
-          } else if (categorie === "EXPLOITATION_LITIGES") {
-            if (!valeurs.incidentCompteReference?.trim()) {
-              contexte.addIssue({
-                code: "custom",
-                path: ["incidentCompteReference"],
-                message: tm("champObligatoire"),
-              });
-            }
-            if (!valeurs.elementsJustificatifs?.trim()) {
-              contexte.addIssue({
-                code: "custom",
-                path: ["elementsJustificatifs"],
-                message: tm("champObligatoire"),
-              });
-            }
-          }
+          /*
+            Les références conditionnelles ne sont plus exigées (métier, 2026-09-29) : « ce sont les
+            pièces jointes qui sont obligatoires, pas leur texte associé ». L'obligation a changé
+            d'objet — elle est vérifiée sur les fichiers au moment d'enregistrer, hors de ce schéma :
+            les fichiers ne sont pas des champs du formulaire, ils vivent dans l'état des pièces.
+          */
 
           // Un dossier sensible est une proposition : elle n'a de sens qu'accompagnée des deux
           // éléments que le DJ devra arbitrer.
@@ -158,7 +139,9 @@ export function FormulaireDossier({
             }
           }
         }),
-    [natures.data, tm],
+    // Le schéma ne dépend plus du référentiel des natures : les références conditionnelles
+    // ne sont plus exigées, et la catégorie ne conditionne plus aucune validation ici.
+    [tm],
   );
 
   const {
@@ -203,6 +186,22 @@ export function FormulaireDossier({
   const categorie = natures.data?.find((n) => n.libelle === natureChoisie)?.categorie;
 
   const soumettre = handleSubmit(async (valeurs) => {
+    /*
+     * Les pièces d'abord : inutile de créer le dossier pour découvrir ensuite qu'il lui manque ce
+     * que le métier exige. Cette vérification ne peut pas vivre dans le schéma — les fichiers ne
+     * sont pas des champs du formulaire — ni sur le serveur, qui ne les reçoit qu'après la
+     * création. L'écran la tient donc seul, limite acceptée par le métier le 2026-09-29.
+     */
+    if (categorie) {
+      const deposees = new Set(pieces.map((piece) => piece.type));
+      const manquantes = piecesDeCategorie(categorie).filter((type) => !deposees.has(type));
+      setPiecesManquantes(manquantes);
+      if (manquantes.length > 0) {
+        toast.error(tdoc("piecesManquantes"));
+        return;
+      }
+    }
+
     try {
       const cree = await creer.mutateAsync({
         reference: valeurs.reference,
@@ -227,7 +226,6 @@ export function FormulaireDossier({
           categorie === "EXPLOITATION_LITIGES" ? valeurs.incidentCompteReference || undefined : undefined,
         elementsJustificatifs:
           categorie === "EXPLOITATION_LITIGES" ? valeurs.elementsJustificatifs || undefined : undefined,
-        champAlarme: valeurs.champAlarme || undefined,
         estSensible: valeurs.estSensible ?? false,
         seuilMontant: valeurs.estSensible ? Number(valeurs.seuilMontant) : undefined,
         typeClientSensible: valeurs.estSensible ? valeurs.typeClientSensible || undefined : undefined,
@@ -292,17 +290,21 @@ export function FormulaireDossier({
    * Le champ de référence d'une pièce attendue, rendu par le bloc des pièces en tête de sa ligne.
    * Libellés, identifiants et validation sont ceux d'avant la fusion des deux blocs.
    */
+  /*
+   * Les références qui nomment chaque pièce. Sans astérisque depuis le 2026-09-29 : elles sont
+   * facultatives, et c'est le fichier voisin qui la porte.
+   */
   function champReference(type: TypeDocument) {
     switch (type) {
       case "DOSSIER_CREDIT":
         return (
-          <Champ id="dossierCreditOrigine" label={t("champDossierCredit")} obligatoire erreur={errors.dossierCreditOrigine?.message}>
+          <Champ id="dossierCreditOrigine" label={t("champDossierCredit")} erreur={errors.dossierCreditOrigine?.message}>
             <Input id="dossierCreditOrigine" enErreur={!!errors.dossierCreditOrigine} {...register("dossierCreditOrigine")} />
           </Champ>
         );
       case "PV_TRANSFERT":
         return (
-          <Champ id="pvTransfert" label={t("champPvTransfert")} obligatoire erreur={errors.pvTransfert?.message}>
+          <Champ id="pvTransfert" label={t("champPvTransfert")} erreur={errors.pvTransfert?.message}>
             <Input id="pvTransfert" enErreur={!!errors.pvTransfert} {...register("pvTransfert")} />
           </Champ>
         );
@@ -311,7 +313,6 @@ export function FormulaireDossier({
           <Champ
             id="incidentCompteReference"
             label={t("champIncidentCompte")}
-            obligatoire
             erreur={errors.incidentCompteReference?.message}
           >
             <Input
@@ -326,7 +327,6 @@ export function FormulaireDossier({
           <Champ
             id="elementsJustificatifs"
             label={t("champElementsJustificatifs")}
-            obligatoire
             erreur={errors.elementsJustificatifs?.message}
           >
             <Textarea
@@ -454,10 +454,16 @@ export function FormulaireDossier({
               </div>
             ) : null}
 
-            {/* Ce n'est pas une pièce : il siégeait à tort dans le bloc des pièces (2026-09-22). */}
-            <Champ id="champAlarme" label={t("champAlarme")}>
-              <Input id="champAlarme" {...register("champAlarme")} />
-            </Champ>
+            {/*
+              Le « champ d'alarme » a été retiré d'ici (2026-09-28). C'était un texte libre que
+              **rien ne lisait** : ni planificateur, ni alerte, ni recherche. Un juriste qui y
+              écrivait « relancer l'avocat avant le 15 mars » repartait convaincu d'avoir posé un
+              rappel, et rien ne se déclenchait. Les alarmes qui agissent vivent dans la table
+              `alarme` depuis M6 (Q-04), avec une échéance et un destinataire.
+            */}
+            <p className="text-[length:var(--taille-xs)] text-texte-tertiaire sm:col-span-2">
+              {t("renvoiAlarmes")}
+            </p>
           </CardContent>
         </Card>
 
@@ -507,7 +513,12 @@ export function FormulaireDossier({
                 validés et envoyés à la création comme avant ; le bloc des pièces ne fait que les
                 placer. Les fichiers partent toujours après la création, dans la GED.
               */}
-              <PiecesAJoindre categorie={categorie} onChangement={setPieces} reference={champReference} />
+              <PiecesAJoindre
+                categorie={categorie}
+                onChangement={setPieces}
+                reference={champReference}
+                manquantes={piecesManquantes}
+              />
             </CardContent>
           </Card>
         ) : null}

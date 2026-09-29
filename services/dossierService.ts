@@ -45,6 +45,12 @@ export const dossierService = {
         // doit donc pas être confondu avec « non renseigné ».
         estSensible: filtres.estSensible ?? undefined,
         sensibiliteStatut: filtres.sensibiliteStatut || undefined,
+        typeEtape: filtres.typeEtape || undefined,
+        statutEtape: filtres.statutEtape || undefined,
+        dateDebut: filtres.dateDebut || undefined,
+        dateFin: filtres.dateFin || undefined,
+        // `RECENT` est le défaut du serveur : ne pas l'envoyer garde l'URL lisible.
+        tri: filtres.tri && filtres.tri !== "RECENT" ? filtres.tri : undefined,
         page: filtres.page ?? 0,
         size: filtres.size ?? TAILLE_PAGE,
       },

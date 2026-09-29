@@ -57,7 +57,8 @@
     "monEspace": "Mon espace",
     "deposerFrais": "Déposer une demande",
     "deposerPublication": "Déposer une publication",
-    "audit": "Audit"
+    "audit": "Audit",
+    "journalAudiences": "Journal des audiences"
   },
   "accueil": {
     "titre": "Accueil",
@@ -131,9 +132,10 @@
       "EXPLOITATION_LITIGES": "Litiges d’exploitation"
     },
     "TypeEtape": {
-      "INSTANCE": "Instance",
-      "RECOURS_1": "Premier recours",
-      "RECOURS_2": "Second recours"
+      "INSTANCE": "Première instance",
+      "RECOURS_1": "Appel",
+      "RECOURS_2": "Pourvoi en cassation",
+      "RECOURS_2_CCJA": "Pourvoi CCJA"
     },
     "StatutCycleVie": {
       "OUVERTURE": "Ouverture",
@@ -312,6 +314,12 @@
       "PDF": "PDF",
       "EXCEL": "Excel",
       "CSV": "CSV"
+    },
+    "TriDossiers": {
+      "RECENT": "Ouverture, plus récente d'abord",
+      "ANCIEN": "Ouverture, plus ancienne d'abord",
+      "REFERENCE": "Référence (A → Z)",
+      "RISQUE": "Risque encouru, du plus élevé"
     }
   },
   "referentiels": {
@@ -487,15 +495,14 @@
     "champPvTransfert": "PV de transfert",
     "champIncidentCompte": "Référence de l’incident de compte",
     "champElementsJustificatifs": "Éléments justificatifs",
-    "champAlarme": "Champ d’alarme",
     "champJuristes": "Juristes affectés",
     "champAvocats": "Avocats affectés",
     "champEstSensible": "Dossier sensible",
     "champSeuilMontant": "Seuil proposé (FCFA)",
     "champTypeClientSensible": "Type de client",
     "aideNature": "La catégorie du dossier en découle : elle décide des pièces exigées.",
-    "aidePiecesRecouvrement": "Un dossier de recouvrement exige le dossier de crédit d’origine et le PV de transfert.",
-    "aidePiecesLitiges": "Un litige d’exploitation exige la référence de l’incident de compte et les éléments justificatifs.",
+    "aidePiecesRecouvrement": "Un dossier de recouvrement exige le dossier de crédit d’origine et le PV de transfert. Les références qui les nomment sont facultatives.",
+    "aidePiecesLitiges": "Un litige d’exploitation exige l’incident de compte et les éléments justificatifs. Les références qui les nomment sont facultatives.",
     "aideAffectation": "Au moins un juriste et au moins un avocat sont obligatoires.",
     "aideSensibilite": "Le seuil et le type de client constituent une proposition, soumise à la validation du DJ ou du DJA.",
     "categorieDeduite": "Catégorie déduite",
@@ -506,7 +513,14 @@
     "non": "Non",
     "filtreSensibiliteStatut": "Sensibilité",
     "filtreSensiblesSeuls": "Dossiers sensibles seulement",
-    "filtreTous": "Tous"
+    "filtreTous": "Tous",
+    "filtreTypeEtape": "Étape",
+    "filtreStatutEtape": "Statut de l'étape",
+    "filtreAudienceDebut": "Audience du",
+    "filtreAudienceFin": "Audience au",
+    "filtreTri": "Trier par",
+    "renvoiAlarmes": "Les alarmes de suivi se posent depuis la fiche du dossier, onglet « Alarmes » : elles portent une échéance et préviennent leur auteur le jour dit.",
+    "champAlarmeHerite": "Note saisie à la création (champ retiré)"
   },
   "fiche": {
     "retour": "Retour aux dossiers",
@@ -599,9 +613,8 @@
     },
     "piecesTitre": "Pièces à joindre",
     "piecesAide": "Facultatif : ces pièces pourront aussi être ajoutées plus tard depuis la fiche du dossier.",
-    "fichiersAide": "Les fichiers sont facultatifs : ils pourront aussi être ajoutés plus tard depuis la fiche du dossier.",
-    "fichierFacultatif": "Fichier (facultatif)",
-    "fichierDe": "Fichier (facultatif) : {piece}",
+    "fichiersAide": "Chaque pièce attendue doit porter son fichier : c’est elle qui fait foi, pas la référence qui la nomme.",
+    "fichierDe": "Fichier (obligatoire) : {piece}",
     "autresPieces": "Autres pièces",
     "ajouterAutre": "Ajouter une autre pièce",
     "retirerPiece": "Retirer cette pièce",
@@ -626,7 +639,12 @@
     "demandeSuppressionTitre": "Demander la suppression ?",
     "demandeSuppressionMessage": "Le document « {nom} » restera visible jusqu’à la décision du DJ ou du DJA.",
     "documentSupprime": "Document supprimé.",
-    "demandeEnvoyee": "Demande de suppression envoyée au DJ et au DJA."
+    "demandeEnvoyee": "Demande de suppression envoyée au DJ et au DJA.",
+    "telechargerSansEntete": "Sans en-tête",
+    "telechargerSansEnteteAide": "Tirage pour le papier préimprimé de la banque : le contenu seul, sans logo ni mentions légales.",
+    "fichierManquant": "Cette pièce est obligatoire : joignez son fichier.",
+    "piecesManquantes": "Il manque des pièces obligatoires : le dossier n’a pas été créé.",
+    "fichierLibelle": "Fichier"
   },
   "suppressions": {
     "titre": "Demandes de suppression",
@@ -980,7 +998,8 @@
     "payer": "Marquer comme payée",
     "payerTitre": "Marquer la demande comme payée ?",
     "payerMessage": "À faire une fois le paiement confirmé par les circuits de la Banque. L’avocat et la Direction Juridique en seront notifiés.",
-    "payee": "Paiement enregistré : l’avocat et la Direction Juridique sont notifiés."
+    "payee": "Paiement enregistré : l’avocat et la Direction Juridique sont notifiés.",
+    "aucunePiece": "Aucune pièce jointe à cette demande."
   },
   "audiences": {
     "aucune": "Aucune audience planifiée.",
@@ -1031,7 +1050,11 @@
     "traiterAria": "Marquer traitée - {objet}",
     "traiterTitre": "Marquer l’alarme comme traitée",
     "traiterMessage": "L’alarme « {objet} » est close, sans être remplacée. Pour la repousser, reprogrammez-la plutôt.",
-    "alarmeTraitee": "Alarme marquée traitée."
+    "alarmeTraitee": "Alarme marquée traitée.",
+    "dateAvantOuverture": "Cette date précède l’ouverture du dossier.",
+    "compteRenduAvocat": "Compte rendu de l’avocat",
+    "champJuridiction": "Juridiction",
+    "champJuridictionAide": "Là où l’audience se tiendra. Celle du dossier par défaut ; à changer pour un appel ou un pourvoi."
   },
   "deliberes": {
     "aucun": "Aucun délibéré.",
@@ -1476,7 +1499,9 @@
       "CLIENT_MODIFIE": "Modification d’un client",
       "INTERVENANT_MODIFIE": "Modification d’un intervenant",
       "AUDIT_CONSULTE": "Consultation de l’audit",
-      "NON_CLASSEE": "Action non classée"
+      "NON_CLASSEE": "Action non classée",
+      "AUDIT_EXPORTE": "Export de l’audit",
+      "ARCHIVE_TELECHARGEE": "Téléchargement d’une archive d’audit"
     },
     "details": {
       "accord": "Accord",
@@ -1539,7 +1564,37 @@
       "statut": "Statut",
       "statutPaiement": "Statut de paiement",
       "typeArchive": "Type d’archive",
-      "typeDocument": "Type de document"
+      "typeDocument": "Type de document",
+      "exportId": "Archive",
+      "empreinte": "Empreinte",
+      "format": "Format",
+      "lignes": "Lignes"
     }
+  },
+  "journalAudiences": {
+    "titre": "Journal des audiences",
+    "description": "Ce qui s’est dit aux audiences d’une journée, et ce qui n’a pas encore été rapporté.",
+    "journalTitre": "Audiences du jour",
+    "journalVide": "Aucune audience ce jour-là.",
+    "champDate": "Date",
+    "colonneDossier": "Dossier",
+    "colonneEtape": "Étape",
+    "colonneJuristes": "Juristes affectés",
+    "colonneCompteRenduJuriste": "Compte rendu du juriste",
+    "colonneCompteRenduAvocat": "Compte rendu de l’avocat",
+    "manquant": "Manquant",
+    "nonDepose": "Non déposé",
+    "attendusTitre": "Comptes rendus attendus",
+    "attendusAide": "Audiences passées dont le compte rendu du juriste n’a pas été saisi. La journée en cours n’y figure jamais : elle n’est pas en retard.",
+    "attendusVide": "Aucun compte rendu en attente sur cette période.",
+    "du": "Du",
+    "au": "Au",
+    "fenetreInversee": "La date de début est postérieure à la date de fin.",
+    "colonneDate": "Date de l’audience",
+    "colonneRetard": "Retard",
+    "colonneAvocat": "Côté avocat",
+    "joursDeRetard": "{jours} jour(s)",
+    "avocatARendu": "L’avocat a rapporté",
+    "consulterPiece": "Consulter la pièce"
   }
 }

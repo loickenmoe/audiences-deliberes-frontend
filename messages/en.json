@@ -57,7 +57,8 @@
     "monEspace": "My workspace",
     "deposerFrais": "File a claim",
     "deposerPublication": "Submit a publication",
-    "audit": "Audit"
+    "audit": "Audit",
+    "journalAudiences": "Hearing log"
   },
   "accueil": {
     "titre": "Home",
@@ -132,8 +133,9 @@
     },
     "TypeEtape": {
       "INSTANCE": "First instance",
-      "RECOURS_1": "First appeal",
-      "RECOURS_2": "Second appeal"
+      "RECOURS_1": "Appeal",
+      "RECOURS_2": "Supreme Court appeal",
+      "RECOURS_2_CCJA": "CCJA appeal"
     },
     "StatutCycleVie": {
       "OUVERTURE": "Opened",
@@ -312,6 +314,12 @@
       "PDF": "PDF",
       "EXCEL": "Excel",
       "CSV": "CSV"
+    },
+    "TriDossiers": {
+      "RECENT": "Opening date, most recent first",
+      "ANCIEN": "Opening date, oldest first",
+      "REFERENCE": "Reference (A → Z)",
+      "RISQUE": "Exposure, highest first"
     }
   },
   "referentiels": {
@@ -487,15 +495,14 @@
     "champPvTransfert": "Transfer record",
     "champIncidentCompte": "Account incident reference",
     "champElementsJustificatifs": "Supporting evidence",
-    "champAlarme": "Alarm field",
     "champJuristes": "Assigned lawyers",
     "champAvocats": "Assigned counsel",
     "champEstSensible": "Sensitive case",
     "champSeuilMontant": "Proposed threshold (FCFA)",
     "champTypeClientSensible": "Client type",
     "aideNature": "The case category follows from it: it decides which documents are required.",
-    "aidePiecesRecouvrement": "A debt recovery case requires the originating credit file and the transfer record.",
-    "aidePiecesLitiges": "An operating dispute requires the account incident reference and the supporting evidence.",
+    "aidePiecesRecouvrement": "A recovery case requires the original credit file and the transfer record. The references naming them are optional.",
+    "aidePiecesLitiges": "An operational dispute requires the account incident and the supporting evidence. The references naming them are optional.",
     "aideAffectation": "At least one lawyer and at least one counsel are mandatory.",
     "aideSensibilite": "The threshold and client type are a proposal, subject to approval by the Legal Director or Deputy.",
     "categorieDeduite": "Derived category",
@@ -506,7 +513,14 @@
     "non": "No",
     "filtreSensibiliteStatut": "Sensitivity",
     "filtreSensiblesSeuls": "Sensitive case files only",
-    "filtreTous": "All"
+    "filtreTous": "All",
+    "filtreTypeEtape": "Stage",
+    "filtreStatutEtape": "Stage status",
+    "filtreAudienceDebut": "Hearing from",
+    "filtreAudienceFin": "Hearing to",
+    "filtreTri": "Sort by",
+    "renvoiAlarmes": "Follow-up alarms are set from the case file, under “Alarms”: they carry a due date and notify their author on the day.",
+    "champAlarmeHerite": "Note entered at creation (field removed)"
   },
   "fiche": {
     "retour": "Back to cases",
@@ -599,9 +613,8 @@
     },
     "piecesTitre": "Documents to attach",
     "piecesAide": "Optional: these documents can also be added later from the case page.",
-    "fichiersAide": "Files are optional: they can also be added later from the case page.",
-    "fichierFacultatif": "File (optional)",
-    "fichierDe": "File (optional): {piece}",
+    "fichiersAide": "Each expected item must carry its file: the document is what counts, not the reference naming it.",
+    "fichierDe": "File (required): {piece}",
     "autresPieces": "Other documents",
     "ajouterAutre": "Add another document",
     "retirerPiece": "Remove this document",
@@ -626,7 +639,12 @@
     "demandeSuppressionTitre": "Request deletion?",
     "demandeSuppressionMessage": "The document “{nom}” will remain visible until the Legal Director or Deputy decides.",
     "documentSupprime": "Document deleted.",
-    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy."
+    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy.",
+    "telechargerSansEntete": "No letterhead",
+    "telechargerSansEnteteAide": "Print-ready copy for the bank preprinted paper: content only, without logo or legal notices.",
+    "fichierManquant": "This item is required: attach its file.",
+    "piecesManquantes": "Required items are missing: the case was not created.",
+    "fichierLibelle": "File"
   },
   "suppressions": {
     "titre": "Deletion requests",
@@ -980,7 +998,8 @@
     "payer": "Mark as paid",
     "payerTitre": "Mark the request as paid?",
     "payerMessage": "Only once the payment has been confirmed through the Bank’s channels. The lawyer and the Legal Department will be notified.",
-    "payee": "Payment recorded: the lawyer and the Legal Department have been notified."
+    "payee": "Payment recorded: the lawyer and the Legal Department have been notified.",
+    "aucunePiece": "No attachment on this claim."
   },
   "audiences": {
     "aucune": "No hearing scheduled.",
@@ -1031,7 +1050,11 @@
     "traiterAria": "Mark as handled - {objet}",
     "traiterTitre": "Mark the alarm as handled",
     "traiterMessage": "The alarm “{objet}” is closed without being replaced. To push it back, reschedule it instead.",
-    "alarmeTraitee": "Alarm marked as handled."
+    "alarmeTraitee": "Alarm marked as handled.",
+    "dateAvantOuverture": "This date precedes the case opening.",
+    "compteRenduAvocat": "Counsel report",
+    "champJuridiction": "Court",
+    "champJuridictionAide": "Where the hearing will be held. The case court by default; change it for an appeal."
   },
   "deliberes": {
     "aucun": "No deliberation.",
@@ -1476,7 +1499,9 @@
       "CLIENT_MODIFIE": "Client updated",
       "INTERVENANT_MODIFIE": "Provider updated",
       "AUDIT_CONSULTE": "Audit consulted",
-      "NON_CLASSEE": "Unclassified action"
+      "NON_CLASSEE": "Unclassified action",
+      "AUDIT_EXPORTE": "Audit export",
+      "ARCHIVE_TELECHARGEE": "Audit archive downloaded"
     },
     "details": {
       "accord": "Approval",
@@ -1539,7 +1564,37 @@
       "statut": "Status",
       "statutPaiement": "Payment status",
       "typeArchive": "Archive type",
-      "typeDocument": "Document type"
+      "typeDocument": "Document type",
+      "exportId": "Archive",
+      "empreinte": "Fingerprint",
+      "format": "Format",
+      "lignes": "Rows"
     }
+  },
+  "journalAudiences": {
+    "titre": "Hearing log",
+    "description": "What was reported from a day’s hearings, and what is still missing.",
+    "journalTitre": "Hearings of the day",
+    "journalVide": "No hearing on that day.",
+    "champDate": "Date",
+    "colonneDossier": "Case",
+    "colonneEtape": "Stage",
+    "colonneJuristes": "Assigned lawyers",
+    "colonneCompteRenduJuriste": "In-house report",
+    "colonneCompteRenduAvocat": "Counsel report",
+    "manquant": "Missing",
+    "nonDepose": "Not filed",
+    "attendusTitre": "Outstanding reports",
+    "attendusAide": "Past hearings whose in-house report has not been entered. Today is never listed: it is not late.",
+    "attendusVide": "No outstanding report over this period.",
+    "du": "From",
+    "au": "To",
+    "fenetreInversee": "The start date is after the end date.",
+    "colonneDate": "Hearing date",
+    "colonneRetard": "Delay",
+    "colonneAvocat": "Counsel side",
+    "joursDeRetard": "{jours} day(s)",
+    "avocatARendu": "Counsel reported",
+    "consulterPiece": "View attachment"
   }
 }

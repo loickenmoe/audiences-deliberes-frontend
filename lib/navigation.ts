@@ -48,6 +48,7 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: true },
   { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: true },
   { cle: "calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: true },
+  { cle: "journalAudiences", href: "/audiences/journal", icone: ClipboardList, capacite: "consulterJournalAudiences", livre: true },
   { cle: "frais", href: "/frais", icone: Receipt, capacite: "consulterFrais", livre: true },
   { cle: "publications", href: "/publications", icone: FileSignature, capacite: "consulterPublications", livre: true },
   { cle: "constitutions", href: "/constitutions", icone: Gavel, capacite: "consulterConstitutions", livre: true },

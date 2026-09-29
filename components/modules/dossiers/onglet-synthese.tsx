@@ -87,7 +87,15 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
                 </Donnee>
               </>
             )}
-            <Donnee libelle={t("champAlarme")}>{dossier.champAlarme}</Donnee>
+            {/*
+              Affiché **seulement s'il porte une valeur**. Le champ n'est plus saisissable depuis
+              le 2026-09-28 ; aucun des dossiers en base n'en portait. La ligne ne subsiste donc
+              que pour d'éventuelles données héritées, sous un libellé qui ne promet plus de
+              déclenchement — c'était la promesse trompeuse du nom « alarme ».
+            */}
+            {dossier.champAlarme ? (
+              <Donnee libelle={t("champAlarmeHerite")}>{dossier.champAlarme}</Donnee>
+            ) : null}
           </dl>
         </CardContent>
       </Card>

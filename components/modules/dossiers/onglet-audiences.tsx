@@ -3,12 +3,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarPlus, FileText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
+import { usePublications } from "@/hooks/usePublications";
+import type { Publication } from "@/types/domaine";
 import { StatutChip, type TonStatut } from "@/components/global/statut-chip";
 import { DateValeur, DialogueConfirmation } from "@/components/metier";
 import { Button } from "@/components/ui/button";
@@ -22,7 +25,7 @@ import {
 } from "@/hooks/useAudiences";
 import type { Langue } from "@/i18n/config";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";
-import { aujourdhui, demain } from "@/lib/calendrier";
+import { aujourdhui } from "@/lib/calendrier";
 import { peut } from "@/lib/rbac";
 import { formaterDate } from "@/lib/utils";
 import type { Audience, Dossier, PlanifierAudience } from "@/types/domaine";
@@ -47,6 +50,26 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
   const tdom = useTranslations("domaine");
   const requete = useAudiencesDossier(dossier.id);
   const peutGerer = peut(roles, "gererAudiences");
+
+  /*
+   * Le compte rendu de l'avocat vit dans les **publications**, rattaché à l'audience mais pas porté
+   * par elle. Sans ce croisement, l'onglet n'affichait que le récit du juriste : une audience dont
+   * l'avocat avait rendu compte paraissait muette, et personne ne savait où chercher.
+   *
+   * Seules les publications **validées** comptent : un dépôt en attente n'est lisible d'aucun
+   * juriste, et le montrer ici ferait croire à une information disponible.
+   */
+  const peutVoirPublications = peut(roles, "consulterPublications");
+  const publications = usePublications(
+    { dossierId: dossier.id, statut: "VALIDE", size: 200 },
+    peutVoirPublications,
+  );
+  const compteRenduAvocatParAudience = new Map<number, Publication>();
+  for (const publication of publications.data?.content ?? []) {
+    if (publication.type === "CR_AUDIENCE" && publication.audienceId !== null) {
+      compteRenduAvocatParAudience.set(publication.audienceId, publication);
+    }
+  }
   const [planification, setPlanification] = useState(false);
   const [compteRendu, setCompteRendu] = useState<Audience | null>(null);
   const [annulation, setAnnulation] = useState<Audience | null>(null);
@@ -103,7 +126,15 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     <td className="px-4 py-2 font-medium">
                       <DateValeur valeur={audience.datePlanifiee} />
                     </td>
-                    <td className="px-4 py-2">{libelleEtape(audience.etapeId)}</td>
+                    <td className="px-4 py-2">
+                      {libelleEtape(audience.etapeId)}
+                      {/* Là où elle se tient : un appel ne siège pas devant le tribunal qui a jugé. */}
+                      {audience.juridiction ? (
+                        <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
+                          {audience.juridiction}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2">
                       <StatutChip ton={TON[audience.statut]}>
                         {tdom(`StatutAudience.${audience.statut}` as never)}
@@ -113,22 +144,33 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                       <DateValeur valeur={audience.dateTenue} />
                     </td>
                     <td className="max-w-md px-4 py-2">
-                      {audience.compteRendu ? (
-                        <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
-                          {audience.compteRendu}
-                        </p>
-                      ) : audience.statut === "ANNULEE" && audience.motifAnnulation ? (
-                        <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
-                          {t("motifAnnulation", { motif: audience.motifAnnulation })}
-                        </p>
-                      ) : compteRenduPossible ? (
-                        <Button variante="secondaire" taille="sm" onClick={() => setCompteRendu(audience)}>
-                          <FileText size={14} aria-hidden />
-                          {t("saisirCompteRendu")}
-                        </Button>
-                      ) : (
-                        "—"
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {audience.compteRendu ? (
+                          <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
+                            {audience.compteRendu}
+                          </p>
+                        ) : audience.statut === "ANNULEE" && audience.motifAnnulation ? (
+                          <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
+                            {t("motifAnnulation", { motif: audience.motifAnnulation })}
+                          </p>
+                        ) : compteRenduPossible ? (
+                          <Button variante="secondaire" taille="sm" onClick={() => setCompteRendu(audience)}>
+                            <FileText size={14} aria-hidden />
+                            {t("saisirCompteRendu")}
+                          </Button>
+                        ) : !compteRenduAvocatParAudience.has(audience.id) ? (
+                          "—"
+                        ) : null}
+
+                        {compteRenduAvocatParAudience.has(audience.id) ? (
+                          <Link
+                            href={`/publications/${compteRenduAvocatParAudience.get(audience.id)!.id}`}
+                            className="text-[length:var(--taille-xs)] text-texte-secondaire underline underline-offset-2"
+                          >
+                            {t("compteRenduAvocat")}
+                          </Link>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-2 text-right">
                       {peutGerer && audience.statut === "PLANIFIEE" ? (
@@ -154,6 +196,8 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
         <>
           <ModalePlanification
             dossierId={dossier.id}
+            ouvertureDossier={dossier.createdAt.slice(0, 10)}
+            juridictionDuDossier={dossier.juridictionSaisie}
             etapes={etapesEnCours.map((etape) => ({ id: etape.id, libelle: libelleEtape(etape.id) }))}
             ouvert={planification}
             onFermeture={() => setPlanification(false)}
@@ -168,11 +212,17 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
 
 function ModalePlanification({
   dossierId,
+  ouvertureDossier,
+  juridictionDuDossier,
   etapes,
   ouvert,
   onFermeture,
 }: {
   dossierId: number;
+  /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-07). */
+  ouvertureDossier: string;
+  /** Juridiction de la saisine : ce que la planification propose par défaut. */
+  juridictionDuDossier: string;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
@@ -187,16 +237,22 @@ function ModalePlanification({
   const [confirmation, setConfirmation] = useState<PlanifierAudience | null>(null);
   const etapeParDefaut = etapes[0]?.id;
 
+  // RG-AUD-07 amendée (2026-09-23) : une audience s'enregistre le jour même et après coup — une
+  // audience tenue sans avoir été saisie doit pouvoir être régularisée. La seule borne est
+  // l'ouverture du dossier, comme côté serveur : les deux doivent refuser la même chose.
   const schema = useMemo(
     () =>
       z.object({
         etapeId: z.coerce.number().int().positive(tm("champObligatoire")),
         // Comparaison de chaînes `YYYY-MM-DD` : l'ordre lexical est l'ordre chronologique.
-        datePlanifiee: z.string().min(1, tm("champObligatoire")).refine((date) => date >= demain(), {
-          message: tm("champObligatoire"),
-        }),
+        datePlanifiee: z
+          .string()
+          .min(1, tm("champObligatoire"))
+          .refine((date) => date >= ouvertureDossier, { message: t("dateAvantOuverture") }),
+        // Facultative : laissée vide, le serveur reprend la juridiction du dossier.
+        juridiction: z.string().trim().max(100).optional(),
       }),
-    [tm],
+    [tm, t, ouvertureDossier],
   );
 
   const {
@@ -211,10 +267,10 @@ function ModalePlanification({
   // chaque rendu du parent — effaçait la saisie à chaque rechargement du dossier.
   useEffect(() => {
     if (ouvert) {
-      reset({ etapeId: etapeParDefaut, datePlanifiee: "" });
+      reset({ etapeId: etapeParDefaut, datePlanifiee: "", juridiction: juridictionDuDossier });
       setConfirmation(null);
     }
-  }, [ouvert, etapeParDefaut, reset]);
+  }, [ouvert, etapeParDefaut, juridictionDuDossier, reset]);
 
   async function envoyer(audience: PlanifierAudience, forcer: boolean) {
     try {
@@ -268,11 +324,24 @@ function ModalePlanification({
               ))}
             </Select>
           </Champ>
+          <Champ
+            id="audience-juridiction"
+            label={t("champJuridiction")}
+            aide={t("champJuridictionAide")}
+            erreur={errors.juridiction?.message}
+          >
+            <Input
+              id="audience-juridiction"
+              maxLength={100}
+              enErreur={!!errors.juridiction}
+              {...register("juridiction")}
+            />
+          </Champ>
           <Champ id="audience-date" label={t("champDate")} obligatoire erreur={errors.datePlanifiee?.message}>
             <Input
               id="audience-date"
               type="date"
-              min={demain()}
+              min={ouvertureDossier}
               enErreur={!!errors.datePlanifiee}
               {...register("datePlanifiee")}
             />

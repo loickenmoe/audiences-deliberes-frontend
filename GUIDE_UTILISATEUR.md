@@ -67,8 +67,14 @@ tard dans la minute : **aucune notification n'est perdue**, seul l'affichage imm
 ## 4. Dossiers
 
 **Créer un dossier** (juriste) : *Dossiers* → *Nouveau dossier*. La référence doit être unique ; si
-elle existe déjà, le message s'affiche sous le champ concerné. Les pièces exigées dépendent de la
-catégorie — recouvrement ou litiges d'exploitation — et se joignent dès la création.
+elle existe déjà, le message s'affiche sous le champ concerné.
+
+**Les pièces se joignent à la création, et elles sont obligatoires** (depuis le 2026-09-29) : le
+dossier de crédit d'origine et le PV de transfert pour un recouvrement, l'incident de compte et les
+éléments justificatifs pour un litige d'exploitation. Tant qu'un fichier manque, l'enregistrement
+est refusé et la pièce en cause est signalée. Les références qui les nomment, elles, sont
+**facultatives** : c'est le document qui fait foi. Chaque fichier se relit d'un clic sur l'œil avant
+l'envoi.
 
 **Un dossier sensible** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.
@@ -80,16 +86,35 @@ l'onglet ouvert, un collègue retrouvera exactement la même vue.
 **Étapes.** Un dossier suit un cycle — instance, recours, exécution. Une audience ne se planifie que
 sur une étape **en cours** : si le bouton n'apparaît pas, commencez par ouvrir l'étape.
 
+**Retrouver des dossiers.** La barre de filtres croise la référence, le client, la juridiction, la
+nature, la sensibilité, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
+lisent ensemble : « Appel » + « En cours » donne les appels en cours, et non les dossiers dont
+l'appel est clôturé mais qui ont autre chose en cours. La période porte sur les **audiences** — les
+dossiers passés devant un juge entre ces deux dates, les audiences annulées exclues — et non sur la
+date d'ouverture. Un dossier porté à la fois devant la Cour Suprême et devant la CCJA remonte dans
+les deux filtres : les deux procédures existent.
+
+*Trier par* réordonne sans rien retirer : ouverture récente ou ancienne, référence, risque encouru.
+Tous ces critères s'inscrivent dans l'adresse : une recherche se transmet par copier-coller, et
+*Effacer* les remet à zéro d'un coup.
+
 ---
 
 ## 5. Audiences et délibérés
 
-**Planifier une audience** depuis l'onglet *Audiences*. Le système programme les rappels à J-7, J-3
+**Planifier une audience** depuis l'onglet *Audiences*. Le champ *Juridiction* propose celle du
+dossier ; changez-la pour un appel ou un pourvoi, qui ne se tiennent pas devant le tribunal qui a
+jugé. C'est ce lieu qu'annoncent ensuite le calendrier et le journal des audiences. Le système programme les rappels à J-7, J-3
 et J-1. Une audience en double sur la même étape et la même date est signalée avant l'enregistrement
 — vous pouvez confirmer si le doublon est voulu.
 
 **Le calendrier** (*Calendrier*) présente les audiences par semaine, mois ou trimestre, et s'exporte
 en PDF ou Excel.
+
+**Les alarmes** sont vos rappels de suivi : fiche du dossier, onglet *Alarmes*. Une alarme porte un
+objet et une échéance, et prévient son auteur le jour dit ; la reprogrammer clôt l'ancienne et en
+crée une nouvelle. C'est le seul mécanisme de rappel : aucun champ du formulaire de création n'en
+produit.
 
 **Un délibéré** s'enregistre à l'issue de l'audience. Il peut être **prorogé** — au-delà du seuil
 configuré, une alerte part au DJ et à la DJA — ou **rabattu**, ce qui rouvre l'étape et permet de
@@ -114,6 +139,10 @@ ou si le montant dépasse le seuil → enregistrement du **paiement** par l'Assi
 Chaque profil ouvre l'application sur la file dont il a la charge. Un rejet exige toujours un motif,
 et l'avocat en est notifié.
 
+**Vérifiez vos pièces avant d'envoyer.** Chaque fichier chargé porte un œil : il s'ouvre sans
+quitter le formulaire. Une fois la demande déposée, remplacer une pièce suppose une nouvelle
+demande.
+
 **Les pièces justificatives s'ouvrent** depuis le détail de la demande : le contrôle de conformité
 porte sur les documents, pas sur leurs noms.
 
@@ -135,8 +164,13 @@ fois ce qu'il fait. Les formats admis et le poids maximal sont les mêmes que po
 Toute publication passe par la validation de l'Assistante avant d'être visible des juristes. En cas
 de rejet, le motif s'affiche dans *Mon espace*, avec le dépôt concerné.
 
-**Pour l'Assistante et les juristes.** La fiche d'une publication montre le récit et, s'il y en a
-une, la **pièce jointe** — consultable à l'écran ou téléchargeable, sans quitter la page. Un compte
+**Vérifiez votre fichier avant de déposer.** Un œil l'ouvre sans quitter le formulaire : une
+publication déposée ne se corrige pas, elle se redépose.
+
+**Pour l'Assistante et les juristes.** Une fois la publication validée, le compte rendu se retrouve
+**depuis l'audience** : l'onglet *Audiences* du dossier porte un lien vers lui, à côté du compte
+rendu du juriste. La fiche d'une publication montre le récit et, s'il y en a une, la **pièce
+jointe** — consultable à l'écran ou téléchargeable, sans quitter la page. Un compte
 rendu sans pièce n'affiche simplement pas ce bloc.
 
 **Correspondance.** Un juriste commente une publication ; le DJ ou la DJA consolide ces commentaires
