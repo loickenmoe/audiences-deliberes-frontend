@@ -87,6 +87,24 @@ l'onglet ouvert, un collègue retrouvera exactement la même vue.
 **Étapes.** Un dossier suit un cycle — instance, recours, exécution. Une audience ne se planifie que
 sur une étape **en cours** : si le bouton n'apparaît pas, commencez par ouvrir l'étape.
 
+**Chaque changement d'étape suppose que les faits aient eu lieu** (depuis le 2026-09-29). Si le
+système refuse, il dit lequel manque :
+
+- **En délibéré** : une audience au moins doit avoir été **tenue** — c'est-à-dire que son compte
+  rendu est saisi — et aucune audience ne doit rester planifiée. Tenez-les ou annulez-les d'abord.
+- **Exercer un recours** : le délibéré doit être **défavorable ou mixte**, et le délai de recours ne
+  doit pas être expiré. On ne fait pas appel d'un procès gagné.
+- **Clôturer** : l'issue du délibéré doit être enregistrée.
+- **Archiver** : la décision définitive — adjudication ou condamnation — doit être saisie. Et si
+  c'est la dernière étape du dossier, toutes les demandes de frais doivent être payées ou rejetées ;
+  le message nomme alors les factures qui manquent.
+- **Ouvrir les débats d'un appel ou d'un pourvoi** : le degré précédent ne doit pas être en délibéré.
+
+**Archiver à la jurisprudence** (onglet *Décisions*) est autre chose qu'archiver une étape : la
+décision rejoint la base de précédents consultable par tous les juristes. Elle n'y entre que lorsque
+le dossier n'a plus aucune étape en cours — une décision encore susceptible de recours ferait un
+mauvais précédent.
+
 **Retrouver des dossiers.** La barre de filtres croise la référence, le client, la juridiction, la
 nature, la sensibilité, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
 lisent ensemble : « Appel » + « En cours » donne les appels en cours, et non les dossiers dont

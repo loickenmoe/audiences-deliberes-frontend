@@ -423,6 +423,56 @@ permettait de l'« arbitrer » comme une dérogation — fixant un seuil en lais
 attente. C'était inatteignable faute d'identifiant ; la nouvelle lecture le rendait atteignable.
 #7 exige désormais une sensibilité validée, comme #6.
 
+### ✅ Les transitions d'étape exigent des faits, pas seulement un ordre *(2026-09-29)*
+
+**Ce que le métier a demandé.** « Ne pas mettre une étape en délibéré lorsque l'audience n'est pas
+encore tenue… bref, les conditions nécessaires pour passer d'une étape à une autre. »
+
+**Le constat.** `EtapeTransitionValidator` est une table de statuts : elle dit quel statut peut
+suivre quel autre, et rien d'autre. Les seules gardes factuelles du système protégeaient l'**entrée
+dans les modules** — planifier une audience exige une étape `EN_COURS`, enregistrer un délibéré une
+étape `EN_DELIBERE` — jamais le **changement de statut lui-même**.
+
+**Six trous, dont un que je n'attendais pas.** Le plus net n'était pas celui du métier : la règle
+« seuls DEFAVORABLE et MIXTE ouvrent une voie de recours » était **écrite dans le code** depuis M7,
+dans le commentaire de `ResultatDelibere`, et appliquée nulle part. Comme
+`DELIBERE_VIDE → EN_COURS` ouvre automatiquement l'étape suivante, un jugement favorable pouvait
+faire naître une instance d'appel que personne n'avait décidée.
+
+**Les arbitrages du métier :**
+- **« tenue » veut dire « rapportée »** : le statut `TENUE` n'est posé qu'à la saisie du compte
+  rendu. La version souple — « une audience dont la date est passée » — a été écartée ;
+- **aucune audience ne doit rester planifiée** : une étape ne part en délibéré que lorsque toutes
+  ses audiences sont réglées, tenues ou annulées. Sans cela, une audience survivait à la mise en
+  délibéré et alimentait encore le calendrier et les rappels J-7/J-3/J-1 ;
+- **l'archivage exige l'issue définitive et les frais soldés.**
+
+**L'ajustement du multi-avocats.** Un dossier porte plusieurs avocats, donc un flux continu de
+demandes de frais. Appliquée à chaque étape, la règle aurait rendu la première instance inarchivable
+pendant des années à cause d'une facture d'appel — et par quelqu'un qui n'y peut rien : archiver est
+réservé au juriste, payer à l'assistante. La condition ne vaut donc qu'à l'archivage de la
+**dernière étape ouverte** : le dernier qui ferme éteint la lumière.
+
+**Rattacher les frais à une étape a été envisagé puis écarté** : cela n'attraperait aucune dette que
+la règle actuelle laisse passer, puisque tout est vérifié au moment où le dossier cesse de vivre.
+Ce lien aurait une valeur pour le **pilotage** — mesurer le coût d'un appel — pas pour cette garde.
+
+**Une règle validée puis rendue impossible par le code.** « L'étape précédente doit être close »
+avait été validée ; l'exercice d'un recours fait passer l'étape courante à `EN_COURS` au lieu de la
+clore, et la garde aurait bloqué le parcours normal juste après le recours. Ce qui en reste est plus
+étroit et vrai : **on n'ouvre pas les débats d'un degré tant que le précédent est en délibéré**. Un
+test verrouille le cas du recours, pour que la règle ne glisse pas vers la version impossible.
+
+**Ce que les tests ont révélé.** Trois parcours de bout en bout mettaient en délibéré sans qu'aucune
+audience ne se soit tenue, et un test d'intégration versait une jurisprudence sur un dossier
+fraîchement créé. Le défaut vivait jusque dans les tests de référence du projet.
+
+**Rien n'a changé à l'écran, et c'est délibéré.** L'onglet Étapes affiche déjà le message du serveur
+en rouge sous le sélecteur, et ces messages sont rédigés pour être lus tels quels. Griser les
+transitions impossibles **avant** le clic supposerait que le navigateur connaisse les audiences, les
+délibérés et les frais — donc duplique des règles métier que le serveur seul arbitre. C'est
+précisément ce que `lib/transitions.ts` évite déjà : « Le backend reste l'arbitre ».
+
 ### ✅ Les références sont attribuées par le système *(2026-09-29)*
 
 **Ce que le métier a demandé.** « Les champs Référence doivent être automatiquement remplis par le
