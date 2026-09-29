@@ -78,7 +78,6 @@ export interface Client {
 }
 
 export interface CreerClient {
-  reference: string;
   nom: string;
   email?: string;
   telephone?: string;
@@ -354,8 +353,8 @@ export interface DocumentDossier {
  *   transmettre ;
  * · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), pas le libellé.
  */
+/** La référence n'y figure pas : le serveur l'attribue (2026-09-29). */
 export interface CreerDossier {
-  reference: string;
   nature: string;
   juridictionSaisie: string;
   clientId: number;

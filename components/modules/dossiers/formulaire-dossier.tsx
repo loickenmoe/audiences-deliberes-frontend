@@ -40,7 +40,6 @@ import { gedService } from "@/services/gedService";
  * Le contrôle reste côté backend ; le rejouer ici évite un aller-retour pour une omission visible.
  */
 const CHAMPS = [
-  "reference",
   "nature",
   "juridictionSaisie",
   "clientId",
@@ -95,7 +94,6 @@ export function FormulaireDossier({
     () =>
       z
         .object({
-          reference: z.string().trim().min(1, tm("champObligatoire")).max(50),
           nature: z.string().min(1, tm("champObligatoire")),
           juridictionSaisie: z.string().trim().min(1, tm("champObligatoire")).max(100),
           clientId: z.coerce.number().int().positive(tm("champObligatoire")),
@@ -156,7 +154,6 @@ export function FormulaireDossier({
   } = useForm<z.input<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      reference: "",
       nature: "",
       juridictionSaisie: "",
       estSensible: false,
@@ -204,7 +201,6 @@ export function FormulaireDossier({
 
     try {
       const cree = await creer.mutateAsync({
-        reference: valeurs.reference,
         nature: valeurs.nature,
         juridictionSaisie: valeurs.juridictionSaisie,
         clientId: Number(valeurs.clientId),
@@ -259,11 +255,14 @@ export function FormulaireDossier({
         routeur.push(`/dossiers/${cree.id}?onglet=documents`);
         return;
       }
+      // La référence est attribuée par le serveur : l'annoncer est la seule façon pour l'auteur
+      // de savoir sous quel numéro son dossier a été ouvert.
+      toast.success(t("dossierCree", { reference: cree.reference }));
       // Le dossier créé s'ouvre directement : c'est ce que l'utilisateur va consulter ensuite.
       routeur.push(`/dossiers/${cree.id}`);
     } catch (erreur) {
-      // Le backend nomme lui-même le champ fautif depuis M16 (Q-70) : une référence en doublon
-      // arrive avec `champ: "reference"` et se pose au bon endroit sans table de correspondance.
+      // Le backend nomme lui-même le champ fautif depuis M16 (Q-70) : il se pose au bon endroit
+      // sans table de correspondance.
       if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
         setError("root", { message: messageErreur(erreur) });
       }
@@ -376,15 +375,12 @@ export function FormulaireDossier({
             <CardTitle>{t("sectionIdentification")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Champ
-              id="reference"
-              label={t("colonneReference")}
-              obligatoire
-              erreur={errors.reference?.message}
-            >
-              <Input id="reference" enErreur={!!errors.reference} {...register("reference")} />
-            </Champ>
-
+            {/*
+              La référence n'est plus saisie : le serveur l'attribue (DOS-2026-0001) et la
+              confirmation la nomme à la création. Un champ pré-rempli en lecture seule aurait
+              occupé la place d'une information que l'utilisateur ne peut ni corriger ni connaître
+              avant d'enregistrer.
+            */}
             <Champ
               id="nature"
               label={t("champNature")}

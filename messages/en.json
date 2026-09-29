@@ -420,7 +420,8 @@
     "aucunDossierCategorie": "No case file in this category.",
     "risqueEncouru": "Amount at risk",
     "juridiction": "Court",
-    "retourListe": "Back to the client list"
+    "retourListe": "Back to the client list",
+    "clientCree": "Client {reference} created."
   },
   "intervenants": {
     "titre": "Service providers",
@@ -520,7 +521,8 @@
     "filtreAudienceFin": "Hearing to",
     "filtreTri": "Sort by",
     "renvoiAlarmes": "Follow-up alarms are set from the case file, under “Alarms”: they carry a due date and notify their author on the day.",
-    "champAlarmeHerite": "Note entered at creation (field removed)"
+    "champAlarmeHerite": "Note entered at creation (field removed)",
+    "dossierCree": "Case {reference} created."
   },
   "fiche": {
     "retour": "Back to cases",

@@ -164,9 +164,14 @@ describe("clientService", () => {
     expect(vue.exploitationLitiges).toEqual([]);
   });
 
-  /** `ERR-002` doit remonter comme `ErreurApi` typée, pas comme une erreur axios brute. */
+  /**
+   * `ERR-002` doit remonter comme `ErreurApi` typée, pas comme une erreur axios brute.
+   *
+   * La référence n'est plus envoyée depuis le 2026-09-29 — le serveur l'attribue — mais ce conflit
+   * reste possible si le compteur se désynchronise (V36), et sa normalisation doit tenir.
+   */
   it("normalise le refus de référence en doublon", async () => {
-    await expect(clientService.creer({ reference: "CLI-001", nom: "Doublon" })).rejects.toSatisfy(
+    await expect(clientService.creer({ nom: "Doublon" })).rejects.toSatisfy(
       (erreur: unknown) =>
         erreur instanceof ErreurApi &&
         erreur.code === "ERR-002" &&
