@@ -235,7 +235,15 @@ est générée et rangée dans la GED du dossier. L'avocat constitué en est not
 ## 8. Documents (GED)
 
 Les pièces se joignent à la création d'un dossier ou depuis l'onglet *Documents*. Les formats admis
-et le poids maximal sont fixés par le DJ dans les paramètres système.
+et le poids maximal sont fixés par le DJ dans les paramètres système : PDF, images, texte, classeur
+Excel et **documents Word** (depuis le 2026-10-02).
+
+**Lire une pièce sans la télécharger.** L'œil ouvre le document dans l'application : PDF, images,
+texte et `.docx` s'affichent tels quels - un Word montre sa mise en page, ses titres et ses
+tableaux. Deux exceptions, annoncées à l'écran : un classeur Excel ne s'affiche pas, et un fichier
+Word à l'**ancien format** `.doc` (Word 97-2003) non plus - aucun navigateur ne sait le lire. Dans
+ces deux cas, téléchargez le fichier ; pour un `.doc`, le réenregistrer au format `.docx` depuis
+Word le rend consultable dans l'application.
 
 ![L'onglet *Documents* d'un dossier : la GED, pièce par pièce.](images/guide/10-fiche-documents.png)
 

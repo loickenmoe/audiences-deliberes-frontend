@@ -51,9 +51,9 @@ recette : ouvrez simplement http://localhost:3000 dans le navigateur.
 
 - Un navigateur de bureau. Pour les parcours multi-rôles, prévoyez **deux fenêtres de navigation
   privée distinctes** (ou deux navigateurs) : deux rôles ne peuvent pas partager la même session.
-- De quoi charger des fichiers : un **PDF de moins de 10 Mo** et une **image PNG ou JPG**. Formats
-  admis en GED : `PDF, PNG, JPG, TXT, XLSX` - le format est déduit de **l'extension**, pas du type
-  déclaré. Poids maximal : 10 Mo.
+- De quoi charger des fichiers : un **PDF de moins de 10 Mo**, une **image PNG ou JPG** et un
+  **document Word `.docx`**. Formats admis en GED : `PDF, PNG, JPG, TXT, XLSX, DOCX, DOC` - le
+  format est déduit de **l'extension**, pas du type déclaré. Poids maximal : 10 Mo.
 - Au moins **un client** et **un avocat** doivent exister dans le référentiel. S'ils manquent, la
   fiche REC-E2E-002 les crée : exécutez-la en premier.
 
@@ -842,8 +842,8 @@ Juriste (`juriste.test`) → DJ (`dj.test`).
 `DOS-REC-003` existe.
 
 ### Données de test
-Un PDF `pv-transfert.pdf`, une image `scan.png`, un fichier **non autorisé** (par exemple `.docx`),
-motif de suppression `Pièce erronée`.
+Un PDF `pv-transfert.pdf`, une image `scan.png`, un document Word `conclusions.docx`, un fichier
+**non autorisé** (par exemple `.odt`), motif de suppression `Pièce erronée`.
 
 ### Parcours
 
@@ -851,16 +851,17 @@ motif de suppression `Pièce erronée`.
 |---|---|---|---|---|---|
 | 1 | JUR | Fiche → onglet « Documents » → « Déposer », choisir le PDF, renseigner « Type de pièce » → valider | Message « Pièce déposée. » ; le document apparaît dans la liste | | ☐ |
 | 2 | JUR | Déposer l'image `scan.png` | Déposée également | | ☐ |
-| 3 | JUR | Tenter de déposer le fichier `.docx` | Refus explicite : le format n'est pas admis (`PDF, PNG, JPG, TXT, XLSX`) | | ☐ |
-| 4 | JUR | Cliquer « Aperçu » sur le PDF, puis sur l'image | Les deux s'affichent dans une fenêtre d'aperçu, sans quitter la page | | ☐ |
-| 5 | JUR | Cliquer « Télécharger » sur le PDF | Le fichier est téléchargé et s'ouvre | | ☐ |
-| 6 | JUR | Cliquer « Demander la suppression » sur le PDF, saisir le motif → confirmer | Message « Demande de suppression envoyée au DJ et au DJA. » ; **le document reste visible** | | ☐ |
-| 7 | JUR | Redemander la suppression du **même** document | Refus : une demande est déjà en attente | | ☐ |
-| 8 | DJ | Menu « Demandes de suppression » → file « En attente » | La demande figure, avec le nom du fichier, le dossier et le motif | | ☐ |
-| 9 | DJ | Cliquer « Rejeter », saisir un motif → confirmer | La demande est rejetée ; le document reste en place ; le motif est consultable | | ☐ |
-| 10 | JUR | Redemander la suppression du même document | Acceptée : la demande précédente est close | | ☐ |
-| 11 | DJ | « Approuver » la nouvelle demande → confirmer | Le document est supprimé ; il disparaît de l'onglet Documents du dossier | | ☐ |
-| 12 | DJ | Sur la fiche du dossier, onglet « Documents », cliquer « Supprimer » sur `scan.png` → confirmer | Suppression **immédiate**, sans passer par une demande | | ☐ |
+| 3 | JUR | Déposer le document Word `conclusions.docx` | Déposé ; la colonne « Format » affiche `DOCX` | | ☐ |
+| 4 | JUR | Tenter de déposer le fichier `.odt` | Refus explicite : le format n'est pas admis (`PDF, PNG, JPG, TXT, XLSX, DOCX, DOC`) | | ☐ |
+| 5 | JUR | Cliquer « Consulter » sur le PDF, sur l'image, puis sur le `.docx` | Les trois s'affichent dans la fenêtre d'aperçu, sans quitter la page. Le Word montre sa mise en page - titres, gras, tableaux | | ☐ |
+| 6 | JUR | Cliquer « Télécharger » sur le PDF | Le fichier est téléchargé et s'ouvre | | ☐ |
+| 7 | JUR | Cliquer « Demander la suppression » sur le PDF, saisir le motif → confirmer | Message « Demande de suppression envoyée au DJ et au DJA. » ; **le document reste visible** | | ☐ |
+| 8 | JUR | Redemander la suppression du **même** document | Refus : une demande est déjà en attente | | ☐ |
+| 9 | DJ | Menu « Demandes de suppression » → file « En attente » | La demande figure, avec le nom du fichier, le dossier et le motif | | ☐ |
+| 10 | DJ | Cliquer « Rejeter », saisir un motif → confirmer | La demande est rejetée ; le document reste en place ; le motif est consultable | | ☐ |
+| 11 | JUR | Redemander la suppression du même document | Acceptée : la demande précédente est close | | ☐ |
+| 12 | DJ | « Approuver » la nouvelle demande → confirmer | Le document est supprimé ; il disparaît de l'onglet Documents du dossier | | ☐ |
+| 13 | DJ | Sur la fiche du dossier, onglet « Documents », cliquer « Supprimer » sur `scan.png` → confirmer | Suppression **immédiate**, sans passer par une demande | | ☐ |
 
 ### Résultat final attendu
 Un document a suivi le circuit complet (demande, rejet, nouvelle demande, approbation, suppression)
@@ -1365,7 +1366,8 @@ autant de garanties métier.
 | REC-NEG-009 | Transition d'étape interdite | JUR | Choisir une transition non permise dans « Faire passer à » | Seules les transitions permises sont proposées ; une transition refusée affiche les états permis | ☐ |
 | REC-NEG-010 | Compte avocat non rattaché | AVO | Se connecter avec un compte `ROLE_AVOCAT` **sans** fiche au référentiel | Message expliquant que le compte n'est « pas encore rattaché au répertoire » - pas une erreur technique | ☐ |
 | REC-NEG-011 | Motif obligatoire à chaque refus | AST, DJ, SH | Rejeter une demande de frais, une publication, une sensibilité, une suppression, sans motif | Refus dans les quatre cas | ☐ |
-| REC-NEG-012 | Fichier au format interdit | JUR | Déposer un `.docx` en GED | Refus explicite citant les formats admis | ☐ |
+| REC-NEG-012 | Fichier au format interdit | JUR | Déposer un `.odt` en GED | Refus explicite citant les formats admis, Word compris | ☐ |
+| REC-NEG-035 | Word à l'ancien format, sans aperçu | JUR | Déposer un `.doc` (Word 97-2003), puis cliquer « Consulter » | Le dépôt est **accepté**. L'aperçu ne montre pas le document mais **explique pourquoi** - ancien format, non affichable par le navigateur - et propose le téléchargement. Ce n'est pas une anomalie | ☐ |
 | REC-NEG-013 | Fichier trop lourd | JUR | Déposer un fichier de plus de 10 Mo | Refus explicite sur le poids | ☐ |
 | REC-NEG-014 | Double demande de suppression | JUR | Demander deux fois la suppression du même document | La seconde est refusée : une demande est déjà en attente | ☐ |
 | REC-NEG-015 | Double correspondance | DJ | Transmettre deux fois la correspondance d'une même publication | La seconde est refusée | ☐ |
@@ -1569,7 +1571,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
 | **Total parcours de bout en bout** | **29** | | | | |
-| Cas négatifs (REC-NEG) | 34 | | | | |
+| Cas négatifs (REC-NEG) | 35 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1577,7 +1579,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 29 parcours, les 34 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 29 parcours, les 35 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
@@ -1622,7 +1624,7 @@ Report des totaux de la synthèse (§9).
 | | Nombre | Validés | Échecs | Bloqués | Non testés |
 |---|---:|---:|---:|---:|---:|
 | Parcours de bout en bout | 29 | | | | |
-| Cas négatifs | 34 | | | | |
+| Cas négatifs | 35 | | | | |
 | Parcours multi-rôles | 4 | | | | |
 
 ### Décision du métier
