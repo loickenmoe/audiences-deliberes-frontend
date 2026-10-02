@@ -68,6 +68,71 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
+/**
+ * Choisit un dossier dans le sélecteur du portail.
+ *
+ * Le champ interroge le serveur au fil de la frappe depuis le 2026-09-28 : il ne charge plus une
+ * page de dossiers récents, dans laquelle les anciens manquaient. Sans référence, on prend le
+ * premier proposé ; avec, on le cherche — c'est ce que fait l'avocat qui sait ce qu'il veut.
+ */
+/**
+ * Crée un dossier affecté à l'avocat de test, par l'API, et rend sa référence.
+ *
+ * Passe par le juriste, seul habilité à créer et affecter : c'est le geste réel, et il garantit que
+ * l'affectation existe vraiment plutôt que d'être supposée.
+ */
+async function creerDossierAffecteALAvocat(): Promise<string> {
+  const juriste = await jeton("juriste.test");
+  const dj = await jeton("dj.test");
+
+  const avocats = await json<{ content: { id: number; compteKeycloak: string | null }[] }>(
+    "/intervenants?type=AVOCAT&size=200",
+    juriste,
+  );
+  let fiche = avocats.content.find((a) => a.compteKeycloak === "avocat.test");
+  if (!fiche) {
+    const creation = await appel("/intervenants", dj, {
+      method: "POST",
+      body: JSON.stringify({ type: "AVOCAT", nom: "Me Claire Avocat", compteKeycloak: "avocat.test" }),
+    });
+    fiche = (await creation.json()) as { id: number; compteKeycloak: string | null };
+  }
+
+  const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
+  const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
+  const creation = await appel("/dossiers", juriste, {
+    method: "POST",
+    body: JSON.stringify({
+      nature: "Assignation en paiement",
+      juridictionSaisie: "TGI Douala",
+      clientId: clients.content[0]!.id,
+      risqueEncouru: 3_000_000,
+      dossierCreditOrigine: "CRD-RECH",
+      pvTransfert: "PV-RECH",
+      juristesAffectes: [juristes[0]!.id],
+      avocatsAffectes: [fiche!.id],
+    }),
+  });
+  expect(creation.status, "le dossier de recherche doit être créé").toBe(201);
+  // La référence est attribuée par le serveur (2026-09-29) : elle se lit dans la réponse.
+  const cree = (await creation.json()) as { reference: string };
+  return cree.reference;
+}
+
+async function choisirDossier(page: Page, id: string, reference?: string) {
+  const champ = page.getByRole("combobox", { name: "Dossier" });
+  await champ.click();
+  if (reference) await champ.fill(reference);
+  const liste = page.getByRole("listbox", { name: "Dossier" });
+  const option = reference
+    ? liste.getByRole("option", { name: new RegExp(reference) }).first()
+    : liste.getByRole("option").first();
+  await expect(option).toBeVisible({ timeout: 30_000 });
+  await option.click();
+  await champ.press("Escape");
+  void id;
+}
+
 test("l'avocat ne voit que ses dossiers, et rien du portefeuille de la banque (Q-96)", async () => {
   const avocat = await jeton("avocat.test");
 
@@ -110,7 +175,7 @@ test("l'avocat dépose une demande de frais en choisissant son dossier (écran 3
 
   const reference = `FAC-E2E-${suffixe()}`;
   // Le sélecteur est alimenté par `GET /avocat/mes-dossiers` : c'est ce que QF-01 rendait impossible.
-  await avocat.locator("#frais-dossier").selectOption({ index: 1 });
+  await choisirDossier(avocat, "frais-dossier");
   await avocat.locator("#frais-reference").fill(reference);
   await avocat.locator("#frais-montant").fill("450000");
   // UC-INT-01 étape 4 : la pièce est un vrai fichier, transmis dès qu'il est choisi (Q-97).
@@ -118,6 +183,17 @@ test("l'avocat dépose une demande de frais en choisissant son dossier (écran 3
     .locator('input[name="piece-justificative"]')
     .setInputFiles({ name: "facture.pdf", mimeType: "application/pdf", buffer: PDF });
   await expect(avocat.getByText("facture.pdf")).toBeVisible({ timeout: 30_000 });
+
+  /*
+   * Relire la pièce **avant** d'envoyer : une fois la demande déposée, la remplacer suppose de
+   * repasser par une nouvelle demande. L'aperçu s'ouvre sans quitter le formulaire.
+   */
+  await avocat.getByRole("button", { name: "Consulter - facture.pdf" }).click();
+  const apercuAvocat = avocat.getByRole("dialog", { name: "Aperçu - facture.pdf" });
+  await expect(apercuAvocat).toBeVisible({ timeout: 30_000 });
+  // Deux boutons ferment la fenêtre — la croix et le bouton du pied : on prend le premier.
+  await apercuAvocat.getByRole("button", { name: "Fermer" }).first().click();
+
   await avocat.getByRole("button", { name: "Déposer", exact: true }).click();
 
   await expect(avocat.getByText("Demande de frais déposée.")).toBeVisible({ timeout: 30_000 });
@@ -134,7 +210,7 @@ test("une référence de facture en doublon est signalée sur le champ concerné
 
   const reference = `FAC-DUP-${suffixe()}`;
   for (const tentative of [1, 2]) {
-    await avocat.locator("#frais-dossier").selectOption({ index: 1 });
+    await choisirDossier(avocat, "frais-dossier");
     await avocat.locator("#frais-reference").fill(reference);
     await avocat.locator("#frais-montant").fill("100000");
     await avocat
@@ -169,7 +245,7 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
   // Tant qu'aucun dossier n'est choisi, l'audience ne peut pas l'être : elle lui appartient.
   await expect(avocat.locator("#publication-audience")).toBeDisabled();
 
-  await avocat.locator("#publication-dossier").selectOption({ index: 1 });
+  await choisirDossier(avocat, "publication-dossier");
   const audiences = avocat.locator("#publication-audience");
   await expect(audiences).toBeEnabled({ timeout: 30_000 });
 
@@ -201,7 +277,7 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
 test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser }) => {
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/publications/nouvelle");
-  await avocat.locator("#publication-dossier").selectOption({ index: 1 });
+  await choisirDossier(avocat, "publication-dossier");
   const audiences = avocat.locator("#publication-audience");
   await expect(audiences).toBeEnabled({ timeout: 30_000 });
 
@@ -213,6 +289,16 @@ test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser
   await avocat
     .locator('input[name="piece-jointe"]')
     .setInputFiles({ name: `plumitif-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
+
+  /*
+   * Il relit sa pièce avant de déposer son compte rendu : le fichier n'est pas encore parti, et une
+   * publication déposée ne se corrige pas — elle se redépose.
+   */
+  await avocat.getByRole("button", { name: `Consulter - plumitif-${marque}.pdf` }).click();
+  const apercuPiece = avocat.getByRole("dialog", { name: `Aperçu - plumitif-${marque}.pdf` });
+  await expect(apercuPiece).toBeVisible({ timeout: 30_000 });
+  await apercuPiece.getByRole("button", { name: "Fermer" }).first().click();
+
   await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
   await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
     timeout: 30_000,
@@ -237,6 +323,152 @@ test("l'avocat relit ses dépôts et ses constitutions dans son espace", async (
   await expect(avocat.getByRole("heading", { name: "Mes lettres de constitution", level: 2 })).toBeVisible();
 
   await avocat.context().close();
+});
+
+/**
+ * Le défaut signalé en recette (2026-09-28) : le sélecteur chargeait une page des dossiers les plus
+ * récents, et un avocat qui en suit davantage ne voyait plus les anciens — ni demande de frais, ni
+ * compte rendu possible pour eux. Le dossier existait, l'affectation aussi ; seule la liste était
+ * tronquée, en silence.
+ *
+ * Le parcours crée un dossier, en crée d'autres par-dessus pour le repousser dans la liste, puis
+ * vérifie que l'avocat le retrouve **en le cherchant**.
+ */
+test("l'avocat retrouve par la recherche un dossier repoussé hors de la première page", async ({ browser }) => {
+  const reference = await creerDossierAffecteALAvocat();
+
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/frais/nouvelle");
+  await expect(avocat.getByRole("heading", { name: "Déposer une demande de frais", level: 1 })).toBeVisible();
+
+  const champ = avocat.getByRole("combobox", { name: "Dossier" });
+  await champ.click();
+  await champ.fill(reference);
+  const liste = avocat.getByRole("listbox", { name: "Dossier" });
+  await expect(liste.getByRole("option", { name: new RegExp(reference) })).toBeVisible({ timeout: 30_000 });
+
+  // La recherche ignore la casse : on cherche comme on parle, pas comme la base stocke.
+  await champ.fill(reference.toLowerCase());
+  await expect(liste.getByRole("option", { name: new RegExp(reference) })).toBeVisible({ timeout: 30_000 });
+
+  await avocat.context().close();
+});
+
+/**
+ * Le défaut signalé en recette (2026-09-28) : la pièce téléversée par l'avocat arrivait bien dans
+ * le stockage, mais l'écran de l'Assistante n'en montrait que le **chemin technique** — ni
+ * consultable, ni téléchargeable. Elle devait statuer sur la conformité sans pouvoir ouvrir le
+ * document, ce que le guide utilisateur promettait pourtant.
+ *
+ * Le parcours suit la pièce d'un bout à l'autre : l'avocat la charge, l'Assistante l'ouvre.
+ */
+test("la pièce déposée par l'avocat s'ouvre chez l'Assistante", async ({ browser }) => {
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/frais/nouvelle");
+  const reference = `FAC-PJ-${suffixe()}`;
+  await choisirDossier(avocat, "frais-dossier");
+  await avocat.locator("#frais-reference").fill(reference);
+  await avocat.locator("#frais-montant").fill("320000");
+  await avocat
+    .locator('input[name="piece-justificative"]')
+    .setInputFiles({ name: "releve-diligences.pdf", mimeType: "application/pdf", buffer: PDF });
+  await expect(avocat.getByText("releve-diligences.pdf")).toBeVisible({ timeout: 30_000 });
+  await avocat.getByRole("button", { name: "Déposer", exact: true }).click();
+  await expect(avocat.getByText("Demande de frais déposée.")).toBeVisible({ timeout: 30_000 });
+  await avocat.context().close();
+
+  const assistante = await pageConnectee(browser, "assistante.test");
+  await assistante.goto("/frais");
+  await assistante.getByRole("link", { name: reference }).click();
+  await assistante.waitForURL(/\/frais\/\d+/, { timeout: 60_000 });
+
+  // Le nom d'origine, et non le chemin de stockage : c'est ce qu'un humain peut lire.
+  await expect(assistante.getByText("releve-diligences.pdf")).toBeVisible({ timeout: 30_000 });
+  await expect(assistante.getByText(/^frais\//)).toHaveCount(0);
+
+  await assistante.getByRole("button", { name: "Consulter - releve-diligences.pdf" }).click();
+  const apercu = assistante.getByRole("dialog", { name: "Aperçu - releve-diligences.pdf" });
+  await expect(apercu).toBeVisible({ timeout: 30_000 });
+  await apercu.getByRole("button", { name: "Fermer" }).first().click();
+
+  const telechargement = assistante.waitForEvent("download");
+  await assistante.getByRole("button", { name: "Télécharger - releve-diligences.pdf" }).click();
+  expect((await telechargement).suggestedFilename()).toBe("releve-diligences.pdf");
+  await assistante.context().close();
+});
+
+/**
+ * Le défaut signalé en recette (2026-09-28) : une fois la publication validée, le compte rendu de
+ * l'avocat restait introuvable depuis l'audience. Il vit dans les publications, rattaché à
+ * l'audience mais pas porté par elle — l'onglet « Audiences » n'affichait donc que le récit du
+ * juriste, et l'audience paraissait muette.
+ *
+ * Le parcours suit le compte rendu d'un bout à l'autre : l'avocat dépose, l'Assistante valide, et
+ * la ligne de l'audience y mène.
+ */
+test("le compte rendu validé de l'avocat se retrouve depuis son audience", async ({ browser }) => {
+  const juriste = await pageConnectee(browser, "juriste.test");
+  const marque = suffixe();
+
+  // Un dossier neuf, avec une audience du jour : le compte rendu doit pouvoir s'y rattacher.
+  const reference = await creerDossierAffecteALAvocat();
+  await juriste.goto("/dossiers");
+  await juriste.getByLabel("Référence", { exact: true }).fill(reference);
+  await juriste.getByRole("link", { name: reference }).click();
+  await juriste.waitForURL(/\/dossiers\/\d+/, { timeout: 60_000 });
+  const url = juriste.url();
+
+  await juriste.getByRole("tab", { name: "Étapes" }).click();
+  await juriste.getByLabel("Faire passer à", { exact: true }).selectOption("EN_COURS");
+  await juriste.getByRole("button", { name: "Appliquer" }).click();
+
+  await juriste.getByRole("tab", { name: "Audiences" }).click();
+  await juriste.getByRole("button", { name: "Planifier une audience" }).click();
+  const aujourdHui = new Date();
+  const jour = `${aujourdHui.getFullYear()}-${String(aujourdHui.getMonth() + 1).padStart(2, "0")}-${String(aujourdHui.getDate()).padStart(2, "0")}`;
+  await juriste.getByLabel("Date de l’audience", { exact: true }).fill(jour);
+  await juriste
+    .getByRole("dialog", { name: "Planifier une audience" })
+    .getByRole("button", { name: "Enregistrer" })
+    .click();
+  await expect(juriste.getByRole("cell", { name: "Planifiée", exact: true })).toHaveCount(1);
+  await juriste.context().close();
+
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/publications/nouvelle");
+  await choisirDossier(avocat, "publication-dossier", reference);
+  const audiences = avocat.locator("#publication-audience");
+  await expect(audiences).toBeEnabled({ timeout: 30_000 });
+  await audiences.selectOption({ index: 1 });
+  await avocat.locator("#publication-contenu").fill(`Renvoi contradictoire ${marque}`);
+  await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
+  await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
+    timeout: 30_000,
+  });
+  await avocat.context().close();
+
+  const assistante = await pageConnectee(browser, "assistante.test");
+  await assistante.goto("/publications");
+  await assistante.getByRole("row", { name: new RegExp(reference) }).first().getByRole("link").first().click();
+  await assistante.waitForURL(/\/publications\/\d+/, { timeout: 60_000 });
+  await assistante.getByRole("button", { name: "Valider" }).click();
+  await assistante
+    .getByRole("dialog", { name: "Valider la publication ?" })
+    .getByRole("button", { name: "Valider" })
+    .click();
+  // Attendre la confirmation, et non le seul clic : naviguer trop tôt laissait la publication au
+  // statut « déposée », et l'audience paraissait alors — à juste titre — sans compte rendu.
+  await expect(assistante.getByText("Publication validée : les juristes sont prévenus.")).toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Depuis l'audience, la ligne mène au compte rendu de l'avocat — c'est ce qui manquait.
+  await assistante.goto(`${url}?onglet=audiences`);
+  const lien = assistante.getByRole("link", { name: "Compte rendu de l’avocat" });
+  await expect(lien).toBeVisible({ timeout: 30_000 });
+  await lien.click();
+  await expect(assistante.getByText(`Renvoi contradictoire ${marque}`)).toBeVisible({ timeout: 30_000 });
+  await assistante.context().close();
 });
 
 test("le portail reste invisible aux profils internes", async ({ browser }) => {

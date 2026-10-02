@@ -70,6 +70,23 @@ export const constitutionService = {
     return data;
   },
 
+  /**
+   * La lettre signée, mise en page **pour le papier préimprimé** de la banque : sans logo, sans
+   * colonne ni mentions légales, que la feuille porte déjà.
+   *
+   * Désignée par le **document de la GED**, parce que c'est depuis l'onglet « Documents » d'un
+   * dossier que le métier la reprend pour l'imprimer. Le PDF est régénéré à la demande : la pièce
+   * archivée, elle, ne change pas.
+   *
+   * **404** si le document n'est pas une lettre de constitution.
+   */
+  lettrePourPapierPreimprime: async (documentId: number): Promise<Blob> => {
+    const { data } = await apiClient.get<Blob>(`/constitutions/lettres/par-document/${documentId}`, {
+      responseType: "blob",
+    });
+    return data;
+  },
+
   /** #37 — répertoire, trié par charge croissante ; recherche par nom côté serveur. */
   repertoire: async (nom?: string, page = 0, size = TAILLE_PAGE): Promise<PageReponse<AvocatRepertoire>> => {
     const { data } = await apiClient.get<PageReponse<AvocatRepertoire>>("/repertoire/avocats", {

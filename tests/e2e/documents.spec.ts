@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Pièces d'un dossier (création, onglet Documents) **contre le backend réel et MinIO**.
@@ -41,13 +42,13 @@ function suffixe() {
 /** Remplit un dossier de recouvrement, sans l'envoyer. */
 async function remplirDossier(page: Page) {
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-DOC-${suffixe()}`);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DOC");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DOC");
+  await deposerPiecesDeCreation(page, { marque: "doc" });
   await affecterParDefaut(page);
 }
 

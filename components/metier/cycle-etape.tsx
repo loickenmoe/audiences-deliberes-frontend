@@ -33,7 +33,14 @@ export function CycleEtape({
   className,
 }: {
   statut: StatutCycleVie;
-  /** Affiché en surtitre quand il est fourni : une même fiche porte 1 à 3 étapes. */
+  /**
+   * Affiché quand il est fourni : en surtitre dans la vue déployée, devant le statut en compact.
+   *
+   * <b>En compact, il n'était pas rendu du tout</b> — la colonne « Étape » de la liste des dossiers
+   * n'annonçait donc qu'un statut. Tant qu'une seule étape s'affichait, l'ambiguïté passait
+   * inaperçue ; depuis que les deux pourvois coexistent, la même colonne montrait « Ouverture »
+   * deux fois sans dire laquelle était la Cour Suprême et laquelle la CCJA.
+   */
   type?: TypeEtape;
   /** Compteur de prorogations, si l'étape en a connu. */
   nbProrogations?: number;
@@ -67,6 +74,7 @@ export function CycleEtape({
           })}
         </ol>
         <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
+          {type ? `${t(`TypeEtape.${type}` as never)} · ` : ""}
           {t(`StatutCycleVie.${statut}` as never)}
         </span>
       </div>

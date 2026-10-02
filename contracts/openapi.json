@@ -63,6 +63,47 @@
         }
       }
     },
+    "/api/v1/intervenants/{id}": {
+      "put": {
+        "tags": [
+          "intervenant-controller"
+        ],
+        "operationId": "modifier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierIntervenantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntervenantResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ged/documents/{id}/approbation-suppression": {
       "put": {
         "tags": [
@@ -409,12 +450,82 @@
         }
       }
     },
+    "/api/v1/constitutions/prestataires/{id}/lettre": {
+      "get": {
+        "tags": [
+          "constitution-controller"
+        ],
+        "operationId": "lettre",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LettreConstitutionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "constitution-controller"
+        ],
+        "operationId": "redigerLettre",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedigerLettreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LettreConstitutionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/configurations/{cle}": {
       "put": {
         "tags": [
           "configuration-controller"
         ],
-        "operationId": "modifier",
+        "operationId": "modifier_1",
         "parameters": [
           {
             "name": "cle",
@@ -442,6 +553,76 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ConfigurationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{id}": {
+      "get": {
+        "tags": [
+          "client-controller"
+        ],
+        "operationId": "consulterClient",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "client-controller"
+        ],
+        "operationId": "modifierClient",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
                 }
               }
             }
@@ -561,6 +742,115 @@
         }
       }
     },
+    "/notifications/accuses/rappel/{eventId}": {
+      "post": {
+        "tags": [
+          "rappel-accuse-controller"
+        ],
+        "operationId": "rappel",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccuseEngine"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/notifications/accuses/envoyes": {
+      "post": {
+        "tags": [
+          "accuses-dapr-controller"
+        ],
+        "operationId": "envoye",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccuseEngine"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/notifications/accuses/echecs": {
+      "post": {
+        "tags": [
+          "accuses-dapr-controller"
+        ],
+        "operationId": "echoue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccuseEngine"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/notifications/accuses/depots": {
+      "post": {
+        "tags": [
+          "accuses-dapr-controller"
+        ],
+        "operationId": "depot",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReponseDepotPieceJointe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/publications/{id}/correspondance": {
       "post": {
         "tags": [
@@ -649,15 +939,57 @@
           "publication-controller"
         ],
         "operationId": "deposerCompteRendu",
+        "parameters": [
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "audienceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "contenu",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "restrictionAcces",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeposerCompteRenduRequest"
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -740,6 +1072,30 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}/relancer": {
+      "post": {
+        "tags": [
+          "supervision-notification-controller"
+        ],
+        "operationId": "relancer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -933,6 +1289,34 @@
                 "AUTRE_PRESTATAIRE"
               ]
             }
+          },
+          {
+            "name": "nom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -941,10 +1325,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IntervenantResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseIntervenantResponse"
                 }
               }
             }
@@ -1061,6 +1442,50 @@
             }
           },
           {
+            "name": "dossierId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "avocatId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "referenceFacture",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -1077,7 +1502,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 20
+              "default": 10
             }
           }
         ],
@@ -1226,6 +1651,90 @@
             }
           },
           {
+            "name": "estSensible",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sensibiliteStatut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EN_ATTENTE",
+                "VALIDEE",
+                "REJETEE"
+              ]
+            }
+          },
+          {
+            "name": "typeEtape",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INSTANCE",
+                "RECOURS_1",
+                "RECOURS_2",
+                "RECOURS_2_CCJA"
+              ]
+            }
+          },
+          {
+            "name": "statutEtape",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OUVERTURE",
+                "EN_COURS",
+                "EN_DELIBERE",
+                "DELIBERE_VIDE",
+                "CLOTURE",
+                "ARCHIVE"
+              ]
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "tri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECENT",
+                "ANCIEN",
+                "REFERENCE",
+                "RISQUE"
+              ],
+              "default": "RECENT"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -1242,7 +1751,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 20
+              "default": 10
             }
           }
         ],
@@ -1585,6 +2094,26 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -1593,10 +2122,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AudienceResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseAudienceResponse"
                 }
               }
             }
@@ -1667,6 +2193,26 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -1675,10 +2221,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AlarmeResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseAlarmeResponse"
                 }
               }
             }
@@ -1899,6 +2442,26 @@
                 "REJETEE"
               ]
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -1907,10 +2470,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DemandeConstitutionResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseDemandeConstitutionResponse"
                 }
               }
             }
@@ -2025,6 +2585,44 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/avocat/pieces-justificatives": {
+      "post": {
+        "tags": [
+          "portail-avocat-controller"
+        ],
+        "operationId": "deposerPieceJustificative",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceJustificativeResponse"
                 }
               }
             }
@@ -2257,6 +2855,32 @@
         }
       }
     },
+    "/dapr/subscribe": {
+      "get": {
+        "tags": [
+          "accuses-dapr-controller"
+        ],
+        "operationId": "abonnements",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/utilisateurs": {
       "get": {
         "tags": [
@@ -2333,6 +2957,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -2341,10 +2985,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvocatRepertoireResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseAvocatRepertoireResponse"
                 }
               }
             }
@@ -2577,6 +3218,448 @@
         }
       }
     },
+    "/api/v1/notifications/supervision": {
+      "get": {
+        "tags": [
+          "supervision-notification-controller"
+        ],
+        "operationId": "superviser",
+        "parameters": [
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupervisionNotificationsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/historique": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "audit",
+        "parameters": [
+          {
+            "name": "perimetre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HORS_DOSSIER",
+                "UN_DOSSIER",
+                "TOUT"
+              ],
+              "default": "TOUT"
+            }
+          },
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "utilisateurId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DOSSIER_CREE",
+                "DOSSIER_AFFECTATION_MODIFIEE",
+                "ETAPE_STATUT_MODIFIE",
+                "ETAPE_OUVERTE_AUTOMATIQUEMENT",
+                "ETAPE_POSITIONNEE_DIRECTEMENT",
+                "DEROGATION_SEUIL_DEMANDEE",
+                "DEROGATION_SEUIL_ARBITREE",
+                "SENSIBILITE_ARBITREE",
+                "AUDIENCE_PLANIFIEE",
+                "AUDIENCE_DOUBLON_CONFIRME",
+                "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
+                "AUDIENCE_ANNULEE",
+                "ALARME_CREEE",
+                "ALARME_REPROGRAMMEE",
+                "ALARME_TRAITEE",
+                "DELIBERE_MISE_EN_DELIBERE",
+                "DELIBERE_ENREGISTRE",
+                "DELIBERE_VIDE",
+                "DELIBERE_PROROGE",
+                "DELIBERE_RABATTU",
+                "DELIBERE_EXPEDITION_MODIFIEE",
+                "FRAIS_DEMANDE_DEPOSEE",
+                "FRAIS_CONFORMITE_CONTROLEE",
+                "FRAIS_OPPORTUNITE_CONTROLEE",
+                "FRAIS_VALIDATION_CONJOINTE",
+                "FRAIS_PAIEMENT_ENREGISTRE",
+                "DOCUMENT_CHARGE",
+                "DOCUMENT_SUPPRESSION_DEMANDEE",
+                "DOCUMENT_SUPPRIME_DIRECTEMENT",
+                "DOCUMENT_SUPPRESSION_ARBITREE",
+                "CONSTITUTION_DEMANDEE",
+                "CONSTITUTION_ARBITREE",
+                "LETTRE_CONSTITUTION_REDIGEE",
+                "PUBLICATION_CR_DEPOSE",
+                "PUBLICATION_AUTRE_DEPOSEE",
+                "PUBLICATION_ARBITREE",
+                "PUBLICATION_COMMENTEE",
+                "PUBLICATION_CORRESPONDANCE_TRANSMISE",
+                "ADJUDICATION_ENREGISTREE",
+                "CONDAMNATION_ENREGISTREE",
+                "CONDAMNATION_STATUT_MODIFIE",
+                "JURISPRUDENCE_INDEXEE",
+                "CONFIGURATION_MODIFIEE",
+                "CLIENT_MODIFIE",
+                "INTERVENANT_MODIFIE",
+                "AUDIT_CONSULTE",
+                "AUDIT_EXPORTE",
+                "ARCHIVE_TELECHARGEE",
+                "NON_CLASSEE"
+              ]
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/historique/exports": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "archives",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseExportAuditResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/historique/exports/{id}/telechargement": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "telecharger",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/historique/exports/verification": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "verifier",
+        "parameters": [
+          {
+            "name": "empreinte",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/historique/export": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "exporter",
+        "parameters": [
+          {
+            "name": "perimetre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HORS_DOSSIER",
+                "UN_DOSSIER",
+                "TOUT"
+              ],
+              "default": "TOUT"
+            }
+          },
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "utilisateurId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DOSSIER_CREE",
+                "DOSSIER_AFFECTATION_MODIFIEE",
+                "ETAPE_STATUT_MODIFIE",
+                "ETAPE_OUVERTE_AUTOMATIQUEMENT",
+                "ETAPE_POSITIONNEE_DIRECTEMENT",
+                "DEROGATION_SEUIL_DEMANDEE",
+                "DEROGATION_SEUIL_ARBITREE",
+                "SENSIBILITE_ARBITREE",
+                "AUDIENCE_PLANIFIEE",
+                "AUDIENCE_DOUBLON_CONFIRME",
+                "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
+                "AUDIENCE_ANNULEE",
+                "ALARME_CREEE",
+                "ALARME_REPROGRAMMEE",
+                "ALARME_TRAITEE",
+                "DELIBERE_MISE_EN_DELIBERE",
+                "DELIBERE_ENREGISTRE",
+                "DELIBERE_VIDE",
+                "DELIBERE_PROROGE",
+                "DELIBERE_RABATTU",
+                "DELIBERE_EXPEDITION_MODIFIEE",
+                "FRAIS_DEMANDE_DEPOSEE",
+                "FRAIS_CONFORMITE_CONTROLEE",
+                "FRAIS_OPPORTUNITE_CONTROLEE",
+                "FRAIS_VALIDATION_CONJOINTE",
+                "FRAIS_PAIEMENT_ENREGISTRE",
+                "DOCUMENT_CHARGE",
+                "DOCUMENT_SUPPRESSION_DEMANDEE",
+                "DOCUMENT_SUPPRIME_DIRECTEMENT",
+                "DOCUMENT_SUPPRESSION_ARBITREE",
+                "CONSTITUTION_DEMANDEE",
+                "CONSTITUTION_ARBITREE",
+                "LETTRE_CONSTITUTION_REDIGEE",
+                "PUBLICATION_CR_DEPOSE",
+                "PUBLICATION_AUTRE_DEPOSEE",
+                "PUBLICATION_ARBITREE",
+                "PUBLICATION_COMMENTEE",
+                "PUBLICATION_CORRESPONDANCE_TRANSMISE",
+                "ADJUDICATION_ENREGISTREE",
+                "CONDAMNATION_ENREGISTREE",
+                "CONDAMNATION_STATUT_MODIFIE",
+                "JURISPRUDENCE_INDEXEE",
+                "CONFIGURATION_MODIFIEE",
+                "CLIENT_MODIFIE",
+                "INTERVENANT_MODIFIE",
+                "AUDIT_CONSULTE",
+                "AUDIT_EXPORTE",
+                "ARCHIVE_TELECHARGEE",
+                "NON_CLASSEE"
+              ]
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF",
+                "EXCEL"
+              ],
+              "default": "PDF"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ged/rapport-journalier": {
       "get": {
         "tags": [
@@ -2687,6 +3770,26 @@
                 "REJETEE"
               ]
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -2695,10 +3798,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DemandeSuppressionResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseDemandeSuppressionResponse"
                 }
               }
             }
@@ -2768,6 +3868,57 @@
         }
       }
     },
+    "/api/v1/dossiers/{id}/historique": {
+      "get": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "historique",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseHistoriqueActionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dossiers/{id}/documents": {
       "get": {
         "tags": [
@@ -2783,6 +3934,26 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
           }
         ],
         "responses": {
@@ -2791,10 +3962,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DocumentResponse"
-                  }
+                  "$ref": "#/components/schemas/PageResponseDocumentResponse"
                 }
               }
             }
@@ -2864,6 +4032,38 @@
         }
       }
     },
+    "/api/v1/constitutions/lettres/par-document/{documentId}": {
+      "get": {
+        "tags": [
+          "constitution-controller"
+        ],
+        "operationId": "lettrePourPapierPreimprime",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/configurations": {
       "get": {
         "tags": [
@@ -2880,37 +4080,6 @@
                   "items": {
                     "$ref": "#/components/schemas/ConfigurationResponse"
                   }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/clients/{id}": {
-      "get": {
-        "tags": [
-          "client-controller"
-        ],
-        "operationId": "consulterClient",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientResponse"
                 }
               }
             }
@@ -2942,6 +4111,279 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/VueClientDossiersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/avocat/mes-publications": {
+      "get": {
+        "tags": [
+          "portail-avocat-controller"
+        ],
+        "operationId": "mesPublications",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DEPOSE",
+                "VALIDE",
+                "REJETE"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponsePublicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/avocat/mes-dossiers": {
+      "get": {
+        "tags": [
+          "portail-avocat-controller"
+        ],
+        "operationId": "mesDossiers",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDossierAvocatResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/avocat/mes-dossiers/{dossierId}/audiences": {
+      "get": {
+        "tags": [
+          "portail-avocat-controller"
+        ],
+        "operationId": "audiencesDeMonDossier",
+        "parameters": [
+          {
+            "name": "dossierId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudienceAvocatResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/avocat/mes-constitutions": {
+      "get": {
+        "tags": [
+          "portail-avocat-controller"
+        ],
+        "operationId": "mesConstitutions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DemandeConstitutionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audiences/journal": {
+      "get": {
+        "tags": [
+          "reporting-controller"
+        ],
+        "operationId": "journalDesAudiences",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAudienceDuJourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audiences/comptes-rendus-attendus": {
+      "get": {
+        "tags": [
+          "reporting-controller"
+        ],
+        "operationId": "comptesRendusAttendus",
+        "parameters": [
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseCompteRenduAttenduResponse"
                 }
               }
             }
@@ -3007,6 +4449,46 @@
         }
       }
     },
+    "/api/v1/alertes/statistiques-diffusion": {
+      "get": {
+        "tags": [
+          "alerte-controller"
+        ],
+        "operationId": "statistiquesDiffusion",
+        "parameters": [
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatistiquesDiffusionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/alertes/mes-notifications": {
       "get": {
         "tags": [
@@ -3027,6 +4509,42 @@
             }
           },
           {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RAPPEL_AUDIENCE",
+                "DELAI_RECOURS",
+                "PROROGATION",
+                "ALARME",
+                "DOUBLON_AFFECTATION",
+                "DOUBLON_AUDIENCE",
+                "DOUBLON_FACTURE",
+                "NOUVELLE_DEMANDE_FRAIS",
+                "VALIDATION_CONJOINTE_REQUISE",
+                "PAIEMENT_EFFECTUE",
+                "NOUVELLE_PUBLICATION",
+                "DOCUMENT_CHARGE",
+                "SUPPRESSION_DOCUMENT",
+                "CONSTITUTION_A_SIGNER",
+                "CHARGE_MAX_AVOCAT",
+                "DELIBERE_ATTENDU",
+                "DOSSIER_INCOMPLET"
+              ]
+            }
+          },
+          {
+            "name": "dossierId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -3043,7 +4561,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 20
+              "default": 10
             }
           }
         ],
@@ -3223,6 +4741,67 @@
           }
         }
       },
+      "ModifierIntervenantRequest": {
+        "required": [
+          "nom"
+        ],
+        "type": "object",
+        "properties": {
+          "nom": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "telephone": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "notification": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IntervenantResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "AVOCAT",
+              "AUTRE_PRESTATAIRE"
+            ]
+          },
+          "nom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "compteKeycloak": {
+            "type": "string"
+          },
+          "notification": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ApprobationSuppressionRequest": {
         "required": [
           "decision"
@@ -3387,6 +4966,12 @@
               "$ref": "#/components/schemas/ValidationFraisResponse"
             }
           },
+          "piecesTelechargeables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceJustificativeResponse"
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -3394,6 +4979,20 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "PieceJustificativeResponse": {
+        "type": "object",
+        "properties": {
+          "cle": {
+            "type": "string"
+          },
+          "nomFichier": {
+            "type": "string"
+          },
+          "urlTelechargement": {
+            "type": "string"
           }
         }
       },
@@ -3684,7 +5283,8 @@
             "enum": [
               "INSTANCE",
               "RECOURS_1",
-              "RECOURS_2"
+              "RECOURS_2",
+              "RECOURS_2_CCJA"
             ]
           },
           "statutCycleVie": {
@@ -3710,6 +5310,60 @@
           "utilisateurId": {
             "type": "integer",
             "format": "int64"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "DOSSIER_CREE",
+              "DOSSIER_AFFECTATION_MODIFIEE",
+              "ETAPE_STATUT_MODIFIE",
+              "ETAPE_OUVERTE_AUTOMATIQUEMENT",
+              "ETAPE_POSITIONNEE_DIRECTEMENT",
+              "DEROGATION_SEUIL_DEMANDEE",
+              "DEROGATION_SEUIL_ARBITREE",
+              "SENSIBILITE_ARBITREE",
+              "AUDIENCE_PLANIFIEE",
+              "AUDIENCE_DOUBLON_CONFIRME",
+              "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
+              "AUDIENCE_ANNULEE",
+              "ALARME_CREEE",
+              "ALARME_REPROGRAMMEE",
+              "ALARME_TRAITEE",
+              "DELIBERE_MISE_EN_DELIBERE",
+              "DELIBERE_ENREGISTRE",
+              "DELIBERE_VIDE",
+              "DELIBERE_PROROGE",
+              "DELIBERE_RABATTU",
+              "DELIBERE_EXPEDITION_MODIFIEE",
+              "FRAIS_DEMANDE_DEPOSEE",
+              "FRAIS_CONFORMITE_CONTROLEE",
+              "FRAIS_OPPORTUNITE_CONTROLEE",
+              "FRAIS_VALIDATION_CONJOINTE",
+              "FRAIS_PAIEMENT_ENREGISTRE",
+              "DOCUMENT_CHARGE",
+              "DOCUMENT_SUPPRESSION_DEMANDEE",
+              "DOCUMENT_SUPPRIME_DIRECTEMENT",
+              "DOCUMENT_SUPPRESSION_ARBITREE",
+              "CONSTITUTION_DEMANDEE",
+              "CONSTITUTION_ARBITREE",
+              "LETTRE_CONSTITUTION_REDIGEE",
+              "PUBLICATION_CR_DEPOSE",
+              "PUBLICATION_AUTRE_DEPOSEE",
+              "PUBLICATION_ARBITREE",
+              "PUBLICATION_COMMENTEE",
+              "PUBLICATION_CORRESPONDANCE_TRANSMISE",
+              "ADJUDICATION_ENREGISTREE",
+              "CONDAMNATION_ENREGISTREE",
+              "CONDAMNATION_STATUT_MODIFIE",
+              "JURISPRUDENCE_INDEXEE",
+              "CONFIGURATION_MODIFIEE",
+              "CLIENT_MODIFIE",
+              "INTERVENANT_MODIFIE",
+              "AUDIT_CONSULTE",
+              "AUDIT_EXPORTE",
+              "ARCHIVE_TELECHARGEE",
+              "NON_CLASSEE"
+            ]
           },
           "action": {
             "type": "string"
@@ -3924,6 +5578,124 @@
           }
         }
       },
+      "RedigerLettreRequest": {
+        "required": [
+          "corps",
+          "lieu",
+          "objet",
+          "signataire",
+          "suffixeNumero"
+        ],
+        "type": "object",
+        "properties": {
+          "numero": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "suffixeNumero": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "lieu": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "destinataireNom": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "destinataireQualite": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "destinataireVille": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "concerne": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "objet": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "corps": {
+            "type": "string"
+          },
+          "signataire": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "LettreConstitutionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "demandeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "numero": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numeroPropose": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "suffixeNumero": {
+            "type": "string"
+          },
+          "lieu": {
+            "type": "string"
+          },
+          "destinataireNom": {
+            "type": "string"
+          },
+          "destinataireQualite": {
+            "type": "string"
+          },
+          "destinataireVille": {
+            "type": "string"
+          },
+          "concerne": {
+            "type": "string"
+          },
+          "objet": {
+            "type": "string"
+          },
+          "corps": {
+            "type": "string"
+          },
+          "signataire": {
+            "type": "string"
+          },
+          "modifiable": {
+            "type": "boolean"
+          },
+          "dateGeneration": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateModification": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ModifierConfigurationRequest": {
         "required": [
           "valeur"
@@ -3954,6 +5726,10 @@
             "type": "string",
             "format": "date-time"
           },
+          "dernierAuteurId": {
+            "type": "integer",
+            "format": "int64"
+          },
           "typeValeur": {
             "type": "string",
             "enum": [
@@ -3974,6 +5750,61 @@
             "items": {
               "type": "string"
             }
+          },
+          "listeVideAutorisee": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ModifierClientRequest": {
+        "required": [
+          "nom"
+        ],
+        "type": "object",
+        "properties": {
+          "nom": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "telephone": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "ClientResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -4010,6 +5841,9 @@
           "dateTenue": {
             "type": "string",
             "format": "date"
+          },
+          "juridiction": {
+            "type": "string"
           },
           "compteRendu": {
             "type": "string"
@@ -4132,6 +5966,69 @@
           }
         }
       },
+      "AccuseEngine": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string"
+          },
+          "workflowId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "providerMessageId": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "permanent": {
+            "type": "boolean"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "failedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventId": {
+            "type": "string"
+          }
+        }
+      },
+      "ReponseDepotPieceJointe": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "storageKey": {
+            "type": "string"
+          },
+          "presignedPutUrl": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
       "CorrespondanceRequest": {
         "required": [
           "contenu"
@@ -4151,31 +6048,6 @@
         "properties": {
           "contenu": {
             "type": "string"
-          }
-        }
-      },
-      "DeposerCompteRenduRequest": {
-        "required": [
-          "audienceId",
-          "contenu",
-          "dossierId"
-        ],
-        "type": "object",
-        "properties": {
-          "dossierId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "audienceId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "contenu": {
-            "type": "string"
-          },
-          "restrictionAcces": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },
@@ -4259,41 +6131,6 @@
           },
           "notification": {
             "type": "boolean"
-          }
-        }
-      },
-      "IntervenantResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "AVOCAT",
-              "AUTRE_PRESTATAIRE"
-            ]
-          },
-          "nom": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "telephone": {
-            "type": "string"
-          },
-          "compteKeycloak": {
-            "type": "string"
-          },
-          "notification": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
@@ -4393,16 +6230,10 @@
           "juridictionSaisie",
           "juristesAffectes",
           "nature",
-          "reference",
           "risqueEncouru"
         ],
         "type": "object",
         "properties": {
-          "reference": {
-            "maxLength": 50,
-            "minLength": 0,
-            "type": "string"
-          },
           "nature": {
             "maxLength": 255,
             "minLength": 0,
@@ -4557,7 +6388,8 @@
             "enum": [
               "INSTANCE",
               "RECOURS_1",
-              "RECOURS_2"
+              "RECOURS_2",
+              "RECOURS_2_CCJA"
             ]
           }
         }
@@ -4680,6 +6512,11 @@
           "datePlanifiee": {
             "type": "string",
             "format": "date"
+          },
+          "juridiction": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
           }
         }
       },
@@ -4879,16 +6716,10 @@
       },
       "CreerClientRequest": {
         "required": [
-          "nom",
-          "reference"
+          "nom"
         ],
         "type": "object",
         "properties": {
-          "reference": {
-            "maxLength": 50,
-            "minLength": 0,
-            "type": "string"
-          },
           "nom": {
             "maxLength": 255,
             "minLength": 0,
@@ -4903,35 +6734,6 @@
             "maxLength": 20,
             "minLength": 0,
             "type": "string"
-          }
-        }
-      },
-      "ClientResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "reference": {
-            "type": "string"
-          },
-          "nom": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "telephone": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
@@ -5127,6 +6929,25 @@
           }
         }
       },
+      "PageResponseAvocatRepertoireResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvocatRepertoireResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "TypeClientSensibleResponse": {
         "type": "object",
         "properties": {
@@ -5183,6 +7004,106 @@
           }
         }
       },
+      "EnvoiEnDefaut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "typeEvenement": {
+            "type": "string"
+          },
+          "canal": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string"
+          },
+          "destinataire": {
+            "type": "string"
+          },
+          "destinataireOrigine": {
+            "type": "string"
+          },
+          "derniereErreur": {
+            "type": "string"
+          },
+          "tentatives": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateCreation": {
+            "type": "string"
+          }
+        }
+      },
+      "LigneCanal": {
+        "type": "object",
+        "properties": {
+          "canal": {
+            "type": "string"
+          },
+          "enAttente": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "remises": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "confirmees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "echecs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sansRetour": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nonJoignables": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SupervisionNotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "dateDebut": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateFin": {
+            "type": "string",
+            "format": "date"
+          },
+          "canaux": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LigneCanal"
+            }
+          },
+          "derniersEchecs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvoiEnDefaut"
+            }
+          },
+          "engineActif": {
+            "type": "boolean"
+          },
+          "suiviAccusesActif": {
+            "type": "boolean"
+          }
+        }
+      },
       "PageResponseJurisprudenceResponse": {
         "type": "object",
         "properties": {
@@ -5199,6 +7120,196 @@
           "totalElements": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "PageResponseIntervenantResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntervenantResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AuditResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoriqueActionResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "actionsDisponibles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionAction"
+            }
+          }
+        }
+      },
+      "OptionAction": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "DOSSIER_CREE",
+              "DOSSIER_AFFECTATION_MODIFIEE",
+              "ETAPE_STATUT_MODIFIE",
+              "ETAPE_OUVERTE_AUTOMATIQUEMENT",
+              "ETAPE_POSITIONNEE_DIRECTEMENT",
+              "DEROGATION_SEUIL_DEMANDEE",
+              "DEROGATION_SEUIL_ARBITREE",
+              "SENSIBILITE_ARBITREE",
+              "AUDIENCE_PLANIFIEE",
+              "AUDIENCE_DOUBLON_CONFIRME",
+              "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
+              "AUDIENCE_ANNULEE",
+              "ALARME_CREEE",
+              "ALARME_REPROGRAMMEE",
+              "ALARME_TRAITEE",
+              "DELIBERE_MISE_EN_DELIBERE",
+              "DELIBERE_ENREGISTRE",
+              "DELIBERE_VIDE",
+              "DELIBERE_PROROGE",
+              "DELIBERE_RABATTU",
+              "DELIBERE_EXPEDITION_MODIFIEE",
+              "FRAIS_DEMANDE_DEPOSEE",
+              "FRAIS_CONFORMITE_CONTROLEE",
+              "FRAIS_OPPORTUNITE_CONTROLEE",
+              "FRAIS_VALIDATION_CONJOINTE",
+              "FRAIS_PAIEMENT_ENREGISTRE",
+              "DOCUMENT_CHARGE",
+              "DOCUMENT_SUPPRESSION_DEMANDEE",
+              "DOCUMENT_SUPPRIME_DIRECTEMENT",
+              "DOCUMENT_SUPPRESSION_ARBITREE",
+              "CONSTITUTION_DEMANDEE",
+              "CONSTITUTION_ARBITREE",
+              "LETTRE_CONSTITUTION_REDIGEE",
+              "PUBLICATION_CR_DEPOSE",
+              "PUBLICATION_AUTRE_DEPOSEE",
+              "PUBLICATION_ARBITREE",
+              "PUBLICATION_COMMENTEE",
+              "PUBLICATION_CORRESPONDANCE_TRANSMISE",
+              "ADJUDICATION_ENREGISTREE",
+              "CONDAMNATION_ENREGISTREE",
+              "CONDAMNATION_STATUT_MODIFIE",
+              "JURISPRUDENCE_INDEXEE",
+              "CONFIGURATION_MODIFIEE",
+              "CLIENT_MODIFIE",
+              "INTERVENANT_MODIFIE",
+              "AUDIT_CONSULTE",
+              "AUDIT_EXPORTE",
+              "ARCHIVE_TELECHARGEE",
+              "NON_CLASSEE"
+            ]
+          },
+          "libelle": {
+            "type": "string"
+          }
+        }
+      },
+      "ExportAuditResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "utilisateurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dateExport": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateDebut": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateFin": {
+            "type": "string",
+            "format": "date"
+          },
+          "perimetre": {
+            "type": "string",
+            "enum": [
+              "HORS_DOSSIER",
+              "UN_DOSSIER",
+              "TOUT"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "PDF",
+              "EXCEL"
+            ]
+          },
+          "lignes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "empreinte": {
+            "type": "string"
+          },
+          "tailleOctets": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResponseExportAuditResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportAuditResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "VerificationResponse": {
+        "type": "object",
+        "properties": {
+          "reconnue": {
+            "type": "boolean"
+          },
+          "archive": {
+            "$ref": "#/components/schemas/ExportAuditResponse"
           }
         }
       },
@@ -5245,6 +7356,25 @@
           }
         }
       },
+      "PageResponseDemandeSuppressionResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemandeSuppressionResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "PageResponseDemandeFraisResponse": {
         "type": "object",
         "properties": {
@@ -5283,6 +7413,44 @@
           }
         }
       },
+      "PageResponseHistoriqueActionResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoriqueActionResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResponseDocumentResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "DecisionsDossierResponse": {
         "type": "object",
         "properties": {
@@ -5297,6 +7465,44 @@
             "items": {
               "$ref": "#/components/schemas/CondamnationResponse"
             }
+          }
+        }
+      },
+      "PageResponseAudienceResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudienceResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResponseAlarmeResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlarmeResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -5319,6 +7525,25 @@
           },
           "cloture": {
             "type": "boolean"
+          }
+        }
+      },
+      "PageResponseDemandeConstitutionResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemandeConstitutionResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -5362,6 +7587,241 @@
             "items": {
               "$ref": "#/components/schemas/DossierResponse"
             }
+          }
+        }
+      },
+      "DossierAvocatResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "nature": {
+            "type": "string"
+          },
+          "juridictionSaisie": {
+            "type": "string"
+          }
+        }
+      },
+      "PageResponseDossierAvocatResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DossierAvocatResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AudienceAvocatResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "datePlanifiee": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateTenue": {
+            "type": "string",
+            "format": "date"
+          },
+          "juridiction": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "PLANIFIEE",
+              "TENUE",
+              "ANNULEE"
+            ]
+          }
+        }
+      },
+      "AudienceDuJourResponse": {
+        "type": "object",
+        "properties": {
+          "audienceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "referenceDossier": {
+            "type": "string"
+          },
+          "juridiction": {
+            "type": "string"
+          },
+          "etape": {
+            "type": "string"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "PLANIFIEE",
+              "TENUE",
+              "ANNULEE"
+            ]
+          },
+          "juristesAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "compteRenduJuriste": {
+            "type": "string"
+          },
+          "compteRenduAvocat": {
+            "type": "string"
+          },
+          "avocatDuCompteRendu": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "urlPieceJointeAvocat": {
+            "type": "string"
+          }
+        }
+      },
+      "PageResponseAudienceDuJourResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudienceDuJourResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CompteRenduAttenduResponse": {
+        "type": "object",
+        "properties": {
+          "audienceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "referenceDossier": {
+            "type": "string"
+          },
+          "juridiction": {
+            "type": "string"
+          },
+          "etape": {
+            "type": "string"
+          },
+          "datePlanifiee": {
+            "type": "string",
+            "format": "date"
+          },
+          "joursDeRetard": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "juristesAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "compteRenduAvocatDepose": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageResponseCompteRenduAttenduResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompteRenduAttenduResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "StatistiquesDiffusionResponse": {
+        "type": "object",
+        "properties": {
+          "dateDebut": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateFin": {
+            "type": "string",
+            "format": "date"
+          },
+          "observees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "diffusees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "differees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "echecs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nonTraitees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tauxDelivrance": {
+            "type": "number"
+          },
+          "tauxDiffusionTempsReel": {
+            "type": "number"
+          },
+          "seuilRespecte": {
+            "type": "boolean"
           }
         }
       },

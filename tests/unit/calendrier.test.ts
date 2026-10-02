@@ -30,8 +30,11 @@ describe("bornes des périodes", () => {
 
   it("annonce la même fin que le backend, borne incluse (QF-31)", () => {
     // Le backend ajoute une semaine et interroge BETWEEN : le lundi suivant est inclus.
-    expect(versIso(finDePeriode("HEBDOMADAIRE", depuisIso("2026-09-07")))).toBe("2026-09-14");
-    expect(versIso(finDePeriode("MENSUELLE", depuisIso("2026-09-01")))).toBe("2026-10-01");
+    expect(versIso(finDePeriode("HEBDOMADAIRE", depuisIso("2026-09-07")))).toBe("2026-09-13");
+    expect(versIso(finDePeriode("MENSUELLE", depuisIso("2026-09-01")))).toBe("2026-09-30");
+    expect(versIso(finDePeriode("TRIMESTRIELLE", depuisIso("2026-09-01")))).toBe("2026-11-30");
+    // QF-31 : la période suivante commence le lendemain, jamais le même jour.
+    expect(versIso(decalerPeriode("HEBDOMADAIRE", depuisIso("2026-09-07"), 1))).toBe("2026-09-14");
   });
 
   it("ne déborde pas sur le mois suivant en ajoutant un mois à un 31", () => {

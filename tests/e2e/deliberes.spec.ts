@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
 
 /**
  * Délibérés (écrans 10, 26, 27) **contre le backend réel**, cycle Q-78 : mise en délibéré →
@@ -30,13 +31,13 @@ function dansJours(jours: number) {
 /** Crée un dossier, fait passer son instance « En cours » puis « En délibéré », et ouvre l'onglet Délibérés. */
 async function dossierEnDelibere(page: Page) {
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-DEL-${suffixe()}`);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DEL");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DEL");
+  await deposerPiecesDeCreation(page, { marque: "del" });
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });

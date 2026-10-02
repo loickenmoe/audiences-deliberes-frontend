@@ -46,6 +46,17 @@ async function json<T>(chemin: string, jetonAcces: string, init: RequestInit = {
   return (await reponse.json()) as T;
 }
 
+/** Une ligne de la supervision des notifications externes (backend D17). */
+interface LigneSupervision {
+  canal: string;
+  enAttente: number;
+  remises: number;
+  confirmees: number;
+  echecs: number;
+  sansRetour: number;
+  nonJoignables: number;
+}
+
 function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
@@ -327,6 +338,88 @@ test("le backend refuse une valeur qui casserait un autre module (Q-91)", async 
 });
 
 /**
+ * Q-118 — la grille des notifications externes, de l'écran à la base. Une colonne entièrement
+ * décochée est un réglage (« rien par SMS ») : le backend doit l'accepter, et l'écran la relire vide.
+ */
+test("le DJ vide une colonne de la grille des notifications, puis la rétablit (Q-118)", async ({ browser }) => {
+  const jetonDj = await jeton("dj.test");
+  const avant = await json<{ cle: string; valeur: string }[]>("/configurations", jetonDj);
+  const initiale = avant.find((c) => c.cle === "GRILLE_NOTIFICATION_SMS")?.valeur ?? "";
+  expect(initiale).not.toBe("");
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  await expect(dj.getByRole("heading", { name: "Grille des notifications externes" })).toBeVisible();
+  // Les colonnes de la grille ne sont pas répétées dans la liste des paramètres.
+  await expect(dj.locator("article", { hasText: "GRILLE_NOTIFICATION_SMS" })).toHaveCount(0);
+
+  const casesSms = dj.getByRole("checkbox", { name: / par SMS$/ });
+  await expect(casesSms).toHaveCount(9);
+  for (const caseSms of await casesSms.all()) {
+    if (await caseSms.isChecked()) await caseSms.uncheck();
+  }
+  await dj.getByRole("button", { name: "Enregistrer la grille « Prestataires »" }).click();
+  await expect(dj.getByText("Grille des notifications enregistrée.")).toBeVisible();
+
+  const apres = await json<{ cle: string; valeur: string }[]>("/configurations", jetonDj);
+  expect(apres.find((c) => c.cle === "GRILLE_NOTIFICATION_SMS")?.valeur).toBe("");
+  await dj.reload();
+  await expect(dj.getByRole("checkbox", { name: "Rappel d’audience par SMS" })).not.toBeChecked();
+  await dj.context().close();
+
+  // Remise en état : les autres parcours partent de la grille initiale.
+  const retabli = await appel("/configurations/GRILLE_NOTIFICATION_SMS", jetonDj, {
+    method: "PUT",
+    body: JSON.stringify({ valeur: initiale }),
+  });
+  expect(retabli.status).toBe(200);
+});
+
+/**
+ * D17 — la supervision des notifications externes, sur l'écran 41. Elle distingue ce que
+ * l'application a remis au moteur de ce qu'il a confirmé : « remise » n'est pas « reçue ».
+ */
+test("le DJ supervise les notifications externes ; le juriste n'y a pas accès (D17)", async ({ browser }) => {
+  const jetonDj = await jeton("dj.test");
+  const aujourdHui = new Date().toISOString().slice(0, 10);
+  const debut = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10);
+
+  // Le contrat d'abord : la lecture est réservée au DJ et à la DJA.
+  const refus = await appel(`/notifications/supervision?dateDebut=${debut}&dateFin=${aujourdHui}`, await jeton("juriste.test"));
+  expect(refus.status).toBe(403);
+
+  const supervision = await json<{ canaux: { canal: string }[]; engineActif: boolean }>(
+    `/notifications/supervision?dateDebut=${debut}&dateFin=${aujourdHui}`, jetonDj);
+  expect(supervision.canaux.map((c) => c.canal)).toEqual(["EMAIL", "SMS", "WHATSAPP", "TEAMS"]);
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  // Comparaison exacte : « Grille des notifications externes » contiendrait ce fragment.
+  await expect(dj.getByRole("heading", { name: "Notifications externes", exact: true })).toBeVisible();
+  await expect(dj.getByRole("table", { name: "Notifications par canal" })).toBeVisible();
+  // Le moteur est coupé sur le serveur : l'écran doit le dire plutôt que laisser croire aux envois.
+  if (!supervision.engineActif) {
+    await expect(dj.getByText(/Notification Engine est désactivé/)).toBeVisible();
+  }
+  await dj.context().close();
+
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/admin/configurations");
+  await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
+  await expect(juriste.getByRole("heading", { name: "Notifications externes", exact: true })).toHaveCount(0);
+  await juriste.context().close();
+});
+
+test("le backend refuse le vide là où il n'est pas un réglage (Q-118)", async () => {
+  const dj = await jeton("dj.test");
+  const formats = await appel("/configurations/FORMATS_GED", dj, {
+    method: "PUT",
+    body: JSON.stringify({ valeur: "" }),
+  });
+  expect(formats.status).toBe(400);
+});
+
+/**
  * Q-109 — le taux de délivrance du canal applicatif, mesuré **en conditions réelles**.
  *
  * Ce parcours vérifie ce qu'aucun test unitaire ne peut établir : que l'issue enregistrée
@@ -451,4 +544,89 @@ test("une fenêtre inversée est expliquée à l'écran, pas renvoyée en erreur
   await expect(supervision.getByRole("alert")).toContainText("date de début est postérieure");
   await expect(page.locator("#supervision-debut")).toHaveAttribute("aria-invalid", "true");
   await page.context().close();
+});
+
+
+/**
+ * Étape 13 — le parcours entier, d'un bout à l'autre : le DJ règle la grille à l'écran, une action
+ * métier réelle a lieu, et la supervision en rend compte.
+ *
+ * <b>Ce que ce parcours mesure, et ce qu'il ne mesure pas.</b> Les compteurs de supervision sont
+ * partagés : la suite s'exécute en parallèle, et d'autres parcours mettent des notifications en file
+ * au même moment. Une mesure exacte (« retiré, il ne part rien de plus ») y serait fausse un jour
+ * sur deux — elle est faite côté backend, sur une base isolée, par
+ * <code>ChaineNotificationIntegrationTest</code>. Ici on vérifie ce que seul l'écran peut montrer :
+ * le réglage fait à l'écran atteint la base et en revient, et l'activité réelle apparaît en
+ * supervision. Les compteurs ne faisant que croître, l'assertion de croissance reste vraie quoi que
+ * fassent les parcours voisins.
+ */
+test("le réglage du DJ commande ce qui part, et la supervision le montre (étape 13)", async ({ browser }) => {
+  const jetonDj = await jeton("dj.test");
+  const fenetre = (() => {
+    const fin = new Date().toISOString().slice(0, 10);
+    const debut = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    return `dateDebut=${debut}&dateFin=${fin}`;
+  })();
+
+  const courriels = async () => {
+    const supervision = await json<{ canaux: LigneSupervision[] }>(`/notifications/supervision?${fenetre}`, jetonDj);
+    const ligne = supervision.canaux.find((c) => c.canal === "EMAIL");
+    expect(ligne, "la supervision expose toujours une ligne par canal").toBeDefined();
+    return ligne!.enAttente + ligne!.remises + ligne!.confirmees + ligne!.echecs + ligne!.sansRetour
+      + ligne!.nonJoignables;
+  };
+
+  const grille = async () =>
+    (await json<{ cle: string; valeur: string }[]>("/configurations", jetonDj))
+      .find((c) => c.cle === "GRILLE_NOTIFICATION_OUTLOOK")?.valeur ?? "";
+  const initiale = await grille();
+  expect(initiale).toContain("NOUVELLE_DEMANDE_FRAIS");
+
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/admin/configurations");
+  const caseOutlook = dj.getByRole("checkbox", { name: "Nouvelle demande de frais par Outlook" });
+  await expect(caseOutlook).toBeChecked();
+
+  // 1. Décoché à l'écran, l'événement quitte la colonne en base, et l'écran le relit ainsi.
+  await caseOutlook.uncheck();
+  await dj.getByRole("button", { name: "Enregistrer la grille « Utilisateurs internes »" }).click();
+  await expect(dj.getByText("Grille des notifications enregistrée.")).toBeVisible();
+  expect(await grille()).not.toContain("NOUVELLE_DEMANDE_FRAIS");
+  await dj.reload();
+  await expect(caseOutlook).not.toBeChecked();
+
+  // 2. Recoché, il y revient : l'aller-retour écran ↔ base est complet.
+  await caseOutlook.check();
+  await dj.getByRole("button", { name: "Enregistrer la grille « Utilisateurs internes »" }).click();
+  await expect(dj.getByText("Grille des notifications enregistrée.")).toBeVisible();
+  expect(await grille()).toContain("NOUVELLE_DEMANDE_FRAIS");
+
+  // 3. Une action métier réelle, le réglage actif : la supervision compte davantage qu'avant.
+  const avant = await courriels();
+  await deposerDemandeDeFrais();
+  expect(await courriels(), "le dépôt met la notification de l'Assistante en file")
+    .toBeGreaterThan(avant);
+
+  // 4. L'écran de supervision reflète la même fenêtre, et la relance y est offerte sur les défauts.
+  await dj.reload();
+  await expect(dj.getByRole("table", { name: "Notifications par canal" })).toBeVisible();
+  const defauts = await json<{ derniersEchecs: { id: number; destinataire: string | null }[] }>(
+    `/notifications/supervision?${fenetre}`, jetonDj);
+  if (defauts.derniersEchecs.length > 0) {
+    await expect(dj.getByRole("table", { name: "Envois à examiner" })).toBeVisible();
+    await expect(dj.getByRole("button", { name: "Relancer" }).first()).toBeVisible();
+  }
+  await dj.context().close();
+
+  // 5. La relance est réservée au DJ, et ne ressuscite pas un envoi qui n'existe pas.
+  expect((await appel("/notifications/999999999/relancer", await jeton("juriste.test"), { method: "POST" })).status)
+    .toBe(403);
+  expect((await appel("/notifications/999999999/relancer", jetonDj, { method: "POST" })).status).toBe(404);
+
+  // Remise en état : la grille repart de sa valeur initiale pour les autres parcours.
+  const retabli = await appel("/configurations/GRILLE_NOTIFICATION_OUTLOOK", jetonDj, {
+    method: "PUT",
+    body: JSON.stringify({ valeur: initiale }),
+  });
+  expect(retabli.status).toBe(200);
 });

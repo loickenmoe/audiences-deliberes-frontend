@@ -16,7 +16,7 @@ export interface PieceAJoindre {
 }
 
 /**
- * Pièces jointes à la création d'un dossier — facultatives.
+ * Pièces jointes à la création d'un dossier — **obligatoires** depuis le 2026-09-29.
  *
  * Une zone par pièce qu'appelle la catégorie (dossier de crédit et PV pour un recouvrement,
  * incident de compte et justificatifs pour un litige). Chaque fichier est contrôlé localement
@@ -30,19 +30,26 @@ export interface PieceAJoindre {
  * identifiant. C'est le formulaire qui orchestre cet envoi en deux temps.
  *
  * **Une ligne par pièce** (2026-09-22). Quand `reference` est fourni, chaque pièce attendue réunit
- * sa référence — champ du formulaire, obligatoire — et son fichier, facultatif. La pièce n'est plus
- * nommée qu'une fois, par le libellé de sa référence, au lieu de l'être dans deux blocs distincts. Ce
- * composant ne fait que placer ce champ : il reste enregistré, validé et envoyé par le formulaire.
+ * son fichier — obligatoire — et sa référence, facultative, qui le nomme. La pièce n'est plus
+ * nommée qu'une fois, au lieu de l'être dans deux blocs distincts. Ce composant ne fait que placer
+ * ce champ : il reste enregistré et envoyé par le formulaire.
+ *
+ * `manquantes` porte les pièces qu'on a tenté d'enregistrer sans fichier. L'erreur se pose **sur
+ * la pièce concernée**, jamais dans un bandeau au-dessus : sur un formulaire de vingt champs, un
+ * message global laisse chercher lequel est en cause.
  */
 export function PiecesAJoindre({
   categorie,
   onChangement,
   reference,
+  manquantes,
 }: {
   categorie: CategorieDossier;
   onChangement: (pieces: PieceAJoindre[]) => void;
   /** Le champ de référence d'une pièce attendue, placé en tête de sa ligne. */
   reference?: (type: TypeDocument) => ReactNode;
+  /** Pièces attendues restées sans fichier, signalées après une tentative d'enregistrement. */
+  manquantes?: readonly TypeDocument[];
 }) {
   const t = useTranslations("documents");
   const [attendues, setAttendues] = useState<Partial<Record<TypeDocument, File>>>({});
@@ -85,7 +92,18 @@ export function PiecesAJoindre({
           {reference ? (
             <>
               {reference(type)}
-              <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("fichierFacultatif")}</span>
+              {/*
+                Même patron que Champ : l'astérisque est **hors du libellé**, décorative et
+                aria-hidden. L'information « obligatoire » reste portée par le nom accessible du
+                champ de fichier (fichierDe), seul lu par un lecteur d'écran — un input file
+                masqué ne peut pas porter required sans déclencher la validation du navigateur.
+              */}
+              <span className="flex items-center gap-0.5 text-[length:var(--taille-xs)] text-texte-tertiaire">
+                {t("fichierLibelle")}
+                <span aria-hidden className="text-danger">
+                  *
+                </span>
+              </span>
             </>
           ) : (
             <span className="text-[length:var(--taille-sm)] font-medium">{t(`types.${type}` as never)}</span>
@@ -101,6 +119,11 @@ export function PiecesAJoindre({
             />
             <BoutonApercu fichier={attendues[type]} />
           </div>
+          {manquantes?.includes(type) ? (
+            <p role="alert" className="text-[length:var(--taille-xs)] text-danger">
+              {t("fichierManquant")}
+            </p>
+          ) : null}
         </div>
       ))}
 

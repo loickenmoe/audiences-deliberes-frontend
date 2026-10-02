@@ -14,7 +14,13 @@ import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { useNaturesDossier } from "@/hooks/useReferentiels";
 import { peut } from "@/lib/rbac";
 import type { Dossier } from "@/types/domaine";
-import { CategorieDossier, StatutValidation } from "@/types/enums";
+import {
+  CategorieDossier,
+  StatutCycleVie,
+  StatutValidation,
+  TriDossiers,
+  TypeEtape,
+} from "@/types/enums";
 
 const DEFAUTS = {
   reference: "",
@@ -24,6 +30,11 @@ const DEFAUTS = {
   mesDossiers: "",
   estSensible: "",
   sensibiliteStatut: "",
+  typeEtape: "",
+  statutEtape: "",
+  dateDebut: "",
+  dateFin: "",
+  tri: "",
 };
 
 /**
@@ -51,6 +62,11 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
     mesDossiers: filtres.mesDossiers === "1",
     estSensible: filtres.estSensible === "1" ? true : undefined,
     sensibiliteStatut: (filtres.sensibiliteStatut || undefined) as StatutValidation | undefined,
+    typeEtape: (filtres.typeEtape || undefined) as (typeof TypeEtape)[number] | undefined,
+    statutEtape: (filtres.statutEtape || undefined) as (typeof StatutCycleVie)[number] | undefined,
+    dateDebut: filtres.dateDebut || undefined,
+    dateFin: filtres.dateFin || undefined,
+    tri: (filtres.tri || undefined) as (typeof TriDossiers)[number] | undefined,
     size: taille,
     page,
   });
@@ -89,13 +105,25 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       {
         id: "etape",
         header: t("colonneEtape"),
-        // La dernière étape ouverte est l'étape courante : les étapes arrivent triées par type.
+        /*
+         * L'étape la plus avancée — les étapes arrivent triées par type — **et** le pourvoi CCJA
+         * s'il existe, car les deux cassations sont concurrentes : un dossier peut être devant la
+         * Cour Suprême et devant la CCJA en même temps, l'une en délibéré et l'autre clôturée.
+         * N'en montrer qu'une reviendrait à cacher la moitié de la procédure, et laquelle serait
+         * cachée dépendrait d'un ordre de tri.
+         */
         cell: ({ row }) => {
-          const courante = row.original.etapes.at(-1);
-          return courante ? (
-            <CycleEtape statut={courante.statutCycleVie} type={courante.type} compact />
-          ) : (
-            "—"
+          const etapes = row.original.etapes;
+          const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
+          const principale = etapes.filter((etape) => etape.type !== "RECOURS_2_CCJA").at(-1);
+          const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
+          if (aMontrer.length === 0) return "—";
+          return (
+            <div className="flex flex-wrap gap-1">
+              {aMontrer.map((etape) => (
+                <CycleEtape key={etape.id} statut={etape.statutCycleVie} type={etape.type} compact />
+              ))}
+            </div>
           );
         },
       },
@@ -129,6 +157,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         <Champ id="filtre-reference" label={t("rechercheReference")} className="w-44">
           <Input
             id="filtre-reference"
+            key={filtres.reference}
             defaultValue={filtres.reference}
             // Au `blur` : écrire dans l'URL à chaque frappe produirait une requête par caractère.
             onBlur={(evenement) => definirFiltre("reference", evenement.target.value || undefined)}
@@ -138,6 +167,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         <Champ id="filtre-juridiction" label={t("rechercheJuridiction")} className="w-44">
           <Input
             id="filtre-juridiction"
+            key={filtres.juridiction}
             defaultValue={filtres.juridiction}
             onBlur={(evenement) => definirFiltre("juridiction", evenement.target.value || undefined)}
           />
@@ -173,6 +203,81 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
               // Le backend filtre sur le **libellé**, pas sur le code.
               <option key={nature.id} value={nature.libelle}>
                 {nature.libelle}
+              </option>
+            ))}
+          </Select>
+        </Champ>
+
+        {/*
+          Observation métier du 2026-09-25 — « trier les dossiers en fonction de leur étape et
+          pendant une période donnée ». Les deux critères d'étape portent sur une **même** étape :
+          choisir « Appel » et « En cours » donne les appels en cours, et non les dossiers ayant un
+          appel par ailleurs et autre chose en cours.
+        */}
+        <Champ id="filtre-type-etape" label={t("filtreTypeEtape")} className="w-48">
+          <Select
+            id="filtre-type-etape"
+            value={filtres.typeEtape}
+            onChange={(evenement) => definirFiltre("typeEtape", evenement.target.value || undefined)}
+          >
+            <option value="">{t("filtreTous")}</option>
+            {TypeEtape.map((valeur) => (
+              <option key={valeur} value={valeur}>
+                {td(`TypeEtape.${valeur}` as never)}
+              </option>
+            ))}
+          </Select>
+        </Champ>
+
+        <Champ id="filtre-statut-etape" label={t("filtreStatutEtape")} className="w-44">
+          <Select
+            id="filtre-statut-etape"
+            value={filtres.statutEtape}
+            onChange={(evenement) => definirFiltre("statutEtape", evenement.target.value || undefined)}
+          >
+            <option value="">{t("filtreTous")}</option>
+            {StatutCycleVie.map((valeur) => (
+              <option key={valeur} value={valeur}>
+                {td(`StatutCycleVie.${valeur}` as never)}
+              </option>
+            ))}
+          </Select>
+        </Champ>
+
+        {/*
+          La période porte sur les **audiences**, non sur l'ouverture du dossier : la question du
+          métier est « quels dossiers sont passés devant un juge entre ces deux dates ». Les
+          audiences annulées en sont exclues côté serveur — elles ne se sont pas tenues.
+        */}
+        <Champ id="filtre-date-debut" label={t("filtreAudienceDebut")} className="w-40">
+          <Input
+            id="filtre-date-debut"
+            type="date"
+            max={filtres.dateFin || undefined}
+            value={filtres.dateDebut}
+            onChange={(evenement) => definirFiltre("dateDebut", evenement.target.value || undefined)}
+          />
+        </Champ>
+
+        <Champ id="filtre-date-fin" label={t("filtreAudienceFin")} className="w-40">
+          <Input
+            id="filtre-date-fin"
+            type="date"
+            min={filtres.dateDebut || undefined}
+            value={filtres.dateFin}
+            onChange={(evenement) => definirFiltre("dateFin", evenement.target.value || undefined)}
+          />
+        </Champ>
+
+        <Champ id="filtre-tri" label={t("filtreTri")} className="w-48">
+          <Select
+            id="filtre-tri"
+            value={filtres.tri}
+            onChange={(evenement) => definirFiltre("tri", evenement.target.value || undefined)}
+          >
+            {TriDossiers.map((valeur) => (
+              <option key={valeur} value={valeur === "RECENT" ? "" : valeur}>
+                {td(`TriDossiers.${valeur}` as never)}
               </option>
             ))}
           </Select>

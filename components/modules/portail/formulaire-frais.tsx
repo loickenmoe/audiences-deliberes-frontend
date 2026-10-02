@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,10 +8,12 @@ import { toast } from "sonner";
 
 import { SelecteurDossier } from "@/components/modules/portail/selecteur-dossier";
 import { GardeSaisie, Televersement } from "@/components/metier";
+import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { useDeposerFrais } from "@/hooks/usePortailAvocat";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";
+import { gedService } from "@/services/gedService";
 import { portailAvocatService, type PieceJustificative } from "@/services/portailAvocatService";
 
 /**
@@ -28,6 +30,7 @@ import { portailAvocatService, type PieceJustificative } from "@/services/portai
  */
 export function FormulaireFrais() {
   const t = useTranslations("portail");
+  const tdoc = useTranslations("documents");
   const router = useRouter();
   const deposer = useDeposerFrais();
 
@@ -35,6 +38,7 @@ export function FormulaireFrais() {
   const [montant, setMontant] = useState("");
   const [referenceFacture, setReferenceFacture] = useState("");
   const [pieces, setPieces] = useState<PieceJustificative[]>([]);
+  const [apercu, setApercu] = useState<PieceJustificative | null>(null);
   const [envoiPiece, setEnvoiPiece] = useState(false);
   const [erreurChamp, setErreurChamp] = useState<{ champ: string; message: string } | null>(null);
 
@@ -148,14 +152,28 @@ export function FormulaireFrais() {
                   className="flex items-center justify-between gap-2 rounded border border-bordure bg-fond px-3 py-1.5"
                 >
                   <span className="truncate text-[length:var(--taille-sm)]">{piece.nomFichier}</span>
-                  <Button
-                    variante="discrete"
-                    taille="sm"
-                    aria-label={t("retirerPiece", { numero: index + 1 })}
-                    onClick={() => setPieces((precedentes) => precedentes.filter((p) => p.cle !== piece.cle))}
-                  >
-                    <X size={14} aria-hidden />
-                  </Button>
+                  <span className="flex items-center gap-1">
+                    {/*
+                      Relire avant d'envoyer : une pièce chargée ne se vérifiait qu'après le dépôt,
+                      quand il était trop tard pour la remplacer sans repasser par une demande.
+                    */}
+                    <Button
+                      variante="discrete"
+                      taille="sm"
+                      aria-label={`${tdoc("consulter")} - ${piece.nomFichier}`}
+                      onClick={() => setApercu(piece)}
+                    >
+                      <Eye size={14} aria-hidden />
+                    </Button>
+                    <Button
+                      variante="discrete"
+                      taille="sm"
+                      aria-label={t("retirerPiece", { numero: index + 1 })}
+                      onClick={() => setPieces((precedentes) => precedentes.filter((p) => p.cle !== piece.cle))}
+                    >
+                      <X size={14} aria-hidden />
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -181,6 +199,15 @@ export function FormulaireFrais() {
           </Button>
         </div>
       </div>
+
+      {apercu ? (
+        <ApercuFichier
+          ouvert
+          onFermeture={() => setApercu(null)}
+          nomFichier={apercu.nomFichier}
+          obtenir={() => gedService.recupererContenu(apercu.urlTelechargement)}
+        />
+      ) : null}
 
       {/* Les pièces sont déjà téléversées : perdre l'écran perdrait le lien entre elles et la demande. */}
       <GardeSaisie

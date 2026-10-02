@@ -18,14 +18,31 @@ export const TypesDocument = [
 ] as const;
 export type TypeDocument = (typeof TypesDocument)[number];
 
+/**
+ * Le type porté par une lettre de constitution signée, versée à la GED par le backend
+ * (`ConstitutionService.TYPE_DOCUMENT_LETTRE`). C'est lui qui fait apparaître le tirage sur papier
+ * préimprimé dans l'onglet « Documents ».
+ *
+ * `typeDocument` étant un texte libre côté serveur, l'alignement des deux côtés ne peut pas être
+ * garanti par le typage : un parcours de bout en bout le vérifie contre le vrai backend.
+ */
+export const TYPE_LETTRE_CONSTITUTION = "Lettre de constitution";
+
 export function estTypeConnu(valeur: string | null | undefined): valeur is TypeDocument {
   return !!valeur && (TypesDocument as readonly string[]).includes(valeur);
 }
 
 /**
- * Pièces qui accompagnent les références exigées par la catégorie (Q-11). Les références restent
- * obligatoires côté backend ; les pièces, elles, sont **facultatives** à la création : le dossier
- * de crédit est remis manuellement par le GFC (RG-GED-01) et peut arriver après l'ouverture.
+ * Pièces qu'exige la catégorie du dossier.
+ *
+ * **L'obligation a changé d'objet le 2026-09-29**, sur arbitrage du métier : « ce sont les pièces
+ * jointes qui sont obligatoires, pas leur texte associé ». Ces deux fichiers sont donc exigés à la
+ * création, et les références qui les nomment sont devenues facultatives — l'inverse exact de
+ * Q-11. Le constat qui l'a motivé : sur 254 dossiers, les deux références étaient remplies partout
+ * et 51 seulement portaient un document.
+ *
+ * **Seul l'écran tient cette règle** : une pièce se dépose en GED après la création, qui seule
+ * produit l'identifiant du dossier. Le serveur ne peut pas exiger un fichier qu'il n'a pas reçu.
  */
 export function piecesDeCategorie(categorie: CategorieDossier): TypeDocument[] {
   return categorie === "RECOUVREMENT"

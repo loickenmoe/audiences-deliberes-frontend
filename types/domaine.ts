@@ -22,6 +22,7 @@ import type {
   StatutValidation,
   TypeAutrePublication,
   TypeAlerte,
+  TriDossiers,
   TypeEtape,
   TypeRapport,
   TypeIntervenant,
@@ -77,7 +78,6 @@ export interface Client {
 }
 
 export interface CreerClient {
-  reference: string;
   nom: string;
   email?: string;
   telephone?: string;
@@ -353,8 +353,8 @@ export interface DocumentDossier {
  *   transmettre ;
  * · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), pas le libellé.
  */
+/** La référence n'y figure pas : le serveur l'attribue (2026-09-29). */
 export interface CreerDossier {
-  reference: string;
   nature: string;
   juridictionSaisie: string;
   clientId: number;
@@ -392,6 +392,13 @@ export interface FiltresDossiers {
   estSensible?: boolean;
   /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
   sensibiliteStatut?: StatutValidation;
+  /** Les deux critères d'étape portent sur une **même** étape : « un appel en cours ». */
+  typeEtape?: TypeEtape;
+  statutEtape?: StatutCycleVie;
+  /** La période porte sur les **audiences** : « les dossiers ayant eu une audience entre… ». */
+  dateDebut?: string;
+  dateFin?: string;
+  tri?: TriDossiers;
   page?: number;
   size?: number;
 }
@@ -404,8 +411,14 @@ export interface Audience {
   dossierId: number;
   etapeId: number;
   datePlanifiee: string;
-  /** ⚠ Posée par le backend au jour de la **saisie** du compte rendu, pas au jour de l'audience (QF-32). */
+  /** Posée par le backend à la **date planifiée** de l'audience, quel que soit le jour de saisie (QF-32). */
   dateTenue: string | null;
+  /**
+   * Là où l'audience se tient — distincte de `juridictionSaisie` du dossier, qui est celle de la
+   * saisine. Une audience d'appel ne siège pas devant le tribunal qui a jugé. Héritée du dossier à
+   * la planification faute d'indication contraire.
+   */
+  juridiction: string | null;
   compteRendu: string | null;
   statut: StatutAudience;
   createdAt: string;
@@ -449,8 +462,10 @@ export interface EntreeCalendrier {
 
 export interface PlanifierAudience {
   etapeId: number;
-  /** `YYYY-MM-DD`, strictement future (RG-AUD-07). */
+  /** `YYYY-MM-DD`, non antérieure à l'ouverture du dossier (RG-AUD-07 amendée). */
   datePlanifiee: string;
+  /** Facultative : vide, elle reprend la juridiction du dossier — le cas du premier degré. */
+  juridiction?: string;
 }
 
 export interface CreerAlarme {
@@ -549,9 +564,12 @@ export interface Intervenant {
 
 /**
  * Invariants portés par le backend (#61, RG-INT-01/02) :
- * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris —
- *   et refuse le champ `notification` ;
+ * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris ;
  * · un `AUTRE_PRESTATAIRE` refuse tout compte applicatif.
+ *
+ * `notification` vaut pour les deux depuis Q-119 : c'est le consentement du prestataire aux canaux
+ * externes (SMS, WhatsApp, courriel personnel). Absent, il vaut `true` pour un avocat et `false`
+ * pour un autre prestataire.
  */
 export interface CreerIntervenant {
   type: TypeIntervenant;
@@ -564,7 +582,8 @@ export interface CreerIntervenant {
 
 /**
  * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
- * figés, l'identité se gérant dans Keycloak. La notification ne concerne qu'un autre prestataire.
+ * figés, l'identité se gérant dans Keycloak. Le consentement aux notifications externes, lui, se
+ * corrige pour les deux types (Q-119).
  */
 export interface ModifierIntervenant {
   nom: string;
@@ -591,8 +610,24 @@ export interface ValidationFrais {
  * règle RG-INT-03 (dossier sensible **ou** montant > `seuilApplicable`) — pour une demande qui n'a
  * pas encore atteint l'opportunité, c'est ce qui l'attend.
  *
- * `piecesJustificatives` : des **noms** déclarés par l'avocat, pas des fichiers (QF-26).
+ * **Deux listes, et c'est voulu.** `piecesJustificatives` est le tableau brut du dictionnaire des
+ * données : il peut contenir d'anciens libellés, saisis avant que le téléversement n'existe, qui ne
+ * désignent aucun fichier. `piecesTelechargeables` ne porte que les pièces **réellement stockées**,
+ * avec le nom d'origine et une URL signée de courte durée — renseignée sur le **détail** seulement,
+ * jamais sur la liste, comme l'URL d'un document de la GED.
+ *
+ * L'écran doit préférer la seconde : c'est sur les documents que porte le contrôle de conformité,
+ * pas sur leurs noms.
  */
+/** Une pièce justificative stockée, telle que le détail d'une demande de frais la rend. */
+export interface PieceTelechargeable {
+  /** Chemin de stockage ; sert de clé stable, jamais montré à l'utilisateur. */
+  cle: string;
+  nomFichier: string;
+  /** URL signée, de courte durée : à utiliser tout de suite, pas à conserver. */
+  urlTelechargement: string;
+}
+
 export interface DemandeFrais {
   id: number;
   dossierId: number;
@@ -601,6 +636,8 @@ export interface DemandeFrais {
   avocatNom: string;
   montant: number;
   piecesJustificatives: string[];
+  /** Vide sur la liste ; renseignée sur le détail, pour les pièces réellement stockées. */
+  piecesTelechargeables: PieceTelechargeable[];
   statutCircuit: StatutCircuitFrais;
   motifRejet: string | null;
   statutPaiement: StatutPaiementFrais;
@@ -851,6 +888,103 @@ export interface ConfigurationSysteme {
   valeurMinimale: number | null;
   valeurMaximale: number | null;
   valeursPossibles: string[];
+  /**
+   * Une liste peut être entièrement décochée (backend Q-118) : réglages de notification, où
+   * « aucun canal » ou « aucun événement » est un choix, et non un oubli.
+   */
+  listeVideAutorisee: boolean;
+}
+
+/** Une ligne du tableau de supervision des notifications externes (backend D17). */
+/**
+ * Une audience d'une journée donnée, avec ce qui en a été rapporté (backend, écran 44).
+ *
+ * Les deux comptes rendus sont rendus côte à côte : celui du juriste, saisi sur l'audience, et
+ * celui de l'avocat, déposé en publication **et validé**. C'est leur écart qui renseigne sur ce
+ * qui reste à faire.
+ */
+export interface AudienceDuJour {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string | null;
+  etape: TypeEtape | null;
+  statut: StatutAudience;
+  /** Identifiants des juristes affectés au dossier ; l'écran les nomme. */
+  juristesAffectes: number[];
+  compteRenduJuriste: string | null;
+  compteRenduAvocat: string | null;
+  avocatDuCompteRendu: number | null;
+  /**
+   * Adresse signée de la pièce accompagnant le compte rendu de l'avocat — plumitif, note
+   * d'audience —, ou `null` s'il n'en a pas joint. Le compte rendu du juriste est un texte : il
+   * n'a jamais de pièce.
+   */
+  urlPieceJointeAvocat: string | null;
+}
+
+/**
+ * Une audience passée dont le compte rendu du juriste manque encore.
+ *
+ * Le statut « tenue » n'étant posé qu'à la saisie, une audience passée restée « planifiée » est
+ * exactement une audience sans compte rendu : aucune donnée supplémentaire n'est nécessaire.
+ */
+export interface CompteRenduAttendu {
+  audienceId: number;
+  dossierId: number;
+  referenceDossier: string;
+  juridiction: string | null;
+  etape: TypeEtape | null;
+  datePlanifiee: string;
+  joursDeRetard: number;
+  juristesAffectes: number[];
+  /** L'avocat a rapporté : reste à consigner côté banque. */
+  compteRenduAvocatDepose: boolean;
+}
+
+export interface LigneCanalNotification {
+  canal: string;
+  /** En file, pas encore remises au moteur. */
+  enAttente: number;
+  /** Remises au moteur, sans confirmation encore reçue. */
+  remises: number;
+  /** Confirmées par un accusé du moteur. */
+  confirmees: number;
+  /** Abandonnées : tentatives épuisées, périmées, ou échec définitif du moteur. */
+  echecs: number;
+  /** Remises, mais restées sans aucun accusé au-delà du délai (backend Q-120). */
+  sansRetour: number;
+  /** Canal retenu pour un destinataire sans coordonnée utilisable (D14). */
+  nonJoignables: number;
+}
+
+/** Un envoi à examiner : abandonné, sans retour, ou destinataire injoignable. */
+export interface EnvoiNotificationEnDefaut {
+  id: number;
+  eventId: string;
+  typeEvenement: string;
+  canal: string;
+  statut: string;
+  destinataire: string | null;
+  /** Destinataire réel quand la redirection hors production l'a remplacé (backend D10). */
+  destinataireOrigine: string | null;
+  derniereErreur: string | null;
+  tentatives: number;
+  dateCreation: string | null;
+}
+
+export interface SupervisionNotifications {
+  dateDebut: string;
+  dateFin: string;
+  canaux: LigneCanalNotification[];
+  derniersEchecs: EnvoiNotificationEnDefaut[];
+  /** Interrupteur du backend : à false, rien ne part et tout reste journalisé. */
+  engineActif: boolean;
+  /**
+   * Le moteur publie-t-il ses accusés ? Sinon (backend Q-121), « remise » est le dernier état connu
+   * d'un envoi réussi, et la colonne des confirmations reste vide sans rien signaler.
+   */
+  suiviAccusesActif: boolean;
 }
 
 /**

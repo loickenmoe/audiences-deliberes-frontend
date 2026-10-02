@@ -57,7 +57,8 @@
     "monEspace": "My workspace",
     "deposerFrais": "File a claim",
     "deposerPublication": "Submit a publication",
-    "audit": "Audit"
+    "audit": "Audit",
+    "journalAudiences": "Hearing log"
   },
   "accueil": {
     "titre": "Home",
@@ -132,8 +133,9 @@
     },
     "TypeEtape": {
       "INSTANCE": "First instance",
-      "RECOURS_1": "First appeal",
-      "RECOURS_2": "Second appeal"
+      "RECOURS_1": "Appeal",
+      "RECOURS_2": "Supreme Court appeal",
+      "RECOURS_2_CCJA": "CCJA appeal"
     },
     "StatutCycleVie": {
       "OUVERTURE": "Opened",
@@ -270,6 +272,22 @@
       "DELIBERE_ATTENDU": "Judgment expected",
       "DOSSIER_INCOMPLET": "Incomplete case file"
     },
+    "CanalPrestataire": {
+      "COURRIEL_PERSONNEL": "Personal email",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp"
+    },
+    "EvenementPrestataire": {
+      "CONSTITUTION_VALIDEE": "Appointment approved",
+      "FRAIS_REJETES": "Fees rejected",
+      "PAIEMENT_EFFECTUE": "Payment made",
+      "PUBLICATION_ARBITREE": "Publication reviewed",
+      "CORRESPONDANCE_TRANSMISE": "Correspondence sent",
+      "RAPPEL_AUDIENCE": "Hearing reminder",
+      "AFFECTATION_DOSSIER": "Assigned to a case",
+      "DELAI_RECOURS": "Appeal deadline of the ruling",
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed"
+    },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "The bank is liable",
       "TIERS_REDEVABLE": "The third party is liable"
@@ -296,6 +314,12 @@
       "PDF": "PDF",
       "EXCEL": "Excel",
       "CSV": "CSV"
+    },
+    "TriDossiers": {
+      "RECENT": "Opening date, most recent first",
+      "ANCIEN": "Opening date, oldest first",
+      "REFERENCE": "Reference (A → Z)",
+      "RISQUE": "Exposure, highest first"
     }
   },
   "referentiels": {
@@ -326,7 +350,8 @@
     "configurations": {
       "SEUIL_MONTANT_DEFAUT": "Amount above which a fee claim requires the joint approval of the Legal Director and the Deputy Legal Director.",
       "SEUIL_PROROGATIONS": "Number of extensions beyond which an alert is raised.",
-      "CANAUX_NOTIFICATION_DEFAUT": "Channels used by default to deliver alerts.",
+      "CANAUX_NOTIFICATION_DEFAUT": "Notification channels for internal users. In-app is always on; Outlook and Teams are optional.",
+      "CANAUX_NOTIFICATION_PRESTATAIRES": "Notification channels for lawyers and other providers. None ticked: no provider is notified outside the application.",
       "DELAI_VALIDATION_CONJOINTE": "Maximum number of days for the joint approval of a fee claim.",
       "TAILLE_MAX_GED": "Maximum size of a document uploaded to the document management system.",
       "FORMATS_GED": "File formats accepted by the document management system.",
@@ -395,7 +420,8 @@
     "aucunDossierCategorie": "No case file in this category.",
     "risqueEncouru": "Amount at risk",
     "juridiction": "Court",
-    "retourListe": "Back to the client list"
+    "retourListe": "Back to the client list",
+    "clientCree": "Client {reference} created."
   },
   "intervenants": {
     "titre": "Service providers",
@@ -404,6 +430,8 @@
     "colonneType": "Type",
     "colonneEmail": "Email",
     "colonneTelephone": "Phone",
+    "telephoneAide": "Cameroon: nine-digit mobile, 6XX XXX XXX. Outside Cameroon: country code required, +33 X XX XX XX XX.",
+    "telephoneFormat": "Invalid number. Cameroon: nine digits starting with 6. Outside Cameroon: country code required (+33…).",
     "colonneCompte": "Login",
     "sansCompte": "None",
     "filtreType": "Provider type",
@@ -423,7 +451,8 @@
     "compteFige": "The login is managed in Keycloak, which creates and authenticates accounts: it cannot be changed here.",
     "compteObligatoire": "The username counsel signs in with, for example avocat.dupont. It is required to submit fee claims and filings.",
     "comptePrestataire": "Other providers have no account: they are notified by email.",
-    "notification": "Notify by email"
+    "notification": "Accepts notifications outside the application",
+    "notificationAide": "SMS, WhatsApp and personal email, to the contact details on this record. The channels actually used are set by the Legal Department."
   },
   "dossiers": {
     "titre": "Cases",
@@ -467,15 +496,14 @@
     "champPvTransfert": "Transfer record",
     "champIncidentCompte": "Account incident reference",
     "champElementsJustificatifs": "Supporting evidence",
-    "champAlarme": "Alarm field",
     "champJuristes": "Assigned lawyers",
     "champAvocats": "Assigned counsel",
     "champEstSensible": "Sensitive case",
     "champSeuilMontant": "Proposed threshold (FCFA)",
     "champTypeClientSensible": "Client type",
     "aideNature": "The case category follows from it: it decides which documents are required.",
-    "aidePiecesRecouvrement": "A debt recovery case requires the originating credit file and the transfer record.",
-    "aidePiecesLitiges": "An operating dispute requires the account incident reference and the supporting evidence.",
+    "aidePiecesRecouvrement": "A recovery case requires the original credit file and the transfer record. The references naming them are optional.",
+    "aidePiecesLitiges": "An operational dispute requires the account incident and the supporting evidence. The references naming them are optional.",
     "aideAffectation": "At least one lawyer and at least one counsel are mandatory.",
     "aideSensibilite": "The threshold and client type are a proposal, subject to approval by the Legal Director or Deputy.",
     "categorieDeduite": "Derived category",
@@ -486,7 +514,15 @@
     "non": "No",
     "filtreSensibiliteStatut": "Sensitivity",
     "filtreSensiblesSeuls": "Sensitive case files only",
-    "filtreTous": "All"
+    "filtreTous": "All",
+    "filtreTypeEtape": "Stage",
+    "filtreStatutEtape": "Stage status",
+    "filtreAudienceDebut": "Hearing from",
+    "filtreAudienceFin": "Hearing to",
+    "filtreTri": "Sort by",
+    "renvoiAlarmes": "Follow-up alarms are set from the case file, under “Alarms”: they carry a due date and notify their author on the day.",
+    "champAlarmeHerite": "Note entered at creation (field removed)",
+    "dossierCree": "Case {reference} created."
   },
   "fiche": {
     "retour": "Back to cases",
@@ -579,9 +615,8 @@
     },
     "piecesTitre": "Documents to attach",
     "piecesAide": "Optional: these documents can also be added later from the case page.",
-    "fichiersAide": "Files are optional: they can also be added later from the case page.",
-    "fichierFacultatif": "File (optional)",
-    "fichierDe": "File (optional): {piece}",
+    "fichiersAide": "Each expected item must carry its file: the document is what counts, not the reference naming it.",
+    "fichierDe": "File (required): {piece}",
     "autresPieces": "Other documents",
     "ajouterAutre": "Add another document",
     "retirerPiece": "Remove this document",
@@ -606,7 +641,12 @@
     "demandeSuppressionTitre": "Request deletion?",
     "demandeSuppressionMessage": "The document “{nom}” will remain visible until the Legal Director or Deputy decides.",
     "documentSupprime": "Document deleted.",
-    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy."
+    "demandeEnvoyee": "Deletion request sent to the Legal Director and Deputy.",
+    "telechargerSansEntete": "No letterhead",
+    "telechargerSansEnteteAide": "Print-ready copy for the bank preprinted paper: content only, without logo or legal notices.",
+    "fichierManquant": "This item is required: attach its file.",
+    "piecesManquantes": "Required items are missing: the case was not created.",
+    "fichierLibelle": "File"
   },
   "suppressions": {
     "titre": "Deletion requests",
@@ -663,7 +703,7 @@
     "archivees": "Archived judgments",
     "enregistrerAdjudication": "Record an adjudication",
     "suivreCondamnation": "Track a monetary judgment",
-    "archiver": "Archive the judgment",
+    "archiver": "Archive to case law",
     "aucuneAdjudication": "No adjudication.",
     "aucuneCondamnation": "No monetary judgment.",
     "aucuneArchivee": "No judgment archived on this case file.",
@@ -960,7 +1000,8 @@
     "payer": "Mark as paid",
     "payerTitre": "Mark the request as paid?",
     "payerMessage": "Only once the payment has been confirmed through the Bank’s channels. The lawyer and the Legal Department will be notified.",
-    "payee": "Payment recorded: the lawyer and the Legal Department have been notified."
+    "payee": "Payment recorded: the lawyer and the Legal Department have been notified.",
+    "aucunePiece": "No attachment on this claim."
   },
   "audiences": {
     "aucune": "No hearing scheduled.",
@@ -1011,7 +1052,11 @@
     "traiterAria": "Mark as handled - {objet}",
     "traiterTitre": "Mark the alarm as handled",
     "traiterMessage": "The alarm “{objet}” is closed without being replaced. To push it back, reschedule it instead.",
-    "alarmeTraitee": "Alarm marked as handled."
+    "alarmeTraitee": "Alarm marked as handled.",
+    "dateAvantOuverture": "This date precedes the case opening.",
+    "compteRenduAvocat": "Counsel report",
+    "champJuridiction": "Court",
+    "champJuridictionAide": "Where the hearing will be held. The case court by default; change it for an appeal."
   },
   "deliberes": {
     "aucun": "No deliberation.",
@@ -1143,9 +1188,77 @@
     "echecs": "Failures",
     "nonTraitees": "{nombre} alert(s) from this period have not yet been opened by their recipient. This count feeds no rate: it says something other than delivery."
   },
+  "supervisionNotifications": {
+    "titre": "External notifications",
+    "description": "What each channel produced over the period: queued, handed to the engine, confirmed by it, abandoned. “Handed over” does not mean “received”: only a confirmation proves that.",
+    "moteurCoupe": "The Notification Engine is disabled on the server: notifications are prepared and logged, but nothing is sent.",
+    "suiviIndisponible": "The engine does not publish delivery receipts: a notification handed over cannot be confirmed here. “Handed over” is therefore the last known state of a successful send, and the “Confirmed” column stays empty without signalling a problem.",
+    "dateDebut": "From",
+    "dateFin": "To",
+    "fenetreInversee": "The end date must follow the start date.",
+    "tableauCanaux": "Notifications by channel",
+    "canal": "Channel",
+    "enAttente": "Queued",
+    "remises": "Handed over",
+    "confirmees": "Confirmed",
+    "echecs": "Failures",
+    "sansRetour": "No response",
+    "nonJoignables": "Unreachable",
+    "taux": "Completion",
+    "aExaminer": "Deliveries to review",
+    "aucunEchec": "Nothing to review",
+    "aucunEchecTexte": "Over this period, no delivery failed, went unanswered, or lacked a recipient.",
+    "evenement": "Event",
+    "statut": "Status",
+    "destinataire": "Recipient",
+    "destinataireReel": "Actual recipient: {destinataire}",
+    "sansDestinataire": "None",
+    "cause": "Cause",
+    "relancer": "Retry",
+    "relanceFaite": "Notification queued again.",
+    "canaux": {
+      "EMAIL": "Email",
+      "SMS": "SMS",
+      "WHATSAPP": "WhatsApp",
+      "TEAMS": "Teams"
+    },
+    "statuts": {
+      "ECHEC": "Failed",
+      "SANS_RETOUR": "No response",
+      "NON_JOIGNABLE": "Unreachable recipient",
+      "EN_ATTENTE": "Queued",
+      "PUBLIEE": "Handed over",
+      "ENVOYEE": "Confirmed"
+    },
+    "evenements": {
+      "RAPPEL_AUDIENCE": "Hearing reminder",
+      "DELAI_RECOURS": "Appeal deadline of the ruling",
+      "PROROGATION": "Repeated extensions",
+      "ALARME": "Reminder due",
+      "DOUBLON_AFFECTATION": "Duplicate assignment",
+      "DOUBLON_AUDIENCE": "Duplicate hearing",
+      "DOUBLON_FACTURE": "Duplicate invoice",
+      "NOUVELLE_DEMANDE_FRAIS": "New fee claim",
+      "VALIDATION_CONJOINTE_REQUISE": "Joint approval required",
+      "PAIEMENT_EFFECTUE": "Payment made",
+      "NOUVELLE_PUBLICATION": "New filing",
+      "DOCUMENT_CHARGE": "Document uploaded",
+      "SUPPRESSION_DOCUMENT": "Document deletion",
+      "CONSTITUTION_A_SIGNER": "Letter of engagement to sign",
+      "CHARGE_MAX_AVOCAT": "Counsel workload threshold",
+      "DELIBERE_ATTENDU": "Judgment expected",
+      "DOSSIER_INCOMPLET": "Incomplete case file",
+      "CONSTITUTION_VALIDEE": "Appointment approved",
+      "FRAIS_REJETES": "Fees rejected",
+      "PUBLICATION_ARBITREE": "Publication reviewed",
+      "CORRESPONDANCE_TRANSMISE": "Correspondence sent",
+      "AFFECTATION_DOSSIER": "Assigned to a case",
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed"
+    }
+  },
   "configurations": {
     "titre": "System settings",
-    "description": "The seven settings driving the thresholds, deadlines and checks of the application. A change takes effect immediately.",
+    "description": "The settings driving the thresholds, deadlines, checks and notifications of the application. A change takes effect immediately.",
     "lectureSeule": "Read only - only the Legal Director and Deputy Director may change these settings.",
     "valeur": "Value",
     "valeurActuelle": "Current value",
@@ -1167,6 +1280,20 @@
     "vide": "No setting",
     "videTexte": "System settings are created when the application is installed.",
     "modifieeParAuteur": "Changed on {date} by {auteur}"
+  },
+  "grilleNotifications": {
+    "titre": "External notifications grid",
+    "description": "For each channel, the events sent through it. A disabled channel keeps its column: it applies as soon as the channel is turned back on. Nothing is sent until the Notification Engine is enabled on the server.",
+    "sections": {
+      "internes": "Internal users",
+      "prestataires": "Providers"
+    },
+    "evenement": "Event",
+    "canalCoupe": "Channel off",
+    "case": "{evenement} by {canal}",
+    "enregistrer": "Save the “{section}” grid",
+    "annuler": "Cancel",
+    "succes": "Notifications grid saved."
   },
   "tableauDeBord": {
     "titre": "Dashboard",
@@ -1374,7 +1501,9 @@
       "CLIENT_MODIFIE": "Client updated",
       "INTERVENANT_MODIFIE": "Provider updated",
       "AUDIT_CONSULTE": "Audit consulted",
-      "NON_CLASSEE": "Unclassified action"
+      "NON_CLASSEE": "Unclassified action",
+      "AUDIT_EXPORTE": "Audit export",
+      "ARCHIVE_TELECHARGEE": "Audit archive downloaded"
     },
     "details": {
       "accord": "Approval",
@@ -1437,7 +1566,37 @@
       "statut": "Status",
       "statutPaiement": "Payment status",
       "typeArchive": "Archive type",
-      "typeDocument": "Document type"
+      "typeDocument": "Document type",
+      "exportId": "Archive",
+      "empreinte": "Fingerprint",
+      "format": "Format",
+      "lignes": "Rows"
     }
+  },
+  "journalAudiences": {
+    "titre": "Hearing log",
+    "description": "What was reported from a day’s hearings, and what is still missing.",
+    "journalTitre": "Hearings of the day",
+    "journalVide": "No hearing on that day.",
+    "champDate": "Date",
+    "colonneDossier": "Case",
+    "colonneEtape": "Stage",
+    "colonneJuristes": "Assigned lawyers",
+    "colonneCompteRenduJuriste": "In-house report",
+    "colonneCompteRenduAvocat": "Counsel report",
+    "manquant": "Missing",
+    "nonDepose": "Not filed",
+    "attendusTitre": "Outstanding reports",
+    "attendusAide": "Past hearings whose in-house report has not been entered. Today is never listed: it is not late.",
+    "attendusVide": "No outstanding report over this period.",
+    "du": "From",
+    "au": "To",
+    "fenetreInversee": "The start date is after the end date.",
+    "colonneDate": "Hearing date",
+    "colonneRetard": "Delay",
+    "colonneAvocat": "Counsel side",
+    "joursDeRetard": "{jours} day(s)",
+    "avocatARendu": "Counsel reported",
+    "consulterPiece": "View attachment"
   }
 }

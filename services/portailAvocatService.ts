@@ -42,9 +42,15 @@ export const portailAvocatService = {
    * Les dossiers auxquels il est affecté. `size` est généreux par défaut : la liste alimente un
    * sélecteur, et paginer un sélecteur le rendrait inutilisable.
    */
-  mesDossiers: async (page = 0, size = 100): Promise<PageReponse<DossierAvocat>> => {
+  /**
+   * Ses dossiers, éventuellement cherchés par référence.
+   *
+   * La recherche est faite **par le serveur** : filtrer la page reçue n'aurait cherché que parmi
+   * les dossiers les plus récents, et aurait répondu « aucun résultat » pour un dossier qui existe.
+   */
+  mesDossiers: async (reference?: string, page = 0, size = 100): Promise<PageReponse<DossierAvocat>> => {
     const { data } = await apiClient.get<PageReponse<DossierAvocat>>("/avocat/mes-dossiers", {
-      params: { page, size },
+      params: { ...(reference ? { reference } : {}), page, size },
     });
     return data;
   },

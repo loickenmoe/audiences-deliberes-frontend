@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Eye } from "lucide-react";
+
 import { GardeSaisie, Televersement } from "@/components/metier";
+import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { SelecteurDossier } from "@/components/modules/portail/selecteur-dossier";
 import { Button } from "@/components/ui/button";
 import { Champ, Select, Textarea } from "@/components/ui/champ";
@@ -41,6 +44,7 @@ const NATURES: Nature[] = ["compteRendu", "document"];
  */
 export function FormulairePublication() {
   const t = useTranslations("portail");
+  const tdoc = useTranslations("documents");
   const td = useTranslations("domaine");
   const router = useRouter();
 
@@ -50,6 +54,7 @@ export function FormulairePublication() {
   const [contenu, setContenu] = useState("");
   const [typeDocument, setTypeDocument] = useState<(typeof TypeAutrePublication)[number]>("PIECE");
   const [fichier, setFichier] = useState<File | null>(null);
+  const [apercu, setApercu] = useState(false);
 
   const audiences = useAudiencesDeMonDossier(nature === "compteRendu" ? dossierId : null);
   const deposerCompteRendu = useDeposerCompteRendu();
@@ -200,6 +205,7 @@ export function FormulairePublication() {
                 {t("pieceJointeAide")}
               </p>
               <Televersement nom="piece-jointe" label={t("pieceJointe")} onChangement={setFichier} />
+              <BoutonRelire fichier={fichier} onOuverture={() => setApercu(true)} libelle={tdoc("consulter")} />
             </div>
           </>
         ) : (
@@ -222,6 +228,7 @@ export function FormulairePublication() {
             </Champ>
 
             <Televersement nom="fichier" label={t("fichier")} onChangement={setFichier} />
+            <BoutonRelire fichier={fichier} onOuverture={() => setApercu(true)} libelle={tdoc("consulter")} />
           </>
         )}
 
@@ -235,10 +242,50 @@ export function FormulairePublication() {
         </div>
       </div>
 
+      {/*
+        Relire le fichier **avant** de déposer. Le fichier n'est pas encore parti : l'aperçu lit
+        directement celui que le navigateur tient en mémoire, sans aller-retour avec le serveur.
+        Une publication déposée ne se corrige pas — elle se redépose.
+      */}
+      {apercu && fichier ? (
+        <ApercuFichier
+          ouvert
+          onFermeture={() => setApercu(false)}
+          nomFichier={fichier.name}
+          obtenir={() => Promise.resolve(fichier)}
+        />
+      ) : null}
+
       {/* Un compte rendu d'audience est un récit : le reperdre, c'est le réécrire. */}
       <GardeSaisie
         actif={!enCours && (dossierId !== null || contenu.trim() !== "" || fichier !== null)}
       />
+    </div>
+  );
+}
+
+/** Le bouton de relecture : il n'apparaît que lorsqu'un fichier est effectivement choisi. */
+function BoutonRelire({
+  fichier,
+  onOuverture,
+  libelle,
+}: {
+  fichier: File | null;
+  onOuverture: () => void;
+  libelle: string;
+}) {
+  if (!fichier) return null;
+  return (
+    <div>
+      <Button
+        variante="secondaire"
+        taille="sm"
+        onClick={onOuverture}
+        aria-label={`${libelle} - ${fichier.name}`}
+      >
+        <Eye size={14} aria-hidden />
+        {libelle}
+      </Button>
     </div>
   );
 }

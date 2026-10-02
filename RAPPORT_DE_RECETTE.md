@@ -143,10 +143,10 @@ qui l'a manquée n'a pas de liste de rattrapage, là où les trois autres circui
 | Réf. | Limite |
 |---|---|
 | QF-40 | Une condamnation se crée toujours « En attente » — le statut de paiement n'est pas accepté à la création |
-| QF-31 | Le calendrier compte le premier jour de la période suivante |
-| QF-32 | Une audience est dite « tenue » le jour où l'on saisit son compte rendu, non le jour où elle s'est tenue |
+| ~~QF-31~~ | ~~Le calendrier compte le premier jour de la période suivante~~ — **corrigée le 2026-09-23** : la période s'arrête la veille de la suivante, côté serveur comme à l'écran |
+| ~~QF-32~~ | ~~Une audience est dite « tenue » le jour où l'on saisit son compte rendu~~ — **corrigée le 2026-09-23** : la date de tenue est la date planifiée, ce qui rend le rapport d'activité indépendant de la date de saisie |
 | QF-27 / QF-02 | Aucun endpoint ne donne l'identifiant numérique de l'utilisateur connecté |
-| QF-24 | L'historique d'un dossier est rédigé en français par le serveur : il n'est pas traduit |
+| ~~QF-24~~ | ~~L'historique d'un dossier n'est pas traduit~~ — **close depuis le 2026-09-17** (code typé Q-111 + traduction côté client) ; couverture complétée le 2026-09-23 : 49 natures d'action et 65 clés de détails traduites en FR et EN |
 | RF-05 | Les annuaires (`utilisateurs`, `intervenants`) ne sont pas paginés — acceptable à l'échelle de la Direction Juridique |
 
 ### 5.3 Réserves de mise en production

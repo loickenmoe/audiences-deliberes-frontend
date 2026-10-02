@@ -1,5 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { referenceDuDossier } from "./reference-attribuee";
 
 /**
  * Parcours de la fiche dossier (écrans 07, 08, 15, 16, 18) **contre le backend réel**.
@@ -32,15 +34,14 @@ function suffixe() {
 
 /** Crée un dossier par l'interface et renvoie l'URL de sa fiche. */
 async function creerDossier(page: Page, { sensible = false } = {}) {
-  const reference = `DOS-FICHE-${suffixe()}`;
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE);
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-FICHE");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-FICHE");
+  await deposerPiecesDeCreation(page, { marque: "fiche" });
   await affecterParDefaut(page);
   if (sensible) {
     await page.getByLabel("Dossier sensible", { exact: true }).check();
@@ -49,7 +50,8 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   }
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  return { url: page.url(), reference };
+  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  return { url: page.url(), reference: await referenceDuDossier(page) };
 }
 
 test("la création mène à la fiche, qui présente le dossier créé", async ({ page }) => {
@@ -89,7 +91,7 @@ test("seules les transitions permises sont proposées, et elles s'appliquent", a
   await expect(choix.locator("option")).toHaveText(["Choisissez un statut", "En délibéré"]);
 });
 
-test("positionner au second recours annonce puis crée le premier recours", async ({ page }) => {
+test("positionner au pourvoi en cassation annonce puis crée l'appel", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await creerDossier(page);
 
@@ -99,12 +101,54 @@ test("positionner au second recours annonce puis crée le premier recours", asyn
 
   // L'effet de bord du backend est annoncé avant confirmation, pas découvert après.
   const dialogue = page.getByRole("dialog");
-  await expect(dialogue).toContainText("Premier recours");
+  await expect(dialogue).toContainText("Appel");
   await dialogue.getByRole("button", { name: "Confirmer" }).click();
 
-  await expect(page.getByRole("heading", { name: "Premier recours" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Second recours" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Appel" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pourvoi en cassation" })).toBeVisible();
+  // Le pourvoi CCJA reste à ouvrir : les deux cassations sont concurrentes, pas successives.
+  await expect(page.getByText("Toutes les étapes existent déjà.")).toHaveCount(0);
+});
+
+/**
+ * Les deux cassations coexistent (observation métier du 2026-09-25). Ce parcours vérifie ce que
+ * seul l'écran peut montrer : que le pourvoi CCJA s'ouvre **sans** faire naître une étape Cour
+ * Suprême, et que le dossier porte ensuite les deux.
+ */
+test("un dossier peut être porté devant la Cour Suprême et devant la CCJA", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  const { reference } = await creerDossier(page);
+
+  await page.getByRole("tab", { name: "Étapes" }).click();
+  await page.getByLabel("Choisissez une étape", { exact: true }).selectOption("RECOURS_2_CCJA");
+  await page.getByRole("button", { name: "Positionner" }).click();
+
+  // L'appel est annoncé, la Cour Suprême ne l'est pas : elle n'est pas un antécédent du pourvoi CCJA.
+  const dialogue = page.getByRole("dialog");
+  await expect(dialogue).toContainText("Appel");
+  await expect(dialogue).not.toContainText("Pourvoi en cassation");
+  await dialogue.getByRole("button", { name: "Confirmer" }).click();
+
+  await expect(page.getByRole("heading", { name: "Pourvoi CCJA" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pourvoi en cassation", exact: true })).toHaveCount(0);
+
+  // Le pourvoi national s'ouvre ensuite, à côté : le dossier est devant les deux juridictions.
+  await page.getByLabel("Choisissez une étape", { exact: true }).selectOption("RECOURS_2");
+  await page.getByRole("button", { name: "Positionner" }).click();
+  const second = page.getByRole("dialog");
+  if (await second.isVisible()) {
+    await second.getByRole("button", { name: "Confirmer" }).click();
+  }
+  await expect(page.getByRole("heading", { name: "Pourvoi en cassation", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pourvoi CCJA" })).toBeVisible();
   await expect(page.getByText("Toutes les étapes existent déjà.")).toBeVisible();
+
+  // La liste des dossiers montre les deux cassations : n'en afficher qu'une en cacherait la moitié.
+  await page.goto("/dossiers");
+  await page.getByLabel("Référence", { exact: true }).fill(reference);
+  const ligne = page.getByRole("row", { name: new RegExp(reference) });
+  await expect(ligne).toContainText("Pourvoi en cassation");
+  await expect(ligne).toContainText("Pourvoi CCJA");
 });
 
 test("conserver une affectation demande confirmation (ERR-003), puis l'enregistre", async ({ page }) => {

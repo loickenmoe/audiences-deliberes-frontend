@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/intervenants/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["modifier"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ged/documents/{id}/approbation-suppression": {
         parameters: {
             query?: never;
@@ -148,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/constitutions/prestataires/{id}/lettre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["lettre"];
+        put: operations["redigerLettre"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/configurations/{cle}": {
         parameters: {
             query?: never;
@@ -156,7 +188,23 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["modifier"];
+        put: operations["modifier_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clients/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consulterClient"];
+        put: operations["modifierClient"];
         post?: never;
         delete?: never;
         options?: never;
@@ -206,6 +254,70 @@ export interface paths {
         get?: never;
         put: operations["reprogrammerAlarme"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/accuses/rappel/{eventId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rappel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/accuses/envoyes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["envoye"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/accuses/echecs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["echoue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/accuses/depots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["depot"];
         delete?: never;
         options?: never;
         head?: never;
@@ -270,6 +382,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["deposerAutre"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{id}/relancer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["relancer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -564,6 +692,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/avocat/pieces-justificatives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["deposerPieceJustificative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/frais/demandes/{id}/paiement": {
         parameters: {
             query?: never;
@@ -658,6 +802,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["traiterAlarme"];
+        trace?: never;
+    };
+    "/dapr/subscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["abonnements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/utilisateurs": {
@@ -788,6 +948,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/supervision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["superviser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/historique": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/historique/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["archives"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/historique/exports/{id}/telechargement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["telecharger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/historique/exports/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["verifier"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/historique/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["exporter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ged/rapport-journalier": {
         parameters: {
             query?: never;
@@ -868,6 +1124,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dossiers/{id}/historique": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["historique"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dossiers/{id}/documents": {
         parameters: {
             query?: never;
@@ -916,14 +1188,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/configurations": {
+    "/api/v1/constitutions/lettres/par-document/{documentId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_7"];
+        get: operations["lettrePourPapierPreimprime"];
         put?: never;
         post?: never;
         delete?: never;
@@ -932,14 +1204,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/clients/{id}": {
+    "/api/v1/configurations": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["consulterClient"];
+        get: operations["lister_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -964,6 +1236,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/avocat/mes-publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mesPublications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/avocat/mes-dossiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mesDossiers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/avocat/mes-dossiers/{dossierId}/audiences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["audiencesDeMonDossier"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/avocat/mes-constitutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mesConstitutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audiences/journal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["journalDesAudiences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audiences/comptes-rendus-attendus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["comptesRendusAttendus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audiences/calendrier": {
         parameters: {
             query?: never;
@@ -972,6 +1340,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["calendrier"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alertes/statistiques-diffusion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["statistiquesDiffusion"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1060,6 +1444,25 @@ export interface components {
             commentaires?: components["schemas"]["CommentaireResponse"][];
             correspondance?: components["schemas"]["CorrespondanceResponse"];
         };
+        ModifierIntervenantRequest: {
+            nom: string;
+            email?: string;
+            telephone?: string;
+            notification?: boolean;
+        };
+        IntervenantResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** @enum {string} */
+            type?: "AVOCAT" | "AUTRE_PRESTATAIRE";
+            nom?: string;
+            email?: string;
+            telephone?: string;
+            compteKeycloak?: string;
+            notification?: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+        };
         ApprobationSuppressionRequest: {
             /** @enum {string} */
             decision: "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
@@ -1117,10 +1520,16 @@ export interface components {
             seuilApplicable?: number;
             validationConjointeRequise?: boolean;
             validations?: components["schemas"]["ValidationFraisResponse"][];
+            piecesTelechargeables?: components["schemas"]["PieceJustificativeResponse"][];
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        PieceJustificativeResponse: {
+            cle?: string;
+            nomFichier?: string;
+            urlTelechargement?: string;
         };
         ValidationFraisResponse: {
             /** @enum {string} */
@@ -1214,7 +1623,7 @@ export interface components {
             /** Format: int64 */
             dossierId?: number;
             /** @enum {string} */
-            type?: "INSTANCE" | "RECOURS_1" | "RECOURS_2";
+            type?: "INSTANCE" | "RECOURS_1" | "RECOURS_2" | "RECOURS_2_CCJA";
             /** @enum {string} */
             statutCycleVie?: "OUVERTURE" | "EN_COURS" | "EN_DELIBERE" | "DELIBERE_VIDE" | "CLOTURE" | "ARCHIVE";
         };
@@ -1223,6 +1632,8 @@ export interface components {
             id?: number;
             /** Format: int64 */
             utilisateurId?: number;
+            /** @enum {string} */
+            code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
             action?: string;
             details?: {
                 [key: string]: Record<string, never>;
@@ -1302,6 +1713,43 @@ export interface components {
             demandeurNom?: string;
             valideParNom?: string;
         };
+        RedigerLettreRequest: {
+            /** Format: int32 */
+            numero?: number;
+            suffixeNumero: string;
+            lieu: string;
+            destinataireNom?: string;
+            destinataireQualite?: string;
+            destinataireVille?: string;
+            concerne?: string;
+            objet: string;
+            corps: string;
+            signataire: string;
+        };
+        LettreConstitutionResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            demandeId?: number;
+            /** Format: int32 */
+            numero?: number;
+            /** Format: int32 */
+            numeroPropose?: number;
+            suffixeNumero?: string;
+            lieu?: string;
+            destinataireNom?: string;
+            destinataireQualite?: string;
+            destinataireVille?: string;
+            concerne?: string;
+            objet?: string;
+            corps?: string;
+            signataire?: string;
+            modifiable?: boolean;
+            /** Format: date-time */
+            dateGeneration?: string;
+            /** Format: date-time */
+            dateModification?: string;
+        };
         ModifierConfigurationRequest: {
             valeur: string;
         };
@@ -1312,6 +1760,8 @@ export interface components {
             modifiablePar?: string;
             /** Format: date-time */
             dateModification?: string;
+            /** Format: int64 */
+            dernierAuteurId?: number;
             /** @enum {string} */
             typeValeur?: "ENTIER" | "LISTE";
             /** Format: int64 */
@@ -1319,6 +1769,24 @@ export interface components {
             /** Format: int64 */
             valeurMaximale?: number;
             valeursPossibles?: string[];
+            listeVideAutorisee?: boolean;
+        };
+        ModifierClientRequest: {
+            nom: string;
+            email?: string;
+            telephone?: string;
+        };
+        ClientResponse: {
+            /** Format: int64 */
+            id?: number;
+            reference?: string;
+            nom?: string;
+            email?: string;
+            telephone?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         EnregistrerCompteRenduRequest: {
             compteRendu: string;
@@ -1334,6 +1802,7 @@ export interface components {
             datePlanifiee?: string;
             /** Format: date */
             dateTenue?: string;
+            juridiction?: string;
             compteRendu?: string;
             /** @enum {string} */
             statut?: "PLANIFIEE" | "TENUE" | "ANNULEE";
@@ -1375,20 +1844,34 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        AccuseEngine: {
+            notificationId?: string;
+            workflowId?: string;
+            serviceId?: string;
+            channel?: string;
+            provider?: string;
+            providerMessageId?: string;
+            errorMessage?: string;
+            permanent?: boolean;
+            /** Format: date-time */
+            sentAt?: string;
+            /** Format: date-time */
+            failedAt?: string;
+            eventId?: string;
+        };
+        ReponseDepotPieceJointe: {
+            requestId?: string;
+            status?: string;
+            storageKey?: string;
+            presignedPutUrl?: string;
+            expiresAt?: string;
+            errorMessage?: string;
+        };
         CorrespondanceRequest: {
             contenu: string;
         };
         CommentaireRequest: {
             contenu: string;
-        };
-        DeposerCompteRenduRequest: {
-            /** Format: int64 */
-            dossierId: number;
-            /** Format: int64 */
-            audienceId: number;
-            contenu: string;
-            /** Format: int64 */
-            restrictionAcces?: number;
         };
         JurisprudenceResponse: {
             /** Format: int64 */
@@ -1414,19 +1897,6 @@ export interface components {
             telephone?: string;
             compteKeycloak?: string;
             notification?: boolean;
-        };
-        IntervenantResponse: {
-            /** Format: int64 */
-            id?: number;
-            /** @enum {string} */
-            type?: "AVOCAT" | "AUTRE_PRESTATAIRE";
-            nom?: string;
-            email?: string;
-            telephone?: string;
-            compteKeycloak?: string;
-            notification?: boolean;
-            /** Format: date-time */
-            createdAt?: string;
         };
         DocumentResponse: {
             /** Format: int64 */
@@ -1459,7 +1929,6 @@ export interface components {
             motifRejet?: string;
         };
         CreerDossierRequest: {
-            reference: string;
             nature: string;
             /** @enum {string} */
             categorie?: "RECOUVREMENT" | "EXPLOITATION_LITIGES";
@@ -1500,7 +1969,7 @@ export interface components {
         };
         CreerEtapeRequest: {
             /** @enum {string} */
-            type: "INSTANCE" | "RECOURS_1" | "RECOURS_2";
+            type: "INSTANCE" | "RECOURS_1" | "RECOURS_2" | "RECOURS_2_CCJA";
         };
         EnregistrerDelibereRequest: {
             /** Format: int64 */
@@ -1545,6 +2014,7 @@ export interface components {
             etapeId: number;
             /** Format: date */
             datePlanifiee: string;
+            juridiction?: string;
         };
         CreerAlarmeRequest: {
             /** Format: int64 */
@@ -1619,22 +2089,9 @@ export interface components {
             motif: string;
         };
         CreerClientRequest: {
-            reference: string;
             nom: string;
             email?: string;
             telephone?: string;
-        };
-        ClientResponse: {
-            /** Format: int64 */
-            id?: number;
-            reference?: string;
-            nom?: string;
-            email?: string;
-            telephone?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
         };
         ModifierStatutEtapeRequest: {
             /** @enum {string} */
@@ -1700,6 +2157,13 @@ export interface components {
             /** Format: double */
             indicateurPerformance?: number;
         };
+        PageResponseAvocatRepertoireResponse: {
+            content?: components["schemas"]["AvocatRepertoireResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
         TypeClientSensibleResponse: {
             /** Format: int64 */
             id?: number;
@@ -1721,12 +2185,104 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
         };
+        EnvoiEnDefaut: {
+            /** Format: int64 */
+            id?: number;
+            eventId?: string;
+            typeEvenement?: string;
+            canal?: string;
+            statut?: string;
+            destinataire?: string;
+            destinataireOrigine?: string;
+            derniereErreur?: string;
+            /** Format: int32 */
+            tentatives?: number;
+            dateCreation?: string;
+        };
+        LigneCanal: {
+            canal?: string;
+            /** Format: int64 */
+            enAttente?: number;
+            /** Format: int64 */
+            remises?: number;
+            /** Format: int64 */
+            confirmees?: number;
+            /** Format: int64 */
+            echecs?: number;
+            /** Format: int64 */
+            sansRetour?: number;
+            /** Format: int64 */
+            nonJoignables?: number;
+        };
+        SupervisionNotificationsResponse: {
+            /** Format: date */
+            dateDebut?: string;
+            /** Format: date */
+            dateFin?: string;
+            canaux?: components["schemas"]["LigneCanal"][];
+            derniersEchecs?: components["schemas"]["EnvoiEnDefaut"][];
+            engineActif?: boolean;
+            suiviAccusesActif?: boolean;
+        };
         PageResponseJurisprudenceResponse: {
             content?: components["schemas"]["JurisprudenceResponse"][];
             /** Format: int32 */
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+        };
+        PageResponseIntervenantResponse: {
+            content?: components["schemas"]["IntervenantResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        AuditResponse: {
+            content?: components["schemas"]["HistoriqueActionResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            actionsDisponibles?: components["schemas"]["OptionAction"][];
+        };
+        OptionAction: {
+            /** @enum {string} */
+            code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+            libelle?: string;
+        };
+        ExportAuditResponse: {
+            /** Format: int64 */
+            id?: number;
+            reference?: string;
+            /** Format: int64 */
+            utilisateurId?: number;
+            /** Format: date-time */
+            dateExport?: string;
+            /** Format: date */
+            dateDebut?: string;
+            /** Format: date */
+            dateFin?: string;
+            /** @enum {string} */
+            perimetre?: "HORS_DOSSIER" | "UN_DOSSIER" | "TOUT";
+            /** @enum {string} */
+            format?: "PDF" | "EXCEL";
+            /** Format: int64 */
+            lignes?: number;
+            empreinte?: string;
+            /** Format: int64 */
+            tailleOctets?: number;
+        };
+        PageResponseExportAuditResponse: {
+            content?: components["schemas"]["ExportAuditResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        VerificationResponse: {
+            reconnue?: boolean;
+            archive?: components["schemas"]["ExportAuditResponse"];
         };
         ActePlanifieResponse: {
             /** Format: int64 */
@@ -1746,6 +2302,13 @@ export interface components {
             affairesNouvelles?: number;
             planificationActes?: components["schemas"]["ActePlanifieResponse"][];
         };
+        PageResponseDemandeSuppressionResponse: {
+            content?: components["schemas"]["DemandeSuppressionResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
         PageResponseDemandeFraisResponse: {
             content?: components["schemas"]["DemandeFraisResponse"][];
             /** Format: int32 */
@@ -1760,9 +2323,37 @@ export interface components {
             /** Format: int64 */
             totalElements?: number;
         };
+        PageResponseHistoriqueActionResponse: {
+            content?: components["schemas"]["HistoriqueActionResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        PageResponseDocumentResponse: {
+            content?: components["schemas"]["DocumentResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
         DecisionsDossierResponse: {
             adjudications?: components["schemas"]["AdjudicationResponse"][];
             condamnations?: components["schemas"]["CondamnationResponse"][];
+        };
+        PageResponseAudienceResponse: {
+            content?: components["schemas"]["AudienceResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        PageResponseAlarmeResponse: {
+            content?: components["schemas"]["AlarmeResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
         };
         RecoursResponse: {
             /** Format: int64 */
@@ -1772,6 +2363,13 @@ export interface components {
             recoursExerce?: boolean;
             delaiExpire?: boolean;
             cloture?: boolean;
+        };
+        PageResponseDemandeConstitutionResponse: {
+            content?: components["schemas"]["DemandeConstitutionResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
         };
         PageResponseClientResponse: {
             content?: components["schemas"]["ClientResponse"][];
@@ -1786,6 +2384,96 @@ export interface components {
             clientNom?: string;
             recouvrement?: components["schemas"]["DossierResponse"][];
             exploitationLitiges?: components["schemas"]["DossierResponse"][];
+        };
+        DossierAvocatResponse: {
+            /** Format: int64 */
+            id?: number;
+            reference?: string;
+            nature?: string;
+            juridictionSaisie?: string;
+        };
+        PageResponseDossierAvocatResponse: {
+            content?: components["schemas"]["DossierAvocatResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        AudienceAvocatResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: date */
+            datePlanifiee?: string;
+            /** Format: date */
+            dateTenue?: string;
+            juridiction?: string;
+            /** @enum {string} */
+            statut?: "PLANIFIEE" | "TENUE" | "ANNULEE";
+        };
+        AudienceDuJourResponse: {
+            /** Format: int64 */
+            audienceId?: number;
+            /** Format: int64 */
+            dossierId?: number;
+            referenceDossier?: string;
+            juridiction?: string;
+            etape?: string;
+            /** @enum {string} */
+            statut?: "PLANIFIEE" | "TENUE" | "ANNULEE";
+            juristesAffectes?: number[];
+            compteRenduJuriste?: string;
+            compteRenduAvocat?: string;
+            /** Format: int64 */
+            avocatDuCompteRendu?: number;
+            urlPieceJointeAvocat?: string;
+        };
+        PageResponseAudienceDuJourResponse: {
+            content?: components["schemas"]["AudienceDuJourResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        CompteRenduAttenduResponse: {
+            /** Format: int64 */
+            audienceId?: number;
+            /** Format: int64 */
+            dossierId?: number;
+            referenceDossier?: string;
+            juridiction?: string;
+            etape?: string;
+            /** Format: date */
+            datePlanifiee?: string;
+            /** Format: int64 */
+            joursDeRetard?: number;
+            juristesAffectes?: number[];
+            compteRenduAvocatDepose?: boolean;
+        };
+        PageResponseCompteRenduAttenduResponse: {
+            content?: components["schemas"]["CompteRenduAttenduResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+        };
+        StatistiquesDiffusionResponse: {
+            /** Format: date */
+            dateDebut?: string;
+            /** Format: date */
+            dateFin?: string;
+            /** Format: int64 */
+            observees?: number;
+            /** Format: int64 */
+            diffusees?: number;
+            /** Format: int64 */
+            differees?: number;
+            /** Format: int64 */
+            echecs?: number;
+            /** Format: int64 */
+            nonTraitees?: number;
+            tauxDelivrance?: number;
+            tauxDiffusionTempsReel?: number;
+            seuilRespecte?: boolean;
         };
         PageResponseAlerteResponse: {
             content?: components["schemas"]["AlerteResponse"][];
@@ -1825,6 +2513,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PublicationResponse"];
+                };
+            };
+        };
+    };
+    modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModifierIntervenantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntervenantResponse"];
                 };
             };
         };
@@ -2040,7 +2754,55 @@ export interface operations {
             };
         };
     };
-    modifier: {
+    lettre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LettreConstitutionResponse"];
+                };
+            };
+        };
+    };
+    redigerLettre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedigerLettreRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LettreConstitutionResponse"];
+                };
+            };
+        };
+    };
+    modifier_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2062,6 +2824,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConfigurationResponse"];
+                };
+            };
+        };
+    };
+    consulterClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClientResponse"];
+                };
+            };
+        };
+    };
+    modifierClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModifierClientRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClientResponse"];
                 };
             };
         };
@@ -2142,6 +2952,98 @@ export interface operations {
             };
         };
     };
+    rappel: {
+        parameters: {
+            query?: {
+                signature?: string;
+            };
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AccuseEngine"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    envoye: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccuseEngine"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    echoue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccuseEngine"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    depot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReponseDepotPieceJointe"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     transmettreCorrespondance: {
         parameters: {
             query?: never;
@@ -2196,14 +3098,22 @@ export interface operations {
     };
     deposerCompteRendu: {
         parameters: {
-            query?: never;
+            query: {
+                dossierId: number;
+                audienceId: number;
+                contenu: string;
+                restrictionAcces?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["DeposerCompteRenduRequest"];
+                "application/json": {
+                    /** Format: binary */
+                    file?: string;
+                };
             };
         };
         responses: {
@@ -2246,6 +3156,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PublicationResponse"];
                 };
+            };
+        };
+    };
+    relancer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2314,6 +3244,9 @@ export interface operations {
         parameters: {
             query?: {
                 type?: "AVOCAT" | "AUTRE_PRESTATAIRE";
+                nom?: string;
+                page?: number;
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -2327,7 +3260,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["IntervenantResponse"][];
+                    "*/*": components["schemas"]["PageResponseIntervenantResponse"];
                 };
             };
         };
@@ -2390,6 +3323,11 @@ export interface operations {
         parameters: {
             query?: {
                 statut?: "DEPOSEE" | "CONFORMITE" | "OPPORTUNITE" | "VALIDEE" | "REJETEE" | "PAYEE";
+                dossierId?: number;
+                avocatId?: number;
+                referenceFacture?: string;
+                dateDebut?: string;
+                dateFin?: string;
                 page?: number;
                 size?: number;
             };
@@ -2469,6 +3407,13 @@ export interface operations {
                 reference?: string;
                 clientId?: number;
                 mesDossiers?: boolean;
+                estSensible?: boolean;
+                sensibiliteStatut?: "EN_ATTENTE" | "VALIDEE" | "REJETEE";
+                typeEtape?: "INSTANCE" | "RECOURS_1" | "RECOURS_2" | "RECOURS_2_CCJA";
+                statutEtape?: "OUVERTURE" | "EN_COURS" | "EN_DELIBERE" | "DELIBERE_VIDE" | "CLOTURE" | "ARCHIVE";
+                dateDebut?: string;
+                dateFin?: string;
+                tri?: "RECENT" | "ANCIEN" | "REFERENCE" | "RISQUE";
                 page?: number;
                 size?: number;
             };
@@ -2691,7 +3636,10 @@ export interface operations {
     };
     listerAudiencesDossier: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -2706,7 +3654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AudienceResponse"][];
+                    "*/*": components["schemas"]["PageResponseAudienceResponse"];
                 };
             };
         };
@@ -2741,7 +3689,10 @@ export interface operations {
     };
     listerAlarmesDossier: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -2756,7 +3707,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AlarmeResponse"][];
+                    "*/*": components["schemas"]["PageResponseAlarmeResponse"];
                 };
             };
         };
@@ -2891,6 +3842,8 @@ export interface operations {
         parameters: {
             query?: {
                 statut?: "EN_ATTENTE" | "VALIDEE" | "REJETEE";
+                page?: number;
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -2904,7 +3857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DemandeConstitutionResponse"][];
+                    "*/*": components["schemas"]["PageResponseDemandeConstitutionResponse"];
                 };
             };
         };
@@ -2978,6 +3931,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ClientResponse"];
+                };
+            };
+        };
+    };
+    deposerPieceJustificative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PieceJustificativeResponse"];
                 };
             };
         };
@@ -3127,6 +4107,28 @@ export interface operations {
             };
         };
     };
+    abonnements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    }[];
+                };
+            };
+        };
+    };
     lister: {
         parameters: {
             query?: {
@@ -3174,6 +4176,8 @@ export interface operations {
         parameters: {
             query?: {
                 nom?: string;
+                page?: number;
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -3187,7 +4191,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AvocatRepertoireResponse"][];
+                    "*/*": components["schemas"]["PageResponseAvocatRepertoireResponse"];
                 };
             };
         };
@@ -3306,6 +4310,155 @@ export interface operations {
             };
         };
     };
+    superviser: {
+        parameters: {
+            query: {
+                dateDebut: string;
+                dateFin: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SupervisionNotificationsResponse"];
+                };
+            };
+        };
+    };
+    audit: {
+        parameters: {
+            query?: {
+                perimetre?: "HORS_DOSSIER" | "UN_DOSSIER" | "TOUT";
+                dossierId?: number;
+                utilisateurId?: number;
+                code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+                dateDebut?: string;
+                dateFin?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuditResponse"];
+                };
+            };
+        };
+    };
+    archives: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseExportAuditResponse"];
+                };
+            };
+        };
+    };
+    telecharger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    verifier: {
+        parameters: {
+            query: {
+                empreinte: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VerificationResponse"];
+                };
+            };
+        };
+    };
+    exporter: {
+        parameters: {
+            query: {
+                perimetre?: "HORS_DOSSIER" | "UN_DOSSIER" | "TOUT";
+                dossierId?: number;
+                utilisateurId?: number;
+                code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+                dateDebut: string;
+                dateFin: string;
+                format?: "PDF" | "EXCEL";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
     rapportJournalier: {
         parameters: {
             query?: {
@@ -3376,6 +4529,8 @@ export interface operations {
         parameters: {
             query?: {
                 statut?: "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
+                page?: number;
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -3389,7 +4544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DemandeSuppressionResponse"][];
+                    "*/*": components["schemas"]["PageResponseDemandeSuppressionResponse"];
                 };
             };
         };
@@ -3438,9 +4593,12 @@ export interface operations {
             };
         };
     };
-    listerDocumentsDossier: {
+    historique: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -3455,7 +4613,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["DocumentResponse"][];
+                    "*/*": components["schemas"]["PageResponseHistoriqueActionResponse"];
+                };
+            };
+        };
+    };
+    listerDocumentsDossier: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseDocumentResponse"];
                 };
             };
         };
@@ -3504,6 +4687,28 @@ export interface operations {
             };
         };
     };
+    lettrePourPapierPreimprime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
     lister_7: {
         parameters: {
             query?: never;
@@ -3520,28 +4725,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConfigurationResponse"][];
-                };
-            };
-        };
-    };
-    consulterClient: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClientResponse"];
                 };
             };
         };
@@ -3564,6 +4747,145 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VueClientDossiersResponse"];
+                };
+            };
+        };
+    };
+    mesPublications: {
+        parameters: {
+            query?: {
+                statut?: "DEPOSE" | "VALIDE" | "REJETE";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePublicationResponse"];
+                };
+            };
+        };
+    };
+    mesDossiers: {
+        parameters: {
+            query?: {
+                reference?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseDossierAvocatResponse"];
+                };
+            };
+        };
+    };
+    audiencesDeMonDossier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dossierId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AudienceAvocatResponse"][];
+                };
+            };
+        };
+    };
+    mesConstitutions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DemandeConstitutionResponse"][];
+                };
+            };
+        };
+    };
+    journalDesAudiences: {
+        parameters: {
+            query: {
+                date: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAudienceDuJourResponse"];
+                };
+            };
+        };
+    };
+    comptesRendusAttendus: {
+        parameters: {
+            query: {
+                dateDebut: string;
+                dateFin: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseCompteRenduAttenduResponse"];
                 };
             };
         };
@@ -3592,10 +4914,35 @@ export interface operations {
             };
         };
     };
+    statistiquesDiffusion: {
+        parameters: {
+            query: {
+                dateDebut: string;
+                dateFin: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StatistiquesDiffusionResponse"];
+                };
+            };
+        };
+    };
     mesNotifications: {
         parameters: {
             query?: {
                 statut?: "DECLENCHEE" | "TRAITEE";
+                type?: "RAPPEL_AUDIENCE" | "DELAI_RECOURS" | "PROROGATION" | "ALARME" | "DOUBLON_AFFECTATION" | "DOUBLON_AUDIENCE" | "DOUBLON_FACTURE" | "NOUVELLE_DEMANDE_FRAIS" | "VALIDATION_CONJOINTE_REQUISE" | "PAIEMENT_EFFECTUE" | "NOUVELLE_PUBLICATION" | "DOCUMENT_CHARGE" | "SUPPRESSION_DOCUMENT" | "CONSTITUTION_A_SIGNER" | "CHARGE_MAX_AVOCAT" | "DELIBERE_ATTENDU" | "DOSSIER_INCOMPLET";
+                dossierId?: number;
                 page?: number;
                 size?: number;
             };

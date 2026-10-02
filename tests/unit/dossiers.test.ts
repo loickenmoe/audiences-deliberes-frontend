@@ -68,6 +68,39 @@ describe("dossierService.lister", () => {
     expect(derniereUrl?.searchParams.has("reference")).toBe(false);
     expect(derniereUrl?.searchParams.has("juridiction")).toBe(false);
   });
+
+  /*
+   * Observation métier du 2026-09-25 : filtrer par étape et par période d'audience, et trier.
+   * Ce qui se teste ici est la requête émise — le filtrage lui-même est vérifié en base par
+   * `DossierFiltresIntegrationTest`, seul endroit où un EXISTS peut être pris en défaut.
+   */
+  it("transmet le type et le statut d'étape", async () => {
+    await dossierService.lister({ typeEtape: "RECOURS_1", statutEtape: "EN_COURS" });
+
+    expect(derniereUrl?.searchParams.get("typeEtape")).toBe("RECOURS_1");
+    expect(derniereUrl?.searchParams.get("statutEtape")).toBe("EN_COURS");
+  });
+
+  it("transmet la période d'audience", async () => {
+    await dossierService.lister({ dateDebut: "2026-03-01", dateFin: "2026-03-31" });
+
+    expect(derniereUrl?.searchParams.get("dateDebut")).toBe("2026-03-01");
+    expect(derniereUrl?.searchParams.get("dateFin")).toBe("2026-03-31");
+  });
+
+  it("n'envoie pas le tri par défaut", async () => {
+    await dossierService.lister({ tri: "RECENT" });
+
+    // `RECENT` est déjà le défaut du serveur : le transmettre allongerait l'URL partagée sans
+    // rien changer à l'ordre des lignes.
+    expect(derniereUrl?.searchParams.has("tri")).toBe(false);
+  });
+
+  it("transmet un tri choisi", async () => {
+    await dossierService.lister({ tri: "RISQUE" });
+
+    expect(derniereUrl?.searchParams.get("tri")).toBe("RISQUE");
+  });
 });
 
 describe("dossierService.creer", () => {

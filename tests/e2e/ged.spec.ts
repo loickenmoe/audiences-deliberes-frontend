@@ -1,6 +1,8 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { ligneDansLaFile } from "./files-de-travail";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { referenceDuDossier } from "./reference-attribuee";
 
 /**
  * GED (écrans 36 et 37) **contre le backend réel et MinIO** : la file des demandes de suppression
@@ -41,19 +43,20 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   const nom = `pv-${suffixe()}.pdf`;
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto("/dossiers/nouveau");
-  const reference = `DOS-GED-${suffixe().toUpperCase()}`;
-  await juriste.getByLabel("Référence", { exact: true }).fill(reference);
   await juriste.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await juriste.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await juriste.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await juriste.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
+  await deposerPiecesDeCreation(juriste, { marque: "ged" });
   await affecterParDefaut(juriste);
   await juriste.locator('input[name="piece-PV_TRANSFERT"]').setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
   await juriste.getByRole("button", { name: "Enregistrer" }).click();
   await juriste.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
   const url = juriste.url();
+  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  const reference = await referenceDuDossier(juriste);
 
   await juriste.getByRole("tab", { name: "Documents" }).click();
   await juriste.getByRole("button", { name: `Demander la suppression - ${nom}` }).click();

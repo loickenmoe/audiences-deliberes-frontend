@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
+import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { referenceDuDossier } from "./reference-attribuee";
 
 /**
  * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
@@ -26,9 +28,13 @@ function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-/** Remplit le tronc commun du formulaire, hors pièces conditionnelles. */
-async function remplirTroncCommun(page: Page, reference: string, nature: string) {
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
+/**
+ * Remplit le tronc commun du formulaire, hors pièces conditionnelles.
+ *
+ * La référence n'en fait plus partie depuis le 2026-09-29 : le système l'attribue, et les parcours
+ * la lisent après création avec `referenceDuDossier`.
+ */
+async function remplirTroncCommun(page: Page, nature: string) {
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(nature);
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
@@ -54,7 +60,8 @@ test("la catégorie est déduite de la nature et commande les pièces exigées",
 
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LONGUE);
 
-  // Recouvrement : dossier de crédit d'origine ET PV de transfert (Q-11, en ET).
+  // Recouvrement : le dossier de crédit d'origine et le PV de transfert. Depuis le 2026-09-29,
+  // ce sont leurs **fichiers** qui sont obligatoires ; ces références ne le sont plus (Q-11 amendée).
   await expect(page.getByText("Recouvrement", { exact: true }).first()).toBeVisible({
     timeout: 30_000,
   });
@@ -81,14 +88,44 @@ test("la sensibilité n'exige seuil et type qu'une fois cochée", async ({ page 
   await expect(page.getByLabel("Type de client", { exact: true })).toBeVisible();
 });
 
+/*
+ * Amendement de Q-11 (métier, 2026-09-29) : « ce sont les pièces jointes qui sont obligatoires, pas
+ * leur texte associé ». Ce parcours vérifie les deux moitiés de la bascule — le refus sans fichier,
+ * et l'acceptation sans référence — parce qu'une seule des deux laisserait passer une règle à
+ * moitié appliquée.
+ */
+test("les pièces sont obligatoires, leurs références ne le sont plus", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  await remplirTroncCommun(page, NATURE_LONGUE);
+
+  // Ni fichiers ni références : l'écran doit refuser, et nommer la pièce en cause.
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  await expect(
+    page.getByText("Cette pièce est obligatoire : joignez son fichier.").first(),
+  ).toBeVisible({ timeout: 30_000 });
+  // Rien n'a été créé : on est toujours sur le formulaire.
+  await expect(page).toHaveURL(/\/dossiers\/nouveau/);
+
+  // Les fichiers seuls suffisent : les références restent vides.
+  await deposerPiecesDeCreation(page, { marque: "sans-references" });
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+
+  await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
+  // La référence est attribuée : le parcours vérifie sa forme, il ne la choisit plus.
+  expect(await referenceDuDossier(page)).toMatch(/^DOS-\d{4}-\d{4,}$/);
+});
+
 test("un juriste crée un dossier dont la nature dépasse 50 caractères", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
 
-  const reference = `DOS-E2E-${suffixe()}`;
-  await remplirTroncCommun(page, reference, NATURE_LONGUE);
+  await remplirTroncCommun(page, NATURE_LONGUE);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-E2E");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-E2E");
+  await deposerPiecesDeCreation(page, { marque: "dos" });
 
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
@@ -99,33 +136,36 @@ test("un juriste crée un dossier dont la nature dépasse 50 caractères", async
    * La création mène à la fiche du dossier créé (écran 07, livré en F7 — levée de QF-22).
    */
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  await expect(page.getByText(reference, { exact: true })).toBeVisible({ timeout: 30_000 });
+  // La référence est attribuée : le parcours vérifie sa forme, il ne la choisit plus.
+  expect(await referenceDuDossier(page)).toMatch(/^DOS-\d{4}-\d{4,}$/);
 });
 
-test("une référence de dossier en doublon est signalée sur le champ concerné", async ({ page }) => {
+/*
+ * Le doublon de référence n'existe plus : depuis le 2026-09-29 le système attribue la référence, il
+ * ne la reçoit pas. Ce parcours vérifie ce qui remplace la garantie perdue — deux dossiers créés à
+ * la suite ne portent jamais le même numéro, et le second suit le premier.
+ *
+ * L'unicité elle-même est prouvée en base (GenerateurReferenceIntegrationTest, cinquante demandes
+ * simultanées) ; ce qui se vérifie ici est que l'écran en rend compte fidèlement.
+ */
+test("deux dossiers créés à la suite reçoivent deux références distinctes", async ({ page }) => {
   await seConnecter(page, "juriste.test");
 
-  const reference = `DOS-DUP-${suffixe()}`;
-
-  for (const tentative of [1, 2]) {
+  const references: string[] = [];
+  for (const rang of [1, 2]) {
     await page.goto("/dossiers/nouveau");
-    await remplirTroncCommun(page, reference, NATURE_LONGUE);
-    await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DUP");
-    await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DUP");
+    await remplirTroncCommun(page, NATURE_LONGUE);
+    await deposerPiecesDeCreation(page, { marque: `suite-${rang}` });
     await page.getByRole("button", { name: "Enregistrer" }).click();
-
-    if (tentative === 1) {
-      await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-    }
+    await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
+    references.push(await referenceDuDossier(page));
   }
 
-  /*
-   * `ERR-002` arrive avec `champ: "reference"` depuis la correction Q-70 du backend. Ce parcours
-   * vérifie la chaîne complète : le champ nommé par le backend, transporté par `ErreurApi`, posé
-   * sur le bon contrôle — et non dans un bandeau au-dessus d'un formulaire de vingt champs.
-   */
-  const champ = page.getByLabel("Référence", { exact: true });
-  await expect(champ).toHaveAttribute("aria-invalid", "true", { timeout: 30_000 });
+  expect(references[0]).not.toEqual(references[1]);
+
+  // Et elles se suivent : le compteur avance d'un, il ne saute pas et ne recule pas.
+  const numero = (reference: string) => Number(reference.split("-")[2]);
+  expect(numero(references[1])).toEqual(numero(references[0]) + 1);
 });
 
 test("la recherche par référence passe par l'URL et reste partageable", async ({ page }) => {
@@ -152,6 +192,40 @@ test("le filtre « mes dossiers » ne montre que le portefeuille de l'utilisateu
    * de consulter le portefeuille d'un collègue.
    */
   await expect(page.getByText("Aucun dossier", { exact: true })).toBeVisible({ timeout: 30_000 });
+});
+
+/*
+ * Observation métier du 2026-09-25 : filtrer par étape et par période d'audience, et trier.
+ * Ce parcours vérifie la chaîne écran → URL → requête, sans dépendre du jeu de données : que les
+ * bons dossiers en ressortent est vérifié en base par `DossierFiltresIntegrationTest`.
+ */
+test("les filtres d'étape et de tri passent par l'URL et restent partageables", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  await page.getByLabel("Étape", { exact: true }).selectOption("RECOURS_1");
+  await page.getByLabel("Statut de l'étape", { exact: true }).selectOption("EN_COURS");
+
+  await expect(page).toHaveURL(/typeEtape=RECOURS_1/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/statutEtape=EN_COURS/, { timeout: 30_000 });
+
+  await page.getByLabel("Trier par", { exact: true }).selectOption("REFERENCE");
+  await expect(page).toHaveURL(/tri=REFERENCE/, { timeout: 30_000 });
+
+  // `RECENT` est le défaut du serveur : le rechoisir doit retirer le paramètre, et non l'écrire.
+  await page.getByLabel("Trier par", { exact: true }).selectOption("");
+  await expect(page).not.toHaveURL(/tri=/, { timeout: 30_000 });
+});
+
+test("la période porte sur les audiences et reste dans l'URL", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  await page.getByLabel("Audience du", { exact: true }).fill("2026-03-01");
+  await page.getByLabel("Audience au", { exact: true }).fill("2026-03-31");
+
+  await expect(page).toHaveURL(/dateDebut=2026-03-01/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/dateFin=2026-03-31/, { timeout: 30_000 });
 });
 
 test("un avocat n'accède pas aux dossiers", async ({ page }) => {
@@ -197,8 +271,8 @@ test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async 
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
 
-  const reference = `DOS-GARDE-${suffixe()}`;
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
+  const juridiction = `TGI GARDE ${suffixe()}`;
+  await page.getByLabel("Juridiction saisie", { exact: true }).fill(juridiction);
 
   // Un clic sur la navigation : la garde doit s'interposer.
   await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
@@ -208,7 +282,7 @@ test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async 
   // Renoncer : on reste sur le formulaire, et la saisie est intacte.
   await dialogue.getByRole("button", { name: "Annuler" }).click();
   await expect(page).toHaveURL(/\/dossiers\/nouveau/);
-  await expect(page.getByLabel("Référence", { exact: true })).toHaveValue(reference);
+  await expect(page.getByLabel("Juridiction saisie", { exact: true })).toHaveValue(juridiction);
 
   // Confirmer : on part pour de bon.
   await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
@@ -220,7 +294,7 @@ test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async 
 test("l'Annuler du formulaire n'est pas intercepté par la garde", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-GARDE-${suffixe()}`);
+  await page.getByLabel("Juridiction saisie", { exact: true }).fill(`TGI GARDE ${suffixe()}`);
 
   await page.getByRole("link", { name: "Annuler" }).click();
   await page.waitForURL(/\/dossiers$/, { timeout: 30_000 });
@@ -247,11 +321,12 @@ test("changer de langue ne vide pas un formulaire en cours de saisie", async ({ 
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
 
-  const reference = `DOS-LANGUE-${suffixe()}`;
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
+  const juridiction = `TGI LANGUE ${suffixe()}`;
+  await page.getByLabel("Juridiction saisie", { exact: true }).fill(juridiction);
 
   await page.getByRole("button", { name: "en", exact: true }).click();
-  await expect(page.getByLabel("Reference", { exact: true })).toHaveValue(reference, { timeout: 30_000 });
+  await expect(page.getByLabel("Court seized", { exact: true }))
+    .toHaveValue(juridiction, { timeout: 30_000 });
 });
 
 /**

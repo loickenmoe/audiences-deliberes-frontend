@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Eye, Trash2 } from "lucide-react";
+import { Download, Eye, FileText, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,7 +14,14 @@ import { Champ, Select } from "@/components/ui/champ";
 import { useDeposerDocument, useDocumentsDossier, useSupprimerDocument } from "@/hooks/useDossiers";
 import { useLibelles } from "@/hooks/useLibelles";
 import { messageErreur } from "@/lib/api/errors";
-import { estTypeConnu, telechargerBlob, TypesDocument, type TypeDocument } from "@/lib/documents";
+import {
+  estTypeConnu,
+  telechargerBlob,
+  TYPE_LETTRE_CONSTITUTION,
+  TypesDocument,
+  type TypeDocument,
+} from "@/lib/documents";
+import { constitutionService } from "@/services/constitutionService";
 import { peut } from "@/lib/rbac";
 import { gedService } from "@/services/gedService";
 import type { DocumentDossier } from "@/types/domaine";
@@ -65,6 +72,24 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
       telechargerBlob(await contenuDocument(document.id), document.nomFichier);
     } catch (e) {
       setErreur(e instanceof Error && e.message.startsWith("Stockage") ? tdoc("apercuErreur") : messageErreur(e));
+    }
+  }
+
+  /**
+   * Le tirage de la lettre pour le papier préimprimé de la banque (observation métier du
+   * 2026-09-25) : la feuille porte déjà logo, colonne et mentions légales, le PDF ne pose que le
+   * contenu — aux mêmes emplacements, sans quoi l'impression tomberait à côté.
+   *
+   * Le fichier archivé n'est pas remplacé : c'est lui qui fait foi, et il reste téléchargeable par
+   * le bouton voisin.
+   */
+  async function telechargerSansEntete(document: DocumentDossier) {
+    setErreur(null);
+    try {
+      const pdf = await constitutionService.lettrePourPapierPreimprime(document.id);
+      telechargerBlob(pdf, document.nomFichier.replace(/.pdf$/i, "") + "-sans-entete.pdf");
+    } catch (e) {
+      setErreur(messageErreur(e));
     }
   }
 
@@ -157,6 +182,17 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                       >
                         <Download size={14} aria-hidden />
                       </Button>
+                      {document.typeDocument === TYPE_LETTRE_CONSTITUTION ? (
+                        <Button
+                          variante="secondaire"
+                          taille="sm"
+                          onClick={() => void telechargerSansEntete(document)}
+                          aria-label={`${tdoc("telechargerSansEntete")} - ${document.nomFichier}`}
+                          title={tdoc("telechargerSansEnteteAide")}
+                        >
+                          <FileText size={14} aria-hidden />
+                        </Button>
+                      ) : null}
                       {peutSupprimer ? (
                         <Button
                           variante="secondaire"

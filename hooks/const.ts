@@ -17,6 +17,8 @@ export const CLES = {
   audiencesDossier: "audiences-dossier",
   alarmesDossier: "alarmes-dossier",
   calendrier: "calendrier",
+  journalAudiences: "journal-audiences",
+  comptesRendusAttendus: "comptes-rendus-attendus",
   deliberesDossier: "deliberes-dossier",
   prorogations: "prorogations",
   recours: "recours",

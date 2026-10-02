@@ -57,16 +57,16 @@ export function decalerPeriode(periode: PeriodeCalendrier, debut: Date, sens: 1 
 }
 
 /**
- * Dernier jour **affiché** de la période.
+ * Dernier jour **affiché** de la période : la veille de la période suivante.
  *
- * ⚠ Le backend calcule `dateFin = début + 1 semaine / 1 mois / 3 mois` et interroge `BETWEEN`,
- * bornes **incluses** : une semaine commençant un lundi ramène aussi le lundi suivant (QF-31).
- * L'écran annonce la période réelle sans masquer ce jour : l'export PDF/Excel le contient, et
- * l'écran doit dire la même chose que le document qu'on en tire.
+ * Le backend interroge `BETWEEN`, bornes incluses, et sa borne de fin s'arrête désormais elle aussi
+ * la veille (QF-31, corrigé) — une semaine commençant un lundi ne ramène plus le lundi suivant.
+ * L'écran doit annoncer exactement la période que l'export PDF/Excel contient : les deux calculs
+ * restent donc alignés, ici comme dans `PeriodeCalendrier` côté serveur.
  */
 export function finDePeriode(periode: PeriodeCalendrier, debut: Date): Date {
-  if (periode === "HEBDOMADAIRE") return ajouterJours(debut, 7);
-  return ajouterMois(debut, periode === "MENSUELLE" ? 1 : 3);
+  if (periode === "HEBDOMADAIRE") return ajouterJours(debut, 6);
+  return ajouterJours(ajouterMois(debut, periode === "MENSUELLE" ? 1 : 3), -1);
 }
 
 /** Aujourd'hui, en `YYYY-MM-DD` local. */
