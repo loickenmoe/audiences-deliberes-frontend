@@ -100,11 +100,9 @@ async function creerDossierAffecteALAvocat(): Promise<string> {
 
   const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
-  const reference = `DOS-RECH-${suffixe()}`;
   const creation = await appel("/dossiers", juriste, {
     method: "POST",
     body: JSON.stringify({
-      reference,
       nature: "Assignation en paiement",
       juridictionSaisie: "TGI Douala",
       clientId: clients.content[0]!.id,
@@ -116,7 +114,9 @@ async function creerDossierAffecteALAvocat(): Promise<string> {
     }),
   });
   expect(creation.status, "le dossier de recherche doit être créé").toBe(201);
-  return reference;
+  // La référence est attribuée par le serveur (2026-09-29) : elle se lit dans la réponse.
+  const cree = (await creation.json()) as { reference: string };
+  return cree.reference;
 }
 
 async function choisirDossier(page: Page, id: string, reference?: string) {

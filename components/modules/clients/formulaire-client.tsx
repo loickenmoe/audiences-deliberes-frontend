@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,7 @@ import type { Client } from "@/types/domaine";
  * Un seul formulaire pour les deux usages, et non deux : ses règles de validation ne doivent pas
  * pouvoir diverger entre la création et la correction d'un même client.
  */
-const CHAMPS = ["reference", "nom", "email", "telephone"] as const;
-
-/** `POST /clients` n'a qu'un seul conflit possible : la référence (ClientService, RG-CLI-01). */
-const CONFLIT_SUR_REFERENCE = { "ERR-CONFLICT": "reference" } as const;
+const CHAMPS = ["nom", "email", "telephone"] as const;
 
 export function FormulaireClient({
   ouvert,
@@ -48,16 +46,12 @@ export function FormulaireClient({
   const mutation = edition ? modifier : creer;
 
   const schema = z.object({
-    // En édition la référence est figée et n’est pas envoyée : un champ désactivé pouvant revenir
-    // vide de react-hook-form, l’exiger bloquerait la soumission pour une valeur qu’on ne transmet pas.
-    reference: edition ? z.string().optional() : z.string().trim().min(1, tm("champObligatoire")).max(50),
     nom: z.string().trim().min(1, tm("champObligatoire")).max(255),
     email: z.union([z.string().email(), z.literal("")]).optional(),
     telephone: z.string().max(20).optional(),
   });
 
   const valeursInitiales = {
-    reference: client?.reference ?? "",
     nom: client?.nom ?? "",
     email: client?.email ?? "",
     telephone: client?.telephone ?? "",
@@ -92,19 +86,17 @@ export function FormulaireClient({
           telephone: valeurs.telephone || null,
         });
       } else {
-        await creer.mutateAsync({
-          // Exigée par le schéma en création : jamais vide ici.
-          reference: valeurs.reference ?? "",
+        const cree = await creer.mutateAsync({
           nom: valeurs.nom,
           email: valeurs.email || undefined,
           telephone: valeurs.telephone || undefined,
         });
+        // La référence est attribuée par le serveur : l'annoncer est la seule façon de la connaître.
+        toast.success(t("clientCree", { reference: cree.reference }));
       }
       fermer();
     } catch (erreur) {
-      // Le doublon de référence client remonte en `ERR-CONFLICT` — code générique côté backend :
-      // c'est ici, où l'endpoint est connu, qu'on sait qu'il vise `reference`.
-      if (!appliquerErreurApi(erreur, setError, CHAMPS, CONFLIT_SUR_REFERENCE)) {
+      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
         setError("root", { message: messageErreur(erreur) });
       }
     }
@@ -137,22 +129,18 @@ export function FormulaireClient({
           </p>
         ) : null}
 
-        {/* La référence est l'identifiant du client : saisie à la création, figée ensuite. */}
-        <Champ
-          id="reference"
-          label={t("colonneReference")}
-          obligatoire={!edition}
-          aide={edition ? t("referenceFigee") : undefined}
-          erreur={errors.reference?.message}
-        >
-          <Input
-            id="reference"
-            enErreur={!!errors.reference}
-            disabled={edition}
-            readOnly={edition}
-            {...register("reference")}
-          />
-        </Champ>
+        {/*
+          La référence est l'identifiant du client : attribuée à la création (2026-09-29), figée
+          ensuite. Elle reste montrée en correction — savoir lequel on modifie en dépend — mais
+          n'est plus un champ : rien ne la saisit, rien ne l'envoie.
+        */}
+        {edition ? (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[length:var(--taille-sm)] font-medium">{t("colonneReference")}</span>
+            <p className="font-mono text-[length:var(--taille-sm)]">{client.reference}</p>
+            <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("referenceFigee")}</p>
+          </div>
+        ) : null}
 
         <Champ id="nom" label={t("colonneNom")} obligatoire erreur={errors.nom?.message}>
           <Input id="nom" enErreur={!!errors.nom} {...register("nom")} />

@@ -36,7 +36,6 @@ test("le DJ agit en juriste — étape et audience — sans cesser d'être DJ", 
   await expect(page.getByRole("banner").getByText("Directeur Juridique", { exact: true })).toBeVisible();
 
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-DJ-${suffixe()}`);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });

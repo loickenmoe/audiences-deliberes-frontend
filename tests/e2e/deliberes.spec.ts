@@ -31,7 +31,6 @@ function dansJours(jours: number) {
 /** Crée un dossier, fait passer son instance « En cours » puis « En délibéré », et ouvre l'onglet Délibérés. */
 async function dossierEnDelibere(page: Page) {
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-DEL-${suffixe()}`);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });

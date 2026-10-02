@@ -4,6 +4,7 @@ import { affecterParDefaut } from "./affectation";
 import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { referenceDuDossier } from "./reference-attribuee";
 
 /**
  * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
@@ -72,8 +73,6 @@ async function pageConnectee(browser: Browser, identifiant: string) {
  */
 async function ouvrirUnDossier(page: Page, marque: string) {
   await page.goto("/dossiers/nouveau");
-  const reference = `DOS-${marque}`;
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
@@ -93,7 +92,8 @@ async function ouvrirUnDossier(page: Page, marque: string) {
     .setInputFiles({ name: `pv-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  return { reference, url: page.url() };
+  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  return { reference: await referenceDuDossier(page), url: page.url() };
 }
 
 /**

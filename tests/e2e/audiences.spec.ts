@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { referenceDuDossier } from "./reference-attribuee";
 
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
@@ -51,9 +52,7 @@ function ligneAuStatut(page: Page, statut: string) {
 
 /** Crée un dossier et fait passer son instance « En cours » : la condition d'une audience. */
 async function dossierEnCours(page: Page) {
-  const reference = `DOS-AUD-${suffixe()}`;
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(reference);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
@@ -65,6 +64,9 @@ async function dossierEnCours(page: Page) {
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
+  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  const reference = await referenceDuDossier(page);
+
   await page.getByRole("tab", { name: "Étapes" }).click();
   await page.getByLabel("Faire passer à", { exact: true }).selectOption("EN_COURS");
   await page.getByRole("button", { name: "Appliquer" }).click();
@@ -75,7 +77,6 @@ async function dossierEnCours(page: Page) {
 test("sans étape en cours, la planification est expliquée plutôt que proposée", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
-  await page.getByLabel("Référence", { exact: true }).fill(`DOS-AUD-${suffixe()}`);
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });

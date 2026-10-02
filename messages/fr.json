@@ -420,7 +420,8 @@
     "aucunDossierCategorie": "Aucun dossier dans cette catégorie.",
     "risqueEncouru": "Risque encouru",
     "juridiction": "Juridiction",
-    "retourListe": "Retour à la liste des clients"
+    "retourListe": "Retour à la liste des clients",
+    "clientCree": "Client {reference} créé."
   },
   "intervenants": {
     "titre": "Intervenants",
@@ -520,7 +521,8 @@
     "filtreAudienceFin": "Audience au",
     "filtreTri": "Trier par",
     "renvoiAlarmes": "Les alarmes de suivi se posent depuis la fiche du dossier, onglet « Alarmes » : elles portent une échéance et préviennent leur auteur le jour dit.",
-    "champAlarmeHerite": "Note saisie à la création (champ retiré)"
+    "champAlarmeHerite": "Note saisie à la création (champ retiré)",
+    "dossierCree": "Dossier {reference} créé."
   },
   "fiche": {
     "retour": "Retour aux dossiers",
@@ -701,7 +703,7 @@
     "archivees": "Décisions archivées",
     "enregistrerAdjudication": "Enregistrer une adjudication",
     "suivreCondamnation": "Suivre une condamnation",
-    "archiver": "Archiver la décision",
+    "archiver": "Archiver à la jurisprudence",
     "aucuneAdjudication": "Aucune adjudication.",
     "aucuneCondamnation": "Aucune condamnation.",
     "aucuneArchivee": "Aucune décision archivée sur ce dossier.",

@@ -4,7 +4,13 @@
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88) et leur état de consommation par le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-15 (M22 — **huit endpoints passent en `PageResponse`** et dix filtres
+> Dernière mise à jour : 2026-09-29 (**contrat régénéré depuis le backend** : `contracts/openapi.json`
+> passe de 62 à 86 chemins, aucun retiré. Il datait d’avant le Notification Engine, le portail
+> Avocat, l’audit et le journal des audiences — et ne portait donc ni la référence attribuée par le
+> système, ni la juridiction d’audience, ni les filtres d’étape. Il ne sert qu’à la vérification :
+> `/v3/api-docs` est ouvert sans authentification (R-08) et le frontend n’en dépend pas à
+> l’exécution. À régénérer après chaque jalon backend, par `npm run api:fetch && npm run api:types`).
+> Précédente : 2026-09-15 (M22 — **huit endpoints passent en `PageResponse`** et dix filtres
 > s'ajoutent ; `GET /dossiers/{id}/historique` créé. Le décompte reste **74 sur 74** : ce sont les
 > mêmes endpoints, sous une autre forme).
 > Précédente : 2026-09-14 (Q-98 — **#29 passe en multipart** avec une pièce facultative ;
@@ -75,6 +81,9 @@
     un 400 si elle diverge : le frontend ne l'envoie pas ;
   · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), désormais validé
     contre le référentiel (Q-73).
+  · `reference` **n'est plus envoyée** depuis le 2026-09-29 : le serveur l'attribue
+    (`DOS-2026-0001`) et elle a quitté le corps de la requête. Elle se lit dans la réponse de
+    création. Idem pour `POST /clients` (`CLI-2026-0001`).
   · `champAlarme` **n'est plus envoyé** depuis le 2026-09-28 : le champ ne déclenchait rien et son
     nom promettait un rappel. Le backend l'accepte toujours ; les alarmes qui agissent passent par
     `POST /dossiers/{id}/alarmes`.
