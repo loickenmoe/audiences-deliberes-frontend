@@ -404,7 +404,7 @@ Une date d'audience **dans le futur**, puis une date **du jour** pour le compte 
 | 8 | JUR | Saisir `Doublon de saisie` → confirmer | L'audience passe à **Annulée** et le motif s'affiche sur sa ligne | | ☐ |
 | 9 | JUR | Replanifier une audience **à la même date** que celle qui vient d'être annulée | Acceptée **sans alerte de doublon** : une audience annulée ne compte plus | | ☐ |
 | 10 | JUR | Sur une audience dont la date est **future**, chercher « Saisir le compte rendu » | L'action n'est pas proposée : elle ne l'est qu'à partir du jour de l'audience | | ☐ |
-| 11 | JUR | Planifier une audience **datée d'aujourd'hui** | Acceptée (RG-AUD-07 amendée le 2026-09-23) : l'audience apparaît, au statut **Planifiée** | | ☐ |
+| 11 | JUR | Planifier une audience **datée d'aujourd'hui** | Acceptée (RG-AUD-08, 2026-09-23) : l'audience apparaît, au statut **Planifiée** | | ☐ |
 | 11 bis | JUR | Planifier une audience datée **avant l'ouverture du dossier** | Refus : « Cette date précède l'ouverture du dossier. » C'est la seule borne | | ☐ |
 | 12 | JUR | Sur l'audience du jour, cliquer « Saisir le compte rendu » | La fenêtre s'ouvre immédiatement : le compte rendu est recevable dès le jour de l'audience | | ☐ |
 | 13 | JUR | Enregistrer un compte rendu **vide** | Refus : le compte rendu ne peut pas être vide | | ☐ |
@@ -422,7 +422,7 @@ une audience planifiée à venir.
 ### Points de contrôle
 - Planifier exige une étape au statut **En cours** : sinon le bouton est absent et l'écran l'explique.
 - La date doit seulement être **postérieure à l'ouverture du dossier** : le jour même et le passé
-  sont acceptés depuis l'amendement de RG-AUD-07 (2026-09-23).
+  sont acceptés depuis RG-AUD-08 (2026-09-23).
 - Trois rappels sont programmés automatiquement à J-7, J-3 et J-1 (vérifiables en REC-E2E-022).
 - Depuis la correction du 2026-09-23 (QF-32), une audience est « tenue » **à sa date planifiée**,
   quelle que soit la date de saisie du compte rendu : c'est cette date que comptent les rapports.
