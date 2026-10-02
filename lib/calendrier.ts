@@ -74,7 +74,7 @@ export function aujourdhui(): string {
   return versIso(new Date());
 }
 
-/** Demain, en `YYYY-MM-DD` local — la date minimale d'une audience (RG-AUD-07). */
+/** Demain, en `YYYY-MM-DD` local — borne employée hors planification d'audience (RG-AUD-08). */
 export function demain(): string {
   return versIso(ajouterJours(new Date(), 1));
 }

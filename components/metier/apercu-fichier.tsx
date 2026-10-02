@@ -2,12 +2,13 @@
 
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { EtatChargement } from "@/components/global";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { natureApercu, telechargerBlob } from "@/lib/documents";
+import { cn } from "@/lib/utils";
 
 type Etat =
   | { phase: "chargement" }
@@ -40,6 +41,8 @@ export function ApercuFichier({
   const tc = useTranslations("commun");
   const [etat, setEtat] = useState<Etat>({ phase: "chargement" });
   const nature = natureApercu(nomFichier);
+  const conteneurWord = useRef<HTMLDivElement>(null);
+  const [renduWord, setRenduWord] = useState<"attente" | "fait" | "erreur">("attente");
 
   useEffect(() => {
     if (!ouvert) return;
@@ -66,6 +69,49 @@ export function ApercuFichier({
     // `obtenir` change à chaque rendu du parent : seule l'ouverture relance le chargement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ouvert, nomFichier]);
+
+  /**
+   * Rendu d'un `.docx` dans la page (2026-10-02).
+   *
+   * La bibliothèque est chargée **à la demande** : elle pèse quelques centaines de kilo-octets et
+   * ne sert qu'ici. L'inclure dans le lot principal l'imposerait à tous les écrans, pour une pièce
+   * Word qu'un utilisateur donné n'ouvrira peut-être jamais.
+   *
+   * Elle écrit directement dans le DOM plutôt que de rendre du React : on lui confie un conteneur
+   * dédié, vidé avant chaque rendu pour qu'une seconde ouverture n'empile pas deux documents.
+   */
+  useEffect(() => {
+    if (!ouvert || etat.phase !== "pret" || nature !== "word") return;
+    const cible = conteneurWord.current;
+    if (!cible) return;
+
+    let annule = false;
+    setRenduWord("attente");
+    cible.replaceChildren();
+
+    import("docx-preview")
+      .then(({ renderAsync }) =>
+        renderAsync(etat.contenu, cible, undefined, {
+          className: "docx",
+          inWrapper: true,
+          // La largeur de page d'origine est conservée — c'est elle qui fait la mise en page
+          // d'une conclusion ; la hauteur, non : le document défile dans la fenêtre.
+          ignoreWidth: false,
+          ignoreHeight: true,
+          breakPages: true,
+        }),
+      )
+      .then(() => {
+        if (!annule) setRenduWord("fait");
+      })
+      .catch(() => {
+        if (!annule) setRenduWord("erreur");
+      });
+
+    return () => {
+      annule = true;
+    };
+  }, [ouvert, nature, etat]);
 
   return (
     <Dialog
@@ -110,6 +156,32 @@ export function ApercuFichier({
         <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded border border-bordure bg-surface-attenuee p-4 text-[length:var(--taille-sm)]">
           {etat.texte}
         </pre>
+      ) : null}
+
+      {etat.phase === "pret" && nature === "word" ? (
+        <>
+          {renduWord === "attente" ? <EtatChargement lignes={4} /> : null}
+          {renduWord === "erreur" ? (
+            <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
+              {t("apercuWordErreur")}
+            </p>
+          ) : null}
+          {/* Fond blanc et non `surface` : la page Word porte ses propres couleurs, et un fond
+              teinté ferait croire à une mise en forme du document. */}
+          <div
+            ref={conteneurWord}
+            className={cn(
+              "max-h-[70vh] overflow-auto rounded border border-bordure bg-white",
+              renduWord === "fait" ? "" : "hidden",
+            )}
+          />
+        </>
+      ) : null}
+
+      {etat.phase === "pret" && nature === "word-ancien" ? (
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("apercuWordAncien")}
+        </p>
       ) : null}
 
       {etat.phase === "pret" && nature === null ? (

@@ -50,17 +50,26 @@ export function piecesDeCategorie(categorie: CategorieDossier): TypeDocument[] {
     : ["INCIDENT_COMPTE", "ELEMENT_JUSTIFICATIF"];
 }
 
-export type NatureApercu = "pdf" | "image" | "texte" | null;
+export type NatureApercu = "pdf" | "image" | "texte" | "word" | "word-ancien" | null;
 
 /**
  * Ce que le navigateur sait afficher. Dérivé de l'extension, comme le backend dérive le format
  * (Q-46). Un XLSX n'a pas d'aperçu possible dans un navigateur : il se télécharge.
+ *
+ * **Les deux formats Word ne se valent pas** (2026-10-02). Un `.docx` est une archive XML qu'une
+ * bibliothèque sait rendre dans la page ; un `.doc` est le format binaire de Word 97-2003, qu'aucune
+ * bibliothèque de navigateur ne lit. Les distinguer permet à l'écran de dire *pourquoi* il n'affiche
+ * pas, au lieu du « format non pris en charge » indifférencié qu'il opposait à tout le reste : un
+ * utilisateur à qui l'on explique que son fichier est à l'ancien format sait quoi faire — le
+ * réenregistrer en `.docx` depuis Word.
  */
 export function natureApercu(nomFichier: string): NatureApercu {
   const extension = nomFichier.slice(nomFichier.lastIndexOf(".") + 1).toLowerCase();
   if (extension === "pdf") return "pdf";
   if (extension === "png" || extension === "jpg" || extension === "jpeg") return "image";
   if (extension === "txt") return "texte";
+  if (extension === "docx") return "word";
+  if (extension === "doc") return "word-ancien";
   return null;
 }
 

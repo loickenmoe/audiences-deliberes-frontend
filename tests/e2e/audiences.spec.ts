@@ -6,7 +6,7 @@ import { referenceDuDossier } from "./reference-attribuee";
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
  *
- * Depuis l'amendement de RG-AUD-07 (2026-09-23), une audience s'enregistre **à la date du jour** et
+ * Depuis RG-AUD-08 (2026-09-23), une audience s'enregistre **à la date du jour** et
  * même après coup : le cycle complet — planifier, tenir, rendre compte — se joue donc entièrement
  * ici, ce qu'aucun parcours ne pouvait faire tant que seule une date future était acceptée. On
  * vérifie aussi qu'une audience **à venir** ne propose toujours pas son compte rendu.
@@ -122,10 +122,10 @@ test("planifier une audience, puis confirmer un doublon (ERR-005)", async ({ pag
 });
 
 /**
- * RG-AUD-07 amendée : l'audience du jour s'enregistre, et son compte rendu suit immédiatement.
+ * RG-AUD-08 : l'audience du jour s'enregistre, et son compte rendu suit immédiatement.
  * C'est le besoin qui a motivé l'arbitrage — une audience apprise le matin pour le jour même.
  */
-test("une audience du jour reçoit son compte rendu dans la foulée (RG-AUD-07 amendée)", async ({ page }) => {
+test("une audience du jour reçoit son compte rendu dans la foulée (RG-AUD-08)", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await dossierEnCours(page);
   await page.getByRole("tab", { name: "Audiences" }).click();

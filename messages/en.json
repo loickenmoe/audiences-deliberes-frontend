@@ -237,7 +237,9 @@
       "PNG": "PNG image",
       "JPG": "JPEG image",
       "TXT": "Text",
-      "XLSX": "Excel workbook"
+      "XLSX": "Excel workbook",
+      "DOCX": "Word document",
+      "DOC": "Word document (legacy format)"
     },
     "StatutSuppression": {
       "EN_ATTENTE": "Awaiting approval",
@@ -646,7 +648,9 @@
     "telechargerSansEnteteAide": "Print-ready copy for the bank preprinted paper: content only, without logo or legal notices.",
     "fichierManquant": "This item is required: attach its file.",
     "piecesManquantes": "Required items are missing: the case was not created.",
-    "fichierLibelle": "File"
+    "fichierLibelle": "File",
+    "apercuWordAncien": "This file uses the legacy Word format (.doc), which the browser cannot display. Download it to open it, or save it as .docx from Word.",
+    "apercuWordErreur": "This Word document could not be displayed. Download it to open it."
   },
   "suppressions": {
     "titre": "Deletion requests",
@@ -1359,7 +1363,7 @@
     "referenceFactureAide": "It must be unique: an invoice already filed is rejected.",
     "montant": "Amount (FCFA)",
     "pieces": "Supporting items",
-    "piecesAide": "Upload each supporting document (PDF or image). They are submitted with your claim and can be opened by the Assistant during the compliance check.",
+    "piecesAide": "Upload each supporting document (PDF, image or Word document). They are submitted with your claim and can be opened by the Assistant during the compliance check.",
     "retirerPiece": "Remove item {numero}",
     "ajouterPiece": "Add an item",
     "fraisDeposes": "Fee claim filed.",

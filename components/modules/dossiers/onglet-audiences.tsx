@@ -37,7 +37,8 @@ const TON: Record<StatutAudience, TonStatut> = { PLANIFIEE: "info", TENUE: "succ
  * Écran 09 — audiences du dossier, la plus récente d'abord (ordre du backend).
  *
  * Deux règles du backend commandent les actions proposées :
- * · on ne planifie que sur une étape **en cours** (RG-AUD-01) et à une date **future** (RG-AUD-07) ;
+ * · on ne planifie que sur une étape **en cours** (RG-AUD-01), à une date qui ne précède pas
+ *   l'ouverture du dossier (RG-AUD-08) ;
  * · le compte rendu n'est recevable qu'**à partir du jour de l'audience**.
  * L'interface n'offre donc ni une étape qui serait refusée, ni un compte rendu sur une audience à
  * venir.
@@ -219,7 +220,7 @@ function ModalePlanification({
   onFermeture,
 }: {
   dossierId: number;
-  /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-07). */
+  /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-08). */
   ouvertureDossier: string;
   /** Juridiction de la saisine : ce que la planification propose par défaut. */
   juridictionDuDossier: string;
@@ -237,7 +238,7 @@ function ModalePlanification({
   const [confirmation, setConfirmation] = useState<PlanifierAudience | null>(null);
   const etapeParDefaut = etapes[0]?.id;
 
-  // RG-AUD-07 amendée (2026-09-23) : une audience s'enregistre le jour même et après coup — une
+  // RG-AUD-08 (2026-09-23) : une audience s'enregistre le jour même et après coup — une
   // audience tenue sans avoir été saisie doit pouvoir être régularisée. La seule borne est
   // l'ouverture du dossier, comme côté serveur : les deux doivent refuser la même chose.
   const schema = useMemo(

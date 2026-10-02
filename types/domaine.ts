@@ -462,7 +462,7 @@ export interface EntreeCalendrier {
 
 export interface PlanifierAudience {
   etapeId: number;
-  /** `YYYY-MM-DD`, non antérieure à l'ouverture du dossier (RG-AUD-07 amendée). */
+  /** `YYYY-MM-DD`, non antérieure à l'ouverture du dossier (RG-AUD-08). */
   datePlanifiee: string;
   /** Facultative : vide, elle reprend la juridiction du dossier — le cas du premier degré. */
   juridiction?: string;

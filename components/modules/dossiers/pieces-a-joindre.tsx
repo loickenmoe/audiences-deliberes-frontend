@@ -74,7 +74,15 @@ export function PiecesAJoindre({
   function BoutonApercu({ fichier }: { fichier: File | undefined | null }) {
     if (!fichier) return null;
     return (
-      <Button variante="secondaire" taille="sm" onClick={() => setApercu(fichier)}>
+      // Le nom accessible porte le fichier : les deux pièces exigées à la création affichent
+      // chacune un bouton « Aperçu », et deux actions de même nom dans un même formulaire ne se
+      // distinguent pas à l'oreille. L'onglet Documents nomme déjà ses actions de cette façon.
+      <Button
+        variante="secondaire"
+        taille="sm"
+        aria-label={`${t("apercu")} - ${fichier.name}`}
+        onClick={() => setApercu(fichier)}
+      >
         <Eye size={14} aria-hidden />
         {t("apercu")}
       </Button>
