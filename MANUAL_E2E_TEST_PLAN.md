@@ -131,6 +131,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-027 | Les deux pourvois : Cour Suprême et CCJA sur le même dossier | JUR | Moyenne | REC-E2E-003 | ☐ |
 | REC-E2E-028 | Journal des audiences et comptes rendus attendus | JUR → DJ | Haute | REC-E2E-006 | ☐ |
 | REC-E2E-029 | Filtrer et trier la liste des dossiers | JUR | Haute | REC-E2E-006 | ☐ |
+| REC-E2E-030 | Relance de l'avocat dont le compte rendu manque | DJ, JUR, AVO | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -949,6 +950,61 @@ immédiatement après la création.
 
 ---
 
+## REC-E2E-030 - Relance de l'avocat dont le compte rendu manque
+
+### Objectif
+Valider RG-INT-11 : une audience passée sans compte rendu d'avocat produit une relance vers
+l'avocat affecté, répétée à la cadence réglée, et qui cesse au dépôt.
+
+### Acteurs
+DJ (`dj.test`) pour le réglage et la supervision, juriste (`juriste.test`) pour l'audience, avocat
+(`avocat.test`) pour le dépôt.
+
+### Préconditions
+Un dossier avec une étape **En cours** et un avocat affecté (REC-E2E-003).
+`NOTIFICATION_ENGINE_ACTIF` vaut `false` : rien ne part réellement, les envois sont mis en file et
+c'est la file que l'on observe.
+
+### Comment déclencher le traitement
+Le contrôle tourne **une fois par jour, à 6 h 30**. Deux façons de ne pas attendre :
+
+- **sans la DSI** : jouer les étapes la veille au soir, et relever le résultat le lendemain matin ;
+- **avec la DSI** : surcharger `publication.relance-compte-rendu.cron` au démarrage du backend
+  (par exemple toutes les minutes) le temps de la recette.
+
+Dire laquelle a été employée dans la colonne *Résultat obtenu* : un résultat obtenu par surcharge
+ne dit rien de l'heure réelle d'exécution.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | DJ | *Configuration* → paramètre « Délai de relance du compte rendu de l'avocat » → saisir `1` → enregistrer | Accepté. Un délai de 1 jour rend la recette jouable en une nuit | | ☐ |
+| 2 | DJ | Saisir `0` dans ce même champ | Refus expliqué : le délai vaut au moins un jour | | ☐ |
+| 3 | JUR | Planifier une audience **datée d'hier** sur l'étape en cours | L'audience est créée (RG-AUD-08 admet le passé) | | ☐ |
+| 4 | - | Déclencher le traitement (voir ci-dessus) | - | | ☐ |
+| 5 | DJ | *Configuration* → bloc « Notifications externes » → « Notifications par canal » | Les compteurs ont progressé ; un envoi « Compte rendu attendu » vise l'avocat du dossier | | ☐ |
+| 6 | - | Déclencher le traitement **une seconde fois le même jour** | - | | ☐ |
+| 7 | DJ | Relire la supervision | **Aucun envoi supplémentaire** : deux exécutions du même jour ne relancent pas deux fois | | ☐ |
+| 8 | AVO | Déposer le compte rendu de cette audience | Déposé, en attente de validation | | ☐ |
+| 9 | - | Déclencher le traitement de nouveau | - | | ☐ |
+| 10 | DJ | Relire la supervision | **Aucune nouvelle relance** : le dépôt l'a arrêtée, sans attendre la validation de l'Assistante | | ☐ |
+| 11 | JUR | Sur un second dossier, planifier une audience d'hier puis l'**annuler** | Annulée | | ☐ |
+| 12 | - | Déclencher le traitement, puis relire la supervision | **Aucune relance** sur cette audience : une audience annulée n'a pas de compte rendu à rendre | | ☐ |
+
+### Résultat final attendu
+L'avocat est relancé tant que le compte rendu manque, une fois par échéance et pas davantage ; le
+dépôt arrête la relance ; une audience annulée n'en produit aucune.
+
+### Points de contrôle
+- La relance vise **l'avocat**, pas le juriste : c'est un rappel au prestataire.
+- Elle s'arrête au bout de **cinq rappels** - au-delà, le problème n'est plus un oubli et se traite
+  autrement que par un message automatique.
+- Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
+- Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
 ## REC-E2E-020 - Jurisprudence : archiver, rechercher, consulter
 
 ### Objectif
@@ -1561,7 +1617,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Transverse (connexion, accueil, droits) | 1 | | | | |
 | Référentiels (clients, intervenants) | 2 | | | | |
 | Dossiers (ouverture, sensibilité, dérogation, filtres, pourvois) | 5 | | | | |
-| Audiences et alarmes | 4 | | | | |
+| Audiences et alarmes | 5 | | | | |
 | Délibérés | 2 | | | | |
 | Frais d'avocats | 3 | | | | |
 | Publications et constitutions | 3 | | | | |
@@ -1570,7 +1626,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Pilotage et administration | 2 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **29** | | | | |
+| **Total parcours de bout en bout** | **30** | | | | |
 | Cas négatifs (REC-NEG) | 35 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
@@ -1579,7 +1635,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 29 parcours, les 35 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 30 parcours, les 35 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
@@ -1623,7 +1679,7 @@ Report des totaux de la synthèse (§9).
 
 | | Nombre | Validés | Échecs | Bloqués | Non testés |
 |---|---:|---:|---:|---:|---:|
-| Parcours de bout en bout | 29 | | | | |
+| Parcours de bout en bout | 30 | | | | |
 | Cas négatifs | 35 | | | | |
 | Parcours multi-rôles | 4 | | | | |
 

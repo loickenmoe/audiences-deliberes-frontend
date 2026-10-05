@@ -165,6 +165,12 @@ planifier de nouvelles audiences. Le résultat rendu clôt le délibéré.
 **Voie de recours.** Un délibéré défavorable ou mixte ouvre un délai de recours, suivi par une
 alarme. Passé le délai sans recours, l'étape est close.
 
+**Le compte rendu de l'avocat est réclamé tout seul.** Quand une audience est passée et qu'aucun
+compte rendu d'avocat n'est arrivé, l'application relance l'avocat affecté par ses canaux
+externes, puis le relance encore à la même cadence jusqu'au dépôt - cinq fois au plus. Le délai
+se règle dans les paramètres système. Rien n'est envoyé si l'audience a été annulée, ni si
+l'étape est close ou archivée.
+
 ---
 
 ## 6. Frais d'avocats
@@ -317,7 +323,7 @@ détient à la fois le fichier et sa trace, elle est juge et partie. Et le calcu
 `http://` depuis l'adresse IP d'un autre poste. En recette depuis plusieurs machines, la vérification
 est donc indisponible ; l'extraction et le scellement, eux, fonctionnent normalement.
 
-**Paramètres système** (DJ) : huit réglages pilotent les seuils, les délais, le poids et les formats
+**Paramètres système** (DJ) : neuf réglages pilotent les seuils, les délais, le poids et les formats
 admis en GED, et les canaux de notification. Une valeur incohérente est refusée à la saisie, avec
 la raison. Un changement prend effet immédiatement, pour tout le monde. La **grille des
 notifications** - quel événement part sur quel canal - se règle à part, dans son propre tableau.
@@ -333,6 +339,12 @@ L'avocat est un utilisateur **externe** : il ne voit que ce qui le concerne. Tro
 - **Déposer une demande** - une demande de frais ;
 - **Déposer une publication** - un compte rendu d'audience (avec sa pièce, si besoin) ou un
   document du dossier.
+
+**Vous serez relancé si un compte rendu manque.** Passé le délai fixé par la Direction Juridique,
+une audience tenue dont vous n'avez pas déposé le compte rendu déclenche un rappel, répété
+jusqu'à votre dépôt. Déposer le compte rendu suffit à arrêter les rappels - ils ne guettent que
+le dépôt. Votre compte rendu suit ensuite son cours habituel : l'Assistante le valide, et c'est
+cette validation qui le diffuse.
 
 Il ne voit que les dossiers auxquels il est affecté, et seulement leur référence, leur nature et leur
 juridiction. Ni client, ni montant en jeu, ni sensibilité.

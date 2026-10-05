@@ -288,7 +288,8 @@
       "RAPPEL_AUDIENCE": "Rappel d’audience",
       "AFFECTATION_DOSSIER": "Affectation à un dossier",
       "DELAI_RECOURS": "Délai de recours du délibéré",
-      "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée"
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée",
+      "COMPTE_RENDU_ATTENDU": "Compte rendu attendu"
     },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "La banque est redevable",
@@ -355,6 +356,7 @@
       "CANAUX_NOTIFICATION_DEFAUT": "Canaux de notification des utilisateurs internes. L’application est toujours active ; Outlook et Teams sont optionnels.",
       "CANAUX_NOTIFICATION_PRESTATAIRES": "Canaux de notification des avocats et autres prestataires. Aucune case cochée : aucun prestataire n’est notifié hors de l’application.",
       "DELAI_VALIDATION_CONJOINTE": "Délai maximal, en jours, pour la validation conjointe d’une demande de frais.",
+      "DELAI_RAPPEL_CR_AVOCAT": "Nombre de jours après une audience passée au terme desquels l’avocat est relancé s’il n’a pas déposé son compte rendu, puis cadence des relances suivantes.",
       "TAILLE_MAX_GED": "Poids maximal d’un document chargé dans la gestion documentaire.",
       "FORMATS_GED": "Formats de fichiers acceptés dans la gestion documentaire.",
       "CHARGE_MAX_AVOCAT": "Nombre maximal de dossiers actifs par avocat avant déclenchement d’une alerte."

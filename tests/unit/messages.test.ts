@@ -122,10 +122,10 @@ describe("couverture du domaine", () => {
   });
 
   /**
-   * Les 8 clés affichées une à une sur l'écran 41. Les six colonnes de la grille des notifications
+   * Les 9 clés affichées une à une sur l'écran 41. Les six colonnes de la grille des notifications
    * (Q-118) n'en font pas partie : elles se lisent dans leur tableau, par canal et par événement.
    */
-  it.each(LANGUES)("les 8 clés de configuration de la liste sont décrites en %s", (langue) => {
+  it.each(LANGUES)("les 9 clés de configuration de la liste sont décrites en %s", (langue) => {
     const config = lire(langue, "referentiels.configurations") as Record<string, string>;
     expect(Object.keys(config)).toEqual([
       "SEUIL_MONTANT_DEFAUT",
@@ -133,6 +133,7 @@ describe("couverture du domaine", () => {
       "CANAUX_NOTIFICATION_DEFAUT",
       "CANAUX_NOTIFICATION_PRESTATAIRES",
       "DELAI_VALIDATION_CONJOINTE",
+      "DELAI_RAPPEL_CR_AVOCAT",
       "TAILLE_MAX_GED",
       "FORMATS_GED",
       "CHARGE_MAX_AVOCAT",

@@ -354,7 +354,8 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
   await expect(dj.locator("article", { hasText: "GRILLE_NOTIFICATION_SMS" })).toHaveCount(0);
 
   const casesSms = dj.getByRole("checkbox", { name: / par SMS$/ });
-  await expect(casesSms).toHaveCount(9);
+  // Dix événements prestataires depuis RG-INT-11 (compte rendu attendu, 2026-10-05).
+  await expect(casesSms).toHaveCount(10);
   for (const caseSms of await casesSms.all()) {
     if (await caseSms.isChecked()) await caseSms.uncheck();
   }

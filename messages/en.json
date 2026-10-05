@@ -288,7 +288,8 @@
       "RAPPEL_AUDIENCE": "Hearing reminder",
       "AFFECTATION_DOSSIER": "Assigned to a case",
       "DELAI_RECOURS": "Appeal deadline of the ruling",
-      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed"
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed",
+      "COMPTE_RENDU_ATTENDU": "Hearing report overdue"
     },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "The bank is liable",
@@ -355,6 +356,7 @@
       "CANAUX_NOTIFICATION_DEFAUT": "Notification channels for internal users. In-app is always on; Outlook and Teams are optional.",
       "CANAUX_NOTIFICATION_PRESTATAIRES": "Notification channels for lawyers and other providers. None ticked: no provider is notified outside the application.",
       "DELAI_VALIDATION_CONJOINTE": "Maximum number of days for the joint approval of a fee claim.",
+      "DELAI_RAPPEL_CR_AVOCAT": "Number of days after a past hearing before the lawyer is reminded that the hearing report is missing, then the pace of further reminders.",
       "TAILLE_MAX_GED": "Maximum size of a document uploaded to the document management system.",
       "FORMATS_GED": "File formats accepted by the document management system.",
       "CHARGE_MAX_AVOCAT": "Maximum number of active case files per counsel before an alert is raised."

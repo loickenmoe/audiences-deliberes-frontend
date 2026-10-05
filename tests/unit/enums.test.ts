@@ -18,9 +18,9 @@ describe("énumérations du domaine", () => {
     expect(TypeAlerte).toHaveLength(17);
   });
 
-  it("couvre les canaux et les 9 événements prestataires du backend (Q-118)", () => {
+  it("couvre les canaux et les 10 événements prestataires du backend (Q-118, RG-INT-11)", () => {
     expect(CanalPrestataire).toEqual(["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"]);
-    expect(EvenementPrestataire).toHaveLength(9);
+    expect(EvenementPrestataire).toHaveLength(10);
   });
 
   it("décrit le cycle de vie d'une étape dans l'ordre de progression", () => {
