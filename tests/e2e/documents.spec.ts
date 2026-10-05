@@ -75,7 +75,7 @@ test("une pièce jointe se lit avant la création, puis se retrouve sur la fiche
   });
 
   // Lire avant de valider : l'aperçu est servi depuis le fichier local, rien n'est encore envoyé.
-  await page.getByRole("button", { name: "Aperçu" }).click();
+  await page.getByRole("button", { name: "Aperçu - pv-transfert.pdf" }).click();
   const apercu = page.getByRole("dialog", { name: "Aperçu - pv-transfert.pdf" });
   await expect(apercu.locator("iframe")).toHaveAttribute("src", /^blob:/);
   await apercu.getByRole("button", { name: "Fermer" }).first().click();
@@ -94,12 +94,14 @@ test("un format refusé est signalé avant tout envoi", async ({ page }) => {
   await remplirDossier(page);
 
   await page.locator('input[name="piece-PV_TRANSFERT"]').setInputFiles({
-    name: "pv.docx",
-    mimeType: "application/octet-stream",
+    name: "pv.odt",
+    mimeType: "application/vnd.oasis.opendocument.text",
     buffer: Buffer.from("x"),
   });
 
-  await expect(page.getByRole("alert").filter({ hasText: "PDF, PNG, JPG, TXT, XLSX" })).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "PDF, PNG, JPG, TXT, XLSX, DOCX, DOC" }),
+  ).toBeVisible();
 });
 
 test("depuis la fiche : déposer, consulter et télécharger une pièce", async ({ page }) => {

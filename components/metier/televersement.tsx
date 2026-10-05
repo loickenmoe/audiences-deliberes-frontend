@@ -43,7 +43,10 @@ export function Televersement({
   onChangement?: (fichier: File | null) => void;
   className?: string;
 }) {
-  const formats = formatsAcceptes ?? ["pdf", "png", "jpg", "txt", "xlsx"];
+  // Les formats par défaut recopient `FORMATS_GED` (RG-GED-08) : toute évolution de ce paramètre
+  // doit se répercuter ici, sans quoi l'écran refuserait un fichier que le serveur accepte.
+  // Word ajouté le 2026-10-02.
+  const formats = formatsAcceptes ?? ["pdf", "png", "jpg", "txt", "xlsx", "docx", "doc"];
   const plafond = tailleMax ?? 10 * 1024 * 1024;
 
   const t = useTranslations("metier");

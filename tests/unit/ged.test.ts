@@ -118,6 +118,20 @@ describe("règles des pièces", () => {
     expect(natureApercu("etat.xlsx")).toBeNull();
   });
 
+  it("sépare les deux formats Word, que le navigateur ne traite pas de la même façon", () => {
+    // Un `.docx` est une archive XML : une bibliothèque sait le rendre dans la page.
+    expect(natureApercu("conclusions.docx")).toBe("word");
+    expect(natureApercu("CONCLUSIONS.DOCX")).toBe("word");
+
+    // Un `.doc` est le binaire de Word 97-2003 : aucune bibliothèque de navigateur ne le lit.
+    // Le distinguer permet d'expliquer pourquoi, plutôt que d'opposer un refus indifférencié.
+    expect(natureApercu("assignation.doc")).toBe("word-ancien");
+    expect(natureApercu("Assignation.Doc")).toBe("word-ancien");
+
+    // Le piège de la recherche d'extension : « .doc » ne doit pas être vu dans « .docx ».
+    expect(natureApercu("note.docx.pdf")).toBe("pdf");
+  });
+
   it("affiche tel quel un type déposé hors de l'interface", () => {
     expect(estTypeConnu("PV_TRANSFERT")).toBe(true);
     // La lettre de constitution est déposée par le backend sous un libellé français.

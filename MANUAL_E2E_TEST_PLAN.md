@@ -1,4 +1,4 @@
-# Recette fonctionnelle manuelle — parcours de bout en bout
+# Recette fonctionnelle manuelle - parcours de bout en bout
 
 > Document de campagne. Il s'exécute écran en main, du haut vers le bas.
 > Établi le 2026-09-23 par analyse conjointe du frontend (`audiences-deliberes-frontend`) et du
@@ -51,9 +51,9 @@ recette : ouvrez simplement http://localhost:3000 dans le navigateur.
 
 - Un navigateur de bureau. Pour les parcours multi-rôles, prévoyez **deux fenêtres de navigation
   privée distinctes** (ou deux navigateurs) : deux rôles ne peuvent pas partager la même session.
-- De quoi charger des fichiers : un **PDF de moins de 10 Mo** et une **image PNG ou JPG**. Formats
-  admis en GED : `PDF, PNG, JPG, TXT, XLSX` — le format est déduit de **l'extension**, pas du type
-  déclaré. Poids maximal : 10 Mo.
+- De quoi charger des fichiers : un **PDF de moins de 10 Mo**, une **image PNG ou JPG** et un
+  **document Word `.docx`**. Formats admis en GED : `PDF, PNG, JPG, TXT, XLSX, DOCX, DOC` - le
+  format est déduit de **l'extension**, pas du type déclaré. Poids maximal : 10 Mo.
 - Au moins **un client** et **un avocat** doivent exister dans le référentiel. S'ils manquent, la
   fiche REC-E2E-002 les crée : exécutez-la en premier.
 
@@ -88,7 +88,7 @@ l'application n'en crée, n'en modifie et n'en supprime aucun.
 **Rattachement de l'avocat.** Le compte `avocat.test` doit correspondre à une fiche du référentiel
 des intervenants dont le champ *Identifiant de connexion* vaut exactement `avocat.test` (fiche
 « Me Claire Avocat » dans le jeu de recette). Sans ce rattachement, le portail affiche « … pas encore
-rattaché au répertoire » — comportement attendu, vérifié en REC-NEG-010.
+rattaché au répertoire » - comportement attendu, vérifié en REC-NEG-010.
 
 **Deux règles de droits à garder en tête** (elles expliquent beaucoup de comportements) :
 
@@ -149,7 +149,7 @@ s'appuient sur les données créées par les trois premières.
 > **Convention.** Les libellés entre guillemets sont ceux de l'interface en français.
 >
 > **Les références sont attribuées par le système** depuis le 2026-09-29 : vous ne les saisissez
-> plus. À chaque création, le message de confirmation la nomme — « Dossier DOS-2026-0007 créé. » —
+> plus. À chaque création, le message de confirmation la nomme - « Dossier DOS-2026-0007 créé. » -
 > et c'est cette valeur qu'il faut **noter au passage** : les fiches suivantes en auront besoin.
 >
 > Les identifiants du type `DOS-REC-003` ou `CLI-REC-001` employés dans ce document **ne sont plus
@@ -157,7 +157,7 @@ s'appuient sur les données créées par les trois premières.
 > même numéro. Là où une fiche vous demande de rechercher `DOS-REC-003`, cherchez la référence que
 > le système a attribuée au dossier de REC-E2E-003.
 
-## REC-E2E-001 — Connexion, accueil, langue et déconnexion
+## REC-E2E-001 - Connexion, accueil, langue et déconnexion
 
 ### Objectif
 Valider l'entrée dans l'application pour chaque profil, l'adaptation de l'accueil au rôle, la
@@ -176,8 +176,8 @@ Les six comptes du §3, mot de passe `Password1!`.
 
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
-| 1 | — | Ouvrir http://localhost:3000 sans être connecté | Redirection vers l'écran de connexion `/login` | | ☐ |
-| 2 | — | Saisir l'identifiant `juriste.test`, un **mot de passe faux**, cliquer « Connexion » | Refus. Le message **ne dit pas** si le compte existe | | ☐ |
+| 1 | - | Ouvrir http://localhost:3000 sans être connecté | Redirection vers l'écran de connexion `/login` | | ☐ |
+| 2 | - | Saisir l'identifiant `juriste.test`, un **mot de passe faux**, cliquer « Connexion » | Refus. Le message **ne dit pas** si le compte existe | | ☐ |
 | 3 | JUR | Saisir `juriste.test` / `Password1!`, cliquer « Connexion » | Arrivée sur l'accueil `/` | | ☐ |
 | 4 | JUR | Lire le bloc « Ce qui vous attend » | Cartes propres au juriste (ses dossiers, audiences proches, délibérés, alarmes) avec un compteur par file | | ☐ |
 | 5 | JUR | Lire le bloc « Rôles de votre compte » en bas d'écran | `ROLE_JURISTE`, `ROLE_SAISIE`, `ROLE_CONSULTATION` | | ☐ |
@@ -200,7 +200,7 @@ déconnexion ferme réellement la session.
 
 ---
 
-## REC-E2E-002 — Référentiel : créer un client et un intervenant
+## REC-E2E-002 - Référentiel : créer un client et un intervenant
 
 ### Objectif
 Créer les données sans lesquelles aucun dossier n'est possible, et valider les contrôles de
@@ -217,7 +217,7 @@ Aucune.
 - Client : nom `Société de recette`. **Sa référence est attribuée** ; notez-la, les fiches
   suivantes y renvoient sous le nom de commodité `CLI-REC-001`.
 - Avocat : nom `Me Recette`, identifiant de connexion `avocat.test` **si aucune fiche ne le porte
-  déjà** — sinon, créez `Me Recette 2` sans réutiliser un identifiant déjà pris.
+  déjà** - sinon, créez `Me Recette 2` sans réutiliser un identifiant déjà pris.
 - Autre prestataire : nom `Notaire Recette`, courriel `notaire.recette@example.cm`, téléphone
   `650 228 936`.
 
@@ -248,7 +248,7 @@ existe, avec des coordonnées au format international.
 
 ---
 
-## REC-E2E-003 — Ouvrir un dossier de recouvrement, affecter, joindre les pièces
+## REC-E2E-003 - Ouvrir un dossier de recouvrement, affecter, joindre les pièces
 
 ### Objectif
 Valider le parcours d'ouverture (P1) : création avec champs conditionnels, affectations obligatoires,
@@ -276,7 +276,7 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 5 | JUR | Renseigner Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides**. **Aucun champ Référence de dossier n'est proposé** | Aucun message sur les deux champs laissés vides : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
 | 6 | JUR | Cliquer « Enregistrer » **sans joindre de fichier** | Refus, avec un message **sous chaque pièce manquante** : « Cette pièce est obligatoire : joignez son fichier. » Rien n'est créé | | ☐ |
 | 7 | JUR | Joindre un PDF sur **chacune** des deux pièces, relire l'un d'eux avec l'œil, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
-| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés. Les deux références laissées vides s'affichent « — » | | ☐ |
+| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés. Les deux références laissées vides s'affichent « - » | | ☐ |
 | 9 | JUR | Onglet « Documents » | **Les deux PDF** déposés sont listés avec leur nom | | ☐ |
 | 10 | JUR | Onglet « Étapes » | Une étape **Première instance** existe, au statut **Ouverture** | | ☐ |
 | 11 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
@@ -287,7 +287,7 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 
 ### Résultat final attendu
 Un dossier `DOS-REC-003` existe, affecté à un juriste et un avocat, avec une pièce en GED et son
-étape Instance au statut `EN_COURS` — état requis pour planifier une audience.
+étape Instance au statut `EN_COURS` - état requis pour planifier une audience.
 
 ### Points de contrôle
 - La référence est **attribuée** et jamais servie deux fois : deux dossiers créés à la suite portent
@@ -298,7 +298,7 @@ Un dossier `DOS-REC-003` existe, affecté à un juriste et un avocat, avec une p
 
 ---
 
-## REC-E2E-004 — Dossier sensible : arbitrage de la sensibilité
+## REC-E2E-004 - Dossier sensible : arbitrage de la sensibilité
 
 ### Objectif
 Valider le circuit de validation de la sensibilité : un juriste déclare, la direction statue.
@@ -337,7 +337,7 @@ le motif du refus.
 
 ---
 
-## REC-E2E-005 — Dérogation de seuil : demande et arbitrage
+## REC-E2E-005 - Dérogation de seuil : demande et arbitrage
 
 ### Objectif
 Valider qu'un seuil propre au dossier se demande, s'arbitre et s'applique.
@@ -373,7 +373,7 @@ Le dossier porte un seuil dérogatoire validé, qui remplace le seuil global pou
 
 ---
 
-## REC-E2E-006 — Cycle d'audience : planifier, doublon, annuler, compte rendu
+## REC-E2E-006 - Cycle d'audience : planifier, doublon, annuler, compte rendu
 
 ### Objectif
 Valider le parcours P2 : planification, détection de doublon confirmable, annulation motivée et
@@ -404,7 +404,7 @@ Une date d'audience **dans le futur**, puis une date **du jour** pour le compte 
 | 8 | JUR | Saisir `Doublon de saisie` → confirmer | L'audience passe à **Annulée** et le motif s'affiche sur sa ligne | | ☐ |
 | 9 | JUR | Replanifier une audience **à la même date** que celle qui vient d'être annulée | Acceptée **sans alerte de doublon** : une audience annulée ne compte plus | | ☐ |
 | 10 | JUR | Sur une audience dont la date est **future**, chercher « Saisir le compte rendu » | L'action n'est pas proposée : elle ne l'est qu'à partir du jour de l'audience | | ☐ |
-| 11 | JUR | Planifier une audience **datée d'aujourd'hui** | Acceptée (RG-AUD-07 amendée le 2026-09-23) : l'audience apparaît, au statut **Planifiée** | | ☐ |
+| 11 | JUR | Planifier une audience **datée d'aujourd'hui** | Acceptée (RG-AUD-08, 2026-09-23) : l'audience apparaît, au statut **Planifiée** | | ☐ |
 | 11 bis | JUR | Planifier une audience datée **avant l'ouverture du dossier** | Refus : « Cette date précède l'ouverture du dossier. » C'est la seule borne | | ☐ |
 | 12 | JUR | Sur l'audience du jour, cliquer « Saisir le compte rendu » | La fenêtre s'ouvre immédiatement : le compte rendu est recevable dès le jour de l'audience | | ☐ |
 | 13 | JUR | Enregistrer un compte rendu **vide** | Refus : le compte rendu ne peut pas être vide | | ☐ |
@@ -413,7 +413,7 @@ Une date d'audience **dans le futur**, puis une date **du jour** pour le compte 
 > **Régularisation.** Depuis le 2026-09-23, une audience tenue sans avoir été saisie s'enregistre
 > après coup, à sa vraie date : planifiez-en une datée de la semaine dernière et saisissez son
 > compte rendu. Elle comptera dans le rapport du mois où elle s'est tenue (QF-32), pas dans celui de
-> la saisie. Aucun rappel n'est émis pour une audience du jour ou passée — c'est attendu.
+> la saisie. Aucun rappel n'est émis pour une audience du jour ou passée - c'est attendu.
 
 ### Résultat final attendu
 Le dossier porte au moins une audience tenue avec son compte rendu, une audience annulée motivée et
@@ -422,14 +422,14 @@ une audience planifiée à venir.
 ### Points de contrôle
 - Planifier exige une étape au statut **En cours** : sinon le bouton est absent et l'écran l'explique.
 - La date doit seulement être **postérieure à l'ouverture du dossier** : le jour même et le passé
-  sont acceptés depuis l'amendement de RG-AUD-07 (2026-09-23).
+  sont acceptés depuis RG-AUD-08 (2026-09-23).
 - Trois rappels sont programmés automatiquement à J-7, J-3 et J-1 (vérifiables en REC-E2E-022).
 - Depuis la correction du 2026-09-23 (QF-32), une audience est « tenue » **à sa date planifiée**,
   quelle que soit la date de saisie du compte rendu : c'est cette date que comptent les rapports.
 
 ---
 
-## REC-E2E-007 — Alarmes : créer, reprogrammer, marquer traitée
+## REC-E2E-007 - Alarmes : créer, reprogrammer, marquer traitée
 
 ### Objectif
 Valider le suivi des échéances libres attachées à un dossier.
@@ -460,12 +460,12 @@ Le dossier porte au moins une alarme traitée et une alarme active à échéance
 ### Points de contrôle
 - Marquer traitée **clôt** l'alarme sans en créer une nouvelle ; reprogrammer **remplace**.
 - **L'onglet « Alarmes » de la fiche est le seul mécanisme de rappel.** Aucun champ du formulaire de
-  création n'en produit — celui qui en portait le nom a été retiré le 2026-09-28.
+  création n'en produit - celui qui en portait le nom a été retiré le 2026-09-28.
 - Les alarmes échues remontent dans les files de l'accueil du juriste.
 
 ---
 
-## REC-E2E-008 — Calendrier des audiences et exports
+## REC-E2E-008 - Calendrier des audiences et exports
 
 ### Objectif
 Valider la vue calendaire, ses périodes et ses exports.
@@ -498,7 +498,7 @@ Le calendrier reflète les audiences planifiées et s'exporte dans les deux form
 
 ---
 
-## REC-E2E-009 — Délibéré : mise en délibéré, prorogation, décision, recours
+## REC-E2E-009 - Délibéré : mise en délibéré, prorogation, décision, recours
 
 ### Objectif
 Valider le parcours P3 et l'entrée du parcours P4 : le cycle complet du délibéré, l'alerte de
@@ -523,7 +523,7 @@ Date annoncée du délibéré dans 15 jours ; résultat **Défavorable** ; éch�
 | 3 | JUR | Saisir la « Date annoncée du délibéré » → « Enregistrer » | Le délibéré apparaît, annoncé à cette date | | ☐ |
 | 4 | JUR | Cliquer « Proroger » sur ce délibéré, saisir une « Nouvelle date du délibéré » et un motif facultatif → enregistrer | La prorogation est enregistrée, le compteur affiche « prorogé 1 fois », l'étape **reste** `EN_DELIBERE` | | ☐ |
 | 5 | JUR | Cliquer « Historique des prorogations » | Toutes les prorogations sont listées, numérotées, avec leur date et leur motif | | ☐ |
-| 6 | JUR | Répéter la prorogation jusqu'à **dépasser le seuil** (`SEUIL_PROROGATIONS`, 10 par défaut — abaissez-le à 2 en REC-E2E-021 pour aller plus vite) | Au franchissement, un avertissement s'affiche ; la prorogation est **quand même enregistrée** | | ☐ |
+| 6 | JUR | Répéter la prorogation jusqu'à **dépasser le seuil** (`SEUIL_PROROGATIONS`, 10 par défaut - abaissez-le à 2 en REC-E2E-021 pour aller plus vite) | Au franchissement, un avertissement s'affiche ; la prorogation est **quand même enregistrée** | | ☐ |
 | 7 | DJ | Ouvrir la cloche | Une alerte de type prorogation est arrivée, **une seule fois**, pas à chaque prorogation suivante | | ☐ |
 | 8 | JUR | Cliquer « Enregistrer la décision » sur le délibéré, choisir « Résultat » = **Défavorable**, sans échéance de recours | Refus : l'échéance du délai de recours est obligatoire pour un résultat défavorable ou mixte | | ☐ |
 | 9 | JUR | Saisir la date de décision et une échéance de recours postérieure → « Enregistrer » | Le délibéré est rendu ; l'étape passe à **`DELIBERE_VIDE`** | | ☐ |
@@ -542,7 +542,7 @@ et son délai de recours ; le DJ a été alerté une fois au franchissement du s
 
 ---
 
-## REC-E2E-010 — Rabattement d'un délibéré et reprise des audiences
+## REC-E2E-010 - Rabattement d'un délibéré et reprise des audiences
 
 ### Objectif
 Valider qu'un délibéré rabattu rouvre l'étape et redonne accès à la planification.
@@ -573,7 +573,7 @@ parcours est conservé intégralement.
 
 ---
 
-## REC-E2E-011 — Frais : circuit simple, du dépôt au paiement
+## REC-E2E-011 - Frais : circuit simple, du dépôt au paiement
 
 ### Objectif
 Valider le parcours P6 dans sa forme courte : dépôt par l'avocat, conformité par l'Assistante,
@@ -595,14 +595,14 @@ Référence de facture `FAC-REC-011`, montant `1 200 000`, un PDF en pièce just
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
 | 1 | AVO | Menu « Déposer une demande » | L'écran « Déposer une demande de frais » s'ouvre | | ☐ |
-| 2 | AVO | Cliquer le champ « Dossier » et **taper une partie de la référence** | La liste se réduit à ce que le serveur renvoie. **Seuls** les dossiers où l'avocat est affecté apparaissent, avec leur référence, nature et juridiction — ni client, ni montant en jeu | | ☐ |
+| 2 | AVO | Cliquer le champ « Dossier » et **taper une partie de la référence** | La liste se réduit à ce que le serveur renvoie. **Seuls** les dossiers où l'avocat est affecté apparaissent, avec leur référence, nature et juridiction - ni client, ni montant en jeu | | ☐ |
 | 2 bis | AVO | Chercher un dossier **ancien**, créé avant beaucoup d'autres | Il est trouvé, casse indifférente. Le champ cherche sur le serveur et ne se limite plus aux dossiers récents (corrigé le 2026-09-28) | | ☐ |
 | 3 | AVO | Choisir le dossier, saisir « Référence de la facture » = `FAC-REC-011` et « Montant (FCFA) » = `1200000` | Les champs sont acceptés | | ☐ |
 | 4 | AVO | Charger le PDF dans « Pièces justificatives » | Le nom du fichier s'affiche ; il peut être retiré avant l'envoi | | ☐ |
 | 5 | AVO | Cliquer « Déposer » | Message « Demande de frais déposée. » ; la demande figure dans « Mon espace » | | ☐ |
 | 6 | AST | Se connecter, ouvrir l'accueil | La carte « Frais à contrôler » porte la demande | | ☐ |
 | 7 | AST | Menu « Frais d'avocats » → file « À contrôler » → ouvrir `FAC-REC-011` | Le détail affiche le circuit, l'action attendue et la pièce jointe | | ☐ |
-| 8 | AST | Sur la ligne de la pièce, cliquer **« Consulter »** (œil) | Le document s'ouvre à l'écran, sans quitter la page. Le nom affiché est celui du fichier — jamais un chemin de stockage | | ☐ |
+| 8 | AST | Sur la ligne de la pièce, cliquer **« Consulter »** (œil) | Le document s'ouvre à l'écran, sans quitter la page. Le nom affiché est celui du fichier - jamais un chemin de stockage | | ☐ |
 | 8 bis | AST | Cliquer **« Télécharger »** sur la même ligne | Le fichier est enregistré sous son nom d'origine | | ☐ |
 | 9 | AST | Cliquer « Valider » → confirmer | La demande passe au contrôle d'opportunité ; l'Assistante n'a plus d'action | | ☐ |
 | 10 | DJA | Se connecter, ouvrir « Frais d'avocats » → la demande | Le bloc « Action attendue » propose la décision d'opportunité | | ☐ |
@@ -617,13 +617,13 @@ chaque rôle n'ayant vu que l'action qui lui revenait.
 
 ### Points de contrôle
 - Un profil qui n'a pas d'action à l'étape courante lit « Aucune action ne vous revient à cette
-  étape. » — et n'a aucun bouton.
+  étape. » - et n'a aucun bouton.
 - L'avocat ne voit que **ses** demandes : la file est filtrée d'office.
 - Les statuts successifs sont `DEPOSEE → CONFORMITE → OPPORTUNITE → VALIDEE`, puis paiement.
 
 ---
 
-## REC-E2E-012 — Frais : validation conjointe DJ + DJA
+## REC-E2E-012 - Frais : validation conjointe DJ + DJA
 
 ### Objectif
 Valider le déclenchement de la double validation et sa règle : deux accords de profils différents.
@@ -663,7 +663,7 @@ chaque instant ce qui manquait.
 
 ---
 
-## REC-E2E-013 — Frais : rejet motivé et retour à l'avocat
+## REC-E2E-013 - Frais : rejet motivé et retour à l'avocat
 
 ### Objectif
 Valider qu'un rejet exige un motif, est terminal, et que l'avocat en est informé avec le motif.
@@ -700,7 +700,7 @@ autre référence.
 
 ---
 
-## REC-E2E-014 — Publication : compte rendu déposé, validé, puis lu
+## REC-E2E-014 - Publication : compte rendu déposé, validé, puis lu
 
 ### Objectif
 Valider le circuit de publication : dépôt par l'avocat, validation par l'Assistante, visibilité
@@ -747,7 +747,7 @@ son motif ; une publication déposée n'est jamais visible avant validation.
 
 ---
 
-## REC-E2E-015 — Commentaire du juriste puis correspondance unique
+## REC-E2E-015 - Commentaire du juriste puis correspondance unique
 
 ### Objectif
 Valider la règle RG-INT-07 : un juriste ne s'adresse jamais directement à l'avocat ; le DJ ou la DJA
@@ -782,7 +782,7 @@ Une correspondance unique, consolidée par la direction, est attachée à la pub
 
 ---
 
-## REC-E2E-016 — Constitution d'un prestataire : sollicitation, lettre, signature
+## REC-E2E-016 - Constitution d'un prestataire : sollicitation, lettre, signature
 
 ### Objectif
 Valider le parcours P7 : un juriste sollicite, le SH signe, la lettre est générée et rangée dans la
@@ -824,12 +824,12 @@ lorsqu'il dispose d'un compte.
 - Le bouton « Sans en-tête » n'apparaît **que** sur les lettres de constitution, pas sur les autres
   pièces du dossier : le tirage se régénère depuis la lettre enregistrée, ce qu'aucune autre pièce
   ne permet.
-- Un autre prestataire (sans compte) n'a pas d'espace applicatif : il est notifié hors application —
+- Un autre prestataire (sans compte) n'a pas d'espace applicatif : il est notifié hors application -
   ce qui, moteur coupé, reste journalisé sans envoi.
 
 ---
 
-## REC-E2E-017 — GED : dépôt, aperçu, demande de suppression, arbitrage
+## REC-E2E-017 - GED : dépôt, aperçu, demande de suppression, arbitrage
 
 ### Objectif
 Valider le parcours P8, y compris la **double nature** de la suppression : demande pour le juriste,
@@ -842,8 +842,8 @@ Juriste (`juriste.test`) → DJ (`dj.test`).
 `DOS-REC-003` existe.
 
 ### Données de test
-Un PDF `pv-transfert.pdf`, une image `scan.png`, un fichier **non autorisé** (par exemple `.docx`),
-motif de suppression `Pièce erronée`.
+Un PDF `pv-transfert.pdf`, une image `scan.png`, un document Word `conclusions.docx`, un fichier
+**non autorisé** (par exemple `.odt`), motif de suppression `Pièce erronée`.
 
 ### Parcours
 
@@ -851,16 +851,17 @@ motif de suppression `Pièce erronée`.
 |---|---|---|---|---|---|
 | 1 | JUR | Fiche → onglet « Documents » → « Déposer », choisir le PDF, renseigner « Type de pièce » → valider | Message « Pièce déposée. » ; le document apparaît dans la liste | | ☐ |
 | 2 | JUR | Déposer l'image `scan.png` | Déposée également | | ☐ |
-| 3 | JUR | Tenter de déposer le fichier `.docx` | Refus explicite : le format n'est pas admis (`PDF, PNG, JPG, TXT, XLSX`) | | ☐ |
-| 4 | JUR | Cliquer « Aperçu » sur le PDF, puis sur l'image | Les deux s'affichent dans une fenêtre d'aperçu, sans quitter la page | | ☐ |
-| 5 | JUR | Cliquer « Télécharger » sur le PDF | Le fichier est téléchargé et s'ouvre | | ☐ |
-| 6 | JUR | Cliquer « Demander la suppression » sur le PDF, saisir le motif → confirmer | Message « Demande de suppression envoyée au DJ et au DJA. » ; **le document reste visible** | | ☐ |
-| 7 | JUR | Redemander la suppression du **même** document | Refus : une demande est déjà en attente | | ☐ |
-| 8 | DJ | Menu « Demandes de suppression » → file « En attente » | La demande figure, avec le nom du fichier, le dossier et le motif | | ☐ |
-| 9 | DJ | Cliquer « Rejeter », saisir un motif → confirmer | La demande est rejetée ; le document reste en place ; le motif est consultable | | ☐ |
-| 10 | JUR | Redemander la suppression du même document | Acceptée : la demande précédente est close | | ☐ |
-| 11 | DJ | « Approuver » la nouvelle demande → confirmer | Le document est supprimé ; il disparaît de l'onglet Documents du dossier | | ☐ |
-| 12 | DJ | Sur la fiche du dossier, onglet « Documents », cliquer « Supprimer » sur `scan.png` → confirmer | Suppression **immédiate**, sans passer par une demande | | ☐ |
+| 3 | JUR | Déposer le document Word `conclusions.docx` | Déposé ; la colonne « Format » affiche `DOCX` | | ☐ |
+| 4 | JUR | Tenter de déposer le fichier `.odt` | Refus explicite : le format n'est pas admis (`PDF, PNG, JPG, TXT, XLSX, DOCX, DOC`) | | ☐ |
+| 5 | JUR | Cliquer « Consulter » sur le PDF, sur l'image, puis sur le `.docx` | Les trois s'affichent dans la fenêtre d'aperçu, sans quitter la page. Le Word montre sa mise en page - titres, gras, tableaux | | ☐ |
+| 6 | JUR | Cliquer « Télécharger » sur le PDF | Le fichier est téléchargé et s'ouvre | | ☐ |
+| 7 | JUR | Cliquer « Demander la suppression » sur le PDF, saisir le motif → confirmer | Message « Demande de suppression envoyée au DJ et au DJA. » ; **le document reste visible** | | ☐ |
+| 8 | JUR | Redemander la suppression du **même** document | Refus : une demande est déjà en attente | | ☐ |
+| 9 | DJ | Menu « Demandes de suppression » → file « En attente » | La demande figure, avec le nom du fichier, le dossier et le motif | | ☐ |
+| 10 | DJ | Cliquer « Rejeter », saisir un motif → confirmer | La demande est rejetée ; le document reste en place ; le motif est consultable | | ☐ |
+| 11 | JUR | Redemander la suppression du même document | Acceptée : la demande précédente est close | | ☐ |
+| 12 | DJ | « Approuver » la nouvelle demande → confirmer | Le document est supprimé ; il disparaît de l'onglet Documents du dossier | | ☐ |
+| 13 | DJ | Sur la fiche du dossier, onglet « Documents », cliquer « Supprimer » sur `scan.png` → confirmer | Suppression **immédiate**, sans passer par une demande | | ☐ |
 
 ### Résultat final attendu
 Un document a suivi le circuit complet (demande, rejet, nouvelle demande, approbation, suppression)
@@ -875,7 +876,7 @@ et un autre a été supprimé directement par la direction.
 
 ---
 
-## REC-E2E-018 — Rapport journalier GED
+## REC-E2E-018 - Rapport journalier GED
 
 ### Objectif
 Valider la restitution de l'activité documentaire du jour, et son état vide.
@@ -903,7 +904,7 @@ Le rapport reflète l'activité du jour et sait afficher un jour sans activité.
 
 ---
 
-## REC-E2E-019 — Décisions définitives : adjudication et condamnation
+## REC-E2E-019 - Décisions définitives : adjudication et condamnation
 
 ### Objectif
 Valider l'enregistrement des décisions définitives et leur précondition d'étape.
@@ -940,7 +941,7 @@ immédiatement après la création.
 - **Attention à une documentation périmée** : `SCREEN_MAP.md` §8 annonce encore QF-03 comme
   « bloquant fonctionnel » et l'onglet comme étant en écriture seule. **C'est faux depuis Q-88** :
   `GET /dossiers/{id}/decisions` existe, renvoie les deux listes avec leurs identifiants, et le
-  frontend s'en sert. Les étapes 8 et 9 le vérifient — si elles échouent, il s'agit alors d'une
+  frontend s'en sert. Les étapes 8 et 9 le vérifient - si elles échouent, il s'agit alors d'une
   vraie anomalie à signaler.
 - **Limite connue (QF-40)** : une condamnation se crée toujours « En attente » ; le statut de
   paiement n'est pas accepté à la création.
@@ -948,7 +949,7 @@ immédiatement après la création.
 
 ---
 
-## REC-E2E-020 — Jurisprudence : archiver, rechercher, consulter
+## REC-E2E-020 - Jurisprudence : archiver, rechercher, consulter
 
 ### Objectif
 Valider l'archivage d'une décision et la recherche dans la base jurisprudentielle.
@@ -986,7 +987,7 @@ filtres sont partageables par l'URL.
 
 ---
 
-## REC-E2E-021 — Pilotage : tableau de bord, rapport et seuils
+## REC-E2E-021 - Pilotage : tableau de bord, rapport et seuils
 
 ### Objectif
 Valider le parcours P9 : lecture des indicateurs, génération d'un rapport, réglage d'un paramètre
@@ -1009,7 +1010,7 @@ Période du rapport : le mois en cours. Paramètre à modifier : `SEUIL_PROROGAT
 | 2 | DJ | Comparer « Dossiers ouverts » avec la liste des dossiers | Les chiffres sont cohérents avec les données créées | | ☐ |
 | 3 | DJ | Menu « Rapports » → choisir une période **inversée** (fin avant début) → « Afficher le rapport » | Message « La date de fin doit suivre la date de début. » | | ☐ |
 | 4 | DJ | Choisir le mois en cours → « Afficher le rapport » | Le rapport s'affiche avec ses rubriques (dossiers ouverts, délibérés rendus…) | | ☐ |
-| 5 | DJ | Choisir une période ancienne sans activité | « Aucune activité sur cette période » — état vide, pas une erreur | | ☐ |
+| 5 | DJ | Choisir une période ancienne sans activité | « Aucune activité sur cette période » - état vide, pas une erreur | | ☐ |
 | 6 | DJ | Cliquer « Exporter » et choisir PDF, puis Excel, puis CSV | Un fichier est téléchargé dans chaque format | | ☐ |
 | 7 | DJ | Menu « Configuration » → repérer `SEUIL_PROROGATIONS` | La valeur courante est affichée, avec l'auteur de la dernière modification | | ☐ |
 | 8 | DJ | Saisir une valeur **invalide** (texte, ou valeur hors bornes) → « Enregistrer » | Refus expliqué ; la valeur en base ne change pas | | ☐ |
@@ -1029,7 +1030,7 @@ paramètre modifié agit immédiatement sur le comportement métier.
 
 ---
 
-## REC-E2E-022 — Notifications applicatives : temps réel et supervision
+## REC-E2E-022 - Notifications applicatives : temps réel et supervision
 
 ### Objectif
 Valider que les alertes arrivent sans rechargement, qu'elles ne se perdent pas si le temps réel est
@@ -1046,14 +1047,14 @@ Deux sessions ouvertes : l'une pour recevoir, l'autre pour déclencher.
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
 | 1 | AST | Ouvrir l'écran « Notifications » et **ne plus y toucher** | La liste s'affiche ; un indicateur signale que le temps réel est actif | | ☐ |
-| 2 | AVO | Dans l'autre session, déposer une demande de frais (REC-E2E-011) | — | | ☐ |
+| 2 | AVO | Dans l'autre session, déposer une demande de frais (REC-E2E-011) | - | | ☐ |
 | 3 | AST | Regarder l'écran **sans le recharger** | La nouvelle notification apparaît d'elle-même, et la cloche s'incrémente | | ☐ |
 | 4 | AST | Cliquer « Marquer traitée » sur cette notification | Message de confirmation ; le compteur de la cloche diminue | | ☐ |
 | 5 | AST | Couper le réseau du poste quelques secondes, puis déclencher une nouvelle alerte depuis l'autre session, réseau rétabli | La notification finit par apparaître : rien n'est perdu, seul l'affichage immédiat peut manquer | | ☐ |
 | 6 | JUR | Ouvrir l'écran « Notifications » du juriste | Il ne voit **que ses** notifications ; il ne peut pas traiter celles d'un autre | | ☐ |
 | 7 | DJ | Menu « Configuration » → bloc « Supervision des alertes » | Le taux de délivrance du canal applicatif s'affiche sur la période choisie | | ☐ |
 | 8 | DJ | Choisir une fenêtre **inversée** (début après la fin) | Message explicite à l'écran, pas une erreur technique | | ☐ |
-| 9 | DJ | Choisir une période sans alerte | Message indiquant qu'il n'y a rien à mesurer — « ni conforme ni fautif » | | ☐ |
+| 9 | DJ | Choisir une période sans alerte | Message indiquant qu'il n'y a rien à mesurer - « ni conforme ni fautif » | | ☐ |
 | 10 | JUR | Ouvrir la même page avec le compte juriste | Le bloc de supervision **n'apparaît pas** : il est réservé à DJ et DJA | | ☐ |
 
 ### Résultat final attendu
@@ -1067,11 +1068,11 @@ destinataire, et leur délivrance est mesurable par la direction.
 
 ---
 
-## REC-E2E-023 — Notifications externes : grille, supervision et relance
+## REC-E2E-023 - Notifications externes : grille, supervision et relance
 
 ### Objectif
 Valider que le DJ commande les notifications externes, que la supervision les reflète et que la
-relance est réservée à la direction — **moteur coupé**, donc sans aucun envoi réel.
+relance est réservée à la direction - **moteur coupé**, donc sans aucun envoi réel.
 
 ### Acteurs
 DJ (`dj.test`), avec une action métier produite par un autre rôle.
@@ -1088,7 +1089,7 @@ Aucune. `NOTIFICATION_ENGINE_ACTIF` vaut `false`.
 | 3 | DJ | **Recharger la page** | La case est toujours décochée : le réglage a bien été enregistré | | ☐ |
 | 4 | DJ | Décocher **toute** la colonne SMS puis enregistrer | Accepté : « rien par SMS » est un réglage, pas une erreur | | ☐ |
 | 5 | DJ | Recocher la case et la colonne, enregistrer | La grille revient à son état initial | | ☐ |
-| 6 | AVO | Déposer une demande de frais (autre session) | — | | ☐ |
+| 6 | AVO | Déposer une demande de frais (autre session) | - | | ☐ |
 | 7 | DJ | Bloc « Notifications externes » → tableau « Notifications par canal » | Les compteurs du canal Courriel ont progressé ; une ligne par canal (Courriel, SMS, WhatsApp, Teams) | | ☐ |
 | 8 | DJ | Lire le bandeau au-dessus du tableau | Un message indique que le Notification Engine est **désactivé** : rien ne part réellement | | ☐ |
 | 9 | DJ | Lire le tableau « Envois à examiner », s'il n'est pas vide | Chaque ligne porte l'événement, le statut, le destinataire et la cause ; un bouton « Relancer » est proposé | | ☐ |
@@ -1109,7 +1110,7 @@ moteur est coupé, et la relance reste réservée à la direction.
 
 ---
 
-## REC-E2E-024 — Audit : consultation, extraction scellée, vérification
+## REC-E2E-024 - Audit : consultation, extraction scellée, vérification
 
 ### Objectif
 Valider la traçabilité : consulter le journal filtré, en extraire une archive scellée et vérifier un
@@ -1120,6 +1121,11 @@ DJ (`dj.test`).
 
 ### Préconditions
 Les fiches précédentes ont produit de l'activité.
+
+**Les étapes 8 et 9 exigent un contexte sécurisé.** Le calcul d'empreinte se fait dans le navigateur,
+qui ne l'autorise qu'en HTTPS ou sur `localhost`. Depuis un autre poste, par `http://<IP>:3000`,
+l'application le signale et la vérification est indisponible : jouez ces deux étapes sur le poste
+hôte. Ce n'est pas une anomalie.
 
 ### Parcours
 
@@ -1133,7 +1139,7 @@ Les fiches précédentes ont produit de l'activité.
 | 6 | DJ | Bloc « Extraire l'audit » → « Extraire en PDF » | Une archive est produite, avec une référence lisible du type `AUD-2026-0042` | | ☐ |
 | 7 | DJ | Cliquer « Récupérer » sur l'archive produite | Le fichier est téléchargé | | ☐ |
 | 8 | DJ | Bloc « Vérifier un fichier » → déposer le fichier téléchargé | Le fichier est **reconnu** comme authentique | | ☐ |
-| 9 | DJ | Déposer un autre fichier quelconque | Réponse claire indiquant qu'il n'est pas reconnu — pas une erreur technique | | ☐ |
+| 9 | DJ | Déposer un autre fichier quelconque | Réponse claire indiquant qu'il n'est pas reconnu - pas une erreur technique | | ☐ |
 | 10 | DJ | Recharger la page « Audit » | La **consultation de l'audit** figure elle-même dans le journal | | ☐ |
 | 11 | JUR | Ouvrir http://localhost:3000/admin/audit avec le compte juriste | Écran « Vous n'avez pas les droits nécessaires » | | ☐ |
 
@@ -1142,12 +1148,12 @@ Le journal est consultable et filtrable, une archive scellée est produite, réc
 la consultation elle-même laisse une trace.
 
 ### Points de contrôle
-- L'audit est réservé au DJ et à la DJA — l'Assistante, le SH et le juriste n'y accèdent pas.
+- L'audit est réservé au DJ et à la DJA - l'Assistante, le SH et le juriste n'y accèdent pas.
 - L'empreinte du fichier déposé est calculée par le navigateur : le fichier lui-même ne part pas.
 
 ---
 
-## REC-E2E-025 — Portail avocat : périmètre et cloisonnement
+## REC-E2E-025 - Portail avocat : périmètre et cloisonnement
 
 ### Objectif
 Valider qu'un utilisateur externe ne voit que ce qui le concerne, et rien du portefeuille de la
@@ -1183,7 +1189,7 @@ les données sensibles de la banque.
 
 ---
 
-## REC-E2E-026 — Vue consolidée d'un client
+## REC-E2E-026 - Vue consolidée d'un client
 
 ### Objectif
 Valider la lecture transverse de toutes les procédures d'un client.
@@ -1212,7 +1218,7 @@ La fiche client donne une vue complète des procédures du client, quelle que so
 
 ---
 
-## REC-E2E-027 — Les deux pourvois : Cour Suprême et CCJA
+## REC-E2E-027 - Les deux pourvois : Cour Suprême et CCJA
 
 ### Objectif
 Valider qu'un dossier peut être porté devant les deux juridictions de cassation en même temps, que
@@ -1243,17 +1249,17 @@ l'une et l'autre depuis la liste des dossiers.
 
 ### Points de contrôle
 - Le pourvoi CCJA **ne s'ouvre jamais tout seul** : exercer un recours depuis l'appel ouvre la
-  cassation nationale, jamais la CCJA — celle-ci se décide et se positionne à la main.
+  cassation nationale, jamais la CCJA - celle-ci se décide et se positionne à la main.
 - Les libellés sont ceux du métier : Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA.
 - Aucune étape Cour Suprême fantôme n'apparaît quand on positionne directement en CCJA.
 
 ---
 
-## REC-E2E-028 — Journal des audiences et comptes rendus attendus
+## REC-E2E-028 - Journal des audiences et comptes rendus attendus
 
 ### Objectif
-Valider que la direction voit, pour une journée donnée, ce qui a été rapporté de chaque audience —
-par le juriste comme par l'avocat — et retrouve les comptes rendus qui manquent encore.
+Valider que la direction voit, pour une journée donnée, ce qui a été rapporté de chaque audience -
+par le juriste comme par l'avocat - et retrouve les comptes rendus qui manquent encore.
 
 ### Acteurs
 Juriste (`juriste.test`), avocat (`avocat.test`), puis DJ (`dj.test`).
@@ -1289,13 +1295,13 @@ des comptes rendus qui manquent, avec leur ancienneté.
 - L'écran nomme les juristes **affectés au dossier**, pas un responsable de l'audience : un dossier
   suivi à deux affiche deux noms. C'est une limite connue, pas un défaut.
 - L'écran est ouvert à **tous les profils internes**, juristes compris, sur décision du porteur du
-  projet du 2026-09-28 — et fermé aux prestataires externes. La réserve NF-CONF-01
+  projet du 2026-09-28 - et fermé aux prestataires externes. La réserve NF-CONF-01
   (confidentialité, « à définir avec la DRH ») demeure et porte désormais sur un écran largement
   visible.
 
 ---
 
-## REC-E2E-029 — Filtrer et trier la liste des dossiers
+## REC-E2E-029 - Filtrer et trier la liste des dossiers
 
 ### Objectif
 Valider que la liste des dossiers se filtre par étape et par période d'audience, se trie, et que
@@ -1314,7 +1320,7 @@ et si possible un dossier porté devant les **deux** cassations (REC-E2E-027).
 |---|---|---|---|---|---|
 | 1 | JUR | Menu « Dossiers » | La barre de filtres porte Étape, Statut de l'étape, Audience du, Audience au, Trier par | | ☐ |
 | 2 | JUR | Filtre **Étape** = Appel | Seuls les dossiers ayant une étape d'appel restent ; l'adresse contient `typeEtape=RECOURS_1` | | ☐ |
-| 3 | JUR | Ajouter **Statut de l'étape** = En cours | Seuls les dossiers dont **l'appel** est en cours restent — pas ceux dont l'appel est clôturé et qui ont autre chose en cours | | ☐ |
+| 3 | JUR | Ajouter **Statut de l'étape** = En cours | Seuls les dossiers dont **l'appel** est en cours restent - pas ceux dont l'appel est clôturé et qui ont autre chose en cours | | ☐ |
 | 4 | JUR | Copier l'adresse, la rouvrir dans un nouvel onglet | La même liste s'affiche, filtres pré-remplis | | ☐ |
 | 5 | JUR | Effacer les filtres, puis **Audience du** = premier jour du mois d'une audience connue, **Audience au** = dernier jour | Seuls les dossiers ayant eu une audience dans cette fenêtre restent | | ☐ |
 | 6 | JUR | Vérifier qu'un dossier dont l'audience de la période a été **annulée** n'y figure pas | Absent : une audience annulée ne s'est pas tenue | | ☐ |
@@ -1323,7 +1329,7 @@ et si possible un dossier porté devant les **deux** cassations (REC-E2E-027).
 | 9 | JUR | **Trier par** = Risque encouru, du plus élevé | Le montant le plus fort en tête | | ☐ |
 | 10 | JUR | Revenir à **Ouverture, plus récente d'abord** | L'ordre initial revient et `tri=` **disparaît** de l'adresse : c'est déjà le défaut | | ☐ |
 | 11 | JUR | Sur un dossier aux deux cassations : filtrer **Étape** = Pourvoi en cassation, puis = Pourvoi CCJA | Le dossier remonte **dans les deux cas** : les deux procédures existent | | ☐ |
-| 12 | JUR | Saisir aussi **Référence** et **Juridiction**, puis « Effacer » | Tous les critères sont remis à zéro et **les champs se vident à l'écran** — aucun mot ne reste affiché sous un filtre qui n'agit plus | | ☐ |
+| 12 | JUR | Saisir aussi **Référence** et **Juridiction**, puis « Effacer » | Tous les critères sont remis à zéro et **les champs se vident à l'écran** - aucun mot ne reste affiché sous un filtre qui n'agit plus | | ☐ |
 | 13 | JUR | Parcourir plusieurs pages avec un filtre actif | Aucune ligne répétée d'une page à l'autre, aucune manquante ; le total annoncé reste constant | | ☐ |
 
 ### Résultat final attendu
@@ -1349,7 +1355,7 @@ autant de garanties métier.
 | ID | Cas | Rôle | Mode opératoire | Résultat attendu | Statut |
 |---|---|---|---|---|---|
 | REC-NEG-001 | Champs obligatoires manquants | JUR | Créer un dossier en cliquant « Enregistrer » sur un formulaire vide | Chaque champ obligatoire porte son propre message ; rien n'est créé | ☐ |
-| REC-NEG-016 | Pièce obligatoire manquante | JUR | Remplir tout le formulaire de création **sauf un des deux fichiers**, puis « Enregistrer » | Refus, message sous la pièce sans fichier ; rien n'est créé. Les références, elles, peuvent rester vides | ☐ |
+| REC-NEG-027 | Pièce obligatoire manquante | JUR | Remplir tout le formulaire de création **sauf un des deux fichiers**, puis « Enregistrer » | Refus, message sous la pièce sans fichier ; rien n'est créé. Les références, elles, peuvent rester vides | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1358,9 +1364,10 @@ autant de garanties métier.
 | REC-NEG-007 | Accès direct par URL à un écran interdit | AVO | Saisir `/dossiers`, `/clients`, `/admin/audit` | Écran « Vous n'avez pas les droits nécessaires » à chaque fois | ☐ |
 | REC-NEG-008 | Opération impossible selon le statut | JUR | Rabattre un délibéré dont l'étape n'est pas `DELIBERE_VIDE` | L'action n'est pas proposée | ☐ |
 | REC-NEG-009 | Transition d'étape interdite | JUR | Choisir une transition non permise dans « Faire passer à » | Seules les transitions permises sont proposées ; une transition refusée affiche les états permis | ☐ |
-| REC-NEG-010 | Compte avocat non rattaché | AVO | Se connecter avec un compte `ROLE_AVOCAT` **sans** fiche au référentiel | Message expliquant que le compte n'est « pas encore rattaché au répertoire » — pas une erreur technique | ☐ |
+| REC-NEG-010 | Compte avocat non rattaché | AVO | Se connecter avec un compte `ROLE_AVOCAT` **sans** fiche au référentiel | Message expliquant que le compte n'est « pas encore rattaché au répertoire » - pas une erreur technique | ☐ |
 | REC-NEG-011 | Motif obligatoire à chaque refus | AST, DJ, SH | Rejeter une demande de frais, une publication, une sensibilité, une suppression, sans motif | Refus dans les quatre cas | ☐ |
-| REC-NEG-012 | Fichier au format interdit | JUR | Déposer un `.docx` en GED | Refus explicite citant les formats admis | ☐ |
+| REC-NEG-012 | Fichier au format interdit | JUR | Déposer un `.odt` en GED | Refus explicite citant les formats admis, Word compris | ☐ |
+| REC-NEG-035 | Word à l'ancien format, sans aperçu | JUR | Déposer un `.doc` (Word 97-2003), puis cliquer « Consulter » | Le dépôt est **accepté**. L'aperçu ne montre pas le document mais **explique pourquoi** - ancien format, non affichable par le navigateur - et propose le téléchargement. Ce n'est pas une anomalie | ☐ |
 | REC-NEG-013 | Fichier trop lourd | JUR | Déposer un fichier de plus de 10 Mo | Refus explicite sur le poids | ☐ |
 | REC-NEG-014 | Double demande de suppression | JUR | Demander deux fois la suppression du même document | La seconde est refusée : une demande est déjà en attente | ☐ |
 | REC-NEG-015 | Double correspondance | DJ | Transmettre deux fois la correspondance d'une même publication | La seconde est refusée | ☐ |
@@ -1374,7 +1381,14 @@ autant de garanties métier.
 | REC-NEG-023 | Abandon d'une saisie en cours | JUR | Commencer la création d'un dossier puis cliquer une entrée de menu | Une confirmation « Quitter sans enregistrer ? » protège la saisie ; « Annuler » du formulaire n'est pas intercepté | ☐ |
 | REC-NEG-024 | Retour arrière après déconnexion | Tous | Se déconnecter puis utiliser la flèche Retour | La session ne revient pas ; l'écran de connexion reste | ☐ |
 | REC-NEG-025 | Données inexistantes | JUR | Ouvrir `/dossiers/999999` et une URL inconnue | Page « introuvable » lisible, pas une trace technique | ☐ |
-| REC-NEG-026 | Identifiants erronés | — | Se connecter avec un compte inexistant, puis avec un mot de passe faux | **Le même** message dans les deux cas | ☐ |
+| REC-NEG-026 | Identifiants erronés | - | Se connecter avec un compte inexistant, puis avec un mot de passe faux | **Le même** message dans les deux cas | ☐ |
+| REC-NEG-028 | Mise en délibéré sans audience tenue | JUR | Sur une étape **En cours** dont aucune audience n'a de compte rendu, « Faire passer à » → **En délibéré** | Refus : « Aucune audience tenue sur cette étape : le compte rendu d'au moins une audience doit être saisi avant la mise en délibéré. » | ☐ |
+| REC-NEG-029 | Mise en délibéré, une audience encore planifiée | JUR | Tenir une audience (compte rendu saisi), en planifier une seconde, puis passer l'étape **En délibéré** | Refus : « Une audience reste planifiée sur cette étape : tenez-la ou annulez-la avant la mise en délibéré. » Au-delà d'une, le refus **dit le nombre** | ☐ |
+| REC-NEG-030 | Recours contre un délibéré favorable | JUR | Enregistrer un résultat **Favorable**, puis tenter d'exercer un recours | Refus : « Le délibéré de cette étape est favorable : un recours ne s'exerce que contre une décision défavorable ou mixte. » | ☐ |
+| REC-NEG-031 | Archivage d'étape sans décision définitive | JUR | Sur une étape clôturée, « Faire passer à » → **Archivé**, sans avoir saisi d'adjudication ni de condamnation | Refus : « Aucune décision définitive n'est enregistrée sur cette étape : l'adjudication ou la condamnation doit être saisie avant l'archivage. » | ☐ |
+| REC-NEG-032 | Archivage de la **dernière** étape, frais non soldés | JUR (+ AVO) | Déposer une demande de frais et la laisser en cours, puis archiver la dernière étape non archivée du dossier | Refus citant le message : « Une demande de frais de ce dossier n'est ni payée ni rejetée (…) : soldez-la avant d'archiver la dernière étape du dossier. » Le refus **nomme les demandes en cause** - référence de facture, ou l'avocat à défaut - et en cite trois au plus. Une étape qui **n'est pas** la dernière s'archive sans ce contrôle : vérifiez les deux | ☐ |
+| REC-NEG-033 | Ouvrir un degré supérieur, l'étape antérieure en délibéré | JUR | Mettre **Première instance** en délibéré, puis ouvrir les débats de l'**Appel** | Refus : « L'étape « Première instance » est en délibéré : son jugement doit être rendu avant d'ouvrir les débats à ce degré. » | ☐ |
+| REC-NEG-034 | Archivage à la jurisprudence, dossier encore en cours | JUR | Fiche d'un dossier dont une étape n'est ni clôturée ni archivée, onglet **Décisions** → « Archiver à la jurisprudence » | Refus : « Ce dossier porte encore une étape en cours : une décision ne rejoint la base jurisprudentielle qu'une fois définitive, tous recours épuisés. » Depuis le menu *Jurisprudence*, **sans dossier rattaché**, l'archivage reste libre : c'est voulu, cette voie sert à verser une décision trouvée ailleurs | ☐ |
 
 ---
 
@@ -1384,7 +1398,7 @@ Ces quatre enchaînements sont les plus structurants : ils ne peuvent pas être 
 personne, et c'est là que se voient les vrais défauts de circulation entre rôles. Prévoyez deux
 sessions ouvertes en parallèle.
 
-## MR-01 — Demande de frais avec validation conjointe (REC-E2E-012)
+## MR-01 - Demande de frais avec validation conjointe (REC-E2E-012)
 
 **Avocat (`avocat.test`)**
 → *Déposer une demande* : dossier, facture `FAC-MR-01`, montant supérieur au seuil, pièce jointe → « Déposer »
@@ -1406,7 +1420,7 @@ sessions ouvertes en parallèle.
 → File « À payer » → « Marquer comme payée »
 → **Résultat final** : demande **Payée**, avocat informé, aucune étape franchie sans son responsable.
 
-## MR-02 — Publication : de l'avocat au juriste, puis retour officiel (REC-E2E-014 + 015)
+## MR-02 - Publication : de l'avocat au juriste, puis retour officiel (REC-E2E-014 + 015)
 
 **Avocat**
 → *Déposer une publication* → « Compte rendu d'audience » → dossier, audience, récit, pièce → « Déposer le compte rendu »
@@ -1424,7 +1438,7 @@ sessions ouvertes en parallèle.
 → Ouvrir la publication → « Transmettre à l'avocat » → objet + corps → confirmer
 → **Résultat final** : une correspondance **unique** est transmise ; une seconde tentative est refusée.
 
-## MR-03 — Constitution d'un prestataire (REC-E2E-016)
+## MR-03 - Constitution d'un prestataire (REC-E2E-016)
 
 **Juriste**
 → Fiche du dossier → « Solliciter un prestataire » → prestataire + motif → « Soumettre »
@@ -1438,7 +1452,7 @@ sessions ouvertes en parallèle.
 → Onglet « Documents » du dossier
 → **Résultat final** : la lettre est rangée dans la GED du dossier ; l'avocat constitué la voit dans « Mon espace ».
 
-## MR-04 — Suppression d'un document (REC-E2E-017)
+## MR-04 - Suppression d'un document (REC-E2E-017)
 
 **Juriste**
 → Onglet « Documents » → « Demander la suppression » → motif → confirmer
@@ -1471,7 +1485,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
    `DecisionDefinitiveController` expose `GET /dossiers/{id}/decisions`, qui renvoie les
    adjudications et les condamnations avec leurs identifiants ; `decisionService.ts` et
    `onglet-decisions.tsx` l'appellent. Le même document se contredit d'ailleurs lui-même : sa ligne
-   14 cite l'endpoint. **Le paragraphe d'alerte de `SCREEN_MAP.md` §8 est à retirer** — laissé tel
+   14 cite l'endpoint. **Le paragraphe d'alerte de `SCREEN_MAP.md` §8 est à retirer** - laissé tel
    quel, il fera conclure à tort à une régression pendant la recette.
 
 ### Fonctionnalités incomplètes, documentées comme telles
@@ -1517,13 +1531,13 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 12. ~~Une audience est dite « tenue » le jour où l'on saisit son compte rendu (QF-32).~~ **Corrigé
     le 2026-09-23**, sur arbitrage du métier : la date de tenue est la date planifiée. Le rapport
     d'activité ne dépend donc plus de la date de saisie.
-13. ~~L'historique d'un dossier n'est pas traduit (QF-24).~~ **Faux — vérifié dans le code.** La
+13. ~~L'historique d'un dossier n'est pas traduit (QF-24).~~ **Faux - vérifié dans le code.** La
     traduction existe depuis Q-111/Q-112 : le backend renvoie un code typé et des détails
     structurés, `useLibellesHistorique` les traduit sur l'onglet Historique comme sur l'audit. Seuls
     deux codes récents (`AUDIT_EXPORTE`, `ARCHIVE_TELECHARGEE`) et quatre clés de détails
     manquaient : **ajoutés le 2026-09-23**. La ligne QF-24 de `RAPPORT_DE_RECETTE.md` §5.2 était
     périmée, comme l'était celle de QF-03. À vérifier en séance : basculer en `EN` sur l'onglet
-    Historique d'un dossier et sur l'écran Audit — plus aucun libellé français ne doit subsister.
+    Historique d'un dossier et sur l'écran Audit - plus aucun libellé français ne doit subsister.
 14. ~~Alarme à échéance passée : la règle n'est portée que par l'interface.~~ **Corrigé le
     2026-09-23** : `CreerAlarmeRequest` et `ReprogrammerAlarmeRequest` portent désormais la
     contrainte côté serveur. La règle ne vit plus seulement dans le navigateur. L'étape 5 de
@@ -1546,8 +1560,8 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 |---|---:|---:|---:|---:|---:|
 | Transverse (connexion, accueil, droits) | 1 | | | | |
 | Référentiels (clients, intervenants) | 2 | | | | |
-| Dossiers (ouverture, sensibilité, dérogation) | 3 | | | | |
-| Audiences et alarmes | 3 | | | | |
+| Dossiers (ouverture, sensibilité, dérogation, filtres, pourvois) | 5 | | | | |
+| Audiences et alarmes | 4 | | | | |
 | Délibérés | 2 | | | | |
 | Frais d'avocats | 3 | | | | |
 | Publications et constitutions | 3 | | | | |
@@ -1556,8 +1570,8 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Pilotage et administration | 2 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **26** | | | | |
-| Cas négatifs (REC-NEG) | 26 | | | | |
+| **Total parcours de bout en bout** | **29** | | | | |
+| Cas négatifs (REC-NEG) | 35 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1565,7 +1579,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 26 parcours, les 26 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 29 parcours, les 35 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
@@ -1577,11 +1591,86 @@ recette, non un jugement sur l'application :
    seulement par l'absence d'entrée de menu.
 6. **Écarts** : chaque ligne *Résultat obtenu* divergente est reportée dans §8 avec sa fiche, son
    étape, l'heure et le compte utilisé.
-7. **Points ouverts** : les éléments du §8 ont été présentés au métier et arbitrés — en particulier
+7. **Points ouverts** : les éléments du §8 ont été présentés au métier et arbitrés - en particulier
    QF-03 (décisions en écriture seule), l'absence de file de rattrapage pour les arbitrages du DJ,
    et l'absence de gestion de comptes dans l'application.
 8. **Notifications externes** : si le métier attend des envois réels (courriel, SMS, Teams), une
    campagne distincte reste à conduire, moteur activé, sur des destinataires de test, après
    régularisation du canal WhatsApp.
 9. **Jeu de données** : les données créées pendant la recette sont identifiées (préfixe `REC-`) et
-   leur sort est décidé — conservation pour la formation, ou purge avant la bascule.
+   leur sort est décidé - conservation pour la formation, ou purge avant la bascule.
+
+---
+
+# 10. Procès-verbal de recette
+
+Cette page est **à compléter et à signer par le métier** à l'issue de la campagne. Elle n'est pas
+remplie à la livraison : c'est le métier qui prononce la recette, personne d'autre.
+
+### Identification de la campagne
+
+| | |
+|---|---|
+| Application | Audiences et Délibérés - Direction Juridique |
+| Version recettée | |
+| Environnement | |
+| Période de la campagne | du ............ au ............ |
+| Pilote de la recette | |
+
+### Résultat de la campagne
+
+Report des totaux de la synthèse (§9).
+
+| | Nombre | Validés | Échecs | Bloqués | Non testés |
+|---|---:|---:|---:|---:|---:|
+| Parcours de bout en bout | 29 | | | | |
+| Cas négatifs | 35 | | | | |
+| Parcours multi-rôles | 4 | | | | |
+
+### Décision du métier
+
+Cocher une seule case.
+
+| | Décision | Portée |
+|---|---|---|
+| ☐ | **Recette prononcée sans réserve** | L'application est acceptée en l'état |
+| ☐ | **Recette prononcée avec réserves** | Acceptée, les réserves listées ci-dessous étant traitées selon l'échéance convenue |
+| ☐ | **Recette refusée** | Une nouvelle campagne est nécessaire après correction |
+
+### Réserves et écarts retenus
+
+Chaque ligne renvoie à une fiche et à son étape. Les écarts non repris ici sont réputés abandonnés.
+
+| N° | Fiche et étape | Écart constaté | Gravité | Échéance convenue |
+|---|---|---|---|---|
+| 1 | | | | |
+| 2 | | | | |
+| 3 | | | | |
+| 4 | | | | |
+| 5 | | | | |
+
+### Points ouverts présentés au métier
+
+À confirmer comme présentés et arbitrés, ou à reporter en réserve :
+
+| | Point | Arbitrage |
+|---|---|---|
+| ☐ | Statut de paiement d'une condamnation à la création du dossier | |
+| ☐ | Absence de file de rattrapage pour les arbitrages du DJ et de la DJA | |
+| ☐ | Confidentialité des dossiers impliquant un agent de la banque | |
+| ☐ | Notifications externes : aucune émission réelle n'a été recettée | |
+| ☐ | Sort du jeu de données de recette : conservation ou purge | |
+
+### Signatures
+
+| Rôle | Nom | Date | Signature |
+|---|---|---|---|
+| Directeur Juridique | | | |
+| Directeur Juridique Adjoint | | | |
+| Juriste référent | | | |
+| Assistante | | | |
+| Supérieur hiérarchique | | | |
+| Maîtrise d'œuvre (DSI) | | | |
+
+> La recette prononcée engage sur le périmètre réellement joué, consigné aux §4, §6 et §7. Un
+> parcours resté « À tester » n'est pas un parcours validé : il reste hors du périmètre accepté.

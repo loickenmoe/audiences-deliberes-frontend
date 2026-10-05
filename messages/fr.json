@@ -237,7 +237,9 @@
       "PNG": "Image PNG",
       "JPG": "Image JPEG",
       "TXT": "Texte",
-      "XLSX": "Classeur Excel"
+      "XLSX": "Classeur Excel",
+      "DOCX": "Document Word",
+      "DOC": "Document Word (ancien format)"
     },
     "StatutSuppression": {
       "EN_ATTENTE": "En attente d’approbation",
@@ -646,7 +648,9 @@
     "telechargerSansEnteteAide": "Tirage pour le papier préimprimé de la banque : le contenu seul, sans logo ni mentions légales.",
     "fichierManquant": "Cette pièce est obligatoire : joignez son fichier.",
     "piecesManquantes": "Il manque des pièces obligatoires : le dossier n’a pas été créé.",
-    "fichierLibelle": "Fichier"
+    "fichierLibelle": "Fichier",
+    "apercuWordAncien": "Ce fichier est à l’ancien format Word (.doc), que le navigateur ne sait pas afficher. Téléchargez-le pour l’ouvrir, ou réenregistrez-le au format .docx depuis Word.",
+    "apercuWordErreur": "Ce document Word n’a pas pu être affiché. Téléchargez-le pour l’ouvrir."
   },
   "suppressions": {
     "titre": "Demandes de suppression",
@@ -1359,7 +1363,7 @@
     "referenceFactureAide": "Elle doit être unique : une facture déjà déposée est refusée.",
     "montant": "Montant (FCFA)",
     "pieces": "Pièces justificatives",
-    "piecesAide": "Chargez chaque pièce (PDF ou image). Elles sont transmises avec votre demande et consultables par l’Assistante lors du contrôle de conformité.",
+    "piecesAide": "Chargez chaque pièce (PDF, image ou document Word). Elles sont transmises avec votre demande et consultables par l’Assistante lors du contrôle de conformité.",
     "retirerPiece": "Retirer la pièce {numero}",
     "ajouterPiece": "Ajouter une pièce",
     "fraisDeposes": "Demande de frais déposée.",

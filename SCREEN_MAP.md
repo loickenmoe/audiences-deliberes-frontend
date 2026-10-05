@@ -106,7 +106,7 @@ déduite de la nature choisie. `RECOUVREMENT` → `dossierCreditOrigine`, `pvTra
 | 25 | Créer / reprogrammer une alarme | modale (fiche 11) | JUR | `POST /dossiers/{id}/alarmes`, `PUT /alarmes/{id}/reprogrammer` | F8 | ✅ |
 
 **Règles à porter dans l'UI** : étape au statut `EN_COURS` requise pour planifier · date
-obligatoire, non antérieure à l'ouverture du dossier — **le jour même et le passé sont acceptés** depuis l'amendement de RG-AUD-07 (2026-09-23) · doublon (même étape + même date) → 409 `ERR-005` confirmable · compte rendu refusé sur
+obligatoire, non antérieure à l'ouverture du dossier — **le jour même et le passé sont acceptés** (RG-AUD-08, 2026-09-23) · doublon (même étape + même date) → 409 `ERR-005` confirmable · compte rendu refusé sur
 une audience future, non vide obligatoire · vues `HEBDOMADAIRE`/`MENSUELLE`/`TRIMESTRIELLE`, export
 `JSON`/`PDF`/`EXCEL`.
 

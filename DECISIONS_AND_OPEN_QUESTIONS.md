@@ -895,7 +895,11 @@ cassation, Pourvoi CCJA — au lieu d'Instance, Premier recours, Second recours.
 appels, par exemple. Le métier n'en a pas fait état ; si le cas se présente, il faudra alors
 plusieurs étapes de même type distinguées par leur juridiction, avec la reprise que cela suppose.
 
-### ✅ RG-AUD-07 amendée — une audience s'enregistre aussi le jour même et après coup *(2026-09-23)*
+### ✅ RG-AUD-08 — une audience s'enregistre aussi le jour même et après coup *(2026-09-23)*
+
+**Numérotation.** Cette règle est née en recette et n'avait aucun numéro ; le code l'a d'abord
+appelée RG-AUD-07, qui désigne « l'étape concernée » dans les spécifications validées. Elle porte
+désormais **RG-AUD-08**, créée dans les spécifications V1.1 (2026-10-02).
 
 **Constat, vérifié dans le code.** `AudienceService.planifierAudience` exigeait une date
 **strictement** future, et le formulaire bornait le champ à demain. Le compte rendu, lui, était déjà
