@@ -79,7 +79,7 @@ l'application n'en crée, n'en modifie et n'en supprime aucun.
 | Identifiant | Profil | Rôles portés | Responsabilité dans les workflows |
 |---|---|---|---|
 | `juriste.test` | Juriste (JUR) | `ROLE_JURISTE`, `ROLE_SAISIE`, `ROLE_CONSULTATION` | Ouvre les dossiers, affecte, gère étapes, audiences, délibérés, décisions ; sollicite les constitutions ; commente les publications ; demande les suppressions de documents |
-| `dj.test` | Directeur Juridique (DJ) | `ROLE_DJ` (+ `ROLE_JURISTE`, `ROLE_SAISIE`), `ROLE_CONSULTATION` | Arbitre sensibilité et dérogations ; valide conjointement les frais ; transmet les correspondances ; arbitre les suppressions ; règle les paramètres système et la grille de notifications ; tableau de bord et audit |
+| `dj.test` | Directeur Juridique (DJ) | `ROLE_DJ` (+ `ROLE_JURISTE`, `ROLE_SAISIE`), `ROLE_CONSULTATION` | Arbitre la diligence particulière et dérogations ; valide conjointement les frais ; transmet les correspondances ; arbitre les suppressions ; règle les paramètres système et la grille de notifications ; tableau de bord et audit |
 | `dja.test` | Directeur Juridique Adjoint (DJA) | `ROLE_DJA` (+ `ROLE_JURISTE`, `ROLE_SAISIE`), `ROLE_CONSULTATION` | Contrôle d'opportunité des frais ; validation conjointe ; mêmes arbitrages que le DJ sauf mention contraire |
 | `assistante.test` | Assistante (AST) | `ROLE_ASSISTANTE`, `ROLE_SAISIE`, `ROLE_CONSULTATION` | Contrôle de conformité des frais, enregistrement des paiements, validation des publications |
 | `sh.test` | Supérieur Hiérarchique (SH) | `ROLE_SH`, `ROLE_SAISIE`, `ROLE_CONSULTATION` | Signe les constitutions de prestataires |
@@ -112,7 +112,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-001 | Connexion, accueil contextualisé, langue, déconnexion | Tous | Haute | Aucune | ☐ |
 | REC-E2E-002 | Référentiel : créer un client et un intervenant | DJ | Haute | Aucune | ☐ |
 | REC-E2E-003 | Ouvrir un dossier de recouvrement, affecter, joindre les pièces | JUR | Haute | REC-E2E-002 | ☐ |
-| REC-E2E-004 | Dossier sensible : arbitrage de la sensibilité | JUR → DJ | Haute | Un client existant | ☐ |
+| REC-E2E-004 | Dossier à diligence particulière : arbitrage de la diligence | JUR → DJ | Haute | Un client existant | ☐ |
 | REC-E2E-005 | Dérogation de seuil : demande et arbitrage | JUR → DJ | Moyenne | REC-E2E-004 | ☐ |
 | REC-E2E-006 | Cycle d'audience : planifier, doublon, annuler, compte rendu | JUR | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-007 | Alarmes : créer, reprogrammer, marquer traitée | JUR | Moyenne | REC-E2E-003 | ☐ |
@@ -185,7 +185,7 @@ Les six comptes du §3, mot de passe `Password1!`.
 | 6 | JUR | Cliquer le bouton `EN` en haut à droite | Toute l'interface passe en anglais (« Cases », « Dashboard »…) ; revenir en `FR` | | ☐ |
 | 7 | JUR | Cliquer « Se déconnecter » | Retour à l'écran de connexion | | ☐ |
 | 8 | JUR | Cliquer la **flèche Retour** du navigateur | On **ne revient pas** dans l'application : l'écran de connexion reste affiché | | ☐ |
-| 9 | DJ | Se connecter avec `dj.test` | L'accueil montre les files du DJ (sensibilités, dérogations, validations conjointes, suppressions) ; le menu contient « Tableau de bord », « Configuration », « Audit », « Intervenants » | | ☐ |
+| 9 | DJ | Se connecter avec `dj.test` | L'accueil montre les files du DJ (diligences particulières, dérogations, validations conjointes, suppressions) ; le menu contient « Tableau de bord », « Configuration », « Audit », « Intervenants » | | ☐ |
 | 10 | AST | Se connecter avec `assistante.test` | Files « Frais à contrôler », publications à valider, frais à payer. **Pas** de « Tableau de bord » ni d'« Audit » dans le menu | | ☐ |
 | 11 | SH | Se connecter avec `sh.test` | File « Constitutions à signer » ; menu réduit | | ☐ |
 | 12 | AVO | Se connecter avec `avocat.test` | Menu **externe** : « Mon espace », « Déposer une demande », « Déposer une publication ». Aucun menu interne (Dossiers, Clients, Calendrier…) | | ☐ |
@@ -277,9 +277,9 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 5 | JUR | Renseigner Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides**. **Aucun champ Référence de dossier n'est proposé** | Aucun message sur les deux champs laissés vides : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
 | 6 | JUR | Cliquer « Enregistrer » **sans joindre de fichier** | Refus, avec un message **sous chaque pièce manquante** : « Cette pièce est obligatoire : joignez son fichier. » Rien n'est créé | | ☐ |
 | 7 | JUR | Joindre un PDF sur **chacune** des deux pièces, relire l'un d'eux avec l'œil, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
-| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et sensibilité sont affichés. Les deux références laissées vides s'affichent « - » | | ☐ |
+| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et diligence particulière sont affichés. Les deux références laissées vides s'affichent « - » | | ☐ |
 | 9 | JUR | Onglet « Documents » | **Les deux PDF** déposés sont listés avec leur nom | | ☐ |
-| 10 | JUR | Onglet « Étapes » | Une étape **Première instance** existe, au statut **Ouverture** | | ☐ |
+| 10 | JUR | Onglet « Étapes » | Une étape **Instance** existe, au statut **Ouverture** | | ☐ |
 | 11 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
 | 12 | JUR | Onglet « Historique » | La création et le changement de statut sont tracés, en français, avec l'auteur et l'heure | | ☐ |
 | 13 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
@@ -299,10 +299,10 @@ Un dossier `DOS-REC-003` existe, affecté à un juriste et un avocat, avec une p
 
 ---
 
-## REC-E2E-004 - Dossier sensible : arbitrage de la sensibilité
+## REC-E2E-004 - Dossier à diligence particulière : arbitrage de la diligence
 
 ### Objectif
-Valider le circuit de validation de la sensibilité : un juriste déclare, la direction statue.
+Valider le circuit de validation de la diligence particulière : un juriste déclare, la direction statue.
 
 ### Acteurs
 Juriste (`juriste.test`), puis DJ (`dj.test`).
@@ -311,24 +311,24 @@ Juriste (`juriste.test`), puis DJ (`dj.test`).
 Un client existe.
 
 ### Données de test
-Référence `DOS-REC-004`, case « Dossier sensible » cochée, type de client sensible au choix, seuil
+Référence `DOS-REC-004`, case « Dossier à diligence particulière » cochée, type de client au choix, seuil
 proposé `80 000 000`.
 
 ### Parcours
 
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
-| 1 | JUR | Créer un dossier comme en REC-E2E-003, mais **cocher « Dossier sensible »** | Les champs « Type de client » et « Seuil proposé (FCFA) » apparaissent et deviennent obligatoires | | ☐ |
-| 2 | JUR | Renseigner le type de client et le seuil proposé, enregistrer | Le dossier est créé ; la synthèse indique une sensibilité **en attente de validation** | | ☐ |
+| 1 | JUR | Créer un dossier comme en REC-E2E-003, mais **cocher « Dossier à diligence particulière »** | Les champs « Type de client » et « Seuil proposé (FCFA) » apparaissent et deviennent obligatoires | | ☐ |
+| 2 | JUR | Renseigner le type de client et le seuil proposé, enregistrer | Le dossier est créé ; la synthèse indique une diligence particulière **en attente de validation** | | ☐ |
 | 3 | DJ | Dans une autre session, ouvrir la cloche puis l'écran « Notifications » | Une notification signale le dossier à arbitrer, avec un lien direct | | ☐ |
-| 4 | DJ | Ouvrir la fiche du dossier → bouton « Statuer sur la sensibilité » | Une fenêtre propose de valider ou de rejeter | | ☐ |
+| 4 | DJ | Ouvrir la fiche du dossier → bouton « Statuer sur la diligence particulière » | Une fenêtre propose de valider ou de rejeter | | ☐ |
 | 5 | DJ | Choisir **Rejeter** sans saisir de motif | Refus : le motif est obligatoire | | ☐ |
-| 6 | DJ | Saisir un motif puis rejeter | La synthèse affiche la sensibilité **rejetée** avec son motif | | ☐ |
+| 6 | DJ | Saisir un motif puis rejeter | La synthèse affiche la diligence particulière **rejetée** avec son motif | | ☐ |
 | 7 | JUR | Rouvrir la fiche du dossier | Le juriste voit la décision et le motif, sans avoir à demander | | ☐ |
-| 8 | DJ | Recommencer sur un second dossier sensible en choisissant **Valider** | La synthèse affiche la sensibilité validée, avec le seuil appliqué et son origine | | ☐ |
+| 8 | DJ | Recommencer sur un second dossier à diligence particulière en choisissant **Valider** | La synthèse affiche la diligence particulière validée, avec le seuil appliqué et son origine | | ☐ |
 
 ### Résultat final attendu
-Un dossier sensible validé porte un seuil applicable, visible en synthèse ; un dossier rejeté porte
+Un dossier à diligence particulière validé porte un seuil applicable, visible en synthèse ; un dossier rejeté porte
 le motif du refus.
 
 ### Points de contrôle
@@ -585,7 +585,7 @@ Avocat (`avocat.test`) → Assistante (`assistante.test`) → DJA (`dja.test`) �
 
 ### Préconditions
 L'avocat `avocat.test` est **affecté** au dossier utilisé. Le montant doit rester **sous le seuil**
-applicable et le dossier ne doit **pas** être sensible, sinon le circuit bascule en validation
+applicable et le dossier ne doit **pas** être à diligence particulière, sinon le circuit bascule en validation
 conjointe (REC-E2E-012).
 
 ### Données de test
@@ -633,7 +633,7 @@ Valider le déclenchement de la double validation et sa règle : deux accords de
 Avocat → Assistante → DJA → DJ **et** DJA → Assistante.
 
 ### Préconditions
-Un dossier **sensible validé** (REC-E2E-004) ou un montant **supérieur au seuil** applicable.
+Un dossier **à diligence particulière validé** (REC-E2E-004) ou un montant **supérieur au seuil** applicable.
 
 ### Données de test
 Référence de facture `FAC-REC-012`, montant `60 000 000` (au-dessus du seuil par défaut de
@@ -645,7 +645,7 @@ Référence de facture `FAC-REC-012`, montant `60 000 000` (au-dessus du seuil p
 |---|---|---|---|---|---|
 | 1 | AVO | Déposer `FAC-REC-012` pour `60000000` sur le dossier | Demande déposée | | ☐ |
 | 2 | AST | File « À contrôler » → ouvrir → « Valider » | Passage au contrôle d'opportunité | | ☐ |
-| 3 | DJA | Ouvrir la demande → lire le bloc « Circuit de validation » | L'écran annonce « Validation conjointe du DJ et de la DJA requise » et en donne la raison (montant au-dessus du seuil, ou dossier sensible) | | ☐ |
+| 3 | DJA | Ouvrir la demande → lire le bloc « Circuit de validation » | L'écran annonce « Validation conjointe du DJ et de la DJA requise » et en donne la raison (montant au-dessus du seuil, ou dossier à diligence particulière) | | ☐ |
 | 4 | DJA | Cliquer « Valider » | Message indiquant que la validation conjointe est déclenchée et que le DJ et la DJA sont notifiés | | ☐ |
 | 5 | DJA | Cliquer « Donner mon accord » | L'accord de la DJA est enregistré ; l'écran montre l'accord manquant | | ☐ |
 | 6 | DJA | Cliquer de nouveau « Donner mon accord » | Refus : un même profil ne vote pas deux fois | | ☐ |
@@ -1242,7 +1242,7 @@ L'avocat est affecté à au moins un dossier et a déposé au moins une demande 
 | 1 | AVO | Se connecter, observer le menu | Trois entrées seulement : « Mon espace », « Déposer une demande », « Déposer une publication » | | ☐ |
 | 2 | AVO | Ouvrir « Mon espace » | Deux blocs : « Mes dépôts » et « Mes lettres de constitution » | | ☐ |
 | 3 | AVO | Lire la liste des dépôts | Type, dossier, date de dépôt et statut ; le motif s'affiche pour un dépôt rejeté | | ☐ |
-| 4 | AVO | Ouvrir le sélecteur de dossier d'un dépôt | Uniquement ses dossiers : référence, nature, juridiction. **Ni client, ni risque encouru, ni sensibilité** | | ☐ |
+| 4 | AVO | Ouvrir le sélecteur de dossier d'un dépôt | Uniquement ses dossiers : référence, nature, juridiction. **Ni client, ni risque encouru, ni diligence particulière** | | ☐ |
 | 5 | AVO | Saisir directement http://localhost:3000/dossiers dans la barre d'adresse | Écran « Vous n'avez pas les droits nécessaires » | | ☐ |
 | 6 | AVO | Saisir http://localhost:3000/clients | Même refus | | ☐ |
 | 7 | AVO | Saisir l'URL d'une **fiche dossier** relevée dans la session du juriste (`/dossiers/<id>`) | Même refus : l'URL directe ne contourne rien | | ☐ |
@@ -1304,9 +1304,9 @@ Un dossier existe (REC-E2E-003).
 
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
-| 1 | JUR | Fiche du dossier → onglet « Étapes » → liste « Choisissez une étape » | Quatre valeurs : Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA | | ☐ |
+| 1 | JUR | Fiche du dossier → onglet « Étapes » → liste « Choisissez une étape » | Quatre valeurs : Instance, Appel, Pourvoi en cassation, Pourvoi CCJA | | ☐ |
 | 2 | JUR | Choisir **Pourvoi CCJA** → « Positionner » | La confirmation annonce la création de l'**Appel**, et **ne mentionne pas** le Pourvoi en cassation | | ☐ |
-| 3 | JUR | Confirmer | Le dossier porte Première instance, Appel et **Pourvoi CCJA**. Aucune étape Cour Suprême n'a été créée | | ☐ |
+| 3 | JUR | Confirmer | Le dossier porte Instance, Appel et **Pourvoi CCJA**. Aucune étape Cour Suprême n'a été créée | | ☐ |
 | 4 | JUR | Choisir **Pourvoi en cassation** → « Positionner » → confirmer | Les deux cassations coexistent désormais sur le dossier | | ☐ |
 | 5 | JUR | Lire le message sous la liste des étapes | « Toutes les étapes existent déjà. » | | ☐ |
 | 6 | JUR | Passer le **Pourvoi en cassation** à « En cours », et laisser le Pourvoi CCJA en « Ouverture » | Les deux statuts sont indépendants : l'un avance sans l'autre | | ☐ |
@@ -1320,7 +1320,7 @@ l'une et l'autre depuis la liste des dossiers.
 ### Points de contrôle
 - Le pourvoi CCJA **ne s'ouvre jamais tout seul** : exercer un recours depuis l'appel ouvre la
   cassation nationale, jamais la CCJA - celle-ci se décide et se positionne à la main.
-- Les libellés sont ceux du métier : Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA.
+- Les libellés sont ceux du métier : Instance, Appel, Pourvoi en cassation, Pourvoi CCJA.
 - Aucune étape Cour Suprême fantôme n'apparaît quand on positionne directement en CCJA.
 
 ---
@@ -1430,12 +1430,12 @@ autant de garanties métier.
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
 | REC-NEG-005 | Audience sur une étape non ouverte | JUR | Tenter de planifier sur une étape au statut `OUVERTURE` | L'action n'est pas proposée ; l'écran explique qu'il faut ouvrir l'étape | ☐ |
-| REC-NEG-006 | Arbitrage par un rôle non autorisé | JUR | Chercher « Statuer sur la sensibilité » sur un dossier sensible | Le bouton n'existe pas pour ce profil | ☐ |
+| REC-NEG-006 | Arbitrage par un rôle non autorisé | JUR | Chercher « Statuer sur la diligence particulière » sur un dossier à diligence particulière | Le bouton n'existe pas pour ce profil | ☐ |
 | REC-NEG-007 | Accès direct par URL à un écran interdit | AVO | Saisir `/dossiers`, `/clients`, `/admin/audit` | Écran « Vous n'avez pas les droits nécessaires » à chaque fois | ☐ |
 | REC-NEG-008 | Opération impossible selon le statut | JUR | Rabattre un délibéré dont l'étape n'est pas `DELIBERE_VIDE` | L'action n'est pas proposée | ☐ |
 | REC-NEG-009 | Transition d'étape interdite | JUR | Choisir une transition non permise dans « Faire passer à » | Seules les transitions permises sont proposées ; une transition refusée affiche les états permis | ☐ |
 | REC-NEG-010 | Compte avocat non rattaché | AVO | Se connecter avec un compte `ROLE_AVOCAT` **sans** fiche au référentiel | Message expliquant que le compte n'est « pas encore rattaché au répertoire » - pas une erreur technique | ☐ |
-| REC-NEG-011 | Motif obligatoire à chaque refus | AST, DJ, SH | Rejeter une demande de frais, une publication, une sensibilité, une suppression, sans motif | Refus dans les quatre cas | ☐ |
+| REC-NEG-011 | Motif obligatoire à chaque refus | AST, DJ, SH | Rejeter une demande de frais, une publication, une diligence particulière, une suppression, sans motif | Refus dans les quatre cas | ☐ |
 | REC-NEG-012 | Fichier au format interdit | JUR | Déposer un `.odt` en GED | Refus explicite citant les formats admis, Word compris | ☐ |
 | REC-NEG-035 | Word à l'ancien format, sans aperçu | JUR | Déposer un `.doc` (Word 97-2003), puis cliquer « Consulter » | Le dépôt est **accepté**. L'aperçu ne montre pas le document mais **explique pourquoi** - ancien format, non affichable par le navigateur - et propose le téléchargement. Ce n'est pas une anomalie | ☐ |
 | REC-NEG-013 | Fichier trop lourd | JUR | Déposer un fichier de plus de 10 Mo | Refus explicite sur le poids | ☐ |
@@ -1458,7 +1458,7 @@ autant de garanties métier.
 | REC-NEG-030 | Recours contre un délibéré favorable | JUR | Enregistrer un résultat **Favorable**, puis tenter d'exercer un recours | Refus : « Le délibéré de cette étape est favorable : un recours ne s'exerce que contre une décision défavorable ou mixte. » | ☐ |
 | REC-NEG-031 | Archivage d'étape sans décision définitive | JUR | Sur une étape clôturée, « Faire passer à » → **Archivé**, sans avoir saisi d'adjudication ni de condamnation | Refus : « Aucune décision définitive n'est enregistrée sur cette étape : l'adjudication ou la condamnation doit être saisie avant l'archivage. » | ☐ |
 | REC-NEG-032 | Archivage de la **dernière** étape, frais non soldés | JUR (+ AVO) | Déposer une demande de frais et la laisser en cours, puis archiver la dernière étape non archivée du dossier | Refus citant le message : « Une demande de frais de ce dossier n'est ni payée ni rejetée (…) : soldez-la avant d'archiver la dernière étape du dossier. » Le refus **nomme les demandes en cause** - référence de facture, ou l'avocat à défaut - et en cite trois au plus. Une étape qui **n'est pas** la dernière s'archive sans ce contrôle : vérifiez les deux | ☐ |
-| REC-NEG-033 | Ouvrir un degré supérieur, l'étape antérieure en délibéré | JUR | Mettre **Première instance** en délibéré, puis ouvrir les débats de l'**Appel** | Refus : « L'étape « Première instance » est en délibéré : son jugement doit être rendu avant d'ouvrir les débats à ce degré. » | ☐ |
+| REC-NEG-033 | Ouvrir un degré supérieur, l'étape antérieure en délibéré | JUR | Mettre **Instance** en délibéré, puis ouvrir les débats de l'**Appel** | Refus : « L'étape « Instance » est en délibéré : son jugement doit être rendu avant d'ouvrir les débats à ce degré. » | ☐ |
 | REC-NEG-034 | Archivage à la jurisprudence, dossier encore en cours | JUR | Fiche d'un dossier dont une étape n'est ni clôturée ni archivée, onglet **Décisions** → « Archiver à la jurisprudence » | Refus : « Ce dossier porte encore une étape en cours : une décision ne rejoint la base jurisprudentielle qu'une fois définitive, tous recours épuisés. » Depuis le menu *Jurisprudence*, **sans dossier rattaché**, l'archivage reste libre : c'est voulu, cette voie sert à verser une décision trouvée ailleurs | ☐ |
 
 ---
@@ -1563,7 +1563,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 
 2. **Statut de paiement d'une condamnation (QF-40).** Une condamnation se crée toujours « En
    attente » ; le statut n'est pas accepté à la création. Documenté dans `RAPPORT_DE_RECETTE.md` §5.2.
-3. **Aucune liste de rattrapage pour la sensibilité et les dérogations (QF-08).** Le mécanisme prévu
+3. **Aucune liste de rattrapage pour la diligence particulière et les dérogations (QF-08).** Le mécanisme prévu
    est la notification. Un DJ qui manque ou traite trop vite une notification n'a pas d'écran
    listant les dossiers restant à arbitrer, là où les trois autres circuits ont une file.
    Réserve consignée par le projet, candidate V2.
@@ -1631,7 +1631,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 |---|---:|---:|---:|---:|---:|
 | Transverse (connexion, accueil, droits) | 1 | | | | |
 | Référentiels (clients, intervenants) | 2 | | | | |
-| Dossiers (ouverture, sensibilité, dérogation, filtres, pourvois) | 5 | | | | |
+| Dossiers (ouverture, diligence particulière, dérogation, filtres, pourvois) | 5 | | | | |
 | Audiences et alarmes | 5 | | | | |
 | Délibérés | 2 | | | | |
 | Frais d'avocats | 3 | | | | |

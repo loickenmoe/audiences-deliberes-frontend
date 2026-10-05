@@ -187,13 +187,13 @@ test("sensibilité validée, dérogation demandée, puis arbitrée par le DJ", a
   const { url } = await creerDossier(juriste, { sensible: true });
 
   // Le juriste ne peut pas statuer sur sa propre proposition.
-  await expect(juriste.getByRole("button", { name: "Statuer sur la sensibilité" })).toHaveCount(0);
+  await expect(juriste.getByRole("button", { name: "Statuer sur la diligence particulière" })).toHaveCount(0);
   // Et la dérogation n'est pas encore recevable : la sensibilité n'est pas validée.
   await expect(juriste.getByRole("button", { name: "Demander une dérogation" })).toHaveCount(0);
 
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto(url);
-  await dj.getByRole("button", { name: "Statuer sur la sensibilité" }).click();
+  await dj.getByRole("button", { name: "Statuer sur la diligence particulière" }).click();
   await dj.getByRole("dialog").getByRole("button", { name: "Valider" }).click();
   await expect(dj.getByText("Décision enregistrée.")).toBeVisible();
 
@@ -228,7 +228,7 @@ test("un rejet de sensibilité exige un motif", async ({ browser }) => {
 
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto(url);
-  await dj.getByRole("button", { name: "Statuer sur la sensibilité" }).click();
+  await dj.getByRole("button", { name: "Statuer sur la diligence particulière" }).click();
   const dialogue = dj.getByRole("dialog");
   await dialogue.getByLabel("Rejeter").check();
   await dialogue.getByRole("button", { name: "Rejeter" }).click();

@@ -85,16 +85,16 @@ l'envoi.
 
 ![Le formulaire de création. Les pièces portent un astérisque : sans fichier, rien n'est créé.](images/guide/05-creation-dossier.png)
 
-**Un dossier sensible** exige un seuil de montant et un type de client. Une dérogation au seuil
+**Un dossier à diligence particulière** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.
 
-**La fiche** rassemble tout : identification, parties, pièces, affectations, sensibilité, étapes,
+**La fiche** rassemble tout : identification, parties, pièces, affectations, diligence particulière, étapes,
 audiences, délibérés, décisions et publications. Les onglets se partagent par lien : l'adresse porte
 l'onglet ouvert, un collègue retrouvera exactement la même vue.
 
 ![La fiche d'un dossier, onglet *Synthèse*.](images/guide/06-fiche-synthese.png)
 
-**Étapes.** Un dossier suit un cycle de degrés de juridiction - Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA. Les deux pourvois sont concurrents : un même dossier peut aller devant la Cour Suprême et devant la CCJA. Une audience ne se planifie que
+**Étapes.** Un dossier suit un cycle de degrés de juridiction - Instance, Appel, Pourvoi en cassation, Pourvoi CCJA. Les deux pourvois sont concurrents : un même dossier peut aller devant la Cour Suprême et devant la CCJA. Une audience ne se planifie que
 sur une étape **en cours** : si le bouton n'apparaît pas, commencez par ouvrir l'étape.
 
 **Chaque changement d'étape suppose que les faits aient eu lieu** (depuis le 2026-09-29). Si le
@@ -118,7 +118,7 @@ le dossier n'a plus aucune étape en cours - une décision encore susceptible de
 mauvais précédent.
 
 **Retrouver des dossiers.** La barre de filtres croise la référence, le client, la juridiction, la
-nature, la sensibilité, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
+nature, la diligence particulière, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
 lisent ensemble : « Appel » + « En cours » donne les appels en cours, et non les dossiers dont
 l'appel est clôturé mais qui ont autre chose en cours. La période porte sur les **audiences** - les
 dossiers passés devant un juge entre ces deux dates, les audiences annulées exclues - et non sur la
@@ -180,7 +180,7 @@ Chaque pièce part dès qu'elle est choisie ; son nom s'affiche, et vous pouvez 
 d'envoyer la demande.
 
 **Le circuit**, dans l'ordre : dépôt par l'avocat → contrôle de **conformité** par l'Assistante →
-contrôle d'**opportunité** par la DJA → **validation conjointe** DJ + DJA si le dossier est sensible
+contrôle d'**opportunité** par la DJA → **validation conjointe** DJ + DJA si le dossier est à diligence particulière
 ou si le montant dépasse le seuil → enregistrement du **paiement** par l'Assistante.
 
 Chaque profil ouvre l'application sur la file dont il a la charge. Un rejet exige toujours un motif,
@@ -356,7 +356,7 @@ le dépôt. Votre compte rendu suit ensuite son cours habituel : l'Assistante le
 cette validation qui le diffuse.
 
 Il ne voit que les dossiers auxquels il est affecté, et seulement leur référence, leur nature et leur
-juridiction. Ni client, ni montant en jeu, ni sensibilité.
+juridiction. Ni client, ni montant en jeu, ni diligence particulière.
 
 ![Le portail de l'avocat : son périmètre, et rien d'autre.](images/guide/22-portail-avocat.png)
 
