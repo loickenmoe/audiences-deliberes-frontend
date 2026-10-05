@@ -109,11 +109,9 @@ async function demandeDeposee(montant: number) {
   const avocatId = await avocatDuCompteTest();
   const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
-  const reference = `DOS-FRAIS-${suffixe()}`;
-  const dossier = await json<{ id: number }>("/dossiers", juriste, {
+  const dossier = await json<{ id: number; reference: string }>("/dossiers", juriste, {
     method: "POST",
     body: JSON.stringify({
-      reference,
       nature: "Assignation en paiement",
       juridictionSaisie: "TGI Douala",
       clientId: clients.content[0]!.id,
@@ -134,7 +132,9 @@ async function demandeDeposee(montant: number) {
       referenceFacture: facture,
     }),
   });
-  return { id: demande.id, facture, reference };
+  // La référence est ATTRIBUÉE par le système (2026-09-29) : celle qu'on aurait
+  // envoyée n'existe nulle part. On lit celle que le serveur a donnée.
+  return { id: demande.id, facture, reference: dossier.reference };
 }
 
 async function seConnecter(page: Page, identifiant: string) {

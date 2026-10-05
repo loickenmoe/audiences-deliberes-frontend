@@ -223,6 +223,11 @@
       "VALIDE": "Approved",
       "REJETE": "Rejected"
     },
+    "StatutCompteRendu": {
+      "DEPOSE": "Submitted",
+      "VALIDE": "Receipt acknowledged",
+      "REJETE": "Rejected"
+    },
     "TypeIntervenant": {
       "AVOCAT": "Counsel",
       "AUTRE_PRESTATAIRE": "Other service provider"
@@ -289,7 +294,8 @@
       "AFFECTATION_DOSSIER": "Assigned to a case",
       "DELAI_RECOURS": "Appeal deadline of the ruling",
       "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed",
-      "COMPTE_RENDU_ATTENDU": "Hearing report overdue"
+      "COMPTE_RENDU_ATTENDU": "Hearing report overdue",
+      "COMPTE_RENDU_RECU": "Hearing report received"
     },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "The bank is liable",
@@ -849,7 +855,11 @@
     "transmettre": "Send to counsel",
     "transmettreTitre": "Send the letter?",
     "transmettreMessage": "It will be sent to counsel and can no longer be edited or supplemented.",
-    "correspondanceEnvoyee": "Letter sent to counsel."
+    "correspondanceEnvoyee": "Letter sent to counsel.",
+    "accuserReception": "Acknowledge receipt",
+    "accuserReceptionTitre": "Acknowledge receipt of the hearing report?",
+    "accuserReceptionMessage": "The hearing report is already visible to the legal department. Acknowledging receipt only records that you have received it.",
+    "receptionAccusee": "Hearing report receipt acknowledged."
   },
   "constitutions": {
     "titre": "Provider appointments",
@@ -1379,6 +1389,7 @@
     "typeDocument": "Document type",
     "fichier": "File",
     "publicationDeposee": "Publication submitted. It will be visible once approved.",
+    "compteRenduDepose": "Hearing report submitted. It is immediately visible to the legal department; the assistant will acknowledge receipt.",
     "deposer": "Submit",
     "envoiEnCours": "Sending…",
     "annuler": "Cancel",

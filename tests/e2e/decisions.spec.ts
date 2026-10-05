@@ -64,11 +64,9 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
     await json<{ content: { id: number }[] }>("/intervenants?type=AVOCAT&size=200", juriste)
   ).content;
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
-  const reference = `DOS-DEF-${suffixe()}`;
-  const { id } = await json<{ id: number }>("/dossiers", juriste, {
+  const { id, reference } = await json<{ id: number; reference: string }>("/dossiers", juriste, {
     method: "POST",
     body: JSON.stringify({
-      reference,
       nature: "Assignation en paiement",
       juridictionSaisie: "TGI Douala",
       clientId: clients.content[0]!.id,

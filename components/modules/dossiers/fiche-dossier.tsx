@@ -241,7 +241,7 @@ export function FicheDossier({
           {onglet === "historique" ? <OngletHistorique dossierId={dossier.id} /> : null}
           {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} roles={roles} /> : null}
           {onglet === "publications" && peut(roles, "consulterPublications") ? (
-            <OngletPublications dossierId={dossier.id} roles={roles} />
+            <OngletPublications dossierId={dossier.id} />
           ) : null}
         </div>
       </div>

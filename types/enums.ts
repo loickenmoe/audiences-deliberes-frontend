@@ -137,7 +137,7 @@ export type CanalAlerte = (typeof CanalAlerte)[number];
 export const CanalPrestataire = ["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"] as const;
 export type CanalPrestataire = (typeof CanalPrestataire)[number];
 
-/** Les 10 événements notifiés aux prestataires par un canal externe (backend Q-118). */
+/** Les 11 événements notifiés aux prestataires par un canal externe (backend Q-118). */
 export const EvenementPrestataire = [
   "CONSTITUTION_VALIDEE",
   "FRAIS_REJETES",
@@ -149,6 +149,7 @@ export const EvenementPrestataire = [
   "DELAI_RECOURS",
   "SUPPRESSION_DOCUMENT_ARBITREE",
   "COMPTE_RENDU_ATTENDU",
+  "COMPTE_RENDU_RECU",
 ] as const;
 export type EvenementPrestataire = (typeof EvenementPrestataire)[number];
 

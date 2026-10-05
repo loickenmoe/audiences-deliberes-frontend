@@ -223,6 +223,11 @@
       "VALIDE": "Validée",
       "REJETE": "Rejetée"
     },
+    "StatutCompteRendu": {
+      "DEPOSE": "Déposé",
+      "VALIDE": "Réception accusée",
+      "REJETE": "Rejeté"
+    },
     "TypeIntervenant": {
       "AVOCAT": "Avocat",
       "AUTRE_PRESTATAIRE": "Autre prestataire"
@@ -289,7 +294,8 @@
       "AFFECTATION_DOSSIER": "Affectation à un dossier",
       "DELAI_RECOURS": "Délai de recours du délibéré",
       "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée",
-      "COMPTE_RENDU_ATTENDU": "Compte rendu attendu"
+      "COMPTE_RENDU_ATTENDU": "Compte rendu attendu",
+      "COMPTE_RENDU_RECU": "Compte rendu reçu"
     },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "La banque est redevable",
@@ -849,7 +855,11 @@
     "transmettre": "Transmettre à l’avocat",
     "transmettreTitre": "Transmettre la correspondance ?",
     "transmettreMessage": "Elle sera envoyée à l’avocat et ne pourra plus être modifiée ni complétée.",
-    "correspondanceEnvoyee": "Correspondance transmise à l’avocat."
+    "correspondanceEnvoyee": "Correspondance transmise à l’avocat.",
+    "accuserReception": "Accuser réception",
+    "accuserReceptionTitre": "Accuser réception du compte rendu ?",
+    "accuserReceptionMessage": "Le compte rendu est déjà consultable par la Direction Juridique. L’accusé de réception indique seulement que vous l’avez reçu.",
+    "receptionAccusee": "Réception du compte rendu accusée."
   },
   "constitutions": {
     "titre": "Constitutions de prestataires",
@@ -1379,6 +1389,7 @@
     "typeDocument": "Type de document",
     "fichier": "Fichier",
     "publicationDeposee": "Publication déposée. Elle sera visible après validation.",
+    "compteRenduDepose": "Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique ; l’Assistante en accusera réception.",
     "deposer": "Déposer",
     "envoiEnCours": "Envoi en cours…",
     "annuler": "Annuler",

@@ -726,25 +726,39 @@ document `Conclusions`.
 | 3 | AVO | Choisir un dossier **sans audience** | Message « Aucune audience n'est encore planifiée sur ce dossier. » | | ☐ |
 | 4 | AVO | Revenir au dossier avec audience, choisir l'audience, laisser le compte rendu **vide** → « Déposer le compte rendu » | Refus : le récit est obligatoire | | ☐ |
 | 5 | AVO | Joindre le PDF, puis cliquer **« Consulter »** (œil) à côté du fichier | Le document s'ouvre sans quitter le formulaire : la pièce se relit **avant** l'envoi | | ☐ |
-| 5 bis | AVO | Saisir le récit → « Déposer le compte rendu » | Message « Publication déposée. Elle sera visible après validation. » | | ☐ |
+| 5 bis | AVO | Saisir le récit → « Déposer le compte rendu » | Message « Compte rendu déposé. Les juristes du dossier en sont informés ; l'Assistante doit encore le valider pour qu'il soit visible de tous. » | | ☐ |
 | 6 | AVO | Choisir cette fois « Document du dossier », sans joindre de fichier → « Déposer » | Refus : pour un document, le fichier est obligatoire | | ☐ |
-| 7 | AVO | Renseigner « Type de document » = `Conclusions`, joindre le PDF → « Déposer » | Publication déposée | | ☐ |
-| 8 | JUR | Menu « Publications » | La publication **n'apparaît pas** : elle n'est pas encore validée | | ☐ |
-| 9 | AST | Menu « Publications » → file « À valider » → ouvrir la publication | Le récit et la pièce jointe sont consultables sans quitter la page | | ☐ |
-| 10 | AST | Cliquer « Valider » → confirmer | La publication passe à **Validée** et quitte la file | | ☐ |
+| 7 | AVO | Renseigner « Type de document » = `Conclusions`, joindre le PDF → « Déposer » | Message « Publication déposée. Elle sera visible après validation. » - un document, lui, attend bien la validation | | ☐ |
+| 8 | JUR | Fiche du dossier → onglet « Publications » | Le **compte rendu** apparaît déjà, marqué **Déposé** : il se lit sans attendre l'Assistante (RG-INT-06 amendée). Le **document du dossier**, lui, n'apparaît pas | | ☐ |
+| 8 bis | JUR | Ouvrir le compte rendu déposé | Le récit et sa pièce sont consultables | | ☐ |
+| 8 ter | JUR | Cloche des notifications | Une alerte signale le compte rendu, reçue **au dépôt** et non à la validation | | ☐ |
+| 8 quater | SH | Ouvrir l'adresse de ce compte rendu | Il le lit aussi : le SH n'a **aucun rôle propre** ici, il consulte comme les juristes | | ☐ |
+| 9 | AST | Menu « Publications » → file « À valider » → ouvrir le **compte rendu** | Le récit et la pièce jointe sont consultables. Le panneau ne propose que **« Accuser réception »** : aucun bouton « Rejeter » | | ☐ |
+| 9 bis | AST | Cliquer « Accuser réception » → confirmer | Message « Réception du compte rendu accusée. » ; le statut devient **Réception accusée** | | ☐ |
+| 9 ter | DJ | *Configuration* → supervision des notifications externes | Un envoi **« Compte rendu reçu »** vise l'avocat - et non « Publication examinée », qui annoncerait une décision | | ☐ |
+| 10 | AST | Ouvrir le **document du dossier** déposé → « Valider » → confirmer | Celui-là se valide, et se rejette : il passe à **Validée** et quitte la file | | ☐ |
 | 11 | JUR | Menu « Publications » (ou onglet « Publications » du dossier) | La publication validée est désormais visible, avec sa pièce | | ☐ |
 | 11 bis | JUR | Fiche du dossier → onglet **« Audiences »**, ligne de l'audience relatée | Un lien **« Compte rendu de l'avocat »** y figure, à côté du compte rendu du juriste | | ☐ |
 | 11 ter | JUR | Cliquer ce lien | La publication s'ouvre : le récit de l'avocat et sa pièce | | ☐ |
 | 12 | AST | Ouvrir une autre publication → « Rejeter », saisir un motif → confirmer | La publication est rejetée ; l'avocat voit le motif dans « Mon espace » | | ☐ |
 
 ### Résultat final attendu
-Une publication validée est visible des juristes ; une publication rejetée revient à l'avocat avec
-son motif ; une publication déposée n'est jamais visible avant validation.
+Le compte rendu d'un avocat est lisible de **tous les habilités** dès son dépôt ; l'Assistante
+en accuse réception sans pouvoir le rejeter. Un document du dossier, lui, reste invisible jusqu'à
+sa validation, et se rejette avec son motif.
 
 ### Points de contrôle
 - Un compte rendu **sans** pièce n'affiche simplement pas le bloc de pièce jointe : ce n'est pas une
   anomalie.
 - Le dépôt d'une publication déclenche une alerte applicative vers l'Assistante.
+- Le dépôt d'un **compte rendu** en déclenche une seconde, vers les juristes du dossier. L'accès, lui,
+  est ouvert à tous : l'alerte est ciblée, la lecture ne l'est pas.
+- L'ouverture immédiate ne concerne que le **compte rendu d'audience**. Un document du dossier suit
+  l'ancien régime, sa conformité n'étant pas contrôlée.
+- Un compte rendu **ne se réserve pas** à un destinataire : l'API refuse la réserve à son dépôt. Elle
+  reste disponible sur les autres publications.
+- L'avocat est prévenu de l'accusé de réception par ses canaux externes, avec un événement qui lui
+  est propre. Moteur coupé en recette : l'envoi se lit dans la supervision, il ne part pas.
 
 ---
 
@@ -1428,7 +1442,8 @@ autant de garanties métier.
 | REC-NEG-014 | Double demande de suppression | JUR | Demander deux fois la suppression du même document | La seconde est refusée : une demande est déjà en attente | ☐ |
 | REC-NEG-015 | Double correspondance | DJ | Transmettre deux fois la correspondance d'une même publication | La seconde est refusée | ☐ |
 | REC-NEG-016 | Double vote du même profil | DJA | Donner deux fois son accord sur une validation conjointe | Le second est refusé | ☐ |
-| REC-NEG-017 | Publication non validée invisible | JUR | Chercher une publication au statut déposé | Elle n'apparaît nulle part côté juriste | ☐ |
+| REC-NEG-017 | Document du dossier non validé invisible | JUR | Chercher un **document du dossier** (type Pièce, Décision ou Conclusions) au statut déposé | Il n'apparaît nulle part côté juriste. Le **compte rendu d'audience**, lui, est lisible de tous dès son dépôt | ☐ |
+| REC-NEG-036 | Un compte rendu ne se rejette pas | AST | Ouvrir un compte rendu déposé et chercher à le rejeter | Aucun bouton « Rejeter » n'est proposé. Par l'API, le rejet est refusé avec son motif : le récit se conteste par une correspondance | ☐ |
 | REC-NEG-018 | Notification d'autrui | JUR | Tenter de marquer traitée une notification qui ne lui est pas destinée | Refus | ☐ |
 | REC-NEG-019 | Fenêtre de dates inversée | DJ | Saisir une date de début postérieure à la date de fin (rapports, supervision) | Message métier à l'écran, jamais une erreur technique | ☐ |
 | REC-NEG-020 | Paramètre système incohérent | DJ | Saisir une valeur invalide dans « Configuration » | Refus expliqué ; la valeur en base ne bouge pas | ☐ |
@@ -1627,7 +1642,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
 | **Total parcours de bout en bout** | **30** | | | | |
-| Cas négatifs (REC-NEG) | 35 | | | | |
+| Cas négatifs (REC-NEG) | 36 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1635,7 +1650,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 30 parcours, les 35 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 30 parcours, les 36 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
@@ -1680,7 +1695,7 @@ Report des totaux de la synthèse (§9).
 | | Nombre | Validés | Échecs | Bloqués | Non testés |
 |---|---:|---:|---:|---:|---:|
 | Parcours de bout en bout | 30 | | | | |
-| Cas négatifs | 35 | | | | |
+| Cas négatifs | 36 | | | | |
 | Parcours multi-rôles | 4 | | | | |
 
 ### Décision du métier

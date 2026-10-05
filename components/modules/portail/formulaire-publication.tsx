@@ -86,7 +86,10 @@ export function FormulairePublication() {
     if (!complet || dossierId === null) return;
     const apres = {
       onSuccess: () => {
-        toast.success(t("publicationDeposee"));
+        // Les deux natures ne suivent plus le même sort (RG-INT-06 amendée, 2026-10-05) : un
+        // compte rendu est lisible des juristes du dossier dès maintenant, un document attend sa
+        // validation. Un message unique en aurait trompé une moitié.
+        toast.success(t(nature === "compteRendu" ? "compteRenduDepose" : "publicationDeposee"));
         router.push("/portail");
       },
       onError: (erreur: unknown) => toast.error(messageErreur(erreur)),

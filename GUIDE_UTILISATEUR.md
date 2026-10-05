@@ -210,8 +210,17 @@ porte sur les documents, pas sur leurs noms.
 Les deux choix sont sur la même page, décrits l'un sous l'autre : le bouton d'envoi dit à chaque
 fois ce qu'il fait. Les formats admis et le poids maximal sont les mêmes que pour la GED (§8).
 
-Toute publication passe par la validation de l'Assistante avant d'être visible des juristes. En cas
-de rejet, le motif s'affiche dans *Mon espace*, avec le dépôt concerné.
+**Le compte rendu d'audience n'attend pas.** Dès son dépôt, il est consultable par **toute la
+Direction Juridique** : plus personne n'attend un contrôle pour savoir ce qui s'est dit à l'audience.
+Les juristes affectés au dossier en sont alertés ; les autres le trouvent sur la fiche. L'Assistante
+en **accuse réception** - elle ne l'autorise pas, et ne peut pas le rejeter : un récit d'audience se
+conteste par une correspondance, pas en l'écartant. Un compte rendu ne se réserve pas non plus à un
+destinataire : il appartient au dossier.
+
+**Les documents du dossier, eux, attendent la validation.** Une pièce, une décision ou des conclusions
+transmises par l'avocat ne sont visibles qu'une fois validées : leur conformité n'a pas encore été
+contrôlée. En cas de rejet, le motif s'affiche dans *Mon espace* de l'avocat, avec le dépôt
+concerné.
 
 ![Les publications déposées par les avocats, en attente de validation.](images/guide/15-publications.png)
 

@@ -14,6 +14,7 @@ import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non
 import { estCompteAvocatNonRattache, messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION } from "@/lib/publications";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
+import { cleStatutPublication } from "@/lib/publications";
 
 /**
  * Espace de l'avocat — ses dépôts et ses lettres de constitution (backend Q-96).
@@ -50,7 +51,7 @@ export function EspaceAvocat() {
         cell: ({ row }) => (
           <span className="flex flex-col items-start gap-1">
             <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
-              {td(`StatutPublication.${row.original.statutValidation}` as never)}
+              {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
             </StatutChip>
             {/* Le motif est la seule chose actionnable d'un rejet : il s'affiche, il ne se cache pas. */}
             {row.original.motifRejet ? (
