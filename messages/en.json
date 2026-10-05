@@ -496,8 +496,6 @@
     "champJuridiction": "Court seized",
     "champClient": "Client",
     "champRisque": "Exposure (FCFA)",
-    "champDemandeur": "Claimant",
-    "champDefendeur": "Defendant",
     "champRecours": "Remedies exercised",
     "champMotifRenvoi": "Adjournment reason",
     "champAgenceOrigine": "Originating branch code",
@@ -532,7 +530,13 @@
     "filtreTri": "Sort by",
     "renvoiAlarmes": "Follow-up alarms are set from the case file, under “Alarms”: they carry a due date and notify their author on the day.",
     "champAlarmeHerite": "Note entered at creation (field removed)",
-    "dossierCree": "Case {reference} created."
+    "dossierCree": "Case {reference} created.",
+    "champDemandeurs": "Claimants",
+    "champDefendeurs": "Defendants",
+    "ajouterDemandeur": "Add a claimant",
+    "ajouterDefendeur": "Add a defendant",
+    "partieRang": "{partie} {rang}",
+    "retirerPartie": "Remove {partie} {rang}"
   },
   "fiche": {
     "retour": "Back to cases",

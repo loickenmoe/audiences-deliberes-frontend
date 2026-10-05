@@ -47,6 +47,9 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   await juriste.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await juriste.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await juriste.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
+  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  await juriste.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
+  await juriste.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
   await deposerPiecesDeCreation(juriste, { marque: "ged" });

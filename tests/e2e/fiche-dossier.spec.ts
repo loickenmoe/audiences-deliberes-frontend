@@ -39,6 +39,9 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
+  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
+  await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-FICHE");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-FICHE");
   await deposerPiecesDeCreation(page, { marque: "fiche" });

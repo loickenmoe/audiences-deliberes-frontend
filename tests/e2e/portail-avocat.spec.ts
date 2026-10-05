@@ -111,6 +111,8 @@ async function creerDossierAffecteALAvocat(): Promise<string> {
       pvTransfert: "PV-RECH",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [fiche!.id],
+      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
     }),
   });
   expect(creation.status, "le dossier de recherche doit être créé").toBe(201);

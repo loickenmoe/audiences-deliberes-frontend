@@ -1725,13 +1725,13 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "RECENT",
               "enum": [
                 "RECENT",
                 "ANCIEN",
                 "REFERENCE",
                 "RISQUE"
-              ],
-              "default": "RECENT"
+              ]
             }
           },
           {
@@ -3099,13 +3099,13 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "JSON",
               "enum": [
                 "JSON",
                 "PDF",
                 "EXCEL",
                 "CSV"
-              ],
-              "default": "JSON"
+              ]
             }
           }
         ],
@@ -3271,12 +3271,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "TOUT",
               "enum": [
                 "HORS_DOSSIER",
                 "UN_DOSSIER",
                 "TOUT"
-              ],
-              "default": "TOUT"
+              ]
             }
           },
           {
@@ -3528,12 +3528,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "TOUT",
               "enum": [
                 "HORS_DOSSIER",
                 "UN_DOSSIER",
                 "TOUT"
-              ],
-              "default": "TOUT"
+              ]
             }
           },
           {
@@ -3637,11 +3637,11 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "PDF",
               "enum": [
                 "PDF",
                 "EXCEL"
-              ],
-              "default": "PDF"
+              ]
             }
           }
         ],
@@ -4426,12 +4426,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "JSON",
               "enum": [
                 "JSON",
                 "PDF",
                 "EXCEL"
-              ],
-              "default": "JSON"
+              ]
             }
           }
         ],
@@ -5381,13 +5381,23 @@
         }
       },
       "PartiesDto": {
+        "required": [
+          "defendeurs",
+          "demandeurs"
+        ],
         "type": "object",
         "properties": {
-          "demandeur": {
-            "type": "string"
+          "demandeurs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
-          "defendeur": {
-            "type": "string"
+          "defendeurs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -6158,7 +6168,9 @@
               "PNG",
               "JPG",
               "TXT",
-              "XLSX"
+              "XLSX",
+              "DOCX",
+              "DOC"
             ]
           },
           "poids": {
@@ -6230,6 +6242,7 @@
           "juridictionSaisie",
           "juristesAffectes",
           "nature",
+          "parties",
           "risqueEncouru"
         ],
         "type": "object",

@@ -75,6 +75,8 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
       pvTransfert: "PV-DEF",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocats[0]!.id],
+      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur"] },
     }),
   });
   const dossier = await json<{ etapes: { id: number }[] }>(`/dossiers/${id}`, juriste);

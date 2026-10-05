@@ -94,6 +94,8 @@ async function dossier(): Promise<{ id: number; reference: string }> {
       pvTransfert: "PV-PUB",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocatId],
+      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
     }),
   });
   // La référence est ATTRIBUÉE par le système : celle qu'on aurait envoyée n'existe nulle part.

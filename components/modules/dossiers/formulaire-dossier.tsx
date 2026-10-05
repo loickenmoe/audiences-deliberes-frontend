@@ -21,6 +21,7 @@ import { useIntervenants } from "@/hooks/useIntervenants";
 import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
+import { ListeParties } from "@/components/modules/dossiers/liste-parties";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
 import { piecesDeCategorie, type TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
@@ -97,8 +98,13 @@ export function FormulaireDossier({
           nature: z.string().min(1, tm("champObligatoire")),
           juridictionSaisie: z.string().trim().min(1, tm("champObligatoire")).max(100),
           clientId: z.coerce.number().int().positive(tm("champObligatoire")),
-          demandeur: z.string().optional(),
-          defendeur: z.string().optional(),
+          // Observations 1 et 3 (métier, 2026-10-03) : au moins un de chaque, plusieurs permis.
+          demandeurs: z
+            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
+            .min(1, tm("champObligatoire")),
+          defendeurs: z
+            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
+            .min(1, tm("champObligatoire")),
           risqueEncouru: z.coerce.number().min(0, tm("champObligatoire")),
           recoursExerces: z.string().optional(),
           motifRenvoi: z.string().max(255).optional(),
@@ -156,6 +162,10 @@ export function FormulaireDossier({
     defaultValues: {
       nature: "",
       juridictionSaisie: "",
+      // Une ligne vide de chaque côté : le formulaire s'ouvre sur ce qu'il attend, plutôt que sur
+      // un bloc vide où il faudrait deviner qu'un bouton « Ajouter » existe.
+      demandeurs: [{ nom: "" }],
+      defendeurs: [{ nom: "" }],
       estSensible: false,
       juristesAffectes: [],
       avocatsAffectes: [],
@@ -204,10 +214,10 @@ export function FormulaireDossier({
         nature: valeurs.nature,
         juridictionSaisie: valeurs.juridictionSaisie,
         clientId: Number(valeurs.clientId),
-        parties:
-          valeurs.demandeur || valeurs.defendeur
-            ? { demandeur: valeurs.demandeur || undefined, defendeur: valeurs.defendeur || undefined }
-            : undefined,
+        parties: {
+          demandeurs: valeurs.demandeurs.map((partie) => partie.nom.trim()),
+          defendeurs: valeurs.defendeurs.map((partie) => partie.nom.trim()),
+        },
         risqueEncouru: Number(valeurs.risqueEncouru),
         recoursExerces: valeurs.recoursExerces || undefined,
         motifRenvoi: valeurs.motifRenvoi || undefined,
@@ -468,12 +478,24 @@ export function FormulaireDossier({
             <CardTitle>{t("sectionParties")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Champ id="demandeur" label={t("champDemandeur")}>
-              <Input id="demandeur" {...register("demandeur")} />
-            </Champ>
-            <Champ id="defendeur" label={t("champDefendeur")}>
-              <Input id="defendeur" {...register("defendeur")} />
-            </Champ>
+            <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+              <ListeParties
+                nom="demandeurs"
+                label={t("champDemandeurs")}
+                libelleAjout={t("ajouterDemandeur")}
+                control={control}
+                register={register}
+                errors={errors}
+              />
+              <ListeParties
+                nom="defendeurs"
+                label={t("champDefendeurs")}
+                libelleAjout={t("ajouterDefendeur")}
+                control={control}
+                register={register}
+                errors={errors}
+              />
+            </div>
             <Champ id="recoursExerces" label={t("champRecours")}>
               <Input id="recoursExerces" {...register("recoursExerces")} />
             </Champ>

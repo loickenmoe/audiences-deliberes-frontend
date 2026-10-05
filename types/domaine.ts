@@ -126,7 +126,8 @@ export interface Dossier {
   juridictionSaisie: string;
   clientId: number;
   clientNom: string | null;
-  parties: { demandeur: string | null; defendeur: string | null } | null;
+  /** Plusieurs de chaque depuis le 2026-10-05 (observations 1 et 3). Jamais nul à la lecture. */
+  parties: { demandeurs: string[]; defendeurs: string[] } | null;
   risqueEncouru: number;
   recoursExerces: string | null;
   motifRenvoi: string | null;
@@ -358,7 +359,8 @@ export interface CreerDossier {
   nature: string;
   juridictionSaisie: string;
   clientId: number;
-  parties?: { demandeur?: string; defendeur?: string };
+  /** Obligatoires à la création : au moins un demandeur et un défendeur. */
+  parties: { demandeurs: string[]; defendeurs: string[] };
   risqueEncouru: number;
   recoursExerces?: string;
   motifRenvoi?: string;

@@ -496,8 +496,6 @@
     "champJuridiction": "Juridiction saisie",
     "champClient": "Client",
     "champRisque": "Risque encouru (FCFA)",
-    "champDemandeur": "Demandeur",
-    "champDefendeur": "Défendeur",
     "champRecours": "Recours exercés",
     "champMotifRenvoi": "Motif de renvoi",
     "champAgenceOrigine": "Code agence d’origine",
@@ -532,7 +530,13 @@
     "filtreTri": "Trier par",
     "renvoiAlarmes": "Les alarmes de suivi se posent depuis la fiche du dossier, onglet « Alarmes » : elles portent une échéance et préviennent leur auteur le jour dit.",
     "champAlarmeHerite": "Note saisie à la création (champ retiré)",
-    "dossierCree": "Dossier {reference} créé."
+    "dossierCree": "Dossier {reference} créé.",
+    "champDemandeurs": "Demandeurs",
+    "champDefendeurs": "Défendeurs",
+    "ajouterDemandeur": "Ajouter un demandeur",
+    "ajouterDefendeur": "Ajouter un défendeur",
+    "partieRang": "{partie} {rang}",
+    "retirerPartie": "Retirer {partie} {rang}"
   },
   "fiche": {
     "retour": "Retour aux dossiers",

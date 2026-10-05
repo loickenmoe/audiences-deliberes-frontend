@@ -85,6 +85,12 @@ l'envoi.
 
 ![Le formulaire de création. Les pièces portent un astérisque : sans fichier, rien n'est créé.](images/guide/05-creation-dossier.png)
 
+**Les parties au procès sont obligatoires** (depuis le 2026-10-05) : au moins un demandeur et un
+défendeur. *Ajouter un demandeur* et *Ajouter un défendeur* en déclarent autant que l'affaire en
+compte - une banque assigne souvent un débiteur **et** sa caution. La première ligne de chaque côté
+ne se retire pas, puisqu'il en faut au moins une. Le client du dossier, lui, se choisit à part : il
+est identifié au référentiel, pas ressaisi ici.
+
 **Un dossier à diligence particulière** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.
 

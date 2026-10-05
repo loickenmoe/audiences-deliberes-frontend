@@ -275,9 +275,10 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 3 | JUR | Choisir une nature de catégorie Litiges d'exploitation | Les champs changent : « Référence de l'incident de compte » et « Éléments justificatifs ». Revenir à Recouvrement | | ☐ |
 | 4 | JUR | Cliquer « Enregistrer » **sans rien renseigner d'autre** | Refus : chaque champ obligatoire porte son message, dont les affectations | | ☐ |
 | 5 | JUR | Renseigner Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides**. **Aucun champ Référence de dossier n'est proposé** | Aucun message sur les deux champs laissés vides : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
+| 5 bis | JUR | Bloc « Parties » : saisir un demandeur, puis cliquer **« Ajouter un défendeur »** et saisir deux défendeurs | Une ligne s'ajoute à chaque clic. La croix retire une ligne, sauf la première : au moins une partie de chaque côté est exigée | | ☐ |
 | 6 | JUR | Cliquer « Enregistrer » **sans joindre de fichier** | Refus, avec un message **sous chaque pièce manquante** : « Cette pièce est obligatoire : joignez son fichier. » Rien n'est créé | | ☐ |
 | 7 | JUR | Joindre un PDF sur **chacune** des deux pièces, relire l'un d'eux avec l'œil, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
-| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et diligence particulière sont affichés. Les deux références laissées vides s'affichent « - » | | ☐ |
+| 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et diligence particulière sont affichés. **Les deux défendeurs y figurent, séparés par un point-virgule**. Les deux références laissées vides s'affichent « - » | | ☐ |
 | 9 | JUR | Onglet « Documents » | **Les deux PDF** déposés sont listés avec leur nom | | ☐ |
 | 10 | JUR | Onglet « Étapes » | Une étape **Instance** existe, au statut **Ouverture** | | ☐ |
 | 11 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
@@ -1425,6 +1426,7 @@ autant de garanties métier.
 | ID | Cas | Rôle | Mode opératoire | Résultat attendu | Statut |
 |---|---|---|---|---|---|
 | REC-NEG-001 | Champs obligatoires manquants | JUR | Créer un dossier en cliquant « Enregistrer » sur un formulaire vide | Chaque champ obligatoire porte son propre message ; rien n'est créé | ☐ |
+| REC-NEG-037 | Partie au procès manquante | JUR | Remplir tout le formulaire mais laisser le **demandeur** vide, ou n'y mettre que des espaces | Refus, le message se montrant sous la ligne fautive. Un dossier contentieux dit qui s'oppose à qui, ou n'est pas créé | ☐ |
 | REC-NEG-027 | Pièce obligatoire manquante | JUR | Remplir tout le formulaire de création **sauf un des deux fichiers**, puis « Enregistrer » | Refus, message sous la pièce sans fichier ; rien n'est créé. Les références, elles, peuvent rester vides | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
@@ -1642,7 +1644,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
 | **Total parcours de bout en bout** | **30** | | | | |
-| Cas négatifs (REC-NEG) | 36 | | | | |
+| Cas négatifs (REC-NEG) | 37 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1650,7 +1652,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 30 parcours, les 36 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 30 parcours, les 37 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
@@ -1695,7 +1697,7 @@ Report des totaux de la synthèse (§9).
 | | Nombre | Validés | Échecs | Bloqués | Non testés |
 |---|---:|---:|---:|---:|---:|
 | Parcours de bout en bout | 30 | | | | |
-| Cas négatifs | 36 | | | | |
+| Cas négatifs | 37 | | | | |
 | Parcours multi-rôles | 4 | | | | |
 
 ### Décision du métier

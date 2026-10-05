@@ -112,6 +112,8 @@ describe("dossierService.creer", () => {
     risqueEncouru: 1_000_000,
     juristesAffectes: [3],
     avocatsAffectes: [5],
+    // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+    parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
   };
 
   it("envoie la nature par son libellé, fût-il long", async () => {

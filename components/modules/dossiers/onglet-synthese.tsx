@@ -59,8 +59,14 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2">
-            <Donnee libelle={t("champDemandeur")}>{dossier.parties?.demandeur}</Donnee>
-            <Donnee libelle={t("champDefendeur")}>{dossier.parties?.defendeur}</Donnee>
+            {/* Plusieurs parties de chaque côté depuis le 2026-10-05 : on les sépare par un
+                point-virgule plutôt qu'une virgule, les raisons sociales en contenant souvent. */}
+            <Donnee libelle={t("champDemandeurs")}>
+              {dossier.parties?.demandeurs?.join(" ; ")}
+            </Donnee>
+            <Donnee libelle={t("champDefendeurs")}>
+              {dossier.parties?.defendeurs?.join(" ; ")}
+            </Donnee>
             <Donnee libelle={t("champRecours")}>{dossier.recoursExerces}</Donnee>
             <Donnee libelle={t("champMotifRenvoi")}>{dossier.motifRenvoi}</Donnee>
           </dl>

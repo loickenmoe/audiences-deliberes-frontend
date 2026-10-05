@@ -119,6 +119,8 @@ async function deposerDemandeDeFrais(): Promise<string> {
       pvTransfert: "PV-ALR",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocatId],
+      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
     }),
   });
   await json<{ id: number }>("/frais/demandes", await jeton("avocat.test"), {

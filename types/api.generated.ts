@@ -1642,8 +1642,8 @@ export interface components {
             dateAction?: string;
         };
         PartiesDto: {
-            demandeur?: string;
-            defendeur?: string;
+            demandeurs: string[];
+            defendeurs: string[];
         };
         ViderDelibereRequest: {
             /** @enum {string} */
@@ -1906,7 +1906,7 @@ export interface components {
             nomFichier?: string;
             typeDocument?: string;
             /** @enum {string} */
-            format?: "PDF" | "PNG" | "JPG" | "TXT" | "XLSX";
+            format?: "PDF" | "PNG" | "JPG" | "TXT" | "XLSX" | "DOCX" | "DOC";
             /** Format: int64 */
             poids?: number;
             /** Format: int64 */
@@ -1935,7 +1935,7 @@ export interface components {
             juridictionSaisie: string;
             /** Format: int64 */
             clientId: number;
-            parties?: components["schemas"]["PartiesDto"];
+            parties: components["schemas"]["PartiesDto"];
             /** Format: double */
             risqueEncouru: number;
             recoursExerces?: string;
