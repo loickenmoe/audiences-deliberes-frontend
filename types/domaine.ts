@@ -1082,8 +1082,9 @@ export interface StatistiquesDiffusion {
  * Tableau de bord exécutif (#50, écran 39). Neuf indicateurs **temps réel, tous dossiers
  * confondus** : le backend ne les restreint ni à une période ni au portefeuille de l'appelant.
  *
- * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage — `Pourcentage` le met en
- * forme.
+ * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage. Le tableau de bord ne
+ * l'affiche **plus** depuis le 2026-10-06 - la Direction veut des nombres - mais l'API le renvoie
+ * toujours : la même requête sert à compter les trois résultats, et le rapport périodique s'en sert.
  *
  * **Gagnés, perdus et mixtes sont trois nombres distincts** (métier, 2026-10-03, observation 12).
  * Le backend les possédait et n'exposait que le taux : la Direction lisait un pourcentage sans
@@ -1100,6 +1101,12 @@ export interface TableauDeBord {
   nbLitigesGagnes: number;
   nbLitigesPerdus: number;
   nbLitigesMixtes: number;
+  /**
+   * Les **affaires vidées** : les dossiers dont plus aucune étape n'est en cours (métier,
+   * 2026-10-06). Complément exact de `nbDossiersActifs` - les deux s'additionnent pour faire les
+   * dossiers qui portent au moins une étape.
+   */
+  nbAffairesVidees: number;
   provisionsReprises: number;
 }
 

@@ -1189,7 +1189,9 @@ Période du rapport : le mois en cours. Paramètre à modifier : `SEUIL_PROROGAT
 
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
-| 1 | DJ | Menu « Tableau de bord » | Les **six** indicateurs s'affichent, chacun avec la phrase qui dit ce qu'il compte | | ☐ |
+| 1 | DJ | Menu « Tableau de bord » | Les **neuf** indicateurs s'affichent, chacun avec la phrase qui dit ce qu'il compte. **Aucun « Succès du recouvrement »** : le taux a quitté cet écran le 2026-10-06, la Direction voulant des nombres | | ☐ |
+| 1 bis | DJ | Lire « Litiges gagnés », « Litiges perdus » et « Décisions mixtes » | Les trois s'additionnent pour faire les délibérés rendus. **« Perdus » n'est pas le complément des gagnés** : une décision mixte n'est ni l'un ni l'autre, et la phrase d'aide le dit. Le taux correspondant se lit sur l'écran **Rapports**, borné à une période | | ☐ |
+| 1 ter | DJ | Lire « Affaires vidées » et « Dossiers actifs » | Les deux s'additionnent pour faire le nombre de dossiers ouverts. Une affaire est vidée quand **plus aucune de ses étapes n'est en cours** (métier, 2026-10-06) : un dossier dont l'Instance est clôturée mais dont l'Appel est ouvert reste actif | | ☐ |
 | 2 | DJ | Comparer « Dossiers ouverts » avec la liste des dossiers | Les chiffres sont cohérents avec les données créées | | ☐ |
 | 3 | DJ | Menu « Rapports » → choisir une période **inversée** (fin avant début) → « Afficher le rapport » | Message « La date de fin doit suivre la date de début. » | | ☐ |
 | 4 | DJ | Choisir le mois en cours → « Afficher le rapport » | Le rapport s'affiche avec ses rubriques (dossiers ouverts, délibérés rendus…) | | ☐ |

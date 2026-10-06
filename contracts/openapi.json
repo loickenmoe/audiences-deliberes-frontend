@@ -7304,6 +7304,10 @@
             "type": "integer",
             "format": "int64"
           },
+          "nbAffairesVidees": {
+            "type": "integer",
+            "format": "int64"
+          },
           "provisionsReprises": {
             "type": "number",
             "format": "double"

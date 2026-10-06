@@ -38,13 +38,15 @@ test("le DJ lit ses indicateurs et rejoint les rapports depuis le tableau de bor
   await dj.waitForURL(/\/tableau-de-bord/, { timeout: 60_000 });
 
   await expect(dj.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
-  // Les neuf indicateurs du contrat, chacun avec sa valeur — la base de développement n'est pas vide.
+  // Les neuf indicateurs de l'écran, chacun avec sa valeur — la base de développement n'est pas
+  // vide. Le taux de succès n'y est plus : la Direction veut des nombres (2026-10-06).
+  await expect(dj.getByRole("term").filter({ hasText: "Succès du recouvrement" })).toHaveCount(0);
   for (const libelle of [
     "Dossiers actifs",
+    "Affaires vidées",
     "Audiences planifiées",
     "Frais en attente",
     "Alertes de prorogation",
-    "Succès du recouvrement",
     "Litiges gagnés",
     "Litiges perdus",
     "Décisions mixtes",

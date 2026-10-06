@@ -2261,6 +2261,8 @@ export interface components {
             nbLitigesPerdus?: number;
             /** Format: int64 */
             nbLitigesMixtes?: number;
+            /** Format: int64 */
+            nbAffairesVidees?: number;
             /** Format: double */
             provisionsReprises?: number;
         };

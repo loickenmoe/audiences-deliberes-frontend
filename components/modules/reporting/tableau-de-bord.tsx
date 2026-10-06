@@ -3,12 +3,12 @@
 import {
   AlarmClock,
   CalendarDays,
+  CircleCheckBig,
   FolderOpen,
   Receipt,
   Scale,
   ThumbsDown,
   Trophy,
-  TrendingUp,
   Wallet,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -16,7 +16,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { MontantFcfa, Pourcentage } from "@/components/metier";
+import { MontantFcfa } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { useTableauDeBord } from "@/hooks/useReporting";
 import { messageErreur } from "@/lib/api/errors";
@@ -31,10 +31,14 @@ import type { TableauDeBord } from "@/types/domaine";
  * « dossiers actifs » n'a pas le même sens pour tout le monde, et un chiffre qu'on interprète mal
  * pilote mal.
  *
- * **Gagnés, perdus et mixtes suivent le taux** (métier, 2026-10-03, observation 12) : un
- * pourcentage ne dit pas sur combien d'affaires il porte. Les trois sont affichés côte à côte et
- * **aucun n'est déduit** : un délibéré mixte n'est ni gagné ni perdu, et le ranger d'office aurait
- * fait lire un chiffre faux sans moyen de s'en apercevoir.
+ * **Des nombres, pas un pourcentage** (métier, 2026-10-06). L'écran portait un « taux de succès du
+ * recouvrement » ; il porte désormais ce que ce taux résumait : les litiges **gagnés**, **perdus**
+ * et **mixtes**. Un pourcentage ne dit pas sur combien d'affaires il porte, et les trois nombres le
+ * disent sans calcul. **Aucun n'est déduit** : un délibéré mixte n'est ni gagné ni perdu, et le
+ * ranger d'office aurait fait lire un chiffre faux sans moyen de s'en apercevoir.
+ *
+ * Le **rapport périodique** (écran 40) garde son taux : borné à une période et exporté, il se lit
+ * autrement qu'un indicateur de pilotage temps réel.
  *
  * Lecture réservée au DJ et à la DJA (backend Q-95).
  */
@@ -84,6 +88,13 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           aide={t("nbDossiersActifsAide")}
           valeur={<Nombre valeur={donnees.nbDossiersActifs} />}
         />
+        {/* Posé juste après les dossiers actifs : il en est le complément, et se lit avec lui. */}
+        <Indicateur
+          icone={<CircleCheckBig size={18} aria-hidden />}
+          libelle={t("nbAffairesVidees")}
+          aide={t("nbAffairesVideesAide")}
+          valeur={<Nombre valeur={donnees.nbAffairesVidees} />}
+        />
         <Indicateur
           icone={<CalendarDays size={18} aria-hidden />}
           libelle={t("nbAudiencesPlanifiees")}
@@ -102,12 +113,6 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           aide={t("nbProrogationsAlerteAide")}
           valeur={<Nombre valeur={donnees.nbProrogationsAlerte} />}
           alerte={donnees.nbProrogationsAlerte > 0}
-        />
-        <Indicateur
-          icone={<TrendingUp size={18} aria-hidden />}
-          libelle={t("tauxSuccesRecouvrement")}
-          aide={t("tauxSuccesRecouvrementAide")}
-          valeur={<Pourcentage valeur={donnees.tauxSuccesRecouvrement} />}
         />
         <Indicateur
           icone={<Trophy size={18} aria-hidden />}
