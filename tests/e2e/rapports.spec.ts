@@ -105,6 +105,14 @@ test("un rapport se compile sur la période choisie, et une période vide reste 
   await page.getByRole("button", { name: "Afficher le rapport" }).click();
   await expect(page.getByText("Dossiers ouverts")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Délibérés rendus")).toBeVisible();
+  /*
+   * Des nombres, pas un pourcentage (métier, 2026-10-06). Le rapport portait une ligne
+   * « Succès du recouvrement » en pourcentage ; il porte les trois décomptes qu'elle résumait.
+   */
+  await expect(page.getByText("Litiges gagnés")).toBeVisible();
+  await expect(page.getByText("Litiges perdus")).toBeVisible();
+  await expect(page.getByText("Décisions mixtes")).toBeVisible();
+  await expect(page.getByText("Succès du recouvrement")).toHaveCount(0);
 
   // RG-REP-02 : période sans activité → 204, affiché comme un état vide et non comme une erreur.
   await page.locator("#rapport-debut").fill("2000-01-01");

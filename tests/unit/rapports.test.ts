@@ -29,7 +29,12 @@ const RAPPORT = {
   nbAudiencesTenues: 1,
   nbDemandesFraisDeposees: 2,
   nbDeliberesEnregistres: 0,
+  // Le taux est encore renvoyé par l'API ; l'écran et les exports portent les trois décomptes
+  // depuis le 2026-10-06 - « le métier veut les chiffres, pas les pourcentages ».
   tauxSuccesRecouvrement: 0.5,
+  nbLitigesGagnes: 2,
+  nbLitigesPerdus: 1,
+  nbLitigesMixtes: 1,
   provisionsReprises: 1_250_000,
 };
 
@@ -42,6 +47,10 @@ const serveur = setupServer(
       nbDemandesFraisEnAttente: 2,
       nbProrogationsAlerte: 1,
       tauxSuccesRecouvrement: 0.75,
+      nbLitigesGagnes: 3,
+      nbLitigesPerdus: 1,
+      nbLitigesMixtes: 0,
+      nbAffairesVidees: 5,
       provisionsReprises: 3_000_000,
     });
   }),
@@ -76,8 +85,16 @@ describe("tableau de bord", () => {
     expect(derniere?.url.pathname).toBe("/api/v1/tableau-de-bord");
     expect(derniere?.url.search).toBe("");
     expect(donnees.nbDossiersActifs).toBe(12);
-    // Ratio de 0 à 1, pas un pourcentage : `Pourcentage` le met en forme.
-    expect(donnees.tauxSuccesRecouvrement).toBe(0.75);
+    /*
+     * Le taux reste dans la réponse, mais ce ne sont plus lui que les écrans affichent : depuis le
+     * 2026-10-06, le tableau de bord et le rapport portent les **nombres** qu'il résumait. Les
+     * trois se lisent ensemble, et aucun ne se déduit des autres.
+     */
+    expect(donnees.nbLitigesGagnes).toBe(3);
+    expect(donnees.nbLitigesPerdus).toBe(1);
+    expect(donnees.nbLitigesMixtes).toBe(0);
+    // Les affaires vidées complètent les dossiers actifs : 5 + 12 font les dossiers ouverts.
+    expect(donnees.nbAffairesVidees).toBe(5);
   });
 });
 

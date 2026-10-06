@@ -29,9 +29,19 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
 }
 
-/** Un code libre, dans la plage `009xx` qu'aucune agence réelle n'occupe. */
+/**
+ * Un code libre, hors de toute plage réelle.
+ *
+ * **Il doit être unique à travers les exécutions**, et non seulement dans celle-ci : une agence ne
+ * se supprime pas - elle se ferme - donc chaque passage de la suite laisse les siennes derrière
+ * lui. Un tirage dans `009xx` offrait quatre-vingt-dix codes et en consommait quatre par passage :
+ * les collisions sont devenues la norme, et la création refusée laissait la modale ouverte.
+ *
+ * L'horodatage à la milliseconde tient dans les vingt caractères de la colonne et ne se répétera
+ * pas.
+ */
 function codeDeTest() {
-  return `009${Math.floor(Math.random() * 90 + 10)}`;
+  return `9${Date.now() % 1_000_000_000}`;
 }
 
 /** La ligne de l'agence dans le tableau, atteinte par son code. */

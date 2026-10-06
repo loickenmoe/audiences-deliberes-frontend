@@ -1125,7 +1125,15 @@ export interface Rapport {
   nbAudiencesTenues: number;
   nbDemandesFraisDeposees: number;
   nbDeliberesEnregistres: number;
+  /**
+   * Toujours renvoyé par l'API, **plus affiché ni exporté** depuis le 2026-10-06 : « le métier veut
+   * les chiffres, le montant, pas les pourcentages ». Les trois décomptes ci-dessous disent ce qu'il
+   * résumait, et le disent sans calcul.
+   */
   tauxSuccesRecouvrement: number;
+  nbLitigesGagnes: number;
+  nbLitigesPerdus: number;
+  nbLitigesMixtes: number;
   provisionsReprises: number;
 }
 

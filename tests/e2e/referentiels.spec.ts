@@ -86,9 +86,17 @@ test("deux clients créés à la suite reçoivent deux références distinctes",
 
   expect(references[0]).not.toEqual(references[1]);
 
-  // Et elles se suivent : le compteur avance d'un, il ne saute pas et ne recule pas.
+  /*
+   * Et le compteur **avance** : la seconde référence est strictement supérieure à la première.
+   *
+   * Pas « la première plus un » : ce n'est pas ce que le système promet. Deux personnes qui créent
+   * un client au même moment en obtiennent deux numéros distincts, pas forcément consécutifs - et
+   * la suite elle-même le prouve, ses parcours tournant en parallèle. Ce qui doit tenir, et qui
+   * tient, c'est qu'un numéro n'est jamais servi deux fois et que le compteur ne revient pas en
+   * arrière.
+   */
   const numero = (reference: string) => Number(reference.split("-")[2]);
-  expect(numero(references[1])).toEqual(numero(references[0]) + 1);
+  expect(numero(references[1])).toBeGreaterThan(numero(references[0]));
 });
 
 /**

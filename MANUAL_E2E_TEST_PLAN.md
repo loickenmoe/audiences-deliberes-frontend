@@ -1194,9 +1194,9 @@ Période du rapport : le mois en cours. Paramètre à modifier : `SEUIL_PROROGAT
 | 1 ter | DJ | Lire « Affaires vidées » et « Dossiers actifs » | Les deux s'additionnent pour faire le nombre de dossiers ouverts. Une affaire est vidée quand **plus aucune de ses étapes n'est en cours** (métier, 2026-10-06) : un dossier dont l'Instance est clôturée mais dont l'Appel est ouvert reste actif | | ☐ |
 | 2 | DJ | Comparer « Dossiers ouverts » avec la liste des dossiers | Les chiffres sont cohérents avec les données créées | | ☐ |
 | 3 | DJ | Menu « Rapports » → choisir une période **inversée** (fin avant début) → « Afficher le rapport » | Message « La date de fin doit suivre la date de début. » | | ☐ |
-| 4 | DJ | Choisir le mois en cours → « Afficher le rapport » | Le rapport s'affiche avec ses rubriques (dossiers ouverts, délibérés rendus…) | | ☐ |
+| 4 | DJ | Choisir le mois en cours → « Afficher le rapport » | Le rapport s'affiche avec ses rubriques (dossiers ouverts, délibérés rendus…). Il porte **« Litiges gagnés », « Litiges perdus » et « Décisions mixtes »**, et **aucun « Succès du recouvrement »** : le taux a quitté le rapport le 2026-10-06, comme le tableau de bord | | ☐ |
 | 5 | DJ | Choisir une période ancienne sans activité | « Aucune activité sur cette période » - état vide, pas une erreur | | ☐ |
-| 6 | DJ | Cliquer « Exporter » et choisir PDF, puis Excel, puis CSV | Un fichier est téléchargé dans chaque format | | ☐ |
+| 6 | DJ | Cliquer « Exporter » et choisir PDF, puis Excel, puis CSV | Un fichier est téléchargé dans chaque format. **Ouvrez-les** : chacun porte les trois décomptes et **aucun pourcentage** - c'est le fichier que le métier lit vraiment | | ☐ |
 | 7 | DJ | Menu « Configuration » → repérer `SEUIL_PROROGATIONS` | La valeur courante est affichée, avec l'auteur de la dernière modification | | ☐ |
 | 8 | DJ | Saisir une valeur **invalide** (texte, ou valeur hors bornes) → « Enregistrer » | Refus expliqué ; la valeur en base ne change pas | | ☐ |
 | 9 | DJ | Saisir `2` → « Enregistrer » | Message de succès nommant la clé modifiée | | ☐ |

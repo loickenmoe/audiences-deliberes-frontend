@@ -231,16 +231,20 @@ attente d'arbitrage n'offrant que l'arbitrage (écran 18). Le motif du retrait s
 synthèse **après** le retrait, alors que le dossier n'est plus sensible - sans ce cas, il aurait été
 exigé du DJ pour n'être lu nulle part.
 
-**39** — **neuf** indicateurs depuis N6, et non six. Les litiges **gagnés**, **perdus** et
-**mixtes** ont **remplacé** le « taux de succès du recouvrement » (métier, 2026-10-03,
-observation 12, puis 2026-10-06 : « ce qui les intéresse, ce sont les chiffres, pas les
-pourcentages ») - un pourcentage ne dit pas sur combien d'affaires il porte. Les **affaires
-vidées** suivent les dossiers actifs dont elles sont le complément exact (définition arrêtée le
-2026-10-06 : plus aucune étape du dossier en cours). Le taux reste sur l'**écran 40**, borné à une
-période et exporté : il s'y lit autrement. Un pourcentage ne dit pas
-sur combien d'affaires il porte. Les trois sont affichés côte à côte et **aucun n'est déduit** : un
-délibéré mixte n'est ni gagné ni perdu, et le ranger d'office aurait fait lire un chiffre faux. La
-phrase d'aide des « litiges perdus » le dit à l'écran, pas seulement dans le code.
+**39 et 40** — **plus aucun pourcentage** (métier, 2026-10-03, observation 12, puis 2026-10-06 :
+« le métier veut les chiffres, le montant, pas les pourcentages »). Les litiges **gagnés**,
+**perdus** et **mixtes** ont remplacé le « taux de succès du recouvrement » sur les **deux** écrans,
+et dans les **trois exports** du rapport : un pourcentage ne dit pas sur combien d'affaires il
+porte. Les trois se lisent ensemble et **aucun n'est déduit** - un délibéré mixte n'est ni gagné ni
+perdu, et le ranger d'office aurait fait lire un chiffre faux. Sur l'écran 39, la phrase d'aide des
+« litiges perdus » le dit à l'utilisateur, pas seulement dans le code.
+
+L'écran 39 compte donc **neuf** indicateurs, et non six : les **affaires vidées** y suivent les
+dossiers actifs dont elles sont le complément exact (définition arrêtée le 2026-10-06 : plus aucune
+étape du dossier en cours). Le backend continue de renvoyer le taux dans les deux réponses : la même
+requête le produit en comptant les résultats, et le retirer du contrat serait une rupture sans gain.
+Le **seul pourcentage restant** de l'application est l'indicateur de performance du répertoire des
+avocats (écran 24), que le métier n'a pas nommé.
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.

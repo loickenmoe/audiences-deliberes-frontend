@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { EtatErreur, EtatVide } from "@/components/global";
-import { MenuExport, MontantFcfa, Pourcentage } from "@/components/metier";
+import { MenuExport, MontantFcfa } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { useGenererRapport } from "@/hooks/useReporting";
@@ -166,10 +166,14 @@ export function FormulaireRapport() {
               libelle={t("nbDeliberesEnregistres")}
               valeur={<span data-nombres>{rapport.nbDeliberesEnregistres}</span>}
             />
-            <Ligne
-              libelle={t("tauxSuccesRecouvrement")}
-              valeur={<Pourcentage valeur={rapport.tauxSuccesRecouvrement} />}
-            />
+            {/*
+              Des nombres, pas un pourcentage (métier, 2026-10-06). La ligne portait un taux ;
+              elle porte désormais ce que ce taux résumait. « Perdus » n'est pas le complément des
+              gagnés : un délibéré mixte n'est ni l'un ni l'autre, et il a sa propre ligne.
+            */}
+            <Ligne libelle={t("nbLitigesGagnes")} valeur={<span data-nombres>{rapport.nbLitigesGagnes}</span>} />
+            <Ligne libelle={t("nbLitigesPerdus")} valeur={<span data-nombres>{rapport.nbLitigesPerdus}</span>} />
+            <Ligne libelle={t("nbLitigesMixtes")} valeur={<span data-nombres>{rapport.nbLitigesMixtes}</span>} />
             <Ligne libelle={t("provisionsReprises")} valeur={<MontantFcfa valeur={rapport.provisionsReprises} />} />
           </dl>
         </section>

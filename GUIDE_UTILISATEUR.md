@@ -331,9 +331,20 @@ ignore la casse - « saisie » retrouve « Saisie immobilière ». Les accents, 
 
 ## 10. Pilotage (DJ et DJA)
 
-**Tableau de bord** : six indicateurs en temps réel - dossiers actifs, audiences planifiées, frais en
-attente, alertes de prorogation, taux de succès du recouvrement, provisions reprises. Chacun porte
-une phrase disant ce qu'il compte.
+**Tableau de bord** : neuf indicateurs en temps réel - dossiers actifs, affaires vidées, audiences
+planifiées, frais en attente, alertes de prorogation, litiges gagnés, litiges perdus, décisions
+mixtes, provisions reprises. Chacun porte une phrase disant ce qu'il compte.
+
+**Des nombres, pas des pourcentages** (depuis le 2026-10-06). L'écran portait un « taux de succès
+du recouvrement » ; il porte désormais ce que ce taux résumait. Trois précisions utiles :
+
+- **« Litiges perdus » n'est pas le complément des gagnés.** Un délibéré peut être **mixte** -
+  ni gagné ni perdu - et ces décisions ont leur propre compteur. Les trois s'additionnent pour
+  faire les délibérés rendus ;
+- **« Affaires vidées »** compte les dossiers dont **plus aucune étape n'est en cours**. Un dossier
+  dont l'Instance est jugée mais dont l'Appel est ouvert reste donc **actif** : il continue. Avec
+  les dossiers actifs, les affaires vidées font le total des dossiers ouverts ;
+- le rapport d'activité suit la même règle, à l'écran comme dans ses exports.
 
 ![Le tableau de bord du Directeur Juridique.](images/guide/19-tableau-de-bord.png)
 
