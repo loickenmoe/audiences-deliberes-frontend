@@ -38,18 +38,30 @@ test("le DJ lit ses indicateurs et rejoint les rapports depuis le tableau de bor
   await dj.waitForURL(/\/tableau-de-bord/, { timeout: 60_000 });
 
   await expect(dj.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
-  // Les six indicateurs du contrat, chacun avec sa valeur — la base de développement n'est pas vide.
+  // Les neuf indicateurs du contrat, chacun avec sa valeur — la base de développement n'est pas vide.
   for (const libelle of [
     "Dossiers actifs",
     "Audiences planifiées",
     "Frais en attente",
     "Alertes de prorogation",
     "Succès du recouvrement",
+    "Litiges gagnés",
+    "Litiges perdus",
+    "Décisions mixtes",
     "Provisions reprises",
   ]) {
     await expect(dj.getByRole("term").filter({ hasText: libelle })).toBeVisible();
   }
   await expect(dj.getByText("Dossiers portant au moins une étape en cours.")).toBeVisible();
+
+  /*
+   * N6 (observation 12) : la Direction lisait un taux sans savoir sur combien d'affaires il
+   * portait. Les trois décomptes **ne se déduisent pas l'un de l'autre** - une décision mixte
+   * n'est ni gagnée ni perdue - et l'écran doit le dire, pas seulement l'afficher.
+   */
+  await expect(
+    dj.getByText("Ce n’est pas le complément des gagnés : les décisions mixtes sont comptées à part."),
+  ).toBeVisible();
 
   // Le parcours P9 s'enchaîne : le DJ passe au rapport par son composite ROLE_JURISTE (Q-81).
   await dj.getByRole("link", { name: "Générer un rapport" }).click();

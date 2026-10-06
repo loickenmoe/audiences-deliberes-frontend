@@ -13,6 +13,8 @@ import type {
   FiltresDossiers,
   ModifierAffectation,
   ValiderDerogation,
+  ModifierDiligence,
+  ProposerDiligence,
   ValiderSensibilite,
 } from "@/types/domaine";
 import type { StatutCycleVie, StatutValidation, TypeEtape } from "@/types/enums";
@@ -129,6 +131,29 @@ export function useValiderSensibilite(id: number) {
     id,
     (decision: ValiderSensibilite) => dossierService.validerSensibilite(id, decision),
     "sensibiliteEnregistree",
+  );
+}
+
+/** Le juriste propose la diligence particulière sur un dossier déjà ouvert (N4). */
+export function useProposerDiligence(id: number) {
+  return useMutationFiche(
+    id,
+    (demande: ProposerDiligence) => dossierService.proposerDiligence(id, demande),
+    "diligenceProposee",
+  );
+}
+
+/**
+ * Le DJ ou la DJA pose ou lève la diligence directement (N4).
+ *
+ * Une seule mutation pour les deux sens : c'est un seul endpoint, et le message de succès se
+ * déduit de ce qui a été demandé - l'écran sait lequel des deux il vient de faire.
+ */
+export function useModifierDiligence(id: number) {
+  return useMutationFiche(
+    id,
+    (modification: ModifierDiligence) => dossierService.modifierDiligence(id, modification),
+    "diligenceModifiee",
   );
 }
 

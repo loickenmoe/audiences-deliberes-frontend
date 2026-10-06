@@ -1,5 +1,6 @@
 import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { ligneDansLaFile } from "./files-de-travail";
 
 /**
  * Portail Avocat (écrans 30 et 33) **contre le backend réel**.
@@ -453,7 +454,13 @@ test("le compte rendu validé de l'avocat se retrouve depuis son audience", asyn
 
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/publications");
-  await assistante.getByRole("row", { name: new RegExp(reference) }).first().getByRole("link").first().click();
+  /*
+   * La file est **FIFO et paginée** : le compte rendu qu'on vient de déposer est le dernier, donc
+   * pas sur la première page. Chercher à l'écran sans parcourir les pages ne tenait que tant que
+   * la file comptait moins de dix éléments.
+   */
+  const ligneFile = await ligneDansLaFile(assistante, new RegExp(reference));
+  await ligneFile.getByRole("link").first().click();
   await assistante.waitForURL(/\/publications\/\d+/, { timeout: 60_000 });
   /*
    * Un **compte rendu** ne se valide pas, l'Assistante en **accuse réception**. Depuis l'étape 2 du

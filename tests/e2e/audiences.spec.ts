@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { ligneDansLaFile } from "./files-de-travail";
 import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
@@ -31,9 +32,6 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** `YYYY-MM-DD` local, dans `jours` jours. */
 function dansJours(jours: number) {
@@ -352,14 +350,12 @@ test("le journal du jour rapporte le compte rendu que le juriste vient de saisir
 
   /*
    * Le journal est paginé, et une journée de recette accumule les audiences des exécutions
-   * précédentes : on élargit la page comme le ferait la personne qui cherche son dossier, plutôt
-   * que d'avancer page par page — la donnée précédente restant affichée pendant le chargement, une
-   * boucle de clics dépasserait la bonne page sans la voir.
+   * précédentes. Élargir la page à cinquante lignes a tenu un temps, puis le journal a franchi ce
+   * seuil à son tour - c'est précisément ce que l'en-tête de `ligneDansLaFile` annonçait. On
+   * parcourt donc les pages de **cette section**, qui a sa propre pagination.
    */
   const sectionJournal = dj.getByRole("region", { name: "Audiences du jour" });
-  await sectionJournal.getByLabel("Lignes par page").selectOption("50");
-
-  const ligne = sectionJournal.getByRole("row", { name: new RegExp(reference) });
+  const ligne = await ligneDansLaFile(sectionJournal, new RegExp(reference));
   await expect(ligne).toContainText("Renvoi contradictoire au mois prochain.");
   // L'avocat n'a rien déposé : l'écran le dit, sans le confondre avec un compte rendu manquant.
   await expect(ligne).toContainText("Non déposé");

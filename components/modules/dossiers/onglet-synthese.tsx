@@ -161,6 +161,19 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
                 <Donnee libelle={tf("motifRejet")}>{dossier.sensibiliteMotifRejet}</Donnee>
               ) : null}
             </dl>
+          ) : dossier.sensibiliteMotifRetrait ? (
+            /*
+             * Un dossier dont la diligence a été **retirée** (N4) n'est plus sensible : sans ce cas,
+             * le bloc se réduisait à « dossier ordinaire » et le motif du retrait, pourtant exigé du
+             * DJ, n'aurait été lisible nulle part.
+             */
+            <dl className="grid gap-4 sm:grid-cols-3">
+              <Donnee libelle={tf("statutSensibilite")}>{tf("sensibiliteMotifRetrait")}</Donnee>
+              <Donnee libelle={tf("diligenceMotifRetrait")}>{dossier.sensibiliteMotifRetrait}</Donnee>
+              <Donnee libelle={tf("origineSeuil")}>
+                {dossier.seuilOrigine ? tdom(`SeuilOrigine.${dossier.seuilOrigine}` as never) : null}
+              </Donnee>
+            </dl>
           ) : (
             <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{tf("nonSensible")}</p>
           )}

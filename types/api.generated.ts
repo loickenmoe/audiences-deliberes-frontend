@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dossiers/{id}/sensibilite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["modifierSensibilite"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dossiers/{id}/affectation": {
         parameters: {
             query?: never;
@@ -558,6 +574,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["validerSensibilite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dossiers/{id}/sensibilite/proposition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["proposerSensibilite"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1637,9 +1669,12 @@ export interface components {
             /** Format: date-time */
             dateAction?: string;
         };
-        ModifierAffectationRequest: {
-            juristesAffectes: number[];
-            avocatsAffectes: number[];
+        ModifierSensibiliteRequest: {
+            estSensible: boolean;
+            /** Format: double */
+            seuilMontant?: number;
+            typeClientSensible?: string;
+            motif?: string;
         };
         DossierResponse: {
             /** Format: int64 */
@@ -1673,6 +1708,7 @@ export interface components {
             /** @enum {string} */
             sensibiliteStatut?: "EN_ATTENTE" | "VALIDEE" | "REJETEE";
             sensibiliteMotifRejet?: string;
+            sensibiliteMotifRetrait?: string;
             etapes?: components["schemas"]["EtapeProcedureResponse"][];
             juristesAffectes?: number[];
             avocatsAffectes?: number[];
@@ -1699,7 +1735,7 @@ export interface components {
             /** Format: int64 */
             utilisateurId?: number;
             /** @enum {string} */
-            code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+            code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_PROPOSEE" | "SENSIBILITE_ARBITREE" | "SENSIBILITE_RETIREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
             action?: string;
             details?: {
                 [key: string]: Record<string, never>;
@@ -1710,6 +1746,10 @@ export interface components {
         PartiesDto: {
             demandeurs: string[];
             defendeurs: string[];
+        };
+        ModifierAffectationRequest: {
+            juristesAffectes: number[];
+            avocatsAffectes: number[];
         };
         ViderDelibereRequest: {
             /** @enum {string} */
@@ -2033,6 +2073,12 @@ export interface components {
             seuilMontantAjuste?: number;
             typeClientSensibleAjuste?: string;
         };
+        ProposerSensibiliteRequest: {
+            /** Format: double */
+            seuilMontant: number;
+            typeClientSensible: string;
+            motif: string;
+        };
         CreerEtapeRequest: {
             /** @enum {string} */
             type: "INSTANCE" | "RECOURS_1" | "RECOURS_2" | "RECOURS_2_CCJA";
@@ -2209,6 +2255,12 @@ export interface components {
             nbProrogationsAlerte?: number;
             /** Format: double */
             tauxSuccesRecouvrement?: number;
+            /** Format: int64 */
+            nbLitigesGagnes?: number;
+            /** Format: int64 */
+            nbLitigesPerdus?: number;
+            /** Format: int64 */
+            nbLitigesMixtes?: number;
             /** Format: double */
             provisionsReprises?: number;
         };
@@ -2328,7 +2380,7 @@ export interface components {
         };
         OptionAction: {
             /** @enum {string} */
-            code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+            code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_PROPOSEE" | "SENSIBILITE_ARBITREE" | "SENSIBILITE_RETIREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
             libelle?: string;
         };
         ExportAuditResponse: {
@@ -2772,6 +2824,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuditSeuilResponse"];
+                };
+            };
+        };
+    };
+    modifierSensibilite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModifierSensibiliteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DossierResponse"];
                 };
             };
         };
@@ -3710,6 +3788,32 @@ export interface operations {
             };
         };
     };
+    proposerSensibilite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposerSensibiliteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DossierResponse"];
+                };
+            };
+        };
+    };
     creerEtape: {
         parameters: {
             query?: never;
@@ -4537,7 +4641,7 @@ export interface operations {
                 perimetre?: "HORS_DOSSIER" | "UN_DOSSIER" | "TOUT";
                 dossierId?: number;
                 utilisateurId?: number;
-                code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+                code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_PROPOSEE" | "SENSIBILITE_ARBITREE" | "SENSIBILITE_RETIREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
                 dateDebut?: string;
                 dateFin?: string;
                 page?: number;
@@ -4635,7 +4739,7 @@ export interface operations {
                 perimetre?: "HORS_DOSSIER" | "UN_DOSSIER" | "TOUT";
                 dossierId?: number;
                 utilisateurId?: number;
-                code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_ARBITREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
+                code?: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_PROPOSEE" | "SENSIBILITE_ARBITREE" | "SENSIBILITE_RETIREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
                 dateDebut: string;
                 dateFin: string;
                 format?: "PDF" | "EXCEL";

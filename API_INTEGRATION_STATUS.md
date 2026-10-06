@@ -1,12 +1,13 @@
 # API_INTEGRATION_STATUS
 
-> Les **79 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
+> Les **81 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88, puis les cinq du référentiel des agences en N1) et leur état de consommation par
 > le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
 > Dernière mise à jour : 2026-10-05 (jalon N1 — **référentiel des agences** : #67 à #70 consommés,
-> écran 44 livré, contrat régénéré, 89 chemins. Le code d'agence n'est plus un champ de texte ;
+> écran 44 livré, contrat régénéré, 91 chemins avec N4. Le code d'agence n'est plus un champ de
+> texte ;
 > la fermeture d'une agence se défait, #71, demande du 2026-10-06).
 > Précédente : 2026-09-29 (**contrat régénéré depuis le backend** : `contracts/openapi.json`
 > passe de 62 à 86 chemins, aucun retiré. Il datait d’avant le Notification Engine, le portail
@@ -69,6 +70,8 @@
 | 7 | PUT | `/dossiers/{id}/seuil-derogation/{auditId}` | DJ, DJA | 17 | F7 | ✅ |
 | — | GET | `/dossiers/{id}/seuil-derogation[?statut=]` 🆕 Q-74 | CONS | 17 | F7 | ✅ |
 | 8 | POST | `/dossiers/{id}/sensibilite/validation` | DJ, DJA | 18 | F7 | ✅ |
+| 72 | POST | `/dossiers/{id}/sensibilite/proposition` | JUR (SAISIE) | 07, 45 | N4 | ✅ |
+| 73 | PUT | `/dossiers/{id}/sensibilite` | DJ, DJA | 07, 45 | N4 | ✅ |
 
 **Notes d'intégration**
 - **#1** — corps `CreerDossierRequest` : `reference`, `nature`, `categorie`, `juridictionSaisie`,

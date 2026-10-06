@@ -10,6 +10,8 @@ import type {
   HistoriqueAction,
   ModifierAffectation,
   ValiderDerogation,
+  ModifierDiligence,
+  ProposerDiligence,
   ValiderSensibilite,
 } from "@/types/domaine";
 import type { StatutCycleVie, StatutValidation, TypeEtape } from "@/types/enums";
@@ -168,9 +170,31 @@ export const dossierService = {
     return data;
   },
 
-  /** #8 — validation ou rejet de la sensibilité proposée à la création. */
+  /**
+   * #8 — validation ou rejet d'une sensibilité proposée, qu'elle vienne de la création ou d'une
+   * proposition faite en cours de route (N4) : l'arbitrage n'a pas à savoir d'où elle vient.
+   */
   validerSensibilite: async (id: number, decision: ValiderSensibilite): Promise<Dossier> => {
     const { data } = await apiClient.post<Dossier>(`/dossiers/${id}/sensibilite/validation`, decision);
+    return data;
+  },
+
+  /**
+   * Le juriste propose la diligence particulière sur un dossier déjà ouvert - `ROLE_SAISIE`, comme
+   * la demande de dérogation de seuil. Le dossier passe `EN_ATTENTE` ; **rien ne change pour les
+   * frais avant l'arbitrage** (Q-10).
+   */
+  proposerDiligence: async (id: number, demande: ProposerDiligence): Promise<Dossier> => {
+    const { data } = await apiClient.post<Dossier>(`/dossiers/${id}/sensibilite/proposition`, demande);
+    return data;
+  },
+
+  /**
+   * Le DJ ou la DJA pose ou lève la diligence directement - `PUT`, car on ne crée pas une demande,
+   * on fixe l'état de la diligence du dossier. Le retrait remet le seuil global.
+   */
+  modifierDiligence: async (id: number, modification: ModifierDiligence): Promise<Dossier> => {
+    const { data } = await apiClient.put<Dossier>(`/dossiers/${id}/sensibilite`, modification);
     return data;
   },
 };

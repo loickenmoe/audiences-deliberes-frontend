@@ -62,6 +62,13 @@ export const CAPACITES = {
   gererEtapes: ["ROLE_JURISTE"],
   /** `POST /dossiers/{id}/seuil-derogation` — ROLE_SAISIE */
   demanderDerogationSeuil: ["ROLE_SAISIE"],
+  /**
+   * `POST /dossiers/{id}/sensibilite/proposition` - SAISIE (N4, observation 5).
+   *
+   * Même rôle que la demande de dérogation, et pour la même raison : le juriste **propose**,
+   * il ne décide pas. La pose et le retrait directs relèvent d'`arbitrerDossier`.
+   */
+  proposerDiligence: ["ROLE_SAISIE"],
   /** `PUT .../seuil-derogation/{auditId}`, `POST .../sensibilite/validation` — DJ, DJA */
   arbitrerDossier: ["ROLE_DJ", "ROLE_DJA"],
 

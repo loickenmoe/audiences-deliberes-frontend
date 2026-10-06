@@ -347,6 +347,47 @@
         }
       }
     },
+    "/api/v1/dossiers/{id}/sensibilite": {
+      "put": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "modifierSensibilite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifierSensibiliteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dossiers/{id}/affectation": {
       "put": {
         "tags": [
@@ -2069,6 +2110,47 @@
         }
       }
     },
+    "/api/v1/dossiers/{id}/sensibilite/proposition": {
+      "post": {
+        "tags": [
+          "dossier-controller"
+        ],
+        "operationId": "proposerSensibilite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposerSensibiliteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dossiers/{id}/etapes": {
       "post": {
         "tags": [
@@ -3487,7 +3569,9 @@
                 "ETAPE_POSITIONNEE_DIRECTEMENT",
                 "DEROGATION_SEUIL_DEMANDEE",
                 "DEROGATION_SEUIL_ARBITREE",
+                "SENSIBILITE_PROPOSEE",
                 "SENSIBILITE_ARBITREE",
+                "SENSIBILITE_RETIREE",
                 "AUDIENCE_PLANIFIEE",
                 "AUDIENCE_DOUBLON_CONFIRME",
                 "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
@@ -3744,7 +3828,9 @@
                 "ETAPE_POSITIONNEE_DIRECTEMENT",
                 "DEROGATION_SEUIL_DEMANDEE",
                 "DEROGATION_SEUIL_ARBITREE",
+                "SENSIBILITE_PROPOSEE",
                 "SENSIBILITE_ARBITREE",
+                "SENSIBILITE_RETIREE",
                 "AUDIENCE_PLANIFIEE",
                 "AUDIENCE_DOUBLON_CONFIRME",
                 "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
@@ -5351,26 +5437,28 @@
           }
         }
       },
-      "ModifierAffectationRequest": {
+      "ModifierSensibiliteRequest": {
         "required": [
-          "avocatsAffectes",
-          "juristesAffectes"
+          "estSensible"
         ],
         "type": "object",
         "properties": {
-          "juristesAffectes": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int64"
-            }
+          "estSensible": {
+            "type": "boolean"
           },
-          "avocatsAffectes": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "int64"
-            }
+          "seuilMontant": {
+            "type": "number",
+            "format": "double"
+          },
+          "typeClientSensible": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "motif": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
           }
         }
       },
@@ -5464,6 +5552,9 @@
             ]
           },
           "sensibiliteMotifRejet": {
+            "type": "string"
+          },
+          "sensibiliteMotifRetrait": {
             "type": "string"
           },
           "etapes": {
@@ -5562,7 +5653,9 @@
               "ETAPE_POSITIONNEE_DIRECTEMENT",
               "DEROGATION_SEUIL_DEMANDEE",
               "DEROGATION_SEUIL_ARBITREE",
+              "SENSIBILITE_PROPOSEE",
               "SENSIBILITE_ARBITREE",
+              "SENSIBILITE_RETIREE",
               "AUDIENCE_PLANIFIEE",
               "AUDIENCE_DOUBLON_CONFIRME",
               "AUDIENCE_COMPTE_RENDU_ENREGISTRE",
@@ -5638,6 +5731,29 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "ModifierAffectationRequest": {
+        "required": [
+          "avocatsAffectes",
+          "juristesAffectes"
+        ],
+        "type": "object",
+        "properties": {
+          "juristesAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "avocatsAffectes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
             }
           }
         }
@@ -6632,6 +6748,30 @@
           }
         }
       },
+      "ProposerSensibiliteRequest": {
+        "required": [
+          "motif",
+          "seuilMontant",
+          "typeClientSensible"
+        ],
+        "type": "object",
+        "properties": {
+          "seuilMontant": {
+            "type": "number",
+            "format": "double"
+          },
+          "typeClientSensible": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "motif": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
       "CreerEtapeRequest": {
         "required": [
           "type"
@@ -7152,6 +7292,18 @@
             "type": "number",
             "format": "double"
           },
+          "nbLitigesGagnes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nbLitigesPerdus": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nbLitigesMixtes": {
+            "type": "integer",
+            "format": "int64"
+          },
           "provisionsReprises": {
             "type": "number",
             "format": "double"
@@ -7475,7 +7627,9 @@
               "ETAPE_POSITIONNEE_DIRECTEMENT",
               "DEROGATION_SEUIL_DEMANDEE",
               "DEROGATION_SEUIL_ARBITREE",
+              "SENSIBILITE_PROPOSEE",
               "SENSIBILITE_ARBITREE",
+              "SENSIBILITE_RETIREE",
               "AUDIENCE_PLANIFIEE",
               "AUDIENCE_DOUBLON_CONFIRME",
               "AUDIENCE_COMPTE_RENDU_ENREGISTRE",

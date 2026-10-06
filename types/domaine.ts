@@ -174,6 +174,8 @@ export interface Dossier {
   seuilOrigine: SeuilOrigine | null;
   sensibiliteStatut: StatutValidation | null;
   sensibiliteMotifRejet: string | null;
+  /** Motif du retrait de la diligence particulière. Distinct du motif de rejet d'une proposition. */
+  sensibiliteMotifRetrait: string | null;
   etapes: EtapeProcedure[];
   juristesAffectes: number[];
   avocatsAffectes: number[];
@@ -318,6 +320,34 @@ export interface ValiderSensibilite {
   motifRejet?: string;
   seuilMontantAjuste?: number;
   typeClientSensibleAjuste?: string;
+}
+
+/**
+ * Proposition de diligence particulière sur un dossier **déjà ouvert** (métier, 2026-10-03,
+ * observation 5).
+ *
+ * Le seuil et le type sont exigés comme à la création : c'est la proposition que le DJ arbitrera.
+ * Le `motif`, lui, n'existe pas à la création - là, la diligence est annoncée dès l'ouverture. Ici,
+ * le dossier vivait sans elle, et ce qui a changé doit être dit.
+ */
+export interface ProposerDiligence {
+  seuilMontant: number;
+  typeClientSensible: string;
+  motif: string;
+}
+
+/**
+ * Pose ou retrait **direct** par le DJ ou la DJA, sans proposition (métier, 2026-10-06).
+ *
+ * `estSensible` à vrai exige seuil et type ; à faux, c'est un retrait et le `motif` devient
+ * obligatoire - le dossier sort du circuit de double validation des frais, l'audit demandera
+ * pourquoi.
+ */
+export interface ModifierDiligence {
+  estSensible: boolean;
+  seuilMontant?: number;
+  typeClientSensible?: string;
+  motif?: string;
 }
 
 /** Demande de suppression créée quand un juriste auteur supprime une pièce (#40, réponse 202). */
@@ -1049,11 +1079,17 @@ export interface StatistiquesDiffusion {
 // ─────────────────────────────── Reporting ───────────────────────────────
 
 /**
- * Tableau de bord exécutif (#50, écran 39). Six indicateurs **temps réel, tous dossiers
+ * Tableau de bord exécutif (#50, écran 39). Neuf indicateurs **temps réel, tous dossiers
  * confondus** : le backend ne les restreint ni à une période ni au portefeuille de l'appelant.
  *
  * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage — `Pourcentage` le met en
  * forme.
+ *
+ * **Gagnés, perdus et mixtes sont trois nombres distincts** (métier, 2026-10-03, observation 12).
+ * Le backend les possédait et n'exposait que le taux : la Direction lisait un pourcentage sans
+ * savoir sur combien d'affaires il portait. « Perdus » n'est pas « total moins gagnés » - un
+ * délibéré mixte n'est ni l'un ni l'autre, et le déduire aurait compté les affaires partiellement
+ * gagnées comme des pertes.
  */
 export interface TableauDeBord {
   nbDossiersActifs: number;
@@ -1061,6 +1097,9 @@ export interface TableauDeBord {
   nbDemandesFraisEnAttente: number;
   nbProrogationsAlerte: number;
   tauxSuccesRecouvrement: number;
+  nbLitigesGagnes: number;
+  nbLitigesPerdus: number;
+  nbLitigesMixtes: number;
   provisionsReprises: number;
 }
 

@@ -20,9 +20,6 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** `YYYY-MM-DD` local, dans `jours` jours. */
 function dansJours(jours: number) {

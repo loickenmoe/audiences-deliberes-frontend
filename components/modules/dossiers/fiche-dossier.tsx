@@ -12,6 +12,10 @@ import { DerogationsEnAttente } from "@/components/modules/dossiers/derogations-
 import { ModaleAffectation } from "@/components/modules/dossiers/modale-affectation";
 import { ModaleConstitution } from "@/components/modules/dossiers/modale-constitution";
 import { ModaleDerogation } from "@/components/modules/dossiers/modale-derogation";
+import {
+  ModaleDiligence,
+  type IntentionDiligence,
+} from "@/components/modules/dossiers/modale-diligence";
 import { ModaleSensibilite } from "@/components/modules/dossiers/modale-sensibilite";
 import { OngletAlarmes } from "@/components/modules/dossiers/onglet-alarmes";
 import { OngletAudiences } from "@/components/modules/dossiers/onglet-audiences";
@@ -86,6 +90,11 @@ export function FicheDossier({
     (ONGLETS as readonly string[]).includes(ongletInitial ?? "") ? (ongletInitial as Onglet) : "synthese",
   );
   const [modale, setModale] = useState<"affectation" | "derogation" | "sensibilite" | "constitution" | null>(null);
+  /*
+   * La révision de la diligence porte son **intention** et non un simple booléen : trois gestes
+   * partagent la même modale, et c'est l'intention qui décide de ce qui est exigé.
+   */
+  const [diligence, setDiligence] = useState<IntentionDiligence | null>(null);
   const refsOnglets = useRef<Record<Onglet, HTMLButtonElement | null>>({
     synthese: null,
     etapes: null,
@@ -113,6 +122,17 @@ export function FicheDossier({
     peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "EN_ATTENTE";
   // L'arbitrage d'une dérogation n'est recevable que sur une sensibilité déjà validée (Q-74).
   const peutArbitrerDerogation =
+    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
+  /*
+   * N4 — la diligence se révise après l'ouverture (observation 5).
+   *
+   * Le juriste **propose** sur un dossier qui n'est pas déjà en diligence ; le DJ et la DJA
+   * **posent** directement dans le même cas, et **retirent** une diligence validée. Les trois
+   * conditions sont exclusives : un dossier en attente d'arbitrage n'offre que l'arbitrage.
+   */
+  const peutProposerDiligence = peut(roles, "proposerDiligence") && !dossier.estSensible;
+  const peutPoserDiligence = peut(roles, "arbitrerDossier") && !dossier.estSensible;
+  const peutRetirerDiligence =
     peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
   // UC-INT-05 : le juriste sollicite la constitution d'un prestataire depuis le dossier.
   const peutSolliciter = peut(roles, "solliciterConstitution");
@@ -191,6 +211,21 @@ export function FicheDossier({
               {t("actionConstitution")}
             </Button>
           ) : null}
+          {peutProposerDiligence ? (
+            <Button variante="secondaire" onClick={() => setDiligence("proposer")}>
+              {t("actionDiligenceProposer")}
+            </Button>
+          ) : null}
+          {peutPoserDiligence ? (
+            <Button variante="secondaire" onClick={() => setDiligence("poser")}>
+              {t("actionDiligencePoser")}
+            </Button>
+          ) : null}
+          {peutRetirerDiligence ? (
+            <Button variante="secondaire" onClick={() => setDiligence("retirer")}>
+              {t("actionDiligenceRetirer")}
+            </Button>
+          ) : null}
           {peutStatuer ? (
             <Button onClick={() => setModale("sensibilite")}>{t("actionSensibilite")}</Button>
           ) : null}
@@ -265,6 +300,16 @@ export function FicheDossier({
           dossier={dossier}
           ouvert={modale === "sensibilite"}
           onFermeture={() => setModale(null)}
+        />
+      ) : null}
+      {/* La clé remonte la modale à chaque intention : son formulaire repart propre. */}
+      {diligence ? (
+        <ModaleDiligence
+          key={diligence}
+          dossier={dossier}
+          intention={diligence}
+          ouvert
+          onFermeture={() => setDiligence(null)}
         />
       ) : null}
       {peutSolliciter ? (

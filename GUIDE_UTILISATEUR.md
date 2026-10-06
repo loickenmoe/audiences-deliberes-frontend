@@ -115,6 +115,22 @@ connaître :
 **Un dossier à diligence particulière** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.
 
+**La diligence particulière se révise en cours de route** (depuis le 2026-10-06). Une affaire se
+révèle sensible après l'ouverture - une contrepartie change de nature, un montant se découvre - et
+l'inverse arrive aussi. Depuis la fiche du dossier :
+
+- **le juriste propose** *Proposer la diligence particulière* : seuil, type de client, et ce qui a
+  changé depuis l'ouverture. Le dossier passe en attente, et **rien ne change pour les demandes de
+  frais** tant que le DJ ou la DJA n'a pas tranché ;
+- **le DJ et la DJA posent directement** *Mettre en diligence particulière*, sans proposition : ils
+  sont la décision. Une proposition en attente est alors tranchée au seuil qu'ils indiquent ;
+- **le DJ et la DJA retirent** *Retirer la diligence particulière*, avec un motif obligatoire. Le
+  dossier redevient ordinaire et son seuil repasse au seuil global. Le motif reste affiché sur la
+  synthèse : six mois plus tard, on saura pourquoi.
+
+Les boutons proposés dépendent de l'état du dossier et de votre rôle. Un dossier dont la diligence
+attend un arbitrage n'offre que l'arbitrage.
+
 **La fiche** rassemble tout : identification, parties, pièces, affectations, diligence particulière, étapes,
 audiences, délibérés, décisions et publications. Les onglets se partagent par lien : l'adresse porte
 l'onglet ouvert, un collègue retrouvera exactement la même vue.

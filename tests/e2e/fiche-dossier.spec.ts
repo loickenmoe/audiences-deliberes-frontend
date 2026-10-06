@@ -29,9 +29,6 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** Crée un dossier par l'interface et renvoie l'URL de sa fiche. */
 async function creerDossier(page: Page, { sensible = false } = {}) {

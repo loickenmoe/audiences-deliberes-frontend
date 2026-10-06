@@ -1,7 +1,9 @@
 # SCREEN_MAP
 
-> Les 43 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-10-05 (jalon N1 — écran 44 livré : référentiel des agences).
+> Les 44 écrans cibles : route, rôles, endpoints consommés, états, avancement.
+> Dernière mise à jour : 2026-10-06 (jalon N4 — écran 45 : la diligence particulière se révise
+> après l'ouverture, dans les deux sens).
+> Précédente : 2026-10-05 (jalon N1 — écran 44 livré : référentiel des agences).
 > Précédente : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
 > Précédente : 2026-09-14 (jalon F17 — accueil contextualisé achevé : **42 écrans sur 42**).
 > Précédente : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ; 41 sur 42).
@@ -67,6 +69,7 @@
 | 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ✅ |
 | 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ✅ (arbitrage débloqué par Q-74) |
 | 18 | Validation de sensibilité | modale | DJ, DJA | `POST /dossiers/{id}/sensibilite/validation` | F7 | ✅ |
+| 45 | **Révision de la diligence particulière** | modale | JUR (proposer) / DJ, DJA (poser, retirer) | `POST /dossiers/{id}/sensibilite/proposition`, `PUT /dossiers/{id}/sensibilite` | N4 | ✅ |
 
 **Référentiels du formulaire 06** : `GET /referentiels/natures-dossier?categorie=`,
 `GET /referentiels/types-client-sensible`, `GET /utilisateurs?profil=JURISTE`,
@@ -219,6 +222,21 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
 | 44 | **Référentiel des agences** | `/admin/agences` | DJ, DJA (écriture) / CONS (lecture) | `GET /referentiels/agences?recherche&actifSeulement`, `POST`, `PUT /{id}`, `DELETE /{id}`, `PATCH /{id}/reactivation` | N1 | ✅ |
 
+**45** — la diligence ne se posait qu'à la création : un dossier ouvert comme ordinaire le restait
+définitivement. Une seule modale sert **trois gestes**, parce que les champs sont les mêmes et que
+l'intention seule change ce qui est exigé : seuil et type pour proposer et pour poser, motif pour
+proposer et pour retirer, rien d'autre pour le retrait - il efface le seuil. Le juriste propose, le
+DJ et la DJA posent et retirent ; les trois boutons de la fiche sont exclusifs, un dossier en
+attente d'arbitrage n'offrant que l'arbitrage (écran 18). Le motif du retrait s'affiche sur la
+synthèse **après** le retrait, alors que le dossier n'est plus sensible - sans ce cas, il aurait été
+exigé du DJ pour n'être lu nulle part.
+
+**39** — **neuf** indicateurs depuis N6, et non six : les litiges **gagnés**, **perdus** et
+**mixtes** suivent le taux de succès (métier, 2026-10-03, observation 12). Un pourcentage ne dit pas
+sur combien d'affaires il porte. Les trois sont affichés côte à côte et **aucun n'est déduit** : un
+délibéré mixte n'est ni gagné ni perdu, et le ranger d'office aurait fait lire un chiffre faux. La
+phrase d'aide des « litiges perdus » le dit à l'écran, pas seulement dans le code.
+
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.
 `PUT /alertes/seuils` n'accepte que `type = CHARGE_MAX_AVOCAT` et délègue en interne à
@@ -267,4 +285,5 @@ navigateur** : seule sa valeur part au serveur. Chaque archive porte une référ
 | F15 | 39, 40 | 2 |
 | F16 | 30, 33 | 2 |
 | N1 | 44 | 1 |
-| | **Total** | **44 entrées / 43 écrans numérotés** — la 44e est `not-found` (F1), non numérotée |
+| N4 | 45 | 1 |
+| | **Total** | **45 entrées / 44 écrans numérotés** — la 45e est `not-found` (F1), non numérotée |

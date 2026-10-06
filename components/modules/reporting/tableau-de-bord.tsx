@@ -1,6 +1,16 @@
 "use client";
 
-import { AlarmClock, CalendarDays, FolderOpen, Receipt, TrendingUp, Wallet } from "lucide-react";
+import {
+  AlarmClock,
+  CalendarDays,
+  FolderOpen,
+  Receipt,
+  Scale,
+  ThumbsDown,
+  Trophy,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -16,10 +26,15 @@ import type { TableauDeBord } from "@/types/domaine";
 /**
  * Écran 39 — tableau de bord exécutif (FR-REP-02, US 8.5).
  *
- * Six indicateurs **temps réel, tous dossiers confondus** : le backend ne les restreint ni à une
+ * Neuf indicateurs **temps réel, tous dossiers confondus** : le backend ne les restreint ni à une
  * période ni au portefeuille de l'appelant. Chacun porte une phrase qui dit ce qu'il compte —
  * « dossiers actifs » n'a pas le même sens pour tout le monde, et un chiffre qu'on interprète mal
  * pilote mal.
+ *
+ * **Gagnés, perdus et mixtes suivent le taux** (métier, 2026-10-03, observation 12) : un
+ * pourcentage ne dit pas sur combien d'affaires il porte. Les trois sont affichés côte à côte et
+ * **aucun n'est déduit** : un délibéré mixte n'est ni gagné ni perdu, et le ranger d'office aurait
+ * fait lire un chiffre faux sans moyen de s'en apercevoir.
  *
  * Lecture réservée au DJ et à la DJA (backend Q-95).
  */
@@ -93,6 +108,24 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           libelle={t("tauxSuccesRecouvrement")}
           aide={t("tauxSuccesRecouvrementAide")}
           valeur={<Pourcentage valeur={donnees.tauxSuccesRecouvrement} />}
+        />
+        <Indicateur
+          icone={<Trophy size={18} aria-hidden />}
+          libelle={t("nbLitigesGagnes")}
+          aide={t("nbLitigesGagnesAide")}
+          valeur={<Nombre valeur={donnees.nbLitigesGagnes} />}
+        />
+        <Indicateur
+          icone={<ThumbsDown size={18} aria-hidden />}
+          libelle={t("nbLitigesPerdus")}
+          aide={t("nbLitigesPerdusAide")}
+          valeur={<Nombre valeur={donnees.nbLitigesPerdus} />}
+        />
+        <Indicateur
+          icone={<Scale size={18} aria-hidden />}
+          libelle={t("nbLitigesMixtes")}
+          aide={t("nbLitigesMixtesAide")}
+          valeur={<Nombre valeur={donnees.nbLitigesMixtes} />}
         />
         <Indicateur
           icone={<Wallet size={18} aria-hidden />}

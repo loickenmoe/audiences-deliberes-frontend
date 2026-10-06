@@ -36,9 +36,6 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** Remplit un dossier de recouvrement, sans l'envoyer. */
 async function remplirDossier(page: Page) {

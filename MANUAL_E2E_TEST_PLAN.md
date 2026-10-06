@@ -133,6 +133,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-029 | Filtrer et trier la liste des dossiers | JUR | Haute | REC-E2E-006 | ☐ |
 | REC-E2E-030 | Relance de l'avocat dont le compte rendu manque | DJ, JUR, AVO | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-031 | Référentiel des agences : chercher, créer, corriger, fermer | DJ (+ JUR) | Haute | Aucune | ☐ |
+| REC-E2E-032 | Diligence particulière révisée après l'ouverture : proposée, arbitrée, retirée | JUR → DJ → DJA | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1023,6 +1024,57 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
+## REC-E2E-032 - Diligence particulière révisée après l'ouverture
+
+### Objectif
+Valider que la diligence particulière se **pose et se lève après l'ouverture** du dossier (métier,
+2026-10-03, observation 5 ; les deux sens arrêtés le 2026-10-06). Jusqu'ici elle ne se posait qu'à la
+création : un dossier ouvert comme ordinaire le restait définitivement.
+
+### Acteurs
+Juriste (`juriste.test`) qui propose, DJ (`dj.test`) qui arbitre et qui pose directement, DJA
+(`dja.test`) qui retire.
+
+### Préconditions
+Un dossier **ordinaire** - créé sans cocher la diligence particulière. Celui de REC-E2E-003 convient.
+
+### Données de test
+Seuil proposé `60 000 000`, type de client au choix du référentiel, motif
+`La contrepartie est devenue une personne exposée`. Motif de retrait
+`L'affaire s'est révélée ordinaire`.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | JUR | Ouvrir la fiche d'un dossier ordinaire | Le bouton **« Proposer la diligence particulière »** est proposé. « Mettre en diligence particulière » ne l'est **pas** : le juriste propose, il ne décide pas | | ☐ |
+| 2 | JUR | « Proposer la diligence particulière » → enregistrer **sans motif** | Refus : le champ « Ce qui a changé depuis l'ouverture » est obligatoire. Le dossier vivait sans diligence : ce qui a changé doit être dit | | ☐ |
+| 3 | JUR | Renseigner seuil, type et motif → « Enregistrer » | « Proposition de diligence particulière enregistrée. » Le bandeau de la fiche porte **« En attente »** | | ☐ |
+| 4 | JUR | Onglet « Synthèse » | Statut **En attente**, et l'origine du seuil reste **« Seuil global »**. Rien ne change pour les frais avant l'arbitrage | | ☐ |
+| 5 | JUR | Chercher à proposer une seconde fois | Le bouton a disparu : une proposition est déjà en attente | | ☐ |
+| 6 | DJ | Ouvrir la même fiche → « Statuer sur la diligence particulière » → **Valider** | « Décision enregistrée. » C'est la **modale qui existait déjà** : elle ne distingue pas une proposition venue de la création d'une proposition faite en cours de route | | ☐ |
+| 7 | DJ | Onglet « Synthèse » | Statut **Validée**, origine du seuil **« Dérogation validée »**, seuil à 60 000 000. La diligence produit désormais ses effets | | ☐ |
+| 8 | DJA | Ouvrir la fiche → « Retirer la diligence particulière » → « Retirer » **sans motif** | Refus : le motif est obligatoire. Lever la diligence fait sortir le dossier du circuit de double validation des frais | | ☐ |
+| 9 | DJA | Renseigner le motif de retrait → « Retirer » | « Diligence particulière mise à jour. » Le dossier redevient ordinaire | | ☐ |
+| 10 | DJA | Onglet « Synthèse » | Le **motif du retrait** est affiché, et l'origine du seuil est repassée à **« Seuil global »** | | ☐ |
+| 11 | DJA | Onglet « Historique » | La **proposition** et le **retrait** y figurent, nommés et datés, avec leur auteur | | ☐ |
+| 12 | JUR | Reproposer la diligence sur ce même dossier | Accepté : un retrait ne condamne pas le dossier. Le motif du retrait disparaît de la synthèse - il ne porte plus sur la situation en cours | | ☐ |
+| 13 | DJ | Sur un **autre** dossier ordinaire, « Mettre en diligence particulière » → seuil et type → enregistrer | Posée **directement** au statut Validée, sans arbitrage : le DJ est la décision. Le bouton devient « Retirer la diligence particulière » | | ☐ |
+
+### Résultat final attendu
+Un dossier ordinaire a été rendu sensible par proposition puis arbitrage, puis rendu ordinaire par
+retrait motivé, et un second l'a été directement par le DJ. L'historique porte les trois gestes.
+
+### Points de contrôle
+- La proposition **ne produit aucun effet** avant l'arbitrage : le seuil reste global (Q-10).
+- Le juriste **propose**, le DJ et la DJA **décident** - même partage que la dérogation de seuil.
+- Le retrait exige un **motif**, et remet le seuil à **global** : un seuil dérogatoire n'existe que
+  pour un dossier à diligence particulière.
+- Le motif de retrait reste **lisible après** le retrait, bien que le dossier ne soit plus sensible.
+- Les boutons sont **exclusifs** : un dossier en attente d'arbitrage n'offre que l'arbitrage.
+
+---
+
 ## REC-E2E-031 - Référentiel des agences : chercher, créer, corriger, fermer
 
 ### Objectif
@@ -1491,6 +1543,9 @@ autant de garanties métier.
 | REC-NEG-038 | Dossier sans agence d'origine | JUR | Remplir le formulaire de création **sans choisir d'agence d'origine**, puis « Enregistrer » | Refus : le champ porte son message. L'agence d'origine est obligatoire depuis le 2026-10-05 | ☐ |
 | REC-NEG-039 | Code d'agence inventé | JUR | Par l'API, créer un dossier avec `codeAgenceOrigine` = `5466546546` | Refus : « Aucune agence ouverte ne porte le code « 5466546546 » », et le refus **nomme le champ**. C'est le code trouvé sur l'unique dossier de recette qui en portait un | ☐ |
 | REC-NEG-040 | Code d'agence modifié | DJ | Par l'API, envoyer un `PUT` sur une agence avec un code différent du sien | Refus : « Le code d'une agence ne se modifie pas ». À l'écran, le champ est inactif - les deux doivent concorder | ☐ |
+| REC-NEG-041 | Diligence proposée deux fois | JUR | Par l'API, proposer la diligence sur un dossier dont une proposition est déjà en attente | Refus : « Une proposition de diligence particulière est déjà en attente d'arbitrage sur ce dossier ». À l'écran, le bouton a disparu - les deux doivent concorder | ☐ |
+| REC-NEG-042 | Diligence posée par un juriste | JUR | Par l'API, envoyer un `PUT` sur `/dossiers/{id}/sensibilite` | Refus 403 : poser ou lever la diligence engage la double validation des frais, ce n'est pas un geste de saisie | ☐ |
+| REC-NEG-043 | Retrait sur un dossier ordinaire | DJ | Retirer la diligence d'un dossier qui n'en a pas | Refus : « il n'y a rien à retirer » | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1706,8 +1761,8 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Pilotage et administration | 3 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **31** | | | | |
-| Cas négatifs (REC-NEG) | 40 | | | | |
+| **Total parcours de bout en bout** | **32** | | | | |
+| Cas négatifs (REC-NEG) | 43 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1715,7 +1770,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 31 parcours, les 40 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 32 parcours, les 43 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
