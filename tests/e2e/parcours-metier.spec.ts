@@ -5,6 +5,7 @@ import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
@@ -80,6 +81,8 @@ async function ouvrirUnDossier(page: Page, marque: string) {
   // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill(`CRD-${marque}`);
   await page.getByLabel("PV de transfert", { exact: true }).fill(`PV-${marque}`);
   await deposerPiecesDeCreation(page, { marque });
@@ -140,7 +143,7 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
 }) => {
   const marque = suffixe();
   const juriste = await pageConnectee(browser, "juriste.test");
-  const { url } = await ouvrirUnDossier(juriste, marque);
+  const { reference, url } = await ouvrirUnDossier(juriste, marque);
 
   /*
    * L'étape d'instance doit d'abord passer `EN_COURS` : une audience se planifie sur une instance
@@ -169,7 +172,9 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   // L'avocat dépose son compte rendu sur cette audience (US 5.1).
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/publications/nouvelle");
-  await choisirDossierAvocat(avocat, `DOS-${marque}`);
+  // La référence est **attribuée** (2026-09-29) : on emploie celle que la création a rendue,
+  // jamais une référence fabriquée à partir de la marque du parcours.
+  await choisirDossierAvocat(avocat, reference);
   await expect(avocat.locator("#publication-audience")).toBeEnabled({ timeout: 30_000 });
   await avocat.locator("#publication-audience").selectOption({ index: 1 });
   await avocat.locator("#publication-contenu").fill(`Audience renvoyée - ${marque}`);
@@ -178,7 +183,7 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
     .locator('input[name="piece-jointe"]')
     .setInputFiles({ name: `plumitif-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
   await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
-  await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
+  await expect(avocat.getByText("Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique ; l’Assistante en accusera réception.")).toBeVisible({
     timeout: 30_000,
   });
   await avocat.context().close();
@@ -187,7 +192,7 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/publications");
   // File FIFO et paginée : la publication qu'on vient de déposer est en queue, pas en tête.
-  const ligne = await ligneDansLaFile(assistante, new RegExp(`DOS-${marque}`));
+  const ligne = await ligneDansLaFile(assistante, new RegExp(reference));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
 
   // Q-98 : la pièce du compte rendu s'ouvre depuis la publication elle-même — c'est ce qui
@@ -206,14 +211,14 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
 test("P6 — une demande de frais traverse tout son circuit, de l'avocat au paiement", async ({ browser }) => {
   const marque = suffixe();
   const juriste = await pageConnectee(browser, "juriste.test");
-  await ouvrirUnDossier(juriste, marque);
+  const { reference } = await ouvrirUnDossier(juriste, marque);
   await juriste.context().close();
 
   // 1. L'avocat dépose, pièce justificative comprise (UC-INT-01).
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/frais/nouvelle");
   const facture = `FAC-${marque}`;
-  await choisirDossierAvocat(avocat, `DOS-${marque}`);
+  await choisirDossierAvocat(avocat, reference);
   await avocat.locator("#frais-reference").fill(facture);
   await avocat.locator("#frais-montant").fill("400000");
   await avocat
@@ -238,7 +243,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
 }) => {
   const marque = suffixe();
   const juriste = await pageConnectee(browser, "juriste.test");
-  const { url } = await ouvrirUnDossier(juriste, marque);
+  const { reference, url } = await ouvrirUnDossier(juriste, marque);
   // Le même nom que celui déposé par `ouvrirUnDossier` : la casse compte pour retrouver la ligne.
   const nom = `pv-${marque}.pdf`;
 
@@ -255,7 +260,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
   await dj.goto("/ged/demandes-suppression");
   const ligne = await ligneDansLaFile(dj, new RegExp(nom));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
-  await expect(ligne).toContainText(`DOS-${marque}`);
+  await expect(ligne).toContainText(reference);
   await dj.context().close();
 });
 

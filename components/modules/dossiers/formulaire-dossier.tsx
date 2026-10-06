@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { CasesACocher, GardeSaisie, SelecteurCherchable } from "@/components/metier";
+import { CasesACocher, GardeSaisie, SelecteurAgence, SelecteurCherchable } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
@@ -108,7 +108,10 @@ export function FormulaireDossier({
           risqueEncouru: z.coerce.number().min(0, tm("champObligatoire")),
           recoursExerces: z.string().optional(),
           motifRenvoi: z.string().max(255).optional(),
-          codeAgenceOrigine: z.string().max(20).optional(),
+          // Obligatoire depuis le 2026-10-05 (observation 2) : le code vient du référentiel,
+          // il ne se saisit plus. Celle du contentieux reste facultative - un dossier n'est
+          // pas toujours transféré.
+          codeAgenceOrigine: z.string().min(1, tm("champObligatoire")).max(20),
           codeAgenceContentieuse: z.string().max(20).optional(),
           dossierCreditOrigine: z.string().max(50).optional(),
           pvTransfert: z.string().max(255).optional(),
@@ -166,6 +169,10 @@ export function FormulaireDossier({
       // un bloc vide où il faudrait deviner qu'un bouton « Ajouter » existe.
       demandeurs: [{ nom: "" }],
       defendeurs: [{ nom: "" }],
+      // Vide, et non absent : le sélecteur reçoit une chaîne, et le résolveur zod signale
+      // « champ obligatoire » plutôt que « attendu string, reçu undefined ».
+      codeAgenceOrigine: "",
+      codeAgenceContentieuse: "",
       estSensible: false,
       juristesAffectes: [],
       avocatsAffectes: [],
@@ -221,7 +228,7 @@ export function FormulaireDossier({
         risqueEncouru: Number(valeurs.risqueEncouru),
         recoursExerces: valeurs.recoursExerces || undefined,
         motifRenvoi: valeurs.motifRenvoi || undefined,
-        codeAgenceOrigine: valeurs.codeAgenceOrigine || undefined,
+        codeAgenceOrigine: valeurs.codeAgenceOrigine,
         codeAgenceContentieuse: valeurs.codeAgenceContentieuse || undefined,
         // N'envoyer que les pièces de la catégorie concernée : celles de l'autre n'ont pas de sens
         // ici et seraient stockées pour rien.
@@ -502,12 +509,44 @@ export function FormulaireDossier({
             <Champ id="motifRenvoi" label={t("champMotifRenvoi")}>
               <Input id="motifRenvoi" {...register("motifRenvoi")} />
             </Champ>
-            <Champ id="codeAgenceOrigine" label={t("champAgenceOrigine")}>
-              <Input id="codeAgenceOrigine" {...register("codeAgenceOrigine")} />
-            </Champ>
-            <Champ id="codeAgenceContentieuse" label={t("champAgenceContentieuse")}>
-              <Input id="codeAgenceContentieuse" {...register("codeAgenceContentieuse")} />
-            </Champ>
+            {/*
+              Les deux codes d'agence viennent du référentiel (observation 2). La liste affiche
+              « code · nom · ville » : le code pour qui le connaît, le nom pour qui le cherche, la
+              ville pour l'orienter - et l'adresse en seconde ligne, seule à séparer les deux
+              agences homonymes.
+            */}
+            <Controller
+              control={control}
+              name="codeAgenceOrigine"
+              render={({ field }) => (
+                <div className="flex flex-col gap-1">
+                  <SelecteurAgence
+                    id="codeAgenceOrigine"
+                    label={t("champAgenceOrigine")}
+                    obligatoire
+                    valeur={field.value}
+                    onChangement={(code) => field.onChange(code ?? "")}
+                  />
+                  {errors.codeAgenceOrigine?.message ? (
+                    <p className="text-[length:var(--taille-xs)] text-danger">
+                      {errors.codeAgenceOrigine.message}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            />
+            <Controller
+              control={control}
+              name="codeAgenceContentieuse"
+              render={({ field }) => (
+                <SelecteurAgence
+                  id="codeAgenceContentieuse"
+                  label={t("champAgenceContentieuse")}
+                  valeur={field.value}
+                  onChangement={(code) => field.onChange(code ?? "")}
+                />
+              )}
+            />
           </CardContent>
         </Card>
 

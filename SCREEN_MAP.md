@@ -1,7 +1,8 @@
 # SCREEN_MAP
 
-> Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
+> Les 43 écrans cibles : route, rôles, endpoints consommés, états, avancement.
+> Dernière mise à jour : 2026-10-05 (jalon N1 — écran 44 livré : référentiel des agences).
+> Précédente : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
 > Précédente : 2026-09-14 (jalon F17 — accueil contextualisé achevé : **42 écrans sur 42**).
 > Précédente : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ; 41 sur 42).
 > Précédente : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; 39 écrans sur 42).
@@ -216,6 +217,7 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
 | 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants`, `PUT /intervenants/{id}` | F5 · Q-117 | ✅ |
 | 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
+| 44 | **Référentiel des agences** | `/admin/agences` | DJ, DJA (écriture) / CONS (lecture) | `GET /referentiels/agences?recherche&actifSeulement`, `POST`, `PUT /{id}`, `DELETE /{id}`, `PATCH /{id}/reactivation` | N1 | ✅ |
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.
@@ -227,6 +229,16 @@ refuse le champ `notification` ; un `AUTRE_PRESTATAIRE` refuse tout compte appli
 modification ni suppression** : non demandées par les user stories. Cet écran est indispensable en
 F5 — sans lui, aucun avocat n'existe, et `avocatsAffectes` est obligatoire à la création d'un
 dossier.
+
+**44** — le code d'agence était **deux champs de texte libre** : sur les 341 dossiers de recette,
+un seul en portait un, et il ne désignait aucune agence. L'écran tient les 82 agences chargées par
+la migration `V42`. Trois règles s'y voient : le **code ne se modifie pas** après création (champ
+inactif en correction, 400 par l'API), `DELETE` **désactive** sans supprimer - et la fermeture
+se **défait** (2026-10-06, bouton « Réactiver » sur les lignes fermées, sans confirmation : le
+geste est bénin et immédiatement défaisable) -, et la **ville est obligatoire** car deux agences
+peuvent porter le même nom. Le sélecteur de la création d'un dossier (écran 06) s'y alimente et
+affiche « code · Agence nom · ville » - le mot « Agence », « Branch » en anglais, demandé par le
+métier le 2026-10-06 - avec l'adresse en seconde ligne pour séparer les homonymes.
 
 **43** — trois blocs : la **consultation** filtrée (Q-112), l'**extraction scellée** avec la liste des
 archives produites (Q-113), et la **vérification d'un fichier reçu** (Q-114,
@@ -254,4 +266,5 @@ navigateur** : seule sa valeur part au serveur. Chaque archive porte une référ
 | F14 | 03, 41 | 2 |
 | F15 | 39, 40 | 2 |
 | F16 | 30, 33 | 2 |
-| | **Total** | **43 entrées / 42 écrans numérotés** — la 43e est `not-found` (F1), non numérotée |
+| N1 | 44 | 1 |
+| | **Total** | **44 entrées / 43 écrans numérotés** — la 44e est `not-found` (F1), non numérotée |

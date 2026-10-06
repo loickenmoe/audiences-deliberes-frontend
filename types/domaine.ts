@@ -49,6 +49,36 @@ export interface NatureDossier {
   categorie: CategorieDossier;
 }
 
+/**
+ * Une agence de la banque (métier, 2026-10-03, observation 2).
+ *
+ * Le code d'agence d'un dossier était du texte libre : sur les 341 dossiers de recette, un seul
+ * était renseigné, et il ne désignait aucune agence. Le référentiel ferme la saisie.
+ *
+ * `id` est l'identifiant technique, `code` celui que la banque emploie - c'est `code` que le
+ * dossier porte. Deux agences peuvent partager un nom (deux « MBALLA II ») : la **ville** les
+ * oriente, l'**adresse** les tranche.
+ */
+export interface Agence {
+  id: number;
+  code: string;
+  nom: string;
+  ville: string;
+  adresse: string | null;
+  telephone: string | null;
+  actif: boolean;
+}
+
+/** Création et modification d'une agence (DJ/DJA). Le code ne se modifie pas après création. */
+export interface AgenceEcriture {
+  code: string;
+  nom: string;
+  ville: string;
+  adresse?: string | null;
+  telephone?: string | null;
+  actif?: boolean | null;
+}
+
 export interface TypeClientSensible {
   id: number;
   code: string;

@@ -77,6 +77,8 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
       avocatsAffectes: [avocats[0]!.id],
       // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur"] },
+      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      codeAgenceOrigine: "00002",
     }),
   });
   const dossier = await json<{ etapes: { id: number }[] }>(`/dossiers/${id}`, juriste);
@@ -95,6 +97,21 @@ async function etapeCloturee(dossierId: number, etapeId: number) {
       body: JSON.stringify({ nouveauStatut }),
     });
   await statut("EN_COURS");
+
+  /*
+   * Une audience **tenue** est exigee avant la mise en delibere (regle du 2026-09-29,
+   * REC-NEG-028) : un delibere sans audience n'a pas de sens, et le backend refuse la
+   * transition en 400. C'est le compte rendu du juriste qui rend l'audience tenue.
+   */
+  const audience = await json<{ id: number }>(`/dossiers/${dossierId}/audiences`, juriste, {
+    method: "POST",
+    body: JSON.stringify({ datePlanifiee: aujourdhui(), etapeId, juridiction: "TGI Douala" }),
+  });
+  await json(`/audiences/${audience.id}/compte-rendu`, juriste, {
+    method: "PUT",
+    body: JSON.stringify({ compteRendu: "Affaire appelee, mise en delibere." }),
+  });
+
   await statut("EN_DELIBERE");
   await json(`/dossiers/${dossierId}/deliberes`, juriste, {
     method: "POST",
@@ -246,12 +263,20 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
 });
 
 test("une décision archivée depuis la fiche y reste listée", async ({ page }) => {
-  const { id } = await dossierCree();
+  const { id, etapeId } = await dossierCree();
+  /*
+   * L'étape doit être **clôturée** avant l'archivage : depuis la fiche, une décision ne rejoint la
+   * base jurisprudentielle qu'une fois définitive, tous recours épuisés (REC-NEG-034). Un dossier
+   * tout juste créé porte une étape ouverte, et le refus était donc fondé.
+   */
+  await etapeCloturee(id, etapeId);
   await seConnecter(page, "juriste.test");
   await page.goto(`/dossiers/${id}?onglet=decisions`);
   await expect(page.getByText("Aucune décision archivée sur ce dossier.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Archiver la décision" }).click();
+  // Le bouton dit « Archiver à la jurisprudence » : c'est la base jurisprudentielle qu'on
+  // alimente, pas un classement interne au dossier.
+  await page.getByRole("button", { name: "Archiver à la jurisprudence" }).click();
   const modale = page.getByRole("dialog", { name: "Archiver une décision" });
   await modale.locator('input[name="fichier-jurisprudence"]').setInputFiles({ name: "jugement.pdf", mimeType: "application/pdf", buffer: PDF });
   await modale.getByLabel("Type d’archive", { exact: true }).selectOption({ label: "Expédition" });

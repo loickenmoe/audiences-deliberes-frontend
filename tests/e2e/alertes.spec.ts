@@ -121,6 +121,8 @@ async function deposerDemandeDeFrais(): Promise<string> {
       avocatsAffectes: [avocatId],
       // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
+      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      codeAgenceOrigine: "00002",
     }),
   });
   await json<{ id: number }>("/frais/demandes", await jeton("avocat.test"), {

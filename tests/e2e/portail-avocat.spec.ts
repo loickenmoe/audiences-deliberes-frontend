@@ -113,6 +113,8 @@ async function creerDossierAffecteALAvocat(): Promise<string> {
       avocatsAffectes: [fiche!.id],
       // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
+      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      codeAgenceOrigine: "00002",
     }),
   });
   expect(creation.status, "le dossier de recherche doit être créé").toBe(201);
@@ -257,7 +259,7 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
     await avocat.locator("#publication-contenu").fill(marque);
     // Q-98 : la pièce est **facultative** — ce dépôt-ci n'en porte pas, et doit aboutir.
     await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
-    await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
+    await expect(avocat.getByText("Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique ; l’Assistante en accusera réception.")).toBeVisible({
       timeout: 30_000,
     });
     await avocat.waitForURL(/\/portail/, { timeout: 60_000 });
@@ -302,7 +304,7 @@ test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser
   await apercuPiece.getByRole("button", { name: "Fermer" }).first().click();
 
   await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
-  await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
+  await expect(avocat.getByText("Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique ; l’Assistante en accusera réception.")).toBeVisible({
     timeout: 30_000,
   });
 
@@ -444,7 +446,7 @@ test("le compte rendu validé de l'avocat se retrouve depuis son audience", asyn
   await audiences.selectOption({ index: 1 });
   await avocat.locator("#publication-contenu").fill(`Renvoi contradictoire ${marque}`);
   await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
-  await expect(avocat.getByText("Publication déposée. Elle sera visible après validation.")).toBeVisible({
+  await expect(avocat.getByText("Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique ; l’Assistante en accusera réception.")).toBeVisible({
     timeout: 30_000,
   });
   await avocat.context().close();
@@ -453,14 +455,20 @@ test("le compte rendu validé de l'avocat se retrouve depuis son audience", asyn
   await assistante.goto("/publications");
   await assistante.getByRole("row", { name: new RegExp(reference) }).first().getByRole("link").first().click();
   await assistante.waitForURL(/\/publications\/\d+/, { timeout: 60_000 });
-  await assistante.getByRole("button", { name: "Valider" }).click();
+  /*
+   * Un **compte rendu** ne se valide pas, l'Assistante en **accuse réception**. Depuis l'étape 2 du
+   * lot d'améliorations, il est consultable par les juristes affectés dès son dépôt ; l'accusé de
+   * réception l'ouvre aux autres et dit à l'avocat qu'il a été reçu. Le bouton « Rejeter »,
+   * lui, n'est plus proposé : un récit d'audience se conteste par une correspondance.
+   */
+  await assistante.getByRole("button", { name: "Accuser réception" }).click();
   await assistante
-    .getByRole("dialog", { name: "Valider la publication ?" })
-    .getByRole("button", { name: "Valider" })
+    .getByRole("dialog", { name: "Accuser réception du compte rendu ?" })
+    .getByRole("button", { name: "Accuser réception" })
     .click();
   // Attendre la confirmation, et non le seul clic : naviguer trop tôt laissait la publication au
   // statut « déposée », et l'audience paraissait alors — à juste titre — sans compte rendu.
-  await expect(assistante.getByText("Publication validée : les juristes sont prévenus.")).toBeVisible({
+  await expect(assistante.getByText("Réception du compte rendu accusée.")).toBeVisible({
     timeout: 30_000,
   });
 

@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
@@ -42,6 +43,8 @@ async function remplirTroncCommun(page: Page, nature: string) {
   // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await affecterParDefaut(page);
 }
 
@@ -86,7 +89,7 @@ test("la sensibilité n'exige seuil et type qu'une fois cochée", async ({ page 
 
   await expect(page.getByLabel("Seuil proposé (FCFA)", { exact: true })).toHaveCount(0);
 
-  await page.getByLabel("Dossier sensible", { exact: true }).check();
+  await page.getByLabel("Dossier à diligence particulière", { exact: true }).check();
   await expect(page.getByLabel("Seuil proposé (FCFA)", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Type de client", { exact: true })).toBeVisible();
 });

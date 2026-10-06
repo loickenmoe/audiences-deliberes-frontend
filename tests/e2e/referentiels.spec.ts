@@ -129,8 +129,10 @@ test("un juriste corrige un client depuis sa fiche, sans pouvoir toucher à sa r
 
   // La fiche se rafraîchit d'elle-même : son cache est invalidé après la modification.
   await expect(page.getByRole("heading", { name: nomCorrige, level: 1 })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("contact@client-e2e.cm")).toBeVisible();
-  await expect(page.getByText(reference, { exact: true })).toBeVisible();
+  await expect(page.getByText("contact@client-e2e.cm").first()).toBeVisible();
+  // `first()` : le dialogue qu'on vient de fermer reste dans le DOM avec sa propre copie de la
+  // reference et du courriel. Ce qui compte est que la fiche les porte, non qu'ils soient uniques.
+  await expect(page.getByText(reference, { exact: true }).first()).toBeVisible();
 });
 
 test("la vue consolidée regroupe les dossiers par catégorie", async ({ page }) => {

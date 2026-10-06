@@ -2,6 +2,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
@@ -60,6 +61,8 @@ async function dossierEnCours(page: Page) {
   // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-AUD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-AUD");
   await deposerPiecesDeCreation(page, { marque: "aud" });
@@ -87,6 +90,8 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV");
   await deposerPiecesDeCreation(page, { marque: "aud2" });

@@ -3,6 +3,7 @@ import { affecterParDefaut } from "./affectation";
 import { ligneDansLaFile } from "./files-de-travail";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * GED (écrans 36 et 37) **contre le backend réel et MinIO** : la file des demandes de suppression
@@ -50,6 +51,8 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
   await juriste.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await juriste.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(juriste);
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
   await deposerPiecesDeCreation(juriste, { marque: "ged" });

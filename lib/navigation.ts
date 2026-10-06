@@ -7,6 +7,7 @@ import {
   FileSignature,
   FolderOpen,
   Gavel,
+  Landmark,
   LayoutDashboard,
   Library,
   Receipt,
@@ -59,6 +60,7 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "demandesSuppression", href: "/ged/demandes-suppression", icone: Trash2, capacite: "arbitrerSuppressions", livre: true },
   { cle: "rapportJournalier", href: "/ged/rapport-journalier", icone: ClipboardList, capacite: "consulterRapportJournalier", livre: true },
   { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "consulterReferentiels", livre: true },
+  { cle: "agences", href: "/admin/agences", icone: Landmark, capacite: "consulterReferentiels", livre: true },
   { cle: "configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: true },
   // Audit (Q-112) : écran d'enquête, distinct de l'administration. Visible du DJ et de la DJA seuls.
   { cle: "audit", href: "/admin/audit", icone: ScrollText, capacite: "consulterAudit", livre: true },

@@ -91,6 +91,27 @@ compte - une banque assigne souvent un débiteur **et** sa caution. La première
 ne se retire pas, puisqu'il en faut au moins une. Le client du dossier, lui, se choisit à part : il
 est identifié au référentiel, pas ressaisi ici.
 
+**L'agence d'origine est obligatoire, et elle se choisit** (depuis le 2026-10-05). Le champ
+*Agence d'origine* n'est plus une zone de saisie : tapez les premières lettres du code ou du nom, et
+la liste se réduite à mesure. Chaque ligne porte **le code, le mot « Agence », le nom et la
+ville** - « 00002 · Agence BONANJO · Douala » - et, quand deux agences portent le même nom,
+l'adresse apparaît en seconde ligne pour les séparer. *Agence du contentieux* reste facultative : renseignez-la quand le dossier est suivi
+ailleurs qu'à l'agence où il est né. Seules les agences **ouvertes** sont proposées.
+
+**Le référentiel des agences** se consulte depuis *Agences*, dans le menu. Tous les profils internes
+le lisent ; **le DJ et la DJA seuls** y créent, corrigent et ferment une agence. Trois points à
+connaître :
+
+- **Le code ne se modifie pas** après création. Les dossiers le portent en clair : le changer les
+  détacherait de leur agence sans que rien ne le signale. Une agence qui change de code est une
+  autre agence - créez-la, puis désactivez l'ancienne.
+- **On désactive, on ne supprime pas - et on peut rouvrir.** Une agence fermée quitte les listes de
+  choix ; les dossiers ouverts sous elle restent intacts et lisibles. Sa ligne porte un bouton
+  *Réactiver* : une fermeture faite par erreur se défait, et une agence qui réouvre reprend sa
+  place avec **le même code**. Sans cela, il aurait fallu la recréer sous un code inventé.
+- **La ville est obligatoire.** Deux agences peuvent porter le même nom, et c'est elle qui les
+  distingue au moment de la saisie.
+
 **Un dossier à diligence particulière** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.
 

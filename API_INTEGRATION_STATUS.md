@@ -1,10 +1,14 @@
 # API_INTEGRATION_STATUS
 
-> Les **74 endpoints HTTP** exposés par le backend (67 d'origine, plus sept ajouts de M16 : Q-74,
+> Les **79 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
-> dossier, Q-88) et leur état de consommation par le frontend.
+> dossier, Q-88, puis les cinq du référentiel des agences en N1) et leur état de consommation par
+> le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-29 (**contrat régénéré depuis le backend** : `contracts/openapi.json`
+> Dernière mise à jour : 2026-10-05 (jalon N1 — **référentiel des agences** : #67 à #70 consommés,
+> écran 44 livré, contrat régénéré, 89 chemins. Le code d'agence n'est plus un champ de texte ;
+> la fermeture d'une agence se défait, #71, demande du 2026-10-06).
+> Précédente : 2026-09-29 (**contrat régénéré depuis le backend** : `contracts/openapi.json`
 > passe de 62 à 86 chemins, aucun retiré. Il datait d’avant le Notification Engine, le portail
 > Avocat, l’audit et le journal des audiences — et ne portait donc ni la référence attribuée par le
 > système, ni la juridiction d’audience, ni les filtres d’étape. Il ne sert qu’à la vérification :
@@ -360,14 +364,27 @@ nuls tant que la décision n'est pas rendue.
 - ⚠ **QF-03 — aucun `GET` sur #51/#52.** Une décision créée n'est jamais relisible, et #53 exige un
   identifiant inatteignable après rechargement de page. **Bloque l'écran 14 en lecture.**
 
-## 11. Référentiels et utilisateurs
+## 11. Référentiels, agences et utilisateurs
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 64 | GET | `/referentiels/natures-dossier?categorie=` | CONS | 05 (filtre), 06 | F5 · F6 | ✅ consommé à l'écran en F6 *(statut corrigé en F8 : resté à 🟡 par oubli)* |
 | 65 | GET | `/referentiels/types-client-sensible` | CONS | 06, 18 | F5 · F6 | ✅ consommé à l'écran en F6 et F7 *(statut corrigé en F8 : resté à 🟡 par oubli)* |
 | 66 | GET | `/utilisateurs?profil=&inclureInactifs=` | CONS | 06, 16 | F5 | ✅ consommé par `useLibelles` |
+| 67 | GET | `/referentiels/agences?recherche=&actifSeulement=` | CONS | 06, 44 | N1 | ✅ |
+| 68 | POST | `/referentiels/agences` | DJ, DJA | 44 | N1 | ✅ |
+| 69 | PUT | `/referentiels/agences/{id}` | DJ, DJA | 44 | N1 | ✅ |
+| 70 | DELETE | `/referentiels/agences/{id}` | DJ, DJA | 44 | N1 | ✅ |
+| 71 | PATCH | `/referentiels/agences/{id}/reactivation` | DJ, DJA | 44 | N1 | ✅ |
 
+- **#67 à #70** — le seul référentiel **écrit depuis l'application**. Il est aussi le seul
+  **paginé et cherché côté serveur** : 82 agences ne tiennent pas dans une liste déroulante
+  lisible. Le sélecteur de l'écran 06 affiche « code · nom · ville », l'adresse en seconde ligne
+  pour séparer les agences homonymes. `actifSeulement` vaut vrai partout sauf sur l'écran 44 : la
+  saisie ne doit pas proposer une agence que le backend refusera. **`DELETE` désactive** - le
+  service rend l'agence modifiée, non `void`, et l'écran affiche son nouvel état. **#71 rouvre**
+  (2026-10-06) : la fermeture est réversible, code inchangé. Les deux mutations sont distinctes et
+  non un bascule, pour que l'écran puisse nommer celle qui a échoué.
 - **#64** — filtrable par catégorie, entrées actives seulement. Lecture seule (administré en base
   par le DJ, CONF02).
 - **#66** — `keycloakId` **n'est pas exposé**. Comptes actifs seuls par défaut. `ROLE_CONSULTATION`

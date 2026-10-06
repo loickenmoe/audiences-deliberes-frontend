@@ -2,6 +2,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Parcours de la fiche dossier (écrans 07, 08, 15, 16, 18) **contre le backend réel**.
@@ -42,12 +43,14 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-FICHE");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-FICHE");
   await deposerPiecesDeCreation(page, { marque: "fiche" });
   await affecterParDefaut(page);
   if (sensible) {
-    await page.getByLabel("Dossier sensible", { exact: true }).check();
+    await page.getByLabel("Dossier à diligence particulière", { exact: true }).check();
     await page.getByLabel("Seuil proposé (FCFA)", { exact: true }).fill("60000000");
     await page.getByLabel("Type de client", { exact: true }).selectOption("VIP");
   }
@@ -177,12 +180,24 @@ test("l'historique retrace les actions sur le dossier", async ({ page }) => {
   await expect(page.getByText("Création du dossier")).toBeVisible();
 });
 
-test("l'onglet documents lit la liste dédiée, vide pour un dossier neuf", async ({ page }) => {
+/**
+ * L'onglet Documents lit l'endpoint dédié `GET /dossiers/{id}/documents`, et non le champ
+ * `documents` de la fiche, qui reste vide par construction (Q-67).
+ *
+ * **Il ne peut plus être vide sur un dossier neuf.** Les pièces sont obligatoires à la création
+ * depuis le 2026-09-29 : un dossier de recouvrement naît avec son dossier de crédit et son PV de
+ * transfert. Ce test vérifiait l'état vide, prémisse que cette règle a supprimée ; il vérifie
+ * désormais que l'onglet présente bien les deux pièces déposées à la création.
+ */
+test("l'onglet documents lit la liste dédiée et porte les pièces de la création", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await creerDossier(page);
 
   await page.getByRole("tab", { name: "Documents" }).click();
-  await expect(page.getByText("Aucun document", { exact: true })).toBeVisible();
+  await expect(page.getByText("Aucun document", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("row").filter({ hasText: ".pdf" }).first()).toBeVisible({
+    timeout: 30_000,
+  });
 });
 
 test("sensibilité validée, dérogation demandée, puis arbitrée par le DJ", async ({ browser }) => {

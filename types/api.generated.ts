@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/referentiels/agences/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["modifier"];
+        post?: never;
+        delete: operations["desactiver"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/{id}/validation": {
         parameters: {
             query?: never;
@@ -28,7 +44,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["modifier"];
+        put: operations["modifier_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -188,7 +204,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["modifier_1"];
+        put: operations["modifier_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -324,6 +340,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/referentiels/agences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["lister_2"];
+        put?: never;
+        post: operations["creer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/{id}/correspondance": {
         parameters: {
             query?: never;
@@ -413,7 +445,7 @@ export interface paths {
         };
         get: operations["rechercher"];
         put?: never;
-        post: operations["creer"];
+        post: operations["creer_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -427,9 +459,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_3"];
+        get: operations["lister_4"];
         put?: never;
-        post: operations["creer_1"];
+        post: operations["creer_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -459,7 +491,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_4"];
+        get: operations["lister_5"];
         put?: never;
         post: operations["deposer"];
         delete?: never;
@@ -667,7 +699,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_6"];
+        get: operations["lister_7"];
         put?: never;
         post: operations["creerDemande"];
         delete?: never;
@@ -706,6 +738,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/referentiels/agences/{id}/reactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["reactiver"];
         trace?: never;
     };
     "/api/v1/frais/demandes/{id}/paiement": {
@@ -923,7 +971,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_2"];
+        get: operations["lister_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1163,7 +1211,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_5"];
+        get: operations["lister_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1211,7 +1259,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["lister_7"];
+        get: operations["lister_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1384,6 +1432,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AgenceRequest: {
+            code: string;
+            nom: string;
+            ville: string;
+            adresse?: string;
+            telephone?: string;
+            actif?: boolean;
+        };
+        AgenceResponse: {
+            /** Format: int64 */
+            id?: number;
+            code?: string;
+            nom?: string;
+            ville?: string;
+            adresse?: string;
+            telephone?: string;
+            actif?: boolean;
+        };
         ValiderPublicationRequest: {
             /** @enum {string} */
             statut: "DEPOSE" | "VALIDE" | "REJETE";
@@ -1940,7 +2006,7 @@ export interface components {
             risqueEncouru: number;
             recoursExerces?: string;
             motifRenvoi?: string;
-            codeAgenceOrigine?: string;
+            codeAgenceOrigine: string;
             codeAgenceContentieuse?: string;
             dossierCreditOrigine?: string;
             pvTransfert?: string;
@@ -2177,6 +2243,20 @@ export interface components {
             libelle?: string;
             /** @enum {string} */
             categorie?: "RECOUVREMENT" | "EXPLOITATION_LITIGES";
+        };
+        Pageable: {
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            sort?: string[];
+        };
+        PageResponseAgenceResponse: {
+            content?: components["schemas"]["AgenceResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
         };
         PageResponsePublicationResponse: {
             content?: components["schemas"]["PublicationResponse"][];
@@ -2491,6 +2571,54 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgenceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AgenceResponse"];
+                };
+            };
+        };
+    };
+    desactiver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AgenceResponse"];
+                };
+            };
+        };
+    };
     valider: {
         parameters: {
             query?: never;
@@ -2517,7 +2645,7 @@ export interface operations {
             };
         };
     };
-    modifier: {
+    modifier_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2802,7 +2930,7 @@ export interface operations {
             };
         };
     };
-    modifier_1: {
+    modifier_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3044,6 +3172,54 @@ export interface operations {
             };
         };
     };
+    lister_2: {
+        parameters: {
+            query: {
+                recherche?: string;
+                actifSeulement?: boolean;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAgenceResponse"];
+                };
+            };
+        };
+    };
+    creer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AgenceResponse"];
+                };
+            };
+        };
+    };
     transmettreCorrespondance: {
         parameters: {
             query?: never;
@@ -3206,7 +3382,7 @@ export interface operations {
             };
         };
     };
-    creer: {
+    creer_1: {
         parameters: {
             query: {
                 dossierId?: number;
@@ -3240,7 +3416,7 @@ export interface operations {
             };
         };
     };
-    lister_3: {
+    lister_4: {
         parameters: {
             query?: {
                 type?: "AVOCAT" | "AUTRE_PRESTATAIRE";
@@ -3265,7 +3441,7 @@ export interface operations {
             };
         };
     };
-    creer_1: {
+    creer_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3319,7 +3495,7 @@ export interface operations {
             };
         };
     };
-    lister_4: {
+    lister_5: {
         parameters: {
             query?: {
                 statut?: "DEPOSEE" | "CONFORMITE" | "OPPORTUNITE" | "VALIDEE" | "REJETEE" | "PAYEE";
@@ -3838,7 +4014,7 @@ export interface operations {
             };
         };
     };
-    lister_6: {
+    lister_7: {
         parameters: {
             query?: {
                 statut?: "EN_ATTENTE" | "VALIDEE" | "REJETEE";
@@ -3958,6 +4134,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PieceJustificativeResponse"];
+                };
+            };
+        };
+    };
+    reactiver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AgenceResponse"];
                 };
             };
         };
@@ -4263,7 +4461,7 @@ export interface operations {
             };
         };
     };
-    lister_2: {
+    lister_3: {
         parameters: {
             query?: {
                 dossierId?: number;
@@ -4643,7 +4841,7 @@ export interface operations {
             };
         };
     };
-    lister_5: {
+    lister_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -4709,7 +4907,7 @@ export interface operations {
             };
         };
     };
-    lister_7: {
+    lister_8: {
         parameters: {
             query?: never;
             header?: never;

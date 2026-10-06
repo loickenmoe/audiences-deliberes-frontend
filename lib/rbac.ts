@@ -171,6 +171,17 @@ export const CAPACITES = {
    */
   administrerConfigurations: ["ROLE_DJ", "ROLE_DJA"],
   /**
+   * `POST`, `PUT`, `DELETE /referentiels/agences` - DJ, DJA (backend, observation 2).
+   *
+   * **Distincte d'`administrerConfigurations`**, bien qu'elle porte aujourd'hui les mêmes
+   * rôles : un seuil se règle, une agence engage les dossiers qui portent son code. Les
+   * confondre ferait suivre à l'une tout assouplissement futur de l'autre.
+   *
+   * La **lecture** du référentiel relève de `consulterReferentiels` : elle explique ce que
+   * propose le formulaire de création, la cacher n'aiderait personne.
+   */
+  administrerAgences: ["ROLE_DJ", "ROLE_DJA"],
+  /**
    * `GET /alertes/statistiques-diffusion` — DJ, DJA (backend Q-109).
    *
    * Distincte d'`administrerConfigurations` bien qu'elle porte aujourd'hui les mêmes rôles : c'est

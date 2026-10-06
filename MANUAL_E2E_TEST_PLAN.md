@@ -132,6 +132,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-028 | Journal des audiences et comptes rendus attendus | JUR → DJ | Haute | REC-E2E-006 | ☐ |
 | REC-E2E-029 | Filtrer et trier la liste des dossiers | JUR | Haute | REC-E2E-006 | ☐ |
 | REC-E2E-030 | Relance de l'avocat dont le compte rendu manque | DJ, JUR, AVO | Haute | REC-E2E-003 | ☐ |
+| REC-E2E-031 | Référentiel des agences : chercher, créer, corriger, fermer | DJ (+ JUR) | Haute | Aucune | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -276,6 +277,8 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 4 | JUR | Cliquer « Enregistrer » **sans rien renseigner d'autre** | Refus : chaque champ obligatoire porte son message, dont les affectations | | ☐ |
 | 5 | JUR | Renseigner Client, Juridiction saisie, Risque encouru ; affecter **soi-même** comme juriste et un avocat. **Laisser les deux références de recouvrement vides**. **Aucun champ Référence de dossier n'est proposé** | Aucun message sur les deux champs laissés vides : ils sont facultatifs depuis le 2026-09-29 | | ☐ |
 | 5 bis | JUR | Bloc « Parties » : saisir un demandeur, puis cliquer **« Ajouter un défendeur »** et saisir deux défendeurs | Une ligne s'ajoute à chaque clic. La croix retire une ligne, sauf la première : au moins une partie de chaque côté est exigée | | ☐ |
+| 5 ter | JUR | Champ **« Agence d'origine »** : taper `bona` | La liste se réduit aux agences dont le code ou le nom contient « bona » - Bonanjo, Bonabéri, Bonamoussadi, Bonapriso. Chaque ligne porte **le code, le mot « Agence », le nom et la ville** : « 00002 · Agence BONANJO · Douala ». En anglais, le mot devient « Branch » | | ☐ |
+| 5 quater | JUR | Choisir une agence, puis laisser **« Agence du contentieux »** vide | Le champ retient « code · nom · ville ». Aucun message sur l'agence du contentieux : elle est facultative | | ☐ |
 | 6 | JUR | Cliquer « Enregistrer » **sans joindre de fichier** | Refus, avec un message **sous chaque pièce manquante** : « Cette pièce est obligatoire : joignez son fichier. » Rien n'est créé | | ☐ |
 | 7 | JUR | Joindre un PDF sur **chacune** des deux pièces, relire l'un d'eux avec l'œil, puis « Enregistrer » | Le dossier est créé, on arrive sur sa fiche, le titre porte la nature | | ☐ |
 | 8 | JUR | Onglet « Synthèse » | Client, juridiction, risque, affectations et diligence particulière sont affichés. **Les deux défendeurs y figurent, séparés par un point-virgule**. Les deux références laissées vides s'affichent « - » | | ☐ |
@@ -1020,6 +1023,63 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
+## REC-E2E-031 - Référentiel des agences : chercher, créer, corriger, fermer
+
+### Objectif
+Valider le référentiel qui ferme la saisie des codes d'agence (métier, 2026-10-03, observation 2) :
+recherche au fil de la frappe, tenue réservée au DJ et à la DJA, code non modifiable, fermeture
+sans suppression.
+
+### Acteurs
+DJ (`dj.test`) pour la tenue, juriste (`juriste.test`) pour vérifier que la lecture est ouverte et
+l'écriture fermée.
+
+### Préconditions
+Aucune. Les 82 agences sont chargées par la migration `V42`.
+
+### Données de test
+- Agence à créer : code `00900`, nom `AGENCE DE RECETTE`, ville `Douala`, adresse
+  `Rue de la recette`, téléphone `650 228 936`.
+- Agence existante à corriger puis fermer : celle que vous venez de créer, **jamais une vraie
+  agence** : une fermeture se voit ensuite dans tous les formulaires.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | DJ | Menu « Agences » | La liste s'ouvre, triée par code. Les colonnes Code, Nom, Ville, Adresse, Téléphone et État sont présentes | | ☐ |
+| 2 | DJ | Dans « Rechercher une agence », taper `bona` | Seules les agences dont le code ou le nom contient « bona » restent : Bonanjo, Bonabéri, Bonamoussadi, Bonapriso. La recherche **ne distingue pas les majuscules** | | ☐ |
+| 3 | DJ | Taper `00002` | La recherche porte aussi sur le **code** : Bonanjo apparaît | | ☐ |
+| 4 | DJ | Taper `MBALLA` | **Deux** agences homonymes apparaissent, de codes différents (`00108` et `108`), même ville : leurs **adresses** les séparent | | ☐ |
+| 5 | DJ | Effacer la recherche, bouton « Nouvelle agence » | Le formulaire s'ouvre : Code, Nom, Ville obligatoires ; Adresse et Téléphone facultatifs | | ☐ |
+| 6 | DJ | Enregistrer **sans ville** | Refus : la ville est obligatoire. Deux agences peuvent porter le même nom, et c'est elle qui les distingue | | ☐ |
+| 7 | DJ | Renseigner les données de test → « Enregistrer » | L'agence apparaît dans la liste, état **Ouverte** | | ☐ |
+| 8 | DJ | Créer une seconde agence avec le **même code** `00900` | Refus : « Une agence porte déjà le code 00900 ». Le message se pose **sur le champ Code** | | ☐ |
+| 9 | DJ | Sur la ligne de `AGENCE DE RECETTE`, « Modifier » | Le formulaire s'ouvre. Le champ **Code est inactif**, avec l'explication : les dossiers le portent en clair | | ☐ |
+| 10 | DJ | Changer le nom en `AGENCE DE RECETTE 2`, vider le téléphone → « Enregistrer » | Le nouveau nom apparaît ; le téléphone s'affiche « - », non une case vide | | ☐ |
+| 11 | JUR | Se connecter en juriste, menu « Agences » | La liste **s'affiche** : la lecture est ouverte à tous les profils internes. **Aucun bouton** « Nouvelle agence », « Modifier » ni « Désactiver » | | ☐ |
+| 12 | JUR | Créer un dossier, champ « Agence d'origine », taper `00900` | `00900 · AGENCE DE RECETTE 2 · Douala` est proposée. L'enregistrer sur ce dossier et **noter sa référence** | | ☐ |
+| 13 | DJ | Revenir à « Agences », sur `AGENCE DE RECETTE 2` → « Désactiver » → confirmer | La confirmation explique qu'elle est **fermée, pas supprimée**. Après validation, son état passe à **Fermée** et elle **reste dans la liste** | | ☐ |
+| 14 | JUR | Créer un nouveau dossier, champ « Agence d'origine », taper `00900` | Elle **n'est plus proposée** : la saisie ne retient que les agences ouvertes | | ☐ |
+| 15 | JUR | Ouvrir la fiche du dossier créé à l'étape 12 | Elle s'ouvre normalement et porte toujours le code `00900`. Une agence fermée **ne casse aucun dossier** | | ☐ |
+| 16 | DJ | Sur la ligne fermée de `AGENCE DE RECETTE 2`, cliquer « Réactiver » | Pas de confirmation demandée - le geste est bénin. L'état repasse à **Ouverte**, et le code est **toujours `00900`** : c'est la même agence | | ☐ |
+| 17 | JUR | Créer un dossier, champ « Agence d'origine », taper `00900` | Elle est **de nouveau proposée** | | ☐ |
+| 18 | DJ | Cliquer « Réactiver » sur une agence **déjà ouverte** (par l'API, `PATCH /referentiels/agences/{id}/reactivation`) | Aucun refus : l'état demandé est atteint, l'agence est rendue telle quelle | | ☐ |
+
+### Résultat final attendu
+Une agence a été créée, corrigée puis fermée ; le dossier ouvert sous elle reste lisible, et elle
+ne se propose plus à la saisie.
+
+### Points de contrôle
+- La recherche porte sur **le code et le nom**, par fragment, sans distinction de casse.
+- Le **code ne se modifie pas** : une agence qui change de code se recrée.
+- `DELETE` **désactive** : rien ne disparaît de la base, et les dossiers gardent leur sens.
+- La fermeture est **réversible** : « Réactiver » rouvre l'agence **avec son code**. Une fermeture par erreur ne force pas à inventer un nouveau code.
+- Le juriste **lit** le référentiel mais ne l'écrit pas ; par l'API, son `POST` est refusé (403).
+- La ville est **obligatoire** : c'est elle qui sépare deux agences de même nom.
+
+---
+
 ## REC-E2E-020 - Jurisprudence : archiver, rechercher, consulter
 
 ### Objectif
@@ -1428,6 +1488,9 @@ autant de garanties métier.
 | REC-NEG-001 | Champs obligatoires manquants | JUR | Créer un dossier en cliquant « Enregistrer » sur un formulaire vide | Chaque champ obligatoire porte son propre message ; rien n'est créé | ☐ |
 | REC-NEG-037 | Partie au procès manquante | JUR | Remplir tout le formulaire mais laisser le **demandeur** vide, ou n'y mettre que des espaces | Refus, le message se montrant sous la ligne fautive. Un dossier contentieux dit qui s'oppose à qui, ou n'est pas créé | ☐ |
 | REC-NEG-027 | Pièce obligatoire manquante | JUR | Remplir tout le formulaire de création **sauf un des deux fichiers**, puis « Enregistrer » | Refus, message sous la pièce sans fichier ; rien n'est créé. Les références, elles, peuvent rester vides | ☐ |
+| REC-NEG-038 | Dossier sans agence d'origine | JUR | Remplir le formulaire de création **sans choisir d'agence d'origine**, puis « Enregistrer » | Refus : le champ porte son message. L'agence d'origine est obligatoire depuis le 2026-10-05 | ☐ |
+| REC-NEG-039 | Code d'agence inventé | JUR | Par l'API, créer un dossier avec `codeAgenceOrigine` = `5466546546` | Refus : « Aucune agence ouverte ne porte le code « 5466546546 » », et le refus **nomme le champ**. C'est le code trouvé sur l'unique dossier de recette qui en portait un | ☐ |
+| REC-NEG-040 | Code d'agence modifié | DJ | Par l'API, envoyer un `PUT` sur une agence avec un code différent du sien | Refus : « Le code d'une agence ne se modifie pas ». À l'écran, le champ est inactif - les deux doivent concorder | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1640,11 +1703,11 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Publications et constitutions | 3 | | | | |
 | Gestion documentaire | 2 | | | | |
 | Décisions et jurisprudence | 2 | | | | |
-| Pilotage et administration | 2 | | | | |
+| Pilotage et administration | 3 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **30** | | | | |
-| Cas négatifs (REC-NEG) | 37 | | | | |
+| **Total parcours de bout en bout** | **31** | | | | |
+| Cas négatifs (REC-NEG) | 40 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1652,7 +1715,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 30 parcours, les 37 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 31 parcours, les 40 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.

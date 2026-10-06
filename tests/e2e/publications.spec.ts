@@ -96,6 +96,8 @@ async function dossier(): Promise<{ id: number; reference: string }> {
       avocatsAffectes: [avocatId],
       // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
+      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      codeAgenceOrigine: "00002",
     }),
   });
   // La référence est ATTRIBUÉE par le système : celle qu'on aurait envoyée n'existe nulle part.
