@@ -14,8 +14,8 @@ import {
  * vérifiés par `messages.test.ts` — ils vivent désormais dans les fichiers de traduction.
  */
 describe("énumérations du domaine", () => {
-  it("couvre les 17 types d'alerte du backend (Q-22)", () => {
-    expect(TypeAlerte).toHaveLength(17);
+  it("couvre les 18 types d'alerte du backend (Q-22, N7)", () => {
+    expect(TypeAlerte).toHaveLength(18);
   });
 
   it("couvre les canaux et les 11 événements prestataires du backend (Q-118, RG-INT-11, RG-INT-06)", () => {

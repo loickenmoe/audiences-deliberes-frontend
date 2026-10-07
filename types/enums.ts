@@ -153,7 +153,13 @@ export const EvenementPrestataire = [
 ] as const;
 export type EvenementPrestataire = (typeof EvenementPrestataire)[number];
 
-/** Les 17 types d'alerte (arbitrage backend Q-22). */
+/**
+ * Les 18 types d'alerte (arbitrage backend Q-22).
+ *
+ * `MANQUEMENT_COMPTE_RENDU` est arrive avec N7 (2026-10-07) : deux audiences consecutives sans
+ * compte rendu remontent au Directeur Juridique. Cote backend, toute valeur ajoutee ici exige une
+ * migration de `chk_alerte_type` - une contrainte fermee, qui ne se plaint qu'en production.
+ */
 export const TypeAlerte = [
   "RAPPEL_AUDIENCE",
   "DELAI_RECOURS",
@@ -172,6 +178,7 @@ export const TypeAlerte = [
   "CHARGE_MAX_AVOCAT",
   "DELIBERE_ATTENDU",
   "DOSSIER_INCOMPLET",
+  "MANQUEMENT_COMPTE_RENDU",
 ] as const;
 export type TypeAlerte = (typeof TypeAlerte)[number];
 

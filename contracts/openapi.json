@@ -4881,7 +4881,8 @@
                 "CONSTITUTION_A_SIGNER",
                 "CHARGE_MAX_AVOCAT",
                 "DELIBERE_ATTENDU",
-                "DOSSIER_INCOMPLET"
+                "DOSSIER_INCOMPLET",
+                "MANQUEMENT_COMPTE_RENDU"
               ]
             }
           },
@@ -6374,7 +6375,8 @@
               "CONSTITUTION_A_SIGNER",
               "CHARGE_MAX_AVOCAT",
               "DELIBERE_ATTENDU",
-              "DOSSIER_INCOMPLET"
+              "DOSSIER_INCOMPLET",
+              "MANQUEMENT_COMPTE_RENDU"
             ]
           },
           "seuil": {
@@ -7326,7 +7328,8 @@
               "CONSTITUTION_A_SIGNER",
               "CHARGE_MAX_AVOCAT",
               "DELIBERE_ATTENDU",
-              "DOSSIER_INCOMPLET"
+              "DOSSIER_INCOMPLET",
+              "MANQUEMENT_COMPTE_RENDU"
             ]
           },
           "declencheur": {

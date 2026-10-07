@@ -278,7 +278,8 @@
       "CONSTITUTION_A_SIGNER": "Constitution à signer",
       "CHARGE_MAX_AVOCAT": "Charge maximale d’un avocat",
       "DELIBERE_ATTENDU": "Délibéré attendu",
-      "DOSSIER_INCOMPLET": "Dossier incomplet"
+      "DOSSIER_INCOMPLET": "Dossier incomplet",
+      "MANQUEMENT_COMPTE_RENDU": "Comptes rendus manquants"
     },
     "CanalPrestataire": {
       "COURRIEL_PERSONNEL": "Courriel personnel",
@@ -1405,7 +1406,8 @@
       "PUBLICATION_ARBITREE": "Publication arbitrée",
       "CORRESPONDANCE_TRANSMISE": "Correspondance transmise",
       "AFFECTATION_DOSSIER": "Affectation à un dossier",
-      "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée"
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée",
+      "MANQUEMENT_COMPTE_RENDU": "Comptes rendus manquants"
     }
   },
   "configurations": {

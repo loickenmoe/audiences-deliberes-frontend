@@ -278,7 +278,8 @@
       "CONSTITUTION_A_SIGNER": "Letter of engagement to sign",
       "CHARGE_MAX_AVOCAT": "Counsel workload threshold",
       "DELIBERE_ATTENDU": "Judgment expected",
-      "DOSSIER_INCOMPLET": "Incomplete case file"
+      "DOSSIER_INCOMPLET": "Incomplete case file",
+      "MANQUEMENT_COMPTE_RENDU": "Missing hearing reports"
     },
     "CanalPrestataire": {
       "COURRIEL_PERSONNEL": "Personal email",
@@ -1405,7 +1406,8 @@
       "PUBLICATION_ARBITREE": "Publication reviewed",
       "CORRESPONDANCE_TRANSMISE": "Correspondence sent",
       "AFFECTATION_DOSSIER": "Assigned to a case",
-      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed"
+      "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed",
+      "MANQUEMENT_COMPTE_RENDU": "Missing hearing reports"
     }
   },
   "configurations": {

@@ -1668,6 +1668,8 @@ autant de garanties métier.
 | REC-NEG-045 | Lettre signée retouchée par le SH | SH | Modifier une lettre déjà signée | Refus : le gel vaut pour tous. La porte ouverte au SH le 2026-10-06 l'est **avant** la signature, et seulement là | ☐ |
 | REC-NEG-046 | Lettre d'un collègue récrite par l'API | DJ | Par l'API, envoyer un `PUT /constitutions/prestataires/{id}/lettre` sur la lettre d'un juriste | **403**. L'écran cachait déjà le bouton ; le serveur refuse quand on passe outre - c'est là que la règle vit (Q-126) | ☐ |
 | REC-NEG-047 | Constitution signée par l'Assistante | ASS | Par l'API, valider une constitution | **403** : elle rédige, elle ne signe pas. La seconde signature reste au seul supérieur hiérarchique | ☐ |
+| REC-NEG-048 | Un seul compte rendu manquant | DJ | Laisser passer le délai sur **une** audience | **Aucune alerte de manquement**. Le métier a dit « au deuxième » ; alerter au premier banaliserait le signal (RG-INT-12) | ☐ |
+| REC-NEG-049 | Série rompue par un dépôt | DJ | Deux audiences échues, mais compte rendu déposé sur la plus récente | **Aucune alerte** : l'avocat s'est remis en règle, et nommer un comportement corrigé ferait du bruit | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1884,7 +1886,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
 | **Total parcours de bout en bout** | **34** | | | | |
-| Cas négatifs (REC-NEG) | 47 | | | | |
+| Cas négatifs (REC-NEG) | 49 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1892,7 +1894,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 34 parcours, les 47 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 34 parcours, les 49 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.
