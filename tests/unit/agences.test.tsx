@@ -145,3 +145,39 @@ describe("SelecteurAgence", () => {
     expect(parametres).toHaveBeenCalledWith(expect.objectContaining({ actifSeulement: true }));
   });
 });
+
+/**
+ * L'astérisque d'obligation, et le texte d'aide (N5, 2026-10-07).
+ *
+ * **Deux défauts corrigés ensemble.** Elle était noire là où tous les autres champs la portent en
+ * rouge, et elle vivait **dans** le `<label>` : le nom accessible du champ valait « Agence
+ * d'origine * », si bien qu'une recherche par libellé exact ne le trouvait pas. Les parcours y
+ * échappaient en employant une expression régulière - un contournement, non une solution.
+ */
+describe("SelecteurAgence, marque d'obligation et aide", () => {
+  it("rend l'astérisque en rouge, hors du nom accessible du champ", () => {
+    contenu = [BONANJO];
+    render(
+      <SelecteurAgence valeur={null} onChangement={() => {}} label="Agence d'origine" obligatoire />,
+    );
+
+    // Le nom accessible est le libellé **seul** : c'est lui qu'un lecteur d'écran annonce.
+    const champ = screen.getByRole("combobox", { name: "Agence d'origine" });
+    expect(champ).toHaveAttribute("aria-required", "true");
+
+    const asterisque = screen.getByText("*");
+    expect(asterisque).toHaveClass("text-danger");
+    // Décorative : l'obligation est portée par `aria-required`, pas par ce caractère.
+    expect(asterisque).toHaveAttribute("aria-hidden");
+  });
+
+  it("n'affiche aucune astérisque quand le champ est facultatif", () => {
+    contenu = [BONANJO];
+    render(<SelecteurAgence valeur={null} onChangement={() => {}} label="Agence du contentieux" />);
+
+    expect(screen.queryByText("*")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Agence du contentieux" })).not.toHaveAttribute(
+      "aria-required",
+    );
+  });
+});

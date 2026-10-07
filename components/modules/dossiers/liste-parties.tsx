@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/champ";
 export function ListeParties<T extends FieldValues>({
   nom,
   label,
+  placeholder,
   libelleAjout,
   control,
   register,
@@ -45,6 +46,8 @@ export function ListeParties<T extends FieldValues>({
   /** `demandeurs` ou `defendeurs` : le nom du tableau dans le formulaire. */
   nom: "demandeurs" | "defendeurs";
   label: string;
+  /** Placeholder des champs de la liste : il dit quoi écrire, dans le champ même. */
+  placeholder?: string;
   libelleAjout: string;
   /*
    * Générique sur la forme du formulaire plutôt que `Control<any>` : `Control` ne s'élargit pas à
@@ -65,6 +68,7 @@ export function ListeParties<T extends FieldValues>({
         {label} <span aria-hidden className="text-danger">*</span>
       </legend>
 
+
       {fields.map((champ, index) => {
         const identifiant = `${nom}-${index}`;
         const erreur = erreurs?.[index]?.nom?.message;
@@ -77,6 +81,7 @@ export function ListeParties<T extends FieldValues>({
               <Input
                 id={identifiant}
                 className="flex-1"
+                placeholder={placeholder}
                 enErreur={!!erreur}
                 aria-describedby={erreur ? `${identifiant}-erreur` : undefined}
                 {...register(`${nom}.${index}.nom` as Path<T>)}

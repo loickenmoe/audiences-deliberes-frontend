@@ -158,10 +158,24 @@ export function SelecteurCherchable({
 
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={conteneur}>
-      <label htmlFor={idChamp} className="text-[length:var(--taille-sm)] font-medium">
-        {label}
-        {obligatoire ? <span aria-hidden> *</span> : null}
-      </label>
+      {/*
+        L'astérisque est **hors du `<label>`**, et en rouge : c'est la règle que `Champ` applique
+        depuis toujours, et que ce composant avait manquée. À l'intérieur, elle entrait dans le
+        texte du libellé - le nom accessible valait « Agence d'origine * » au lieu de « Agence
+        d'origine », et un test qui interroge le libellé au mot près ne le trouvait pas. Noire,
+        elle ne se lisait pas non plus comme la marque d'obligation que portent les autres champs.
+        Elle reste décorative : l'obligation est annoncée par `aria-required` sur le contrôle.
+      */}
+      <div className="flex items-center gap-0.5">
+        <label htmlFor={idChamp} className="text-[length:var(--taille-sm)] font-medium">
+          {label}
+        </label>
+        {obligatoire ? (
+          <span aria-hidden className="text-danger">
+            *
+          </span>
+        ) : null}
+      </div>
 
       <div className="relative">
         <input
@@ -258,6 +272,7 @@ export function SelecteurCherchable({
           ))}
         </ul>
       ) : null}
+
     </div>
   );
 }

@@ -385,3 +385,49 @@ test("le sélecteur de taille change le nombre de lignes et vit dans l'URL", asy
   await page.reload();
   await expect(page.getByLabel("Lignes par page")).toHaveValue("50");
 });
+
+/**
+ * Les placeholders explicatifs du formulaire de création (N5, observation 4).
+ *
+ * **Ce que l'observation demandait, et que j'avais mal lu.** « Placeholders explicatifs » : le texte
+ * va **dans** le champ, pas dessous. Les deux sélecteurs d'agence en portaient un depuis l'origine
+ * - « Code, nom ou ville de l'agence… » - et c'était le modèle à suivre ; les dix champs libres le
+ * portent désormais aussi.
+ *
+ * **Et la marque d'obligation.** L'astérisque du sélecteur cherchable vivait dans le `<label>` :
+ * le nom accessible valait « Agence d'origine * », si bien qu'une recherche au mot près ne trouvait
+ * pas le champ. C'est corrigé, et c'est ce que la première assertion tient.
+ */
+test("les champs du formulaire de création portent leurs placeholders explicatifs", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  // Le sélecteur cherchable : son nom accessible est le libellé **seul**, sans l'astérisque.
+  const agence = page.getByRole("combobox", { name: "Agence d’origine" });
+  await expect(agence).toBeVisible({ timeout: 30_000 });
+  await expect(agence).toHaveAttribute("aria-required", "true");
+  await expect(agence).toHaveAttribute("placeholder", "Code, nom ou ville de l’agence…");
+
+  // Les champs libres : le texte est dans le champ, et disparaît dès qu'on écrit.
+  await expect(page.getByLabel("Juridiction saisie", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "Le tribunal devant lequel l’affaire est portée",
+  );
+  await expect(page.getByLabel("Risque encouru (FCFA)", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "Ce que la banque peut perdre",
+  );
+
+  // Une partie au procès : chaque ligne de la liste porte le même.
+  await expect(page.getByPlaceholder("Qui engage l’action")).toBeVisible();
+  await expect(page.getByPlaceholder("Contre qui l’action est engagée")).toBeVisible();
+
+  /*
+   * Les références de pièces redisent la règle que les utilisateurs inversent le plus souvent :
+   * c'est le fichier qui est exigé, pas la référence.
+   */
+  await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LONGUE);
+  await expect(
+    page.getByLabel("Dossier de crédit d’origine", { exact: true }),
+  ).toHaveAttribute("placeholder", "Référence facultative : c’est le fichier qui est exigé");
+});

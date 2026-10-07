@@ -275,6 +275,9 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
 |---|---|---|---|---|---|
 | 1 | JUR | Menu « Dossiers » → « Créer un dossier » | Le formulaire s'ouvre | | ☐ |
+| 1 bis | JUR | Parcourir le formulaire des yeux, **sans rien saisir** | **Chaque champ porte un placeholder explicatif**, à l'intérieur (observation 4). Les trois références de pièces disent toutes « Référence facultative : c'est le fichier qui est exigé » : c'est voulu, c'est la règle que l'on inverse le plus souvent | | ☐ |
+| 1 ter | JUR | Écrire dans un de ces champs, puis effacer | Le placeholder **disparaît à la saisie et revient** une fois le champ vidé. C'est le propre d'un placeholder, et la raison pour laquelle il ne remplace pas un libellé | | ☐ |
+| 1 quater | JUR | Regarder l'astérisque de **« Agence d'origine »** | Elle est **rouge**, comme celle de tous les autres champs obligatoires. Elle était noire jusqu'au 2026-10-07 | | ☐ |
 | 2 | JUR | Choisir une « Nature du dossier » de catégorie Recouvrement | Les champs conditionnels **« Dossier de crédit d'origine »** et **« PV de transfert »** apparaissent | | ☐ |
 | 3 | JUR | Choisir une nature de catégorie Litiges d'exploitation | Les champs changent : « Référence de l'incident de compte » et « Éléments justificatifs ». Revenir à Recouvrement | | ☐ |
 | 4 | JUR | Cliquer « Enregistrer » **sans rien renseigner d'autre** | Refus : chaque champ obligatoire porte son message, dont les affectations | | ☐ |

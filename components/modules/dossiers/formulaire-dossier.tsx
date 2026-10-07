@@ -314,14 +314,32 @@ export function FormulaireDossier({
     switch (type) {
       case "DOSSIER_CREDIT":
         return (
-          <Champ id="dossierCreditOrigine" label={t("champDossierCredit")} erreur={errors.dossierCreditOrigine?.message}>
-            <Input id="dossierCreditOrigine" enErreur={!!errors.dossierCreditOrigine} {...register("dossierCreditOrigine")} />
+          <Champ
+            id="dossierCreditOrigine"
+            label={t("champDossierCredit")}
+            erreur={errors.dossierCreditOrigine?.message}
+          >
+            <Input
+              id="dossierCreditOrigine"
+              placeholder={t("placeholderDossierCredit")}
+              enErreur={!!errors.dossierCreditOrigine}
+              {...register("dossierCreditOrigine")}
+            />
           </Champ>
         );
       case "PV_TRANSFERT":
         return (
-          <Champ id="pvTransfert" label={t("champPvTransfert")} erreur={errors.pvTransfert?.message}>
-            <Input id="pvTransfert" enErreur={!!errors.pvTransfert} {...register("pvTransfert")} />
+          <Champ
+            id="pvTransfert"
+            label={t("champPvTransfert")}
+            erreur={errors.pvTransfert?.message}
+          >
+            <Input
+              id="pvTransfert"
+              placeholder={t("placeholderPvTransfert")}
+              enErreur={!!errors.pvTransfert}
+              {...register("pvTransfert")}
+            />
           </Champ>
         );
       case "INCIDENT_COMPTE":
@@ -333,6 +351,7 @@ export function FormulaireDossier({
           >
             <Input
               id="incidentCompteReference"
+              placeholder={t("placeholderIncidentCompte")}
               enErreur={!!errors.incidentCompteReference}
               {...register("incidentCompteReference")}
             />
@@ -348,6 +367,7 @@ export function FormulaireDossier({
             <Textarea
               id="elementsJustificatifs"
               rows={3}
+              placeholder={t("placeholderElementsJustificatifs")}
               enErreur={!!errors.elementsJustificatifs}
               {...register("elementsJustificatifs")}
             />
@@ -424,6 +444,7 @@ export function FormulaireDossier({
             >
               <Input
                 id="juridictionSaisie"
+                placeholder={t("placeholderJuridiction")}
                 enErreur={!!errors.juridictionSaisie}
                 {...register("juridictionSaisie")}
               />
@@ -451,6 +472,7 @@ export function FormulaireDossier({
                 type="number"
                 min={0}
                 step="1000"
+                placeholder={t("placeholderRisque")}
                 enErreur={!!errors.risqueEncouru}
                 {...register("risqueEncouru")}
               />
@@ -489,6 +511,7 @@ export function FormulaireDossier({
               <ListeParties
                 nom="demandeurs"
                 label={t("champDemandeurs")}
+                placeholder={t("placeholderDemandeurs")}
                 libelleAjout={t("ajouterDemandeur")}
                 control={control}
                 register={register}
@@ -497,6 +520,7 @@ export function FormulaireDossier({
               <ListeParties
                 nom="defendeurs"
                 label={t("champDefendeurs")}
+                placeholder={t("placeholderDefendeurs")}
                 libelleAjout={t("ajouterDefendeur")}
                 control={control}
                 register={register}
@@ -504,10 +528,18 @@ export function FormulaireDossier({
               />
             </div>
             <Champ id="recoursExerces" label={t("champRecours")}>
-              <Input id="recoursExerces" {...register("recoursExerces")} />
+              <Input
+                id="recoursExerces"
+                placeholder={t("placeholderRecours")}
+                {...register("recoursExerces")}
+              />
             </Champ>
             <Champ id="motifRenvoi" label={t("champMotifRenvoi")}>
-              <Input id="motifRenvoi" {...register("motifRenvoi")} />
+              <Input
+                id="motifRenvoi"
+                placeholder={t("placeholderMotifRenvoi")}
+                {...register("motifRenvoi")}
+              />
             </Champ>
             {/*
               Les deux codes d'agence viennent du référentiel (observation 2). La liste affiche
