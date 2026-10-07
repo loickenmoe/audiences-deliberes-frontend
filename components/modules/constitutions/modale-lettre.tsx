@@ -13,15 +13,19 @@ import { messageErreur } from "@/lib/api/errors";
 import type { LettreConstitution } from "@/types/domaine";
 
 /**
- * Rédaction et relecture de la lettre de constitution (backend Q-115 B2).
+ * Rédaction de la lettre de constitution (backend Q-124, amendant Q-115 B2).
  *
- * **Deux lecteurs, deux droits.** Le juriste rédige ; le supérieur hiérarchique consulte avant de
- * signer, sans pouvoir récrire. C'est ce qui préserve le sens de la seconde signature : celui qui
- * signe n'est pas celui qui a écrit, et son refus renvoie la lettre à son auteur avec un motif.
- * `modifiable` vient du serveur — l'écran ne le déduit pas d'un statut qu'il aurait pu mal lire.
+ * **Deux plumes, et c'est voulu.** Le juriste rédige ; le supérieur hiérarchique corrige avant de
+ * signer. Jusqu'au 2026-10-06 il ne pouvait que lire, pour que la seconde signature garde son sens
+ * - le métier a tranché l'inverse : il corrige plutôt que de renvoyer. Ce que la séparation des
+ * plumes garantissait, la **traçabilité** le garantit : la lettre porte qui l'a écrite en dernier,
+ * et une reprise par le SH est nommée comme telle, en haut de cette modale.
  *
- * **Une lettre signée ne se réécrit pas.** Elle est partie chez un huissier et figure dans la GED :
- * la retoucher ferait mentir la pièce. Le formulaire passe alors en lecture seule, et le dit.
+ * `modifiable` vient du serveur - l'écran ne le déduit pas d'un statut qu'il aurait pu mal lire.
+ *
+ * **Une lettre signée ne se réécrit pas**, ni par le juriste ni par le SH. Elle est partie chez un
+ * huissier et figure dans la GED : la retoucher ferait mentir la pièce. Le formulaire passe alors
+ * en lecture seule, et le dit.
  */
 export function ModaleLettre({
   demandeId,
@@ -116,6 +120,20 @@ export function ModaleLettre({
         <EtatChargement lignes={6} />
       ) : (
         <div className="flex flex-col gap-4">
+          {/*
+            Qui a écrit la dernière version (N8). Depuis que le SH peut corriger avant de signer,
+            le juriste doit le voir en ouvrant sa lettre - sans aller fouiller l'historique. La
+            correction du SH est nommée comme telle : c'est le seul cas où la séparation des plumes
+            a été franchie, et c'est ce que la traçabilité doit rendre visible.
+          */}
+          {saisie.redigeParNom ? (
+            <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+              {saisie.redigeParProfil === "SH"
+                ? t("redigeeParSh", { nom: saisie.redigeParNom })
+                : t("redigeePar", { nom: saisie.redigeParNom })}
+            </p>
+          ) : null}
+
           {/* ── La ligne du numéro ─────────────────────────────────────────── */}
           <fieldset className="flex flex-col gap-2">
             <legend className="text-[length:var(--taille-sm)] font-medium">{t("lettreNumeroTitre")}</legend>

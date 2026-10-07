@@ -405,6 +405,27 @@
     "retirer": "Remove",
     "selectionnes": "{nombre, plural, =0 {None selected} one {# selected} other {# selected}}"
   },
+  "compte": {
+    "titre": "My account",
+    "description": "What belongs to you alone in the application.",
+    "signatureTitre": "My signature",
+    "signatureDescription": "It is affixed to the instruction letters you sign, in place of a name to be signed by hand. You alone upload it: nobody else can post it for you, or retrieve it.",
+    "signaturePortee": "It adds no legal weight. What proves your signature is the timestamped record the application keeps, not this image.",
+    "aucune": "No signature uploaded. Letters you sign go out with your name, to be signed by hand.",
+    "deposer": "Upload my signature",
+    "remplacer": "Replace",
+    "retirer": "Remove",
+    "apercu": "Preview of my signature",
+    "voir": "Preview",
+    "deposeeLe": "Uploaded on",
+    "deposee": "Signature saved.",
+    "retiree": "Signature removed.",
+    "formatsAdmis": "PNG or JPEG, 200 KB at most: these are the formats the letter can affix.",
+    "formatRefuse": "A signature is uploaded as PNG or JPEG.",
+    "tropLourde": "This image is over 200 KB: a scanned signature fits well below that.",
+    "retraitTitre": "Remove your signature?",
+    "retraitMessage": "Letters already signed do not change: they are produced and filed. The next ones will go out with your name, to be signed by hand."
+  },
   "clients": {
     "titre": "Clients",
     "description": "Search for a client and review all of their litigation case files.",
@@ -921,6 +942,8 @@
     "receptionAccusee": "Hearing report receipt acknowledged."
   },
   "constitutions": {
+    "redigeePar": "Last drafted by {nom}",
+    "redigeeParSh": "Amended by the line manager: {nom}",
     "titre": "Provider appointments",
     "description": "Appointing counsel or another provider commits the Bank: it requires the second signature of the line manager, which generates the letter of appointment.",
     "vue": "Show",

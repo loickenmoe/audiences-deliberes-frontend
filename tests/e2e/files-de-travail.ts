@@ -51,11 +51,20 @@ export async function ligneDansLaFile(
     }
     if ((await suivante.count()) === 0 || (await suivante.isDisabled())) break;
 
-    const position = await indicateur.textContent();
+    const position = await indicateur.textContent().catch(() => null);
     await suivante.click();
-    // On attend que l'indicateur ait réellement changé avant de relire : sans cela on relirait la
-    // page précédente, et le parcours n'avancerait pas.
-    await expect(indicateur).not.toHaveText(position ?? "", { timeout: 30_000 });
+    /*
+     * On attend que l'indicateur ait réellement changé avant de relire : sans cela on relirait la
+     * page précédente, et le parcours n'avancerait pas.
+     *
+     * L'indicateur peut aussi **disparaître** : une file qui se recharge pendant qu'on la parcourt
+     * peut retomber à une seule page, et la pagination n'est alors plus rendue. C'est un cas
+     * normal, mais `not.toHaveText` le compte comme un échec - « element(s) not found ». On lit
+     * donc le texte nous-mêmes, l'absence valant changement.
+     */
+    await expect
+      .poll(() => indicateur.textContent().catch(() => null), { timeout: 30_000 })
+      .not.toBe(position);
   }
 
   throw new Error(`Aucune ligne correspondant à ${motif} dans cette file, toutes pages parcourues`);

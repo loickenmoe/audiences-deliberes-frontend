@@ -142,6 +142,15 @@ export const CAPACITES = {
   solliciterConstitution: ["ROLE_JURISTE"],
   /** `PUT /constitutions/prestataires/{id}/validation` — SH */
   signerConstitution: ["ROLE_SH"],
+  /**
+   * `PUT /constitutions/prestataires/{id}/lettre` — JURISTE **et SH** (N8, observation 10).
+   *
+   * Distincte de `solliciterConstitution`, qui ouvrait la rédaction jusqu'ici : Q-115 B2 réservait
+   * la plume au juriste, « lui donner la plume viderait la seconde signature de son sens ». Le
+   * métier a tranché l'inverse le 2026-10-06 - le SH corrige avant de signer. Les deux capacités
+   * se séparent donc : solliciter reste au juriste, rédiger s'ouvre au SH.
+   */
+  redigerLettre: ["ROLE_JURISTE", "ROLE_SH"],
 
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */

@@ -793,6 +793,29 @@ export interface LettreConstitution {
   modifiable: boolean;
   dateGeneration: string | null;
   dateModification: string | null;
+  /**
+   * Qui a écrit la dernière version (N8, métier du 2026-10-06).
+   *
+   * Q-115 B2 réservait la plume au juriste ; le SH peut désormais corriger avant de signer. La
+   * séparation des plumes cède, et c'est la traçabilité qui la remplace : le juriste doit voir que
+   * sa lettre a bougé, et par qui. Nul tant que personne n'a rédigé - le brouillon naît avec la
+   * demande.
+   */
+  redigeParNom: string | null;
+  /** Le code du profil du rédacteur - `JURISTE`, `SH` - pour que l'écran le nomme lui-même. */
+  redigeParProfil: string | null;
+}
+
+/**
+ * L'état de ma signature enregistrée (N8).
+ *
+ * Ne porte **pas l'image** : l'écran a besoin de savoir s'il propose un dépôt ou un remplacement.
+ * L'image a son propre appel, pour qu'elle ne voyage pas à chaque chargement.
+ */
+export interface Signature {
+  deposee: boolean;
+  type: string | null;
+  deposeeLe: string | null;
 }
 
 export interface DemandeConstitution {

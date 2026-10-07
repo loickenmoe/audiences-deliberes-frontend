@@ -56,7 +56,9 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const requete = useConstitutions(vue === "aSigner" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderConstitution();
   const peutSigner = peut(roles, "signerConstitution");
-  const peutRediger = peut(roles, "solliciterConstitution");
+  // N8 : le SH corrige la lettre avant de la signer, le juriste la rédige. Deux rôles, une
+  // seule capacité - distincte de celle qui ouvre la sollicitation.
+  const peutRediger = peut(roles, "redigerLettre");
   const [signature, setSignature] = useState<DemandeConstitution | null>(null);
   const [rejet, setRejet] = useState<DemandeConstitution | null>(null);
   const [lettre, setLettre] = useState<DemandeConstitution | null>(null);

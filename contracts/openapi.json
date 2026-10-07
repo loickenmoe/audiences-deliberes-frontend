@@ -22,6 +22,73 @@
     }
   ],
   "paths": {
+    "/api/v1/utilisateurs/moi/signature": {
+      "get": {
+        "tags": [
+          "utilisateur-controller"
+        ],
+        "operationId": "maSignature",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignatureResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "utilisateur-controller"
+        ],
+        "operationId": "deposerMaSignature",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "fichier"
+                ],
+                "type": "object",
+                "properties": {
+                  "fichier": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignatureResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "utilisateur-controller"
+        ],
+        "operationId": "retirerMaSignature",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/referentiels/agences/{id}": {
       "put": {
         "tags": [
@@ -3181,6 +3248,27 @@
         }
       }
     },
+    "/api/v1/utilisateurs/moi/signature/image": {
+      "get": {
+        "tags": [
+          "utilisateur-controller"
+        ],
+        "operationId": "maSignatureImage",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tableau-de-bord": {
       "get": {
         "tags": [
@@ -4844,6 +4932,21 @@
   },
   "components": {
     "schemas": {
+      "SignatureResponse": {
+        "type": "object",
+        "properties": {
+          "deposee": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          },
+          "deposeeLe": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "AgenceRequest": {
         "required": [
           "code",
@@ -6060,6 +6163,12 @@
           "dateModification": {
             "type": "string",
             "format": "date-time"
+          },
+          "redigeParNom": {
+            "type": "string"
+          },
+          "redigeParProfil": {
+            "type": "string"
           }
         }
       },

@@ -1,6 +1,6 @@
 # API_INTEGRATION_STATUS
 
-> Les **81 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
+> Les **85 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88, puis les cinq du référentiel des agences en N1) et leur état de consommation par
 > le frontend.
@@ -72,6 +72,10 @@
 | 8 | POST | `/dossiers/{id}/sensibilite/validation` | DJ, DJA | 18 | F7 | ✅ |
 | 72 | POST | `/dossiers/{id}/sensibilite/proposition` | JUR (SAISIE) | 07, 45 | N4 | ✅ |
 | 73 | PUT | `/dossiers/{id}/sensibilite` | DJ, DJA | 07, 45 | N4 | ✅ |
+| 74 | GET | `/utilisateurs/moi/signature` | authentifié | 46 | N8 | ✅ |
+| 75 | GET | `/utilisateurs/moi/signature/image` | authentifié | 46 | N8 | ✅ |
+| 76 | PUT | `/utilisateurs/moi/signature` | authentifié | 46 | N8 | ✅ |
+| 77 | DELETE | `/utilisateurs/moi/signature` | authentifié | 46 | N8 | ✅ |
 
 **Notes d'intégration**
 - **#1** — corps `CreerDossierRequest` : `reference`, `nature`, `categorie`, `juridictionSaisie`,

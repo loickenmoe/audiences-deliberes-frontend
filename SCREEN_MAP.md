@@ -1,7 +1,9 @@
 # SCREEN_MAP
 
-> Les 44 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-10-06 (jalon N4 — écran 45 : la diligence particulière se révise
+> Les 45 écrans cibles : route, rôles, endpoints consommés, états, avancement.
+> Dernière mise à jour : 2026-10-06 (jalon N8 — écran 46 : ma signature enregistrée ; le SH
+> corrige la lettre avant de la signer).
+> Précédente : 2026-10-06 (jalon N4 — écran 45 : la diligence particulière se révise
 > après l'ouverture, dans les deux sens).
 > Précédente : 2026-10-05 (jalon N1 — écran 44 livré : référentiel des agences).
 > Précédente : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
@@ -70,6 +72,7 @@
 | 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ✅ (arbitrage débloqué par Q-74) |
 | 18 | Validation de sensibilité | modale | DJ, DJA | `POST /dossiers/{id}/sensibilite/validation` | F7 | ✅ |
 | 45 | **Révision de la diligence particulière** | modale | JUR (proposer) / DJ, DJA (poser, retirer) | `POST /dossiers/{id}/sensibilite/proposition`, `PUT /dossiers/{id}/sensibilite` | N4 | ✅ |
+| 46 | **Mon compte — ma signature** | `/mon-compte` | tous profils internes | `GET`/`PUT`/`DELETE /utilisateurs/moi/signature`, `GET .../image` | N8 | ✅ |
 
 **Référentiels du formulaire 06** : `GET /referentiels/natures-dossier?categorie=`,
 `GET /referentiels/types-client-sensible`, `GET /utilisateurs?profil=JURISTE`,
@@ -246,6 +249,16 @@ requête le produit en comptant les résultats, et le retirer du contrat serait 
 Le **seul pourcentage restant** de l'application est l'indicateur de performance du répertoire des
 avocats (écran 24), que le métier n'a pas nommé.
 
+**46** — la signature enregistrée s'appose sur les lettres de constitution que l'on signe, à la
+place du nom à signer à la main. **Chacun dépose la sienne** : l'écran ne connaît aucun identifiant,
+il parle de « ma » signature et le serveur travaille sur la session - celle qu'un tiers détient ne
+vaut déjà plus rien. L'écran **dit sa portée** : elle n'ajoute aucune valeur juridique, la preuve
+restant la trace horodatée. Un utilisateur qui croirait tenir là une garantie s'appuierait sur du
+vide, et c'est à l'écran de le dire. On y accède par son nom, en haut à droite : c'est là qu'on
+cherche son compte, et non dans une entrée de menu que six profils sur sept n'ouvriraient jamais.
+La signature déposée se relit **en grand** par le bouton « Aperçu », comme toute pièce de
+l'application : la vignette dit qu'il y a quelque chose, elle ne permet pas de vérifier le trait.
+
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.
 `PUT /alertes/seuils` n'accepte que `type = CHARGE_MAX_AVOCAT` et délègue en interne à
@@ -295,4 +308,5 @@ navigateur** : seule sa valeur part au serveur. Chaque archive porte une référ
 | F16 | 30, 33 | 2 |
 | N1 | 44 | 1 |
 | N4 | 45 | 1 |
-| | **Total** | **45 entrées / 44 écrans numérotés** — la 45e est `not-found` (F1), non numérotée |
+| N8 | 46 | 1 |
+| | **Total** | **46 entrées / 45 écrans numérotés** — la 46e est `not-found` (F1), non numérotée |

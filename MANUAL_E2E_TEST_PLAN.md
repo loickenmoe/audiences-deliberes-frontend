@@ -134,6 +134,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-030 | Relance de l'avocat dont le compte rendu manque | DJ, JUR, AVO | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-031 | Référentiel des agences : chercher, créer, corriger, fermer | DJ (+ JUR) | Haute | Aucune | ☐ |
 | REC-E2E-032 | Diligence particulière révisée après l'ouverture : proposée, arbitrée, retirée | JUR → DJ → DJA | Haute | REC-E2E-003 | ☐ |
+| REC-E2E-033 | Ma signature enregistrée, et la lettre corrigée par le SH | SH → JUR | Haute | REC-E2E-016 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -826,6 +827,7 @@ Motif de la demande `Constitution pour l'audience du mois prochain` ; corps de l
 | 3 | SH | Se connecter, accueil | La carte « Constitutions à signer » porte la demande | | ☐ |
 | 4 | SH | Menu « Constitutions » → file « À signer » → « Rédiger la lettre » | Un éditeur propose le corps de la lettre | | ☐ |
 | 5 | SH | Saisir le « Corps de la lettre » → « Enregistrer la lettre » | La lettre est enregistrée et consultable | | ☐ |
+| 5 bis | SH | Rouvrir la lettre | Elle indique **qui l'a écrite en dernier**. Corrigée par le SH, la mention le dit : « Corrigée par le supérieur hiérarchique ». C'est ce qui remplace la règle antérieure, où le SH ne pouvait pas écrire (Q-124) | | ☐ |
 | 6 | SH | Cliquer « Consulter la lettre » | La lettre s'affiche, nommée d'après le dossier | | ☐ |
 | 7 | SH | Cliquer « Signer », confirmer dans « Signer la constitution ? » | La constitution passe à **Validée** ; la lettre est générée en PDF | | ☐ |
 | 8 | JUR | Fiche du dossier → onglet « Documents » | La lettre de constitution figure parmi les pièces du dossier | | ☐ |
@@ -1021,6 +1023,64 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-033 - Ma signature enregistrée, et la lettre corrigée par le SH
+
+### Objectif
+Valider les deux volets de l'observation 10 (métier, 2026-10-03 ; provenance de la signature
+arrêtée le 2026-10-06) : le **SH corrige la lettre** avant de la signer, et sa **signature
+enregistrée** s'appose sur le PDF à la place du nom à signer à la main.
+
+### Acteurs
+SH (`sh.test`) qui dépose sa signature, corrige et signe ; juriste (`juriste.test`) qui rédige puis
+constate la correction.
+
+### Préconditions
+REC-E2E-016 connue. Prévoir **une image de signature** en PNG ou JPEG, moins de 200 Ko - une
+signature scannée, ou un simple trait dessiné.
+
+### Données de test
+Un dossier existant, un prestataire du référentiel.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | SH | Cliquer **son nom**, en haut à droite | L'écran « Mon compte » s'ouvre, avec le bloc « Ma signature » | | ☐ |
+| 2 | SH | Lire le bloc | Il dit que la signature **n'ajoute aucune valeur juridique** : ce qui fait preuve est la trace horodatée. C'est volontaire, et cela doit rester lisible | | ☐ |
+| 3 | SH | Déposer un **PDF** | Refus : une signature se dépose en PNG ou en JPEG - ce sont les formats que la lettre sait apposer | | ☐ |
+| 4 | SH | Déposer une image de **plus de 200 Ko** | Refus : une signature scannée tient largement en dessous | | ☐ |
+| 5 | SH | Déposer l'image prévue | « Signature enregistrée. » L'aperçu s'affiche, avec la date de dépôt | | ☐ |
+| 5 bis | SH | Cliquer **« Aperçu »** | La signature s'ouvre **en grand**, et peut être téléchargée. La vignette dit qu'il y a quelque chose, elle ne permet pas de vérifier le trait - déposer une signature sans pouvoir la relire reviendrait à signer les yeux fermés | | ☐ |
+| 6 | JUR | Ouvrir « Mon compte » avec le compte juriste | **Aucune signature du SH** : chacun ne voit que la sienne. Y déposer celle du juriste - elle servira à l'étape 11 | | ☐ |
+| 7 | JUR | Solliciter une constitution, puis « Rédiger la lettre » et enregistrer | La lettre est enregistrée | | ☐ |
+| 8 | SH | Ouvrir la même lettre → modifier le corps → « Enregistrer » | **Accepté.** Jusqu'au 2026-10-06 le serveur refusait (403) : le SH consultait sans pouvoir écrire | | ☐ |
+| 9 | JUR | Rouvrir la lettre | Elle porte « **Corrigée par le supérieur hiérarchique : [nom]** ». La correction ne passe pas inaperçue - c'est ce qui remplace la séparation des rôles | | ☐ |
+| 10 | SH | Signer la constitution | La lettre est générée en PDF | | ☐ |
+| 11 | JUR | Onglet « Documents » → ouvrir la lettre | **« La Direction Juridique » reste seule, sans signature** : elle nomme un service, pas une personne. **En dessous, deux blocs** : à gauche la signature du rédacteur et son nom, à droite celle du chef de département et son nom (Q-125) | | ☐ |
+| 12 | SH | Rouvrir la lettre signée et tenter de la modifier | Refus : une lettre signée est partie chez l'huissier et figure dans la GED. **Le gel vaut pour tous**, SH compris | | ☐ |
+| 13 | SH | « Mon compte » → « Retirer » → confirmer | La confirmation précise que **les lettres déjà signées ne changent pas**. Après retrait, l'aperçu disparaît | | ☐ |
+| 14 | JUR | Rouvrir la lettre signée à l'étape 10 | Elle porte **toujours** la signature : le PDF est produit et archivé, retirer l'image ne le réécrit pas | | ☐ |
+| 15 | SH | Refaire une constitution et la signer, sans signature déposée | La lettre part avec les **noms seuls**, à signer à la main. L'absence n'est pas une erreur | | ☐ |
+| 16 | SH | Sur cette même lettre, vérifier l'alignement | Les **deux noms sont sur la même ligne**, qu'il y ait une signature, deux ou aucune. Le nom de celui qui n'a rien déposé ne remonte pas | | ☐ |
+
+### Résultat final attendu
+Deux signatures ont été déposées et apposées sur une lettre, sous le nom du service et non
+au-dessus. L'une a été retirée sans que la lettre déjà produite en soit affectée. Une lettre a
+été corrigée par le SH, et la correction est visible du juriste.
+
+### Points de contrôle
+- **Chacun ne voit et ne dépose que sa propre signature.** Aucun écran ne montre celle d'un autre.
+- Les signatures apposées sont celles des **deux personnes qui ont fait la lettre**, prises à
+  leur compte - jamais celle du nom écrit dans le champ « signataire », qui est du texte libre.
+- **Rien ne se signe au-dessus de « La Direction Juridique »** : c'est un service. Les deux
+  signataires viennent dessous (Q-125, 2026-10-07).
+- **Le gel après signature ne bouge pas** : ni le juriste ni le SH ne retouchent une lettre signée.
+- La correction du SH est **nommée** à l'écran : c'est elle qui remplace la règle antérieure
+  interdisant au signataire d'écrire (Q-124, amendant Q-115 B2).
+- Une image illisible ou absente **ne fait pas échouer la lettre** : elle part avec les noms seuls.
 
 ---
 
@@ -1548,6 +1608,8 @@ autant de garanties métier.
 | REC-NEG-041 | Diligence proposée deux fois | JUR | Par l'API, proposer la diligence sur un dossier dont une proposition est déjà en attente | Refus : « Une proposition de diligence particulière est déjà en attente d'arbitrage sur ce dossier ». À l'écran, le bouton a disparu - les deux doivent concorder | ☐ |
 | REC-NEG-042 | Diligence posée par un juriste | JUR | Par l'API, envoyer un `PUT` sur `/dossiers/{id}/sensibilite` | Refus 403 : poser ou lever la diligence engage la double validation des frais, ce n'est pas un geste de saisie | ☐ |
 | REC-NEG-043 | Retrait sur un dossier ordinaire | DJ | Retirer la diligence d'un dossier qui n'en a pas | Refus : « il n'y a rien à retirer » | ☐ |
+| REC-NEG-044 | Signature d'autrui | JUR | Par l'API, chercher à lire ou à poser la signature d'un autre utilisateur | **Aucun endpoint ne le permet** : les appels disent « moi » et ne prennent pas d'identifiant. Une signature qu'un tiers détient ne vaut déjà plus rien | ☐ |
+| REC-NEG-045 | Lettre signée retouchée par le SH | SH | Modifier une lettre déjà signée | Refus : le gel vaut pour tous. La porte ouverte au SH le 2026-10-06 l'est **avant** la signature, et seulement là | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1763,8 +1825,8 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Pilotage et administration | 3 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **32** | | | | |
-| Cas négatifs (REC-NEG) | 43 | | | | |
+| **Total parcours de bout en bout** | **33** | | | | |
+| Cas négatifs (REC-NEG) | 45 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1772,7 +1834,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 32 parcours, les 43 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 33 parcours, les 45 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.

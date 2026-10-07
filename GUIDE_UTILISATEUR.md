@@ -290,6 +290,39 @@ est générée et rangée dans la GED du dossier. L'avocat constitué en est not
 
 ---
 
+## 7 bis. Ma signature
+
+**Votre signature s'appose sur les lettres de constitution que vous faites** (depuis le
+2026-10-06). Cliquez votre nom, en haut à droite, pour ouvrir *Mon compte*. Déposez une image de
+votre signature - PNG ou JPEG, 200 Ko au plus - et elle paraîtra sur les lettres, à la place du nom
+à signer à la main.
+
+**Une lettre porte deux signatures** (depuis le 2026-10-07). La ligne « La Direction Juridique »
+reste seule : elle nomme un service, pas quelqu'un, et rien ne s'y signe. En dessous viennent les
+deux personnes qui engagent la banque - **à gauche celui qui a rédigé**, **à droite celui qui a
+validé** - chacune sous son trait et avec son nom. Vous déposez votre signature une seule fois, à
+votre compte ; elle sert ensuite pour toutes les lettres où votre nom paraît.
+
+Une fois déposée, elle s'affiche en vignette. Cliquez **Aperçu** pour la relire en grand, comme
+n'importe quelle pièce de l'application : la vignette dit qu'il y a quelque chose, elle ne permet
+pas de vérifier le trait.
+
+**Trois points à connaître.**
+
+- **Vous seul déposez la vôtre.** Personne ne peut la poser pour vous, ni la récupérer : aucun
+  écran, aucun appel ne rend la signature d'un autre.
+- **Elle n'ajoute aucune valeur juridique.** Ce qui fait preuve de votre signature, c'est la trace
+  horodatée que l'application enregistre - qui a signé, quand - et non cette image. La retirer ne
+  retire rien à cette preuve.
+- **La retirer ne change pas les lettres déjà signées** : elles sont produites et versées au
+  dossier. Les suivantes repartiront avec votre nom, à signer à la main.
+
+**Le supérieur hiérarchique peut corriger la lettre avant de la signer** (depuis le 2026-10-06).
+Jusque-là il la consultait sans pouvoir y toucher. La correction n'est pas silencieuse : la lettre
+indique qui l'a écrite en dernier, et le juriste qui la rouvre voit qu'elle a été reprise, et par
+qui. **Une fois signée, elle ne se modifie plus** - pour personne : une correction passe par une
+nouvelle demande.
+
 ## 8. Documents (GED)
 
 Les pièces se joignent à la création d'un dossier ou depuis l'onglet *Documents*. Les formats admis

@@ -405,6 +405,27 @@
     "retirer": "Retirer",
     "selectionnes": "{nombre, plural, =0 {Aucune sélection} one {# sélectionné} other {# sélectionnés}}"
   },
+  "compte": {
+    "titre": "Mon compte",
+    "description": "Ce qui vous appartient en propre dans l’application.",
+    "signatureTitre": "Ma signature",
+    "signatureDescription": "Elle s’appose sur les lettres de constitution que vous signez, à la place du nom à signer à la main. Vous seul la déposez : personne d’autre ne peut la poser pour vous, ni la récupérer.",
+    "signaturePortee": "Elle n’ajoute aucune valeur juridique. Ce qui fait preuve de votre signature, c’est la trace horodatée que l’application enregistre, et non cette image.",
+    "aucune": "Aucune signature déposée. Les lettres que vous signez partent avec votre nom, à signer à la main.",
+    "deposer": "Déposer ma signature",
+    "remplacer": "Remplacer",
+    "retirer": "Retirer",
+    "apercu": "Aperçu de ma signature",
+    "voir": "Aperçu",
+    "deposeeLe": "Déposée le",
+    "deposee": "Signature enregistrée.",
+    "retiree": "Signature retirée.",
+    "formatsAdmis": "PNG ou JPEG, 200 Ko au plus : ce sont les formats que la lettre sait apposer.",
+    "formatRefuse": "Une signature se dépose en PNG ou en JPEG.",
+    "tropLourde": "Cette image dépasse 200 Ko : une signature scannée tient largement en dessous.",
+    "retraitTitre": "Retirer votre signature ?",
+    "retraitMessage": "Les lettres déjà signées ne changent pas : elles sont produites et versées au dossier. Les prochaines partiront avec votre nom, à signer à la main."
+  },
   "clients": {
     "titre": "Clients",
     "description": "Rechercher un client et consulter l’ensemble de ses dossiers contentieux.",
@@ -921,6 +942,8 @@
     "receptionAccusee": "Réception du compte rendu accusée."
   },
   "constitutions": {
+    "redigeePar": "Dernière rédaction par {nom}",
+    "redigeeParSh": "Corrigée par le supérieur hiérarchique : {nom}",
     "titre": "Constitutions de prestataires",
     "description": "La constitution d’un avocat ou d’un autre prestataire engage la Banque : elle requiert la seconde signature du supérieur hiérarchique, qui génère la lettre de constitution.",
     "vue": "Afficher",

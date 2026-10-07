@@ -407,16 +407,21 @@ test("le répertoire est trié par charge croissante ; le SH ne voit ni publicat
 });
 
 /**
- * La rédaction de la lettre de constitution (backend Q-115 B2).
+ * La rédaction de la lettre de constitution (backend Q-124, amendant Q-115 B2).
  *
- * Ce parcours vérifie la répartition des rôles, qui est tout le sens du jalon : **le juriste rédige,
- * le supérieur hiérarchique consulte** avant de signer. Lui refuser la lecture reviendrait à lui
- * demander de signer sans voir ; lui donner la plume viderait la seconde signature de son sens.
+ * Ce parcours vérifiait l'inverse jusqu'au 2026-10-06 : le supérieur hiérarchique consultait sans
+ * pouvoir récrire, le serveur lui rendant un 403, pour que la seconde signature garde son sens. Le
+ * métier a tranché dans l'autre sens : **il corrige plutôt que de renvoyer au juriste**.
+ *
+ * Ce que la séparation des plumes garantissait, la **traçabilité** le garantit désormais, et c'est
+ * elle que ce parcours vérifie : la lettre porte qui l'a écrite en dernier, et une reprise par le
+ * supérieur hiérarchique est nommée comme telle.
  *
  * Et une fois signée, la lettre est **figée** : elle est partie chez un huissier et figure dans la
- * GED. La retoucher ferait mentir la pièce — une correction passe par une nouvelle demande.
+ * GED. La retoucher ferait mentir la pièce - une correction passe par une nouvelle demande. Le gel
+ * vaut pour tous, SH compris : la porte ouverte par Q-124 l'est avant la signature, et là seulement.
  */
-test("le juriste rédige la lettre, le SH la consulte, puis elle est figée (Q-115 B2)", async ({
+test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)", async ({
   browser,
 }) => {
   const { id: dossierId, reference } = await dossier();
@@ -447,21 +452,35 @@ test("le juriste rédige la lettre, le SH la consulte, puis elle est figée (Q-1
   await expect(juriste.getByText("Lettre enregistrée.")).toBeVisible();
   await juriste.context().close();
 
-  // ── Le SH consulte, sans pouvoir récrire ────────────────────────────────────
+  /*
+   * ── Le SH **corrige** avant de signer ─────────────────────────────────────
+   *
+   * C'est le coeur de Q-124. Le bouton lui-même a changé de nom : il ne consulte plus, il rédige.
+   */
   const sh = await pageConnectee(browser, "sh.test");
   await menu(sh).getByRole("link", { name: "Constitutions" }).click();
   await sh.waitForURL(/\/constitutions/, { timeout: 60_000 });
   const ligneSh = await ligneDansLaFile(sh, reference);
-  await ligneSh.getByRole("button", { name: "Consulter la lettre" }).click();
+  await ligneSh.getByRole("button", { name: "Rédiger la lettre" }).click();
 
   const lue = sh.getByRole("dialog", { name: "Lettre de constitution" });
   await expect(lue.getByLabel("Objet", { exact: true })).toHaveValue("Constitution aux fins de saisie-attribution");
-  // Il lit ce qu'il va signer, et rien de plus : aucun champ n'est ouvert, aucun bouton n'enregistre.
-  await expect(lue.getByLabel("Objet", { exact: true })).toBeDisabled();
-  await expect(lue.getByRole("button", { name: "Enregistrer la lettre" })).toHaveCount(0);
-  // Deux boutons portent « Fermer » : la croix de l'en-tête et celui du pied. On vise le second,
-  // qui est celui que l'utilisateur atteint après avoir lu — l'ordre du DOM les départage.
-  await lue.getByRole("button", { name: "Fermer" }).last().click();
+  // La lettre porte son rédacteur : ici le juriste, qui vient de l'écrire.
+  await expect(lue.getByText(/Dernière rédaction par/)).toBeVisible();
+
+  await lue.getByLabel("Corps de la lettre", { exact: true })
+    .fill("Nous vous constituons aux fins de saisie-attribution, sous les réserves d'usage.");
+  await lue.getByRole("button", { name: "Enregistrer la lettre" }).click();
+  await expect(sh.getByText("Lettre enregistrée.")).toBeVisible();
+
+  /*
+   * La correction est **nommée**. C'est ce qui remplace la séparation des plumes : qui rouvre la
+   * lettre voit qu'elle a été reprise, et par qui, sans aller fouiller l'historique.
+   */
+  await ligneSh.getByRole("button", { name: "Rédiger la lettre" }).click();
+  await expect(sh.getByText(/Corrigée par le supérieur hiérarchique/)).toBeVisible();
+  await sh.getByRole("dialog", { name: "Lettre de constitution" })
+    .getByRole("button", { name: "Annuler" }).click();
 
   // ── La signature fige la lettre ─────────────────────────────────────────────
   await ligneSh.getByRole("button", { name: `Signer la constitution - ${avocatRattache}` }).click();
@@ -479,6 +498,7 @@ test("le juriste rédige la lettre, le SH la consulte, puis elle est figée (Q-1
   await relecture.goto("/constitutions");
   await relecture.getByRole("button", { name: "Toutes" }).click();
   const ligneFigee = await ligneDansLaFile(relecture, reference);
+  // Le gel vaut pour **tous**, SH compris : la porte ouverte par Q-124 l'est avant la signature.
   await expect(ligneFigee.getByRole("button", { name: "Rédiger la lettre" })).toHaveCount(0);
   await expect(ligneFigee.getByRole("button", { name: `Lettre de constitution - ${reference}` })).toBeVisible();
   await relecture.context().close();

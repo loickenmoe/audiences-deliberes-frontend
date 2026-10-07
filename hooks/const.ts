@@ -40,6 +40,7 @@ export const CLES = {
   audit: "audit",
   intervenants: "intervenants",
   agences: "agences",
+  maSignature: "ma-signature",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",
   utilisateurs: "utilisateurs",

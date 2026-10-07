@@ -199,6 +199,11 @@ Tout fichier produit hors d'une évolution backend décidée reste dans le répe
   `application/json` — le nôtre. Tout envoi de fichier doit déclarer `multipart/form-data`
   (`gedService.deposer`). Et le tester **sous Node** : sous jsdom, MSW ne relit jamais un corps
   `FormData` et le test expire sans rien vérifier.
+  → **Enfreinte malgré tout au jalon N8** (`signatureService.deposer`) : le dépôt répondait **500**,
+  et c'est l'utilisateur qui l'a trouvé. Les suites ne pouvaient pas : les tests unitaires simulent
+  le service, donc le transport, et aucun parcours ne déposait de fichier sur cet écran. La règle
+  relue ne suffit pas - ce qui tient, c'est **un parcours Playwright qui téléverse pour de vrai**
+  (`signature.spec.ts`). Tout nouvel envoi de fichier en mérite un.
 - **Une URL MinIO pré-signée se lit par `fetch` nu**, jamais par `apiClient` : notre en-tête
   `Authorization` ferait vérifier le jeton Keycloak à la place de la signature. MinIO autorise
   l'origine `localhost:3000` (CORS vérifié) : aperçu en `blob:` et téléchargement sous le nom

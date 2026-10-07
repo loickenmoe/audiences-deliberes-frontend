@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 
 import { BoutonDeconnexion } from "@/components/layout/bouton-deconnexion";
 import { profilPrincipal } from "@/lib/rbac";
@@ -28,8 +29,14 @@ export async function UserNav({
         de 375 px. Le nom reste accessible — il est répété sur l'accueil, et le bouton de déconnexion
         porte son propre libellé.
       */}
+      {/*
+        L'identité mène au compte : c'est là qu'on cherche « ma signature » (N8), et non dans une
+        entrée de menu que six profils sur sept n'ouvriraient jamais.
+      */}
       <div className="hidden text-right leading-tight sm:block">
-        <p className="text-[length:var(--taille-sm)] font-medium">{identite}</p>
+        <Link href="/mon-compte" className="underline-offset-4 hover:underline">
+          <p className="text-[length:var(--taille-sm)] font-medium">{identite}</p>
+        </Link>
         <p className="text-[length:var(--taille-xs)] text-texte-secondaire">
           {profil ? tr(profil) : tc("profilInconnu")}
         </p>
