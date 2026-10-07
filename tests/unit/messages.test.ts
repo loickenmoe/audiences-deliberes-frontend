@@ -88,6 +88,27 @@ describe("couverture du domaine", () => {
     expect(absents).toEqual([]);
   });
 
+  /**
+   * La supervision des notifications nomme les mêmes événements, **ailleurs**.
+   *
+   * **Le trou que ce test ferme.** L'écran 41 ne lit pas `domaine.*` mais son propre bloc,
+   * `supervisionNotifications.evenements` : un événement traduit dans le premier et oublié dans le
+   * second affiche son code brut au Directeur Juridique. C'est arrivé deux fois sans que rien ne le
+   * dise - `COMPTE_RENDU_ATTENDU` et `COMPTE_RENDU_RECU` y manquaient depuis le 2026-10-05, et
+   * `DEMANDE_EXPLICATION` les a rejoints - parce qu'aucun test ne regardait ce bloc-là.
+   *
+   * Il porte les deux familles : les alertes internes **et** les événements prestataires, puisque
+   * la supervision montre les envois de tous les canaux.
+   */
+  it.each(LANGUES)("chaque événement supervisé a un libellé en %s", (langue) => {
+    const supervises = [...ENUMERATIONS_TRADUITES.TypeAlerte, ...ENUMERATIONS_TRADUITES.EvenementPrestataire];
+    const absents = supervises.filter(
+      (evenement) => typeof lire(langue, `supervisionNotifications.evenements.${evenement}`) !== "string",
+    );
+
+    expect(absents, "événements que la supervision afficherait en code brut").toEqual([]);
+  });
+
   it.each(LANGUES)("chaque rôle Keycloak a un libellé en %s", (langue) => {
     const absents = Role.filter((role) => typeof lire(langue, `roles.${role}`) !== "string");
     expect(absents).toEqual([]);

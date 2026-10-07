@@ -280,7 +280,8 @@
       "CHARGE_MAX_AVOCAT": "Counsel workload threshold",
       "DELIBERE_ATTENDU": "Judgment expected",
       "DOSSIER_INCOMPLET": "Incomplete case file",
-      "MANQUEMENT_COMPTE_RENDU": "Missing hearing reports"
+      "MANQUEMENT_COMPTE_RENDU": "Missing hearing reports",
+      "DEMANDE_EXPLICATION": "Explanation request"
     },
     "CanalPrestataire": {
       "COURRIEL_PERSONNEL": "Personal email",
@@ -298,7 +299,8 @@
       "DELAI_RECOURS": "Appeal deadline of the ruling",
       "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed",
       "COMPTE_RENDU_ATTENDU": "Hearing report overdue",
-      "COMPTE_RENDU_RECU": "Hearing report received"
+      "COMPTE_RENDU_RECU": "Hearing report received",
+      "DEMANDE_EXPLICATION": "Explanation request"
     },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "The bank is liable",
@@ -1408,7 +1410,10 @@
       "CORRESPONDANCE_TRANSMISE": "Correspondence sent",
       "AFFECTATION_DOSSIER": "Assigned to a case",
       "SUPPRESSION_DOCUMENT_ARBITREE": "Document deletion reviewed",
-      "MANQUEMENT_COMPTE_RENDU": "Missing hearing reports"
+      "MANQUEMENT_COMPTE_RENDU": "Missing hearing reports",
+      "DEMANDE_EXPLICATION": "Explanation request",
+      "COMPTE_RENDU_ATTENDU": "Hearing report expected",
+      "COMPTE_RENDU_RECU": "Hearing report received"
     }
   },
   "configurations": {

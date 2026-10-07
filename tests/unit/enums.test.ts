@@ -14,13 +14,13 @@ import {
  * vérifiés par `messages.test.ts` — ils vivent désormais dans les fichiers de traduction.
  */
 describe("énumérations du domaine", () => {
-  it("couvre les 18 types d'alerte du backend (Q-22, N7)", () => {
-    expect(TypeAlerte).toHaveLength(18);
+  it("couvre les 19 types d'alerte du backend (Q-22, N7)", () => {
+    expect(TypeAlerte).toHaveLength(19);
   });
 
-  it("couvre les canaux et les 11 événements prestataires du backend (Q-118, RG-INT-11, RG-INT-06)", () => {
+  it("couvre les canaux et les 12 événements prestataires du backend (Q-118, RG-INT-11, RG-INT-06, N7)", () => {
     expect(CanalPrestataire).toEqual(["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"]);
-    expect(EvenementPrestataire).toHaveLength(11);
+    expect(EvenementPrestataire).toHaveLength(12);
   });
 
   it("décrit le cycle de vie d'une étape dans l'ordre de progression", () => {

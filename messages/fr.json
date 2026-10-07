@@ -280,7 +280,8 @@
       "CHARGE_MAX_AVOCAT": "Charge maximale d’un avocat",
       "DELIBERE_ATTENDU": "Délibéré attendu",
       "DOSSIER_INCOMPLET": "Dossier incomplet",
-      "MANQUEMENT_COMPTE_RENDU": "Comptes rendus manquants"
+      "MANQUEMENT_COMPTE_RENDU": "Comptes rendus manquants",
+      "DEMANDE_EXPLICATION": "Demande d’explication"
     },
     "CanalPrestataire": {
       "COURRIEL_PERSONNEL": "Courriel personnel",
@@ -298,7 +299,8 @@
       "DELAI_RECOURS": "Délai de recours du délibéré",
       "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée",
       "COMPTE_RENDU_ATTENDU": "Compte rendu attendu",
-      "COMPTE_RENDU_RECU": "Compte rendu reçu"
+      "COMPTE_RENDU_RECU": "Compte rendu reçu",
+      "DEMANDE_EXPLICATION": "Demande d’explication"
     },
     "SensCondamnation": {
       "BANQUE_REDEVABLE": "La banque est redevable",
@@ -1408,7 +1410,10 @@
       "CORRESPONDANCE_TRANSMISE": "Correspondance transmise",
       "AFFECTATION_DOSSIER": "Affectation à un dossier",
       "SUPPRESSION_DOCUMENT_ARBITREE": "Suppression de document arbitrée",
-      "MANQUEMENT_COMPTE_RENDU": "Comptes rendus manquants"
+      "MANQUEMENT_COMPTE_RENDU": "Comptes rendus manquants",
+      "DEMANDE_EXPLICATION": "Demande d’explication",
+      "COMPTE_RENDU_ATTENDU": "Compte rendu attendu",
+      "COMPTE_RENDU_RECU": "Compte rendu reçu"
     }
   },
   "configurations": {
