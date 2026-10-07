@@ -135,6 +135,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-031 | Référentiel des agences : chercher, créer, corriger, fermer | DJ (+ JUR) | Haute | Aucune | ☐ |
 | REC-E2E-032 | Diligence particulière révisée après l'ouverture : proposée, arbitrée, retirée | JUR → DJ → DJA | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-033 | Ma signature enregistrée, et la lettre corrigée par le SH | SH → JUR | Haute | REC-E2E-016 | ☐ |
+| REC-E2E-034 | La lettre appartient à son demandeur ; l'Assistante rédige | JUR → DJ → SH → ASS | Haute | REC-E2E-016 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1026,6 +1027,54 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
+## REC-E2E-034 - La lettre appartient à son demandeur ; l'Assistante rédige
+
+### Objectif
+Fermer le trou relevé par le métier le 2026-10-07 (Q-126) : le droit d'écrire sur une lettre de
+constitution tenait au **rôle**, et `ROLE_JURISTE` étant composite (Q-81), **tout juriste, le DJ et
+la DJA pouvaient récrire la lettre d'un autre** et la signer de son nom. La lettre est désormais à
+celui qui a sollicité la constitution ; seul le supérieur hiérarchique y passe après lui. Second
+volet : l'**Assistante** sollicite et rédige comme un juriste.
+
+### Acteurs
+Juriste (`juriste.test`) qui sollicite et rédige ; DJ (`dj.test`) et DJA (`dja.test`) qui lisent sans
+pouvoir écrire ; SH (`sh.test`) qui corrige puis signe ; Assistante (`assistante.test`).
+
+### Préconditions
+REC-E2E-016 connue. Un dossier existant et un prestataire au référentiel.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | JUR | Solliciter un prestataire sur un dossier, puis « Rédiger la lettre » et enregistrer | La lettre est enregistrée. Elle est **la sienne** | | ☐ |
+| 2 | DJ | Ouvrir « Constitutions » et chercher la même ligne | Le bouton dit « **Consulter** la lettre », pas « Rédiger » : l'écran ne propose pas une porte qui donne sur un mur | | ☐ |
+| 3 | DJ | Ouvrir la lettre | Les champs sont **fermés**, et aucun bouton n'enregistre. Il lit, il ne touche pas | | ☐ |
+| 4 | DJA | Refaire les étapes 2 et 3 avec le compte de la DJA | Même résultat. Le droit ne vient pas du rang : il vient de qui a demandé | | ☐ |
+| 5 | SH | Ouvrir la même lettre → modifier le corps → « Enregistrer » | **Accepté** : il corrige avant de signer (Q-124) | | ☐ |
+| 6 | JUR | Rouvrir sa lettre | Elle porte « Corrigée par le supérieur hiérarchique », et **ses champs restent ouverts** : l'auteur garde sa plume jusqu'à la signature | | ☐ |
+| 7 | SH | Signer la constitution | La lettre est générée, et **se ferme pour tous**, SH compris | | ☐ |
+| 8 | ASS | Se connecter en Assistante : le menu porte-t-il « Constitutions » ? | **Oui**, depuis le 2026-10-07 | | ☐ |
+| 9 | ASS | Solliciter un prestataire sur un dossier, puis « Rédiger la lettre » et enregistrer | Accepté : elle sollicite et rédige comme un juriste | | ☐ |
+| 10 | ASS | Chercher le bouton « Signer la constitution » sur sa propre ligne | **Absent** : elle rédige, elle ne signe pas. La seconde signature reste au SH | | ☐ |
+| 11 | JUR | Ouvrir « Constitutions » et chercher la ligne de l'Assistante | « **Consulter** la lettre » : la règle vaut dans les deux sens, le juriste ne touche pas à la sienne | | ☐ |
+
+### Résultat final attendu
+Une lettre a été rédigée par son demandeur, lue sans être modifiée par le DJ et la DJA, corrigée par
+le SH, puis signée et figée. L'Assistante a mené le même circuit pour la sienne, sans la signer.
+
+### Points de contrôle
+- **Le rang ne donne pas la plume.** Le DJ et la DJA ont tous les droits métier, et c'est
+  précisément pour cela qu'ils n'ont pas celui-ci : une lettre engage la banque sous le nom de celui
+  qui l'a écrite, et nul ne doit pouvoir écrire sous le nom d'un autre.
+- **Le refus tient aussi hors de l'écran.** Cacher un bouton ne protège rien ; c'est le serveur qui
+  répond 403. Voir REC-NEG-046.
+- **L'auteur garde sa plume jusqu'à la signature** : lui retirer la correction de sa propre coquille
+  imposerait un aller-retour avec le SH pour une virgule.
+- **Le gel après signature ne bouge pas** : 409 pour tous, SH compris.
+
+---
+
 ## REC-E2E-033 - Ma signature enregistrée, et la lettre corrigée par le SH
 
 ### Objectif
@@ -1610,6 +1659,8 @@ autant de garanties métier.
 | REC-NEG-043 | Retrait sur un dossier ordinaire | DJ | Retirer la diligence d'un dossier qui n'en a pas | Refus : « il n'y a rien à retirer » | ☐ |
 | REC-NEG-044 | Signature d'autrui | JUR | Par l'API, chercher à lire ou à poser la signature d'un autre utilisateur | **Aucun endpoint ne le permet** : les appels disent « moi » et ne prennent pas d'identifiant. Une signature qu'un tiers détient ne vaut déjà plus rien | ☐ |
 | REC-NEG-045 | Lettre signée retouchée par le SH | SH | Modifier une lettre déjà signée | Refus : le gel vaut pour tous. La porte ouverte au SH le 2026-10-06 l'est **avant** la signature, et seulement là | ☐ |
+| REC-NEG-046 | Lettre d'un collègue récrite par l'API | DJ | Par l'API, envoyer un `PUT /constitutions/prestataires/{id}/lettre` sur la lettre d'un juriste | **403**. L'écran cachait déjà le bouton ; le serveur refuse quand on passe outre - c'est là que la règle vit (Q-126) | ☐ |
+| REC-NEG-047 | Constitution signée par l'Assistante | ASS | Par l'API, valider une constitution | **403** : elle rédige, elle ne signe pas. La seconde signature reste au seul supérieur hiérarchique | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1825,8 +1876,8 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Pilotage et administration | 3 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **33** | | | | |
-| Cas négatifs (REC-NEG) | 45 | | | | |
+| **Total parcours de bout en bout** | **34** | | | | |
+| Cas négatifs (REC-NEG) | 47 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1834,7 +1885,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 33 parcours, les 45 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 34 parcours, les 47 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.

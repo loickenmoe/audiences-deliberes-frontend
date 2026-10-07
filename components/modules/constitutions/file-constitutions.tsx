@@ -58,7 +58,6 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const peutSigner = peut(roles, "signerConstitution");
   // N8 : le SH corrige la lettre avant de la signer, le juriste la rédige. Deux rôles, une
   // seule capacité - distincte de celle qui ouvre la sollicitation.
-  const peutRediger = peut(roles, "redigerLettre");
   const [signature, setSignature] = useState<DemandeConstitution | null>(null);
   const [rejet, setRejet] = useState<DemandeConstitution | null>(null);
   const [lettre, setLettre] = useState<DemandeConstitution | null>(null);
@@ -173,19 +172,20 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
                       <div className="flex justify-end gap-1">
                         {enAttente ? (
                           /*
-                            Le même bouton pour deux rôles, et deux droits (Q-115 B2). Le juriste
-                            rédige ; le SH consulte avant de signer — lui refuser cette lecture
-                            reviendrait à lui demander de signer sans voir, et lui donner la plume
-                            viderait la seconde signature de son sens.
+                            Le même bouton, deux droits - et c'est le **serveur** qui dit lequel
+                            (Q-126). La lettre appartient à celui qui a sollicité la constitution :
+                            lui l'écrit, le SH la corrige avant de signer, et tout autre la lit sans
+                            y toucher. L'écran ne saurait pas le calculer, et le déduire d'un rôle
+                            proposerait « Rédiger » à qui recevrait ensuite un 403.
                           */
                           <Button
                             variante="secondaire"
                             taille="sm"
                             onClick={() => setLettreOuverte(demande.id)}
-                            aria-label={peutRediger ? t("redigerLettre") : t("consulterLettre")}
+                            aria-label={demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
                           >
                             <FileText size={14} aria-hidden />
-                            {peutRediger ? t("redigerLettre") : t("consulterLettre")}
+                            {demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
                           </Button>
                         ) : null}
                         {enAttente && peutSigner ? (
@@ -241,7 +241,6 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
 
       <ModaleLettre
         demandeId={lettreOuverte}
-        redactionPossible={peutRediger}
         ouvert={lettreOuverte !== null}
         onFermeture={() => setLettreOuverte(null)}
       />

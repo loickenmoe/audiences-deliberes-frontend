@@ -6045,6 +6045,9 @@
           },
           "valideParNom": {
             "type": "string"
+          },
+          "redactionPossible": {
+            "type": "boolean"
           }
         }
       },

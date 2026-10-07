@@ -1856,6 +1856,7 @@ export interface components {
             prestataireType?: "AVOCAT" | "AUTRE_PRESTATAIRE";
             demandeurNom?: string;
             valideParNom?: string;
+            redactionPossible?: boolean;
         };
         RedigerLettreRequest: {
             /** Format: int32 */

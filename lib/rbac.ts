@@ -136,21 +136,22 @@ export const CAPACITES = {
    * DJA » ; seuls le SH et l'avocat en sont écartés.
    */
   consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
-  /** `GET /constitutions/prestataires` — SH, JURISTE */
-  consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE"],
-  /** `POST /constitutions/prestataires` — JURISTE */
-  solliciterConstitution: ["ROLE_JURISTE"],
+  /** `GET /constitutions/prestataires` — SH, JURISTE, **ASSISTANTE** (2026-10-07) */
+  consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE", "ROLE_ASSISTANTE"],
+  /** `POST /constitutions/prestataires` — JURISTE, **ASSISTANTE** (métier, 2026-10-07) */
+  solliciterConstitution: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
   /** `PUT /constitutions/prestataires/{id}/validation` — SH */
   signerConstitution: ["ROLE_SH"],
   /**
-   * `PUT /constitutions/prestataires/{id}/lettre` — JURISTE **et SH** (N8, observation 10).
+   * `PUT /constitutions/prestataires/{id}/lettre` — JURISTE, SH, ASSISTANTE.
    *
-   * Distincte de `solliciterConstitution`, qui ouvrait la rédaction jusqu'ici : Q-115 B2 réservait
-   * la plume au juriste, « lui donner la plume viderait la seconde signature de son sens ». Le
-   * métier a tranché l'inverse le 2026-10-06 - le SH corrige avant de signer. Les deux capacités
-   * se séparent donc : solliciter reste au juriste, rédiger s'ouvre au SH.
+   * **Ce rôle ne suffit pas, et c'est voulu.** Depuis Q-126 (2026-10-07) la lettre appartient au
+   * demandeur de la constitution : lui seul y écrit, et le SH la corrige avant de la signer. Un
+   * rôle ne peut pas dire cela - il ne connaît pas qui a demandé quoi, et `ROLE_JURISTE` étant
+   * composite (Q-81), il vaudrait aussi pour le DJ et la DJA. C'est le **serveur** qui tranche,
+   * ligne par ligne, par `redactionPossible`. Cette capacité ne sert donc qu'à ouvrir l'écran.
    */
-  redigerLettre: ["ROLE_JURISTE", "ROLE_SH"],
+  redigerLettre: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
 
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */

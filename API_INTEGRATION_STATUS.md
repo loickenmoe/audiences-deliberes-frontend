@@ -262,10 +262,10 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 35 | POST | `/constitutions/prestataires` | JURISTE | 07 (modale) | F12 | ✅ |
+| 35 | POST | `/constitutions/prestataires` | JURISTE, **ASSISTANTE** | 07 (modale) | F12 | ✅ |
 | 36 | PUT | `/constitutions/prestataires/{id}/validation` | SH | 35 | F12 | ✅ |
 | 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ✅ |
-| 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ✅ (nommée — Q-86) |
+| 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE, **ASSISTANTE** | 35 | F12 | ✅ (nommée — Q-86 ; porte `redactionPossible` — Q-126) |
 | 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
 | 61 bis | PUT | `/intervenants/{id}` | DJ, DJA | 42 | Q-117 | ✅ |
 | 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |
@@ -322,8 +322,8 @@ nuls tant que la décision n'est pas rendue.
 | — | GET | `/historique/exports?page&size` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | GET | `/historique/exports/{id}/telechargement` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | GET | `/historique/exports/verification?empreinte` 🆕 Q-114 | **DJ + DJA** | 43 (vérification) | F18 | ✅ |
-| — | GET | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **SH + JURISTE** | file des constitutions | F18 | ✅ |
-| — | PUT | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **JURISTE** | file des constitutions | F18 | ✅ |
+| — | GET | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **SH + JURISTE + ASSISTANTE** | file des constitutions | F18 | ✅ |
+| — | PUT | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **son demandeur, ou le SH** (Q-126) | file des constitutions | F18 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la

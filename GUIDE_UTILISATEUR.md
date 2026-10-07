@@ -317,6 +317,11 @@ pas de vérifier le trait.
 - **La retirer ne change pas les lettres déjà signées** : elles sont produites et versées au
   dossier. Les suivantes repartiront avec votre nom, à signer à la main.
 
+**Votre lettre est à vous** (depuis le 2026-10-07). Celui qui sollicite une constitution est celui
+qui rédige sa lettre : personne d'autre ne peut y écrire, pas même un collègue juriste, le Directeur
+Juridique ou son adjointe. Ils la lisent, les champs restent fermés. **L'Assistante** sollicite et
+rédige comme un juriste, depuis la même date ; elle ne signe pas.
+
 **Le supérieur hiérarchique peut corriger la lettre avant de la signer** (depuis le 2026-10-06).
 Jusque-là il la consultait sans pouvoir y toucher. La correction n'est pas silencieuse : la lettre
 indique qui l'a écrite en dernier, et le juriste qui la rouvre voit qu'elle a été reprise, et par

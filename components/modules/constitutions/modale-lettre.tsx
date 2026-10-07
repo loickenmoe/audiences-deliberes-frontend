@@ -29,13 +29,10 @@ import type { LettreConstitution } from "@/types/domaine";
  */
 export function ModaleLettre({
   demandeId,
-  redactionPossible,
   ouvert,
   onFermeture,
 }: {
   demandeId: number | null;
-  /** Vrai pour le juriste ; le SH ouvre la même modale en lecture. */
-  redactionPossible: boolean;
   ouvert: boolean;
   onFermeture: () => void;
 }) {
@@ -52,7 +49,13 @@ export function ModaleLettre({
     if (requete.data) setSaisie(requete.data);
   }, [requete.data]);
 
-  const modifiable = redactionPossible && (saisie?.modifiable ?? false);
+  /*
+   * `modifiable` dit « par moi », et vient du serveur (Q-126) : la lettre appartient à celui qui a
+   * sollicité la constitution, le SH la corrige avant de signer, et une lettre signée ne se
+   * retouche plus - pour personne. L'écran ne redouble pas la condition : une règle tenue à deux
+   * endroits finit par diverger, et c'est le serveur qui a le dernier mot de toute façon.
+   */
+  const modifiable = saisie?.modifiable ?? false;
 
   function changer<C extends keyof LettreConstitution>(champ: C, valeur: LettreConstitution[C]) {
     setSaisie((precedente) => (precedente ? { ...precedente, [champ]: valeur } : precedente));

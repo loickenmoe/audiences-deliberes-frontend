@@ -836,6 +836,14 @@ export interface DemandeConstitution {
   prestataireType: TypeIntervenant;
   demandeurNom: string | null;
   valideParNom: string | null;
+  /**
+   * Vrai si **celui qui lit** peut écrire sur la lettre : son demandeur, ou le SH (Q-126).
+   *
+   * Calculé par le serveur, jamais déduit ici. L'écran connaît les rôles de qui regarde, pas
+   * l'identifiant interne du demandeur - et `ROLE_JURISTE` étant composite (Q-81), un droit lu
+   * sur le rôle vaudrait aussi pour le DJ et la DJA, ce qui est exactement ce que la règle ferme.
+   */
+  redactionPossible: boolean;
 }
 
 /**

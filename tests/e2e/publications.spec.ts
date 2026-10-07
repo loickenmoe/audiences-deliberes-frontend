@@ -503,3 +503,138 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
   await expect(ligneFigee.getByRole("button", { name: `Lettre de constitution - ${reference}` })).toBeVisible();
   await relecture.context().close();
 });
+
+/**
+ * La lettre appartient à son demandeur (backend Q-126, métier du 2026-10-07).
+ *
+ * **Le trou que ce parcours garde fermé.** Le droit d'écrire tenait au rôle, et `ROLE_JURISTE`
+ * étant composite (Q-81), le DJ et la DJA le portent aussi : n'importe lequel pouvait récrire la
+ * lettre d'un juriste et la signer de son nom. Une lettre engage la banque sous le nom de celui qui
+ * l'a écrite ; nul ne doit pouvoir écrire sous le nom d'un autre.
+ *
+ * Le DJ est le bon témoin : il a tous les droits métier, et c'est précisément pour cela qu'il ne
+ * doit pas avoir celui-ci. Le parcours vérifie les deux faces - ce que l'écran lui propose, et ce
+ * que le serveur lui répond s'il passe outre.
+ */
+test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", async ({ browser }) => {
+  const { id: dossierId, reference } = await dossier();
+  const avocatRattache = (await avocatDeTest()).nom;
+
+  // ── Le juriste sollicite et rédige : la lettre est la sienne ────────────────
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto(`/dossiers/${dossierId}`);
+  await juriste.getByRole("button", { name: "Solliciter un prestataire" }).click();
+  const modale = juriste.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
+  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: `${avocatRattache} - Avocat` });
+  await modale.getByLabel("Motif de la demande", { exact: true }).fill("Lettre appartenant à son auteur");
+  await modale.getByRole("button", { name: "Soumettre" }).click();
+  await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+
+  await menu(juriste).getByRole("link", { name: "Constitutions" }).click();
+  await juriste.waitForURL(/\/constitutions/, { timeout: 60_000 });
+  const ligneJuriste = await ligneDansLaFile(juriste, reference);
+  await ligneJuriste.getByRole("button", { name: "Rédiger la lettre" }).click();
+  const lettre = juriste.getByRole("dialog", { name: "Lettre de constitution" });
+  await lettre.getByLabel("Objet", { exact: true }).fill("Constitution rédigée par son auteur");
+  await lettre.getByRole("button", { name: "Enregistrer la lettre" }).click();
+  await expect(juriste.getByText("Lettre enregistrée.")).toBeVisible();
+  await juriste.context().close();
+
+  // ── Le DJ lit, et ne touche pas ────────────────────────────────────────────
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/constitutions");
+  const ligneDj = await ligneDansLaFile(dj, reference);
+  // L'écran ne lui propose pas d'écrire : le serveur le lui a dit, ligne par ligne.
+  await expect(ligneDj.getByRole("button", { name: "Rédiger la lettre" })).toHaveCount(0);
+  await ligneDj.getByRole("button", { name: "Consulter la lettre" }).click();
+  const lue = dj.getByRole("dialog", { name: "Lettre de constitution" });
+  await expect(lue.getByLabel("Objet", { exact: true })).toBeDisabled();
+  await expect(lue.getByRole("button", { name: "Enregistrer la lettre" })).toHaveCount(0);
+  await lue.getByRole("button", { name: "Fermer" }).last().click();
+  await dj.context().close();
+
+  /*
+   * Et s'il passe outre l'écran, le serveur refuse. C'est là que la règle vit : un écran qui cache
+   * un bouton ne protège rien, il rend seulement l'erreur moins probable.
+   */
+  const demande = await json<{ content: { id: number; referenceDossier: string }[] }>(
+    "/constitutions/prestataires?size=100", await jeton("juriste.test"));
+  const demandeId = demande.content.find((d) => d.referenceDossier === reference)?.id;
+  for (const intrus of ["dj.test", "dja.test"]) {
+    const refus = await appel(`/constitutions/prestataires/${demandeId}/lettre`, await jeton(intrus), {
+      method: "PUT",
+      body: JSON.stringify({
+        numero: null, suffixeNumero: "First Bank/DAJR", lieu: "Douala",
+        destinataireNom: "Me Intrus", destinataireQualite: "Huissier", destinataireVille: "Douala",
+        concerne: "Tentative", objet: "Récrite par un tiers", corps: "Corps récrit.",
+        signataire: "La Direction Juridique",
+      }),
+    });
+    expect(refus.status, `${intrus} ne doit pas pouvoir écrire sur la lettre d'un autre`).toBe(403);
+  }
+
+  // ── Le SH, lui, corrige avant de signer (Q-124) ────────────────────────────
+  const sh = await pageConnectee(browser, "sh.test");
+  await sh.goto("/constitutions");
+  const ligneSh = await ligneDansLaFile(sh, reference);
+  await ligneSh.getByRole("button", { name: "Rédiger la lettre" }).click();
+  const corrigee = sh.getByRole("dialog", { name: "Lettre de constitution" });
+  await corrigee.getByLabel("Corps de la lettre", { exact: true }).fill("Corps repris par le supérieur.");
+  await corrigee.getByRole("button", { name: "Enregistrer la lettre" }).click();
+  await expect(sh.getByText("Lettre enregistrée.")).toBeVisible();
+  await sh.context().close();
+
+  // ── Et son auteur garde sa plume, même après la reprise du SH ──────────────
+  const retour = await pageConnectee(browser, "juriste.test");
+  await retour.goto("/constitutions");
+  const ligneRetour = await ligneDansLaFile(retour, reference);
+  await ligneRetour.getByRole("button", { name: "Rédiger la lettre" }).click();
+  const relue = retour.getByRole("dialog", { name: "Lettre de constitution" });
+  await expect(relue.getByText(/Corrigée par le supérieur hiérarchique/)).toBeVisible();
+  await expect(relue.getByLabel("Objet", { exact: true })).toBeEnabled();
+  await retour.context().close();
+});
+
+/**
+ * L'Assistante sollicite et rédige, comme un juriste (backend Q-126, métier du 2026-10-07).
+ *
+ * Elle n'y avait pas accès : le droit tenait à `ROLE_JURISTE`, qu'elle ne porte pas. La lettre
+ * qu'elle fait naître est **la sienne** - la règle de Q-126 vaut pour elle comme pour les autres,
+ * et c'est le second volet que ce parcours vérifie : elle rédige, mais ne signe pas.
+ */
+test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", async ({ browser }) => {
+  const { id: dossierId, reference } = await dossier();
+  const avocatRattache = (await avocatDeTest()).nom;
+
+  const assistante = await pageConnectee(browser, "assistante.test");
+  await expect(menu(assistante).getByRole("link", { name: "Constitutions" })).toBeVisible();
+
+  await assistante.goto(`/dossiers/${dossierId}`);
+  await assistante.getByRole("button", { name: "Solliciter un prestataire" }).click();
+  const modale = assistante.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
+  await modale.getByLabel("Prestataire", { exact: true }).selectOption({ label: `${avocatRattache} - Avocat` });
+  await modale.getByLabel("Motif de la demande", { exact: true }).fill("Sollicitation de l'Assistante");
+  await modale.getByRole("button", { name: "Soumettre" }).click();
+  await expect(assistante.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+
+  await menu(assistante).getByRole("link", { name: "Constitutions" }).click();
+  await assistante.waitForURL(/\/constitutions/, { timeout: 60_000 });
+  const ligne = await ligneDansLaFile(assistante, reference);
+  await ligne.getByRole("button", { name: "Rédiger la lettre" }).click();
+  const lettre = assistante.getByRole("dialog", { name: "Lettre de constitution" });
+  await lettre.getByLabel("Objet", { exact: true }).fill("Constitution rédigée par l'Assistante");
+  await lettre.getByRole("button", { name: "Enregistrer la lettre" }).click();
+  await expect(assistante.getByText("Lettre enregistrée.")).toBeVisible();
+
+  // Elle rédige, elle ne signe pas : la seconde signature reste au supérieur hiérarchique.
+  await expect(ligne.getByRole("button", { name: `Signer la constitution - ${avocatRattache}` })).toHaveCount(0);
+  await assistante.context().close();
+
+  // Et sa lettre est la sienne : le juriste la lit, il ne l'écrit pas.
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/constitutions");
+  const ligneJuriste = await ligneDansLaFile(juriste, reference);
+  await expect(ligneJuriste.getByRole("button", { name: "Rédiger la lettre" })).toHaveCount(0);
+  await expect(ligneJuriste.getByRole("button", { name: "Consulter la lettre" })).toBeVisible();
+  await juriste.context().close();
+});
