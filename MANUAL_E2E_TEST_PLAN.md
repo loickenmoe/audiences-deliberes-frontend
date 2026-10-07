@@ -136,6 +136,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-032 | Diligence particulière révisée après l'ouverture : proposée, arbitrée, retirée | JUR → DJ → DJA | Haute | REC-E2E-003 | ☐ |
 | REC-E2E-033 | Ma signature enregistrée, et la lettre corrigée par le SH | SH → JUR | Haute | REC-E2E-016 | ☐ |
 | REC-E2E-034 | La lettre appartient à son demandeur ; l'Assistante rédige | JUR → DJ → SH → ASS | Haute | REC-E2E-016 | ☐ |
+| REC-E2E-035 | Comptes rendus manquants : alerte à la direction, demande d'explication, réponse | JUR → DJ → AVO | Haute | REC-E2E-013 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1030,6 +1031,65 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
+## REC-E2E-035 - Comptes rendus manquants, demande d'explication et réponse
+
+### Objectif
+Valider l'observation 8 dans ses deux temps (Q-129 et Q-130) : deux audiences consécutives sans
+compte rendu **alertent la direction**, qui décide d'envoyer une **demande d'explication** ; l'avocat
+**répond une seule fois**, et la relance automatique **se tait** pendant l'échange.
+
+### Acteurs
+Juriste (`juriste.test`) qui planifie ; DJ (`dj.test`) et DJA (`dja.test`) qui reçoivent et écrivent ;
+avocat (`avocat.test`) qui répond.
+
+### Préconditions
+REC-E2E-013 connue (audiences). Un dossier affecté à `avocat.test`.
+
+**Le temps est le seul obstacle de cette fiche** : il faut des audiences dont le délai de dépôt est
+passé. Abaissez `DELAI_RAPPEL_CR_AVOCAT` à **1** depuis Configuration → Paramètres système (DJ), et
+remettez-le à la fin.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | DJ | Abaisser `DELAI_RAPPEL_CR_AVOCAT` à 1 | Enregistré | | ☐ |
+| 2 | JUR | Planifier **une** audience à une date passée sur un dossier de cet avocat | Créée | | ☐ |
+| 3 | - | Attendre le passage de 6h45, ou relancer l'application | **Aucune alerte de manquement** : le métier a dit « au deuxième » | | ☐ |
+| 4 | JUR | Planifier une **seconde** audience passée pour le même avocat | Créée | | ☐ |
+| 5 | - | Nouveau passage | Le **DJ et la DJA** reçoivent « Comptes rendus manquants », nommant l'avocat | | ☐ |
+| 6 | - | Laisser passer un jour, ou relancer | **Aucune seconde alerte** : la série a déjà été signalée | | ☐ |
+| 7 | DJ | Menu « Explications » → « Demander une explication » | La modale s'ouvre, et **prévient que la relance se suspendra** | | ☐ |
+| 8 | DJ | Envoyer sans choisir d'avocat | Refus : « Choisissez l'avocat à qui la demande s'adresse » | | ☐ |
+| 9 | DJ | Chercher l'avocat par son nom, écrire la demande, envoyer | « Demande d'explication envoyée. » La ligne apparaît **En attente de réponse** | | ☐ |
+| 10 | DJ | Tenter une **seconde** demande au même avocat | Refus : une demande attend déjà sa réponse. Laquelle suspendrait la relance, à laquelle répondre ? | | ☐ |
+| 11 | AVO | Ouvrir « Explications » avec le compte avocat | Il voit **la sienne**, et elle seule. Aucun bouton « Demander une explication » | | ☐ |
+| 12 | - | Nouveau passage du planificateur | **Aucune relance** n'est envoyée à cet avocat : la machine se tait pendant qu'un responsable écrit | | ☐ |
+| 13 | AVO | « Répondre » | La modale montre **ce qu'on lui reproche** - on ne répond pas de mémoire - et annonce qu'**on ne répond qu'une fois** | | ☐ |
+| 14 | AVO | Écrire et envoyer | « Réponse envoyée. » La ligne passe **Répondue**, et le bouton disparaît | | ☐ |
+| 15 | DJ | Ouvrir « Explications » | La réponse s'affiche **en entier** sous le statut, sans avoir à ouvrir la ligne. Une alerte a prévenu le demandeur | | ☐ |
+| 16 | - | Nouveau passage | **La relance a repris** : le compte rendu manque toujours, et c'est de nouveau son affaire | | ☐ |
+| 17 | DJ | Filtrer « En attente » puis « Toutes » | Le filtre ne montre que les demandes sans réponse, puis l'historique complet | | ☐ |
+| 18 | DJ | Basculer en anglais sur cet écran | Les libellés suivent | | ☐ |
+| 19 | DJ | Remettre `DELAI_RAPPEL_CR_AVOCAT` à sa valeur | Enregistré | | ☐ |
+
+### Résultat final attendu
+Un manquement répété a été signalé à la direction, une explication demandée, une réponse donnée et
+lue. La relance automatique s'est taue pendant l'échange, puis a repris.
+
+### Points de contrôle
+- **L'application constate, la direction décide.** Aucune demande ne part toute seule.
+- **Une demande en attente à la fois** par avocat, et **une seule réponse** : c'est une pièce
+  datée, que la direction relira peut-être des mois plus tard, non une conversation.
+- **La relance se suspend, et le dit avant** : sans cela, la direction verrait les rappels cesser
+  sans savoir pourquoi, et pourrait croire à une panne.
+- **L'avocat ne voit que les siennes**, et c'est le serveur qui le décide - l'écran n'envoie aucun
+  périmètre.
+- ⚠ **Une demande sans réponse n'est jamais relancée** : « reprendre si rien n'arrive » supposerait
+  un délai que le métier n'a pas fixé. Elle reste visible dans la file, filtrable sur « en attente ».
+
+---
+
 ## REC-E2E-034 - La lettre appartient à son demandeur ; l'Assistante rédige
 
 ### Objectif
@@ -1670,6 +1730,9 @@ autant de garanties métier.
 | REC-NEG-047 | Constitution signée par l'Assistante | ASS | Par l'API, valider une constitution | **403** : elle rédige, elle ne signe pas. La seconde signature reste au seul supérieur hiérarchique | ☐ |
 | REC-NEG-048 | Un seul compte rendu manquant | DJ | Laisser passer le délai sur **une** audience | **Aucune alerte de manquement**. Le métier a dit « au deuxième » ; alerter au premier banaliserait le signal (RG-INT-12) | ☐ |
 | REC-NEG-049 | Série rompue par un dépôt | DJ | Deux audiences échues, mais compte rendu déposé sur la plus récente | **Aucune alerte** : l'avocat s'est remis en règle, et nommer un comportement corrigé ferait du bruit | ☐ |
+| REC-NEG-050 | Répondre à la demande d'un autre | AVO | Par l'API, répondre à une demande adressée à un confrère | **403** : elle ne vous est pas adressée | ☐ |
+| REC-NEG-051 | Se reprendre après avoir répondu | AVO | Répondre une seconde fois à la même demande | **409** : une prise de position datée ne se récrit pas. Une correction passe par une nouvelle demande | ☐ |
+| REC-NEG-052 | Demander une explication en tant que juriste | JUR | Par l'API, `POST /demandes-explication` | **403** : c'est la direction qui écrit. Le droit se lit sur le profil, jamais sur `ROLE_JURISTE` qui est composite | ☐ |
 | REC-NEG-002 | Deux dossiers ne portent jamais le même numéro | JUR | Créer deux dossiers à la suite et comparer leurs références | Elles diffèrent et **se suivent** (…0007 puis …0008). Le doublon de saisie n'existe plus : le système attribue | ☐ |
 | REC-NEG-003 | Référence de facture en doublon | AVO | Déposer deux demandes avec la même référence | Refus, y compris si la première a été **rejetée** | ☐ |
 | REC-NEG-004 | Deux clients ne portent jamais le même numéro | DJ | Créer deux clients à la suite et comparer leurs références | Elles diffèrent et se suivent. Aucun champ Référence n'est proposé à la création | ☐ |
@@ -1885,8 +1948,8 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 | Pilotage et administration | 3 | | | | |
 | Notifications (applicatives et externes) | 2 | | | | |
 | Audit | 1 | | | | |
-| **Total parcours de bout en bout** | **34** | | | | |
-| Cas négatifs (REC-NEG) | 49 | | | | |
+| **Total parcours de bout en bout** | **35** | | | | |
+| Cas négatifs (REC-NEG) | 52 | | | | |
 | Parcours multi-rôles (MR) | 4 | | | | |
 
 ### Critères de préparation à la remise au métier
@@ -1894,7 +1957,7 @@ corrigé ; aucun comportement n'a été déduit silencieusement.
 À vérifier avant de considérer la campagne comme terminée. Ce sont des critères d'achèvement de la
 recette, non un jugement sur l'application :
 
-1. **Couverture** : les 34 parcours, les 49 cas négatifs et les 4 enchaînements multi-rôles portent
+1. **Couverture** : les 35 parcours, les 52 cas négatifs et les 4 enchaînements multi-rôles portent
    un statut autre que « À tester ».
 2. **Priorité haute** : aucun parcours marqué *Haute* dans la matrice n'est en échec ou bloqué sans
    analyse écrite.

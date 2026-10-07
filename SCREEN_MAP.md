@@ -1,6 +1,6 @@
 # SCREEN_MAP
 
-> Les 45 écrans cibles : route, rôles, endpoints consommés, états, avancement.
+> Les 46 écrans cibles : route, rôles, endpoints consommés, états, avancement.
 > Dernière mise à jour : 2026-10-06 (jalon N8 — écran 46 : ma signature enregistrée ; le SH
 > corrige la lettre avant de la signer).
 > Précédente : 2026-10-06 (jalon N4 — écran 45 : la diligence particulière se révise
@@ -73,6 +73,7 @@
 | 18 | Validation de sensibilité | modale | DJ, DJA | `POST /dossiers/{id}/sensibilite/validation` | F7 | ✅ |
 | 45 | **Révision de la diligence particulière** | modale | JUR (proposer) / DJ, DJA (poser, retirer) | `POST /dossiers/{id}/sensibilite/proposition`, `PUT /dossiers/{id}/sensibilite` | N4 | ✅ |
 | 46 | **Mon compte — ma signature** | `/mon-compte` | tous profils internes | `GET`/`PUT`/`DELETE /utilisateurs/moi/signature`, `GET .../image` | N8 | ✅ |
+| 47 | **Demandes d'explication** | `/demandes-explication` | DJ, DJA (écrivent) / AVOCAT (répond) | `POST`/`GET /demandes-explication`, `PUT /demandes-explication/{id}/reponse` | N7 | ✅ |
 
 **Référentiels du formulaire 06** : `GET /referentiels/natures-dossier?categorie=`,
 `GET /referentiels/types-client-sensible`, `GET /utilisateurs?profil=JURISTE`,
@@ -249,6 +250,13 @@ requête le produit en comptant les résultats, et le retirer du contrat serait 
 Le **seul pourcentage restant** de l'application est l'indicateur de performance du répertoire des
 avocats (écran 24), que le métier n'a pas nommé.
 
+**47** — le même écran, lu des deux bouts. La direction écrit et relit ; l'avocat répond. Le
+bouton d'écriture n'apparaît que pour celle qui écrit, mais **la liste est la même composante** :
+deux écrans auraient fini par compter différemment la même chose. Le **périmètre des lignes est
+décidé par le serveur**, sur l'identité de qui appelle - l'écran n'envoie aucun paramètre, qui
+suffirait à un avocat pour demander la liste entière. Deux choses s'y disent **avant** d'agir : que
+la relance automatique se suspendra, et qu'on ne répond qu'une fois.
+
 **46** — la signature enregistrée s'appose sur les lettres de constitution que l'on signe, à la
 place du nom à signer à la main. **Chacun dépose la sienne** : l'écran ne connaît aucun identifiant,
 il parle de « ma » signature et le serveur travaille sur la session - celle qu'un tiers détient ne
@@ -309,4 +317,5 @@ navigateur** : seule sa valeur part au serveur. Chaque archive porte une référ
 | N1 | 44 | 1 |
 | N4 | 45 | 1 |
 | N8 | 46 | 1 |
-| | **Total** | **46 entrées / 45 écrans numérotés** — la 46e est `not-found` (F1), non numérotée |
+| N7 | 47 | 1 |
+| | **Total** | **47 entrées / 46 écrans numérotés** — la 47e est `not-found` (F1), non numérotée |

@@ -153,6 +153,19 @@ export const CAPACITES = {
    */
   redigerLettre: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
 
+  /**
+   * `GET /demandes-explication` — DJ, DJA et AVOCAT (N7 temps 2).
+   *
+   * Le même écran sert deux publics, et c'est le **serveur** qui décide lesquelles chacun voit :
+   * la direction les siennes toutes, l'avocat celles qui lui sont adressées. L'écran n'envoie
+   * aucun paramètre de périmètre - il suffirait à un avocat pour demander la liste entière.
+   */
+  consulterExplications: ["ROLE_DJ", "ROLE_DJA", "ROLE_AVOCAT"],
+  /** `POST /demandes-explication` — DJ et DJA seuls : c'est la direction qui écrit. */
+  demanderExplication: ["ROLE_DJ", "ROLE_DJA"],
+  /** `PUT /demandes-explication/{id}/reponse` — l'avocat, et seulement pour la sienne (403). */
+  repondreExplication: ["ROLE_AVOCAT"],
+
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */
   deposerDocument: ["ROLE_SAISIE"],

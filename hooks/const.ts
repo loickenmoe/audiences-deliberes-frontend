@@ -41,6 +41,7 @@ export const CLES = {
   intervenants: "intervenants",
   agences: "agences",
   maSignature: "ma-signature",
+  demandesExplication: "demandes-explication",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",
   utilisateurs: "utilisateurs",

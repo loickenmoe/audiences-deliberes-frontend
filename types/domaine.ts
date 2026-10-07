@@ -847,6 +847,30 @@ export interface DemandeConstitution {
 }
 
 /**
+ * Demande d'explication adressée par la direction à un avocat, et sa réponse (N7 temps 2).
+ *
+ * `enAttente` est **calculé par le serveur** à partir de la date de réponse, jamais stocké : une
+ * troisième donnée pourrait dire le contraire des deux autres, et c'est toujours elle qu'on
+ * croirait.
+ *
+ * `dossierId` est facultatif : la demande porte sur une **conduite** - des audiences manquées à
+ * travers plusieurs dossiers - et non sur une affaire. Renseigné, il situe l'échange.
+ */
+export interface DemandeExplication {
+  id: number;
+  avocatId: number;
+  avocatNom: string;
+  dossierId: number | null;
+  referenceDossier: string | null;
+  auteurNom: string | null;
+  contenu: string;
+  dateDemande: string;
+  reponse: string | null;
+  dateReponse: string | null;
+  enAttente: boolean;
+}
+
+/**
  * Avocat du répertoire (#37), trié par charge croissante. `indicateurCharge` : dossiers actifs ;
  * `indicateurPerformance` : part des délibérés favorables, entre 0 et 1 (0 sans délibéré).
  */

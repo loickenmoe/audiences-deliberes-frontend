@@ -328,6 +328,34 @@ indique qui l'a écrite en dernier, et le juriste qui la rouvre voit qu'elle a �
 qui. **Une fois signée, elle ne se modifie plus** - pour personne : une correction passe par une
 nouvelle demande.
 
+## 7 ter. Demandes d'explication
+
+**Quand un avocat ne rend plus compte** (depuis le 2026-10-07). Si deux audiences consécutives
+passent sans que son compte rendu arrive, le **Directeur Juridique et son adjointe** reçoivent une
+alerte nommant l'avocat. L'application s'arrête là : elle constate, elle ne sanctionne pas. C'est la
+direction qui décide d'écrire.
+
+**Écrire, depuis *Explications*.** Cherchez l'avocat par son nom, dites ce que vous attendez, et
+envoyez. Il la lira dans son espace et la recevra aussi par ses canaux habituels - c'est précisément
+parce qu'il ne se connecte plus qu'on lui écrit.
+
+**Deux choses à savoir avant d'envoyer.**
+
+- **Les rappels automatiques se taisent** pour cet avocat tant qu'il n'a pas répondu. Un responsable
+  qui écrit en personne couvre la machine, il ne rivalise pas avec elle. Ils reprennent dès sa
+  réponse : le compte rendu manque toujours.
+- **Une demande à la fois.** Tant que la première attend, une seconde est refusée - sinon on ne
+  saurait plus laquelle suspend les rappels, ni à laquelle il doit répondre.
+
+**Répondre, pour l'avocat.** La demande apparaît dans *Explications*, avec ce qu'on vous reproche
+sous les yeux. **On ne répond qu'une fois** : votre réponse est datée et conservée avec la demande,
+et la direction la relira peut-être des mois plus tard. Elle ne se modifie pas ; une correction passe
+par une nouvelle demande.
+
+**Ce que l'application ne fait pas** : elle ne relance pas une demande restée sans réponse. Elle
+reste visible dans votre file, que vous pouvez filtrer sur « en attente » - c'est à vous de décider
+d'insister.
+
 ## 8. Documents (GED)
 
 Les pièces se joignent à la création d'un dossier ou depuis l'onglet *Documents*. Les formats admis

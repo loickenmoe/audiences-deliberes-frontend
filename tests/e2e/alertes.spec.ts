@@ -365,9 +365,16 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
   await expect(dj.locator("article", { hasText: "GRILLE_NOTIFICATION_SMS" })).toHaveCount(0);
 
   const casesSms = dj.getByRole("checkbox", { name: / par SMS$/ });
-  // Onze événements prestataires : compte rendu attendu (RG-INT-11) et compte rendu reçu
-  // (RG-INT-06 amendée), tous deux du 2026-10-05.
-  await expect(casesSms).toHaveCount(11);
+  /*
+   * Douze événements prestataires : compte rendu attendu (RG-INT-11) et compte rendu reçu
+   * (RG-INT-06 amendée), tous deux du 2026-10-05, puis **demande d'explication** (N7 temps 2,
+   * 2026-10-07).
+   *
+   * Ce compte est un garde-fou, pas une formalité : un événement ajouté sans entrer dans la grille
+   * partirait dans l'application et **sur aucun canal**. C'est le défaut qu'a révélé V45 ; V46 le
+   * ferme à son tour, et cette ligne le vérifie à l'écran.
+   */
+  await expect(casesSms).toHaveCount(12);
   for (const caseSms of await casesSms.all()) {
     if (await caseSms.isChecked()) await caseSms.uncheck();
   }

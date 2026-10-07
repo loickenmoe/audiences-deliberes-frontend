@@ -162,9 +162,23 @@ describe("périmètre du profil avocat (QF-01)", () => {
     expect(peut(AVOCAT, "consulterFrais")).toBe(true);
   });
 
+  /**
+   * Le périmètre de l'avocat s'énumère, et ne s'élargit pas en silence.
+   *
+   * Les deux dernières sont arrivées avec N7 temps 2 (2026-10-07) : la direction lui demande de
+   * s'expliquer sur des comptes rendus manquants, il répond. Elles ne lui ouvrent rien du dossier -
+   * il lit les demandes **qui lui sont adressées**, le serveur décidant lesquelles, et ne répond
+   * qu'aux siennes.
+   */
   it("l'avocat n'accède qu'à une poignée de capacités", () => {
     const accordees = (Object.keys(CAPACITES) as Capacite[]).filter((c) => peut(AVOCAT, c));
-    expect(accordees).toEqual(["consulterFrais", "deposerFrais", "deposerPublication"]);
+    expect(accordees).toEqual([
+      "consulterFrais",
+      "deposerFrais",
+      "deposerPublication",
+      "consulterExplications",
+      "repondreExplication",
+    ]);
   });
 });
 

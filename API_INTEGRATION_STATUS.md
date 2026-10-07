@@ -1,6 +1,6 @@
 # API_INTEGRATION_STATUS
 
-> Les **85 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
+> Les **88 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
 > dossier, Q-88, puis les cinq du référentiel des agences en N1) et leur état de consommation par
 > le frontend.
@@ -266,6 +266,9 @@ nuls tant que la décision n'est pas rendue.
 | 36 | PUT | `/constitutions/prestataires/{id}/validation` | SH | 35 | F12 | ✅ |
 | 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ✅ |
 | 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE, **ASSISTANTE** | 35 | F12 | ✅ (nommée — Q-86 ; porte `redactionPossible` — Q-126) |
+| — | POST | `/demandes-explication` 🆕 N7 | **DJ, DJA** | 47 | N7 | ✅ |
+| — | GET | `/demandes-explication?enAttente=` 🆕 N7 | DJ, DJA, **AVOCAT** (périmètre décidé par le serveur) | 47 | N7 | ✅ |
+| — | PUT | `/demandes-explication/{id}/reponse` 🆕 N7 | **AVOCAT**, la sienne seule | 47 | N7 | ✅ |
 | 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
 | 61 bis | PUT | `/intervenants/{id}` | DJ, DJA | 42 | Q-117 | ✅ |
 | 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |

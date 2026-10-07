@@ -59,7 +59,8 @@
     "deposerFrais": "File a claim",
     "deposerPublication": "Submit a publication",
     "audit": "Audit",
-    "journalAudiences": "Hearing log"
+    "journalAudiences": "Hearing log",
+    "explications": "Explanations"
   },
   "accueil": {
     "titre": "Home",
@@ -1766,5 +1767,36 @@
     "joursDeRetard": "{jours} day(s)",
     "avocatARendu": "Counsel reported",
     "consulterPiece": "View attachment"
+  },
+  "explications": {
+    "titre": "Explanation requests",
+    "description": "Explanations requested from lawyers whose hearing reports are missing, and their answers.",
+    "demander": "Request an explanation",
+    "demanderTitre": "Request an explanation",
+    "demanderDescription": "The lawyer will read it in their space, and also receive it through their usual channels.",
+    "champAvocat": "Lawyer",
+    "placeholderAvocat": "Lawyer’s name",
+    "champDemande": "What you are asking them to explain",
+    "placeholderDemande": "What is missing, and on which hearings",
+    "avocatRequis": "Choose the lawyer the request is addressed to.",
+    "suspensionRelance": "Until the lawyer answers, the automatic reminders for their hearing reports are suspended: a manager writing in person covers the machine.",
+    "demandeEnvoyee": "Explanation request sent.",
+    "colonneAvocat": "Lawyer",
+    "colonneDemande": "Request",
+    "colonneStatut": "Status",
+    "enAttente": "Awaiting answer",
+    "repondue": "Answered",
+    "filtreEnAttente": "Awaiting",
+    "filtreToutes": "All",
+    "repondre": "Answer",
+    "repondreTitre": "Answer the Legal Department",
+    "repondreDescription": "Your answer is dated and kept with the request.",
+    "champReponse": "Your answer",
+    "placeholderReponse": "What explains the missing reports",
+    "reponseUnique": "You answer only once: your answer cannot be changed afterwards. A correction goes through a new request.",
+    "reponseEnvoyee": "Answer sent.",
+    "envoyer": "Send",
+    "videTitre": "No explanation request",
+    "videTexte": "Nothing has been requested so far."
   }
 }

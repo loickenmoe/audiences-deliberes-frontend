@@ -505,6 +505,47 @@
         }
       }
     },
+    "/api/v1/demandes-explication/{id}/reponse": {
+      "put": {
+        "tags": [
+          "demande-explication-controller"
+        ],
+        "operationId": "repondre",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepondreExplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeExplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/deliberes/{id}/resultat": {
       "put": {
         "tags": [
@@ -2603,6 +2644,85 @@
         }
       }
     },
+    "/api/v1/demandes-explication": {
+      "get": {
+        "tags": [
+          "demande-explication-controller"
+        ],
+        "operationId": "lister_7",
+        "parameters": [
+          {
+            "name": "enAttente",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDemandeExplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "demande-explication-controller"
+        ],
+        "operationId": "demander",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemanderExplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandeExplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/deliberes/{id}/rabattement": {
       "post": {
         "tags": [
@@ -2722,7 +2842,7 @@
         "tags": [
           "constitution-controller"
         ],
-        "operationId": "lister_7",
+        "operationId": "lister_8",
         "parameters": [
           {
             "name": "statut",
@@ -3697,6 +3817,8 @@
                 "CONFIGURATION_MODIFIEE",
                 "CLIENT_MODIFIE",
                 "INTERVENANT_MODIFIE",
+                "EXPLICATION_DEMANDEE",
+                "EXPLICATION_REPONDUE",
                 "AUDIT_CONSULTE",
                 "AUDIT_EXPORTE",
                 "ARCHIVE_TELECHARGEE",
@@ -3956,6 +4078,8 @@
                 "CONFIGURATION_MODIFIEE",
                 "CLIENT_MODIFIE",
                 "INTERVENANT_MODIFIE",
+                "EXPLICATION_DEMANDEE",
+                "EXPLICATION_REPONDUE",
                 "AUDIT_CONSULTE",
                 "AUDIT_EXPORTE",
                 "ARCHIVE_TELECHARGEE",
@@ -4419,7 +4543,7 @@
         "tags": [
           "configuration-controller"
         ],
-        "operationId": "lister_8",
+        "operationId": "lister_9",
         "responses": {
           "200": {
             "description": "OK",
@@ -4882,7 +5006,8 @@
                 "CHARGE_MAX_AVOCAT",
                 "DELIBERE_ATTENDU",
                 "DOSSIER_INCOMPLET",
-                "MANQUEMENT_COMPTE_RENDU"
+                "MANQUEMENT_COMPTE_RENDU",
+                "DEMANDE_EXPLICATION"
               ]
             }
           },
@@ -5797,6 +5922,8 @@
               "CONFIGURATION_MODIFIEE",
               "CLIENT_MODIFIE",
               "INTERVENANT_MODIFIE",
+              "EXPLICATION_DEMANDEE",
+              "EXPLICATION_REPONDUE",
               "AUDIT_CONSULTE",
               "AUDIT_EXPORTE",
               "ARCHIVE_TELECHARGEE",
@@ -5859,6 +5986,62 @@
               "type": "integer",
               "format": "int64"
             }
+          }
+        }
+      },
+      "RepondreExplicationRequest": {
+        "required": [
+          "reponse"
+        ],
+        "type": "object",
+        "properties": {
+          "reponse": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "DemandeExplicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "avocatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "avocatNom": {
+            "type": "string"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "referenceDossier": {
+            "type": "string"
+          },
+          "auteurNom": {
+            "type": "string"
+          },
+          "contenu": {
+            "type": "string"
+          },
+          "dateDemande": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reponse": {
+            "type": "string"
+          },
+          "dateReponse": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "enAttente": {
+            "type": "boolean"
           }
         }
       },
@@ -6376,7 +6559,8 @@
               "CHARGE_MAX_AVOCAT",
               "DELIBERE_ATTENDU",
               "DOSSIER_INCOMPLET",
-              "MANQUEMENT_COMPTE_RENDU"
+              "MANQUEMENT_COMPTE_RENDU",
+              "DEMANDE_EXPLICATION"
             ]
           },
           "seuil": {
@@ -7140,6 +7324,28 @@
           }
         }
       },
+      "DemanderExplicationRequest": {
+        "required": [
+          "avocatId",
+          "contenu"
+        ],
+        "type": "object",
+        "properties": {
+          "avocatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dossierId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contenu": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
       "RabattementRequest": {
         "required": [
           "date",
@@ -7329,7 +7535,8 @@
               "CHARGE_MAX_AVOCAT",
               "DELIBERE_ATTENDU",
               "DOSSIER_INCOMPLET",
-              "MANQUEMENT_COMPTE_RENDU"
+              "MANQUEMENT_COMPTE_RENDU",
+              "DEMANDE_EXPLICATION"
             ]
           },
           "declencheur": {
@@ -7786,6 +7993,8 @@
               "CONFIGURATION_MODIFIEE",
               "CLIENT_MODIFIE",
               "INTERVENANT_MODIFIE",
+              "EXPLICATION_DEMANDEE",
+              "EXPLICATION_REPONDUE",
               "AUDIT_CONSULTE",
               "AUDIT_EXPORTE",
               "ARCHIVE_TELECHARGEE",
@@ -8062,6 +8271,25 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AlarmeResponse"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PageResponseDemandeExplicationResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemandeExplicationResponse"
             }
           },
           "totalPages": {

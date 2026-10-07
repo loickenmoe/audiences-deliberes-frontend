@@ -59,7 +59,8 @@
     "deposerFrais": "Déposer une demande",
     "deposerPublication": "Déposer une publication",
     "audit": "Audit",
-    "journalAudiences": "Journal des audiences"
+    "journalAudiences": "Journal des audiences",
+    "explications": "Explications"
   },
   "accueil": {
     "titre": "Accueil",
@@ -1766,5 +1767,36 @@
     "joursDeRetard": "{jours} jour(s)",
     "avocatARendu": "L’avocat a rapporté",
     "consulterPiece": "Consulter la pièce"
+  },
+  "explications": {
+    "titre": "Demandes d’explication",
+    "description": "Les explications demandées aux avocats dont des comptes rendus d’audience manquent, et leurs réponses.",
+    "demander": "Demander une explication",
+    "demanderTitre": "Demander une explication",
+    "demanderDescription": "L’avocat la lira dans son espace, et la recevra aussi par ses canaux habituels.",
+    "champAvocat": "Avocat",
+    "placeholderAvocat": "Nom de l’avocat",
+    "champDemande": "Ce que vous lui demandez d’expliquer",
+    "placeholderDemande": "Ce qui manque, et sur quelles audiences",
+    "avocatRequis": "Choisissez l’avocat à qui la demande s’adresse.",
+    "suspensionRelance": "Tant que l’avocat n’a pas répondu, la relance automatique de ses comptes rendus est suspendue : un responsable qui écrit en personne couvre la machine.",
+    "demandeEnvoyee": "Demande d’explication envoyée.",
+    "colonneAvocat": "Avocat",
+    "colonneDemande": "Demande",
+    "colonneStatut": "État",
+    "enAttente": "En attente de réponse",
+    "repondue": "Répondue",
+    "filtreEnAttente": "En attente",
+    "filtreToutes": "Toutes",
+    "repondre": "Répondre",
+    "repondreTitre": "Répondre à la Direction Juridique",
+    "repondreDescription": "Votre réponse est datée et conservée avec la demande.",
+    "champReponse": "Votre réponse",
+    "placeholderReponse": "Ce qui explique les comptes rendus manquants",
+    "reponseUnique": "On ne répond qu’une fois : votre réponse ne pourra plus être modifiée. Une correction passe par une nouvelle demande.",
+    "reponseEnvoyee": "Réponse envoyée.",
+    "envoyer": "Envoyer",
+    "videTitre": "Aucune demande d’explication",
+    "videTexte": "Rien n’a été demandé à ce jour."
   }
 }
