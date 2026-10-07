@@ -1389,6 +1389,8 @@ Aucune. `NOTIFICATION_ENGINE_ACTIF` vaut `false`.
 | 9 | DJ | Lire le tableau « Envois à examiner », s'il n'est pas vide | Chaque ligne porte l'événement, le statut, le destinataire et la cause ; un bouton « Relancer » est proposé | | ☐ |
 | 10 | DJ | Si une ligne relançable existe : cliquer « Relancer » | Message « Notification remise en file. » ; la ligne quitte les envois en défaut | | ☐ |
 | 11 | JUR | Ouvrir la page « Configuration » avec le compte juriste | Les **paramètres système** sont visibles en lecture, mais ni la grille ni la supervision des notifications externes | | ☐ |
+| 12 | DJ | Faire signer une constitution à un prestataire **joignable par SMS**, puis relire le message parti (supervision, ou le téléphone du destinataire) | Le texte est **exactement** celui dicté le 2026-10-07 : « Afriland First Bank, Direction Juridique : Vous avez été notifié(e) d'une lettre de constitution. Veuillez consulter votre boîte mail. » Ni référence de dossier, ni lien | | ☐ |
+| 13 | DJ | Faire de même sur un **rejet de frais** | Le message garde sa formulation d'avant : « ... Demande de frais rejetée. Détails par courriel ou auprès de la Direction Juridique. » La Direction Juridique n'a réécrit qu'un texte, pas quatorze | | ☐ |
 
 ### Résultat final attendu
 La grille est modifiable et persistante, la supervision reflète l'activité et dit clairement que le
@@ -1401,6 +1403,8 @@ moteur est coupé, et la relance reste réservée à la direction.
   corrigée.
 - **WhatsApp** ne délivre pas actuellement : les frais d'envoi du canal ne sont pas réglés par
   l'entreprise. Le canal est éteint dans la grille par défaut.
+- Le message court **ne nomme aucun dossier et ne porte aucun lien** (D18), quel que soit
+  l'événement : un SMS se lit sur un écran verrouillé, par-dessus l'épaule de son destinataire.
 
 ---
 
