@@ -145,7 +145,8 @@ export function ModaleSensibilite({
 
         {rejet ? (
           <Champ id="motifRejet" label={t("motifRejet")} obligatoire erreur={errors.motifRejet?.message}>
-            <Textarea id="motifRejet" rows={3} enErreur={!!errors.motifRejet} {...register("motifRejet")} />
+            <Textarea id="motifRejet"
+  placeholder={t("phMotifRejetDiligence")} rows={3} enErreur={!!errors.motifRejet} {...register("motifRejet")} />
           </Champ>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">

@@ -361,10 +361,12 @@ function ModaleAdjudication({
           </Select>
         </Champ>
         <Champ id="adjudication-beneficiaire" label={t("champBeneficiaire")} obligatoire erreur={erreurs.beneficiaire}>
-          <Input id="adjudication-beneficiaire" maxLength={100} value={beneficiaire} onChange={(e) => setBeneficiaire(e.target.value)} />
+          <Input id="adjudication-beneficiaire"
+  placeholder={t("phBeneficiaire")} maxLength={100} value={beneficiaire} onChange={(e) => setBeneficiaire(e.target.value)} />
         </Champ>
         <Champ id="adjudication-comptabilisation" label={t("champComptabilisation")} obligatoire erreur={erreurs.comptabilisation}>
-          <Input id="adjudication-comptabilisation" maxLength={30} value={comptabilisation} onChange={(e) => setComptabilisation(e.target.value)} />
+          <Input id="adjudication-comptabilisation"
+  placeholder={t("phComptabilisation")} maxLength={30} value={comptabilisation} onChange={(e) => setComptabilisation(e.target.value)} />
         </Champ>
         <fieldset className="flex flex-col gap-2 text-[length:var(--taille-sm)]">
           <legend className="mb-1 font-medium">{t("suiviFinancier")}</legend>
@@ -382,7 +384,8 @@ function ModaleAdjudication({
           </label>
         </fieldset>
         <Champ id="adjudication-reliquat" label={t("champReliquat")} obligatoire erreur={erreurs.reliquat}>
-          <Input id="adjudication-reliquat" type="number" min={0} step="1" value={reliquat} onChange={(e) => setReliquat(e.target.value)} />
+          <Input id="adjudication-reliquat"
+  placeholder={t("phReliquat")} type="number" min={0} step="1" value={reliquat} onChange={(e) => setReliquat(e.target.value)} />
         </Champ>
         <Champ id="adjudication-date" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
           <Input id="adjudication-date" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />
@@ -472,7 +475,8 @@ function ModaleCondamnation({
           </Select>
         </Champ>
         <Champ id="condamnation-nature" label={t("champNature")} obligatoire erreur={erreurs.nature}>
-          <Input id="condamnation-nature" maxLength={50} value={nature} onChange={(e) => setNature(e.target.value)} />
+          <Input id="condamnation-nature"
+  placeholder={t("phNatureCondamnation")} maxLength={50} value={nature} onChange={(e) => setNature(e.target.value)} />
         </Champ>
         <Champ id="condamnation-date" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
           <Input id="condamnation-date" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />

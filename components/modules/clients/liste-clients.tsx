@@ -89,6 +89,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
         <Champ id="filtre-nom" label={t("rechercheNom")} className="w-56">
           <Input
             id="filtre-nom"
+            placeholder={t("phFiltreNom")}
             defaultValue={filtres.nom}
             // `onBlur` plutôt qu'`onChange` : écrire dans l'URL à chaque frappe produirait une
             // requête et une entrée d'historique par caractère.
@@ -99,6 +100,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
         <Champ id="filtre-reference" label={t("rechercheReference")} className="w-48">
           <Input
             id="filtre-reference"
+            placeholder={t("phFiltreReference")}
             defaultValue={filtres.reference}
             onBlur={(evenement) => definirFiltre("reference", evenement.target.value || undefined)}
           />

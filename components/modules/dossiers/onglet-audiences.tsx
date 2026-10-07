@@ -333,6 +333,7 @@ function ModalePlanification({
           >
             <Input
               id="audience-juridiction"
+              placeholder={t("phAudienceJuridiction")}
               maxLength={100}
               enErreur={!!errors.juridiction}
               {...register("juridiction")}
@@ -431,7 +432,8 @@ function ModaleCompteRendu({
           </p>
         ) : null}
         <Champ id="compte-rendu" label={t("champCompteRendu")} obligatoire erreur={errors.compteRendu?.message}>
-          <Textarea id="compte-rendu" rows={6} enErreur={!!errors.compteRendu} {...register("compteRendu")} />
+          <Textarea id="compte-rendu"
+  placeholder={t("phCompteRendu")} rows={6} enErreur={!!errors.compteRendu} {...register("compteRendu")} />
         </Champ>
       </form>
     </Dialog>
@@ -509,7 +511,8 @@ function ModaleAnnulation({
           </p>
         ) : null}
         <Champ id="annulation-motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="annulation-motif" rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea id="annulation-motif"
+  placeholder={t("phAnnulationMotif")} rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
         </Champ>
       </form>
     </Dialog>

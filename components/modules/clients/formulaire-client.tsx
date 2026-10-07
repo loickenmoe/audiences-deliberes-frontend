@@ -143,15 +143,18 @@ export function FormulaireClient({
         ) : null}
 
         <Champ id="nom" label={t("colonneNom")} obligatoire erreur={errors.nom?.message}>
-          <Input id="nom" enErreur={!!errors.nom} {...register("nom")} />
+          <Input id="nom"
+  placeholder={t("phNom")} enErreur={!!errors.nom} {...register("nom")} />
         </Champ>
 
         <Champ id="email" label={t("colonneEmail")} erreur={errors.email?.message}>
-          <Input id="email" type="email" enErreur={!!errors.email} {...register("email")} />
+          <Input id="email"
+  placeholder={t("phEmail")} type="email" enErreur={!!errors.email} {...register("email")} />
         </Champ>
 
         <Champ id="telephone" label={t("colonneTelephone")} erreur={errors.telephone?.message}>
-          <Input id="telephone" type="tel" enErreur={!!errors.telephone} {...register("telephone")} />
+          <Input id="telephone"
+  placeholder={t("phTelephone")} type="tel" enErreur={!!errors.telephone} {...register("telephone")} />
         </Champ>
       </form>
     </Dialog>

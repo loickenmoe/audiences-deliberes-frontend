@@ -193,6 +193,7 @@ export function ModaleDiligence({
             >
               <Input
                 id={`${p}seuilMontant`}
+                placeholder={t("phSeuilDiligence")}
                 type="number"
                 min={0}
                 step="1000"
@@ -231,7 +232,8 @@ export function ModaleDiligence({
           aide={intention === "poser" ? t("diligenceMotifFacultatif") : undefined}
           erreur={errors.motif?.message}
         >
-          <Textarea id={`${p}motif`} rows={3} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea id={`${p}motif`}
+  placeholder={t("phMotifDiligence")} rows={3} enErreur={!!errors.motif} {...register("motif")} />
         </Champ>
       </form>
     </Dialog>

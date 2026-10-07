@@ -697,6 +697,7 @@ export function FormulaireDossier({
                   >
                     <Input
                       id="seuilMontant"
+                      placeholder={t("phSeuilMontant")}
                       type="number"
                       min={0}
                       step="1000"

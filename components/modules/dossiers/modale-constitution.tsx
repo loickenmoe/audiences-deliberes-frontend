@@ -102,6 +102,7 @@ export function ModaleConstitution({
         <Champ id="motif-constitution" label={t("champMotif")} obligatoire erreur={erreurs.motif}>
           <Textarea
             id="motif-constitution"
+            placeholder={t("phMotifDemande")}
             rows={4}
             enErreur={!!erreurs.motif}
             value={motif}

@@ -194,7 +194,8 @@ function ModaleArbitrage({
         </fieldset>
 
         <Champ id="motif-arbitrage" label={t("motifDecision")} obligatoire={rejet} erreur={errors.motif?.message}>
-          <Textarea id="motif-arbitrage" rows={3} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea id="motif-arbitrage"
+  placeholder={t("phMotifArbitrage")} rows={3} enErreur={!!errors.motif} {...register("motif")} />
         </Champ>
       </form>
     </Dialog>

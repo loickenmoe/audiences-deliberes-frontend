@@ -455,7 +455,12 @@
     "risqueEncouru": "Amount at risk",
     "juridiction": "Court",
     "retourListe": "Back to the client list",
-    "clientCree": "Client {reference} created."
+    "clientCree": "Client {reference} created.",
+    "phNom": "The name as it appears on the documents",
+    "phEmail": "name@domain.cm",
+    "phTelephone": "9 digits starting with 6, or +country code outside Cameroon",
+    "phFiltreNom": "Client name",
+    "phFiltreReference": "CLI-2026-…"
   },
   "agences": {
     "titre": "Branches",
@@ -491,7 +496,8 @@
     "aucuneAgence": "No branches",
     "aucuneAgenceTexte": "The reference list is empty. Create a branch: without one, no case can be opened.",
     "aucuneAgenceRecherche": "No branch matches this search. Try a shorter fragment of the code or name.",
-    "reessayer": "Retry"
+    "reessayer": "Retry",
+    "phRechercheAgence": "Code, name or city"
   },
   "intervenants": {
     "titre": "Service providers",
@@ -522,7 +528,9 @@
     "compteObligatoire": "The username counsel signs in with, for example avocat.dupont. It is required to submit fee claims and filings.",
     "comptePrestataire": "Other providers have no account: they are notified by email.",
     "notification": "Accepts notifications outside the application",
-    "notificationAide": "SMS, WhatsApp and personal email, to the contact details on this record. The channels actually used are set by the Legal Department."
+    "notificationAide": "SMS, WhatsApp and personal email, to the contact details on this record. The channels actually used are set by the Legal Department.",
+    "phNom": "The name as it appears on the documents",
+    "phEmail": "name@domain.cm"
   },
   "dossiers": {
     "titre": "Cases",
@@ -605,7 +613,10 @@
     "ajouterDemandeur": "Add a claimant",
     "ajouterDefendeur": "Add a defendant",
     "partieRang": "{partie} {rang}",
-    "retirerPartie": "Remove {partie} {rang}"
+    "retirerPartie": "Remove {partie} {rang}",
+    "phSeuilMontant": "The amount above which the file is sensitive",
+    "phFiltreReference": "DOS-2026-…",
+    "phFiltreJuridiction": "Court name"
   },
   "fiche": {
     "retour": "Back to cases",
@@ -702,7 +713,13 @@
     "derogationArbitree": "Waiver decided.",
     "ongletAudiences": "Hearings",
     "ongletAlarmes": "Alarms",
-    "ongletDeliberes": "Deliberations"
+    "ongletDeliberes": "Deliberations",
+    "phMotifDerogation": "Why the threshold must be exceeded",
+    "phMotifArbitrage": "What justifies the decision",
+    "phMotifDiligence": "What makes this file sensitive",
+    "phMotifRejetDiligence": "Why special handling is refused",
+    "phNouveauSeuil": "The requested threshold, in FCFA",
+    "phSeuilDiligence": "The amount above which the file is sensitive"
   },
   "documents": {
     "types": {
@@ -782,7 +799,8 @@
     "champMotifRejet": "Reason for rejection",
     "rejetee": "Request rejected: the lawyer has been notified.",
     "aucuneEnAttente": "No pending request.",
-    "aucune": "No deletion request."
+    "aucune": "No deletion request.",
+    "phMotifRejetSuppression": "Why the deletion is refused"
   },
   "rapportJournalier": {
     "titre": "Daily document report",
@@ -840,7 +858,11 @@
     "condamnationEnregistree": "Monetary judgment recorded.",
     "statutAria": "Payment status - {nature}",
     "mettreAJour": "Update",
-    "statutMisAJour": "Payment status updated."
+    "statutMisAJour": "Payment status updated.",
+    "phBeneficiaire": "Who wins the award",
+    "phComptabilisation": "The accounting entry reference",
+    "phReliquat": "What remains owed after the award",
+    "phNatureCondamnation": "What the party is ordered to do"
   },
   "jurisprudence": {
     "titre": "Case-law database",
@@ -872,7 +894,8 @@
     "champNature": "Nature of the judgment",
     "champJuridiction": "Court",
     "champDate": "Date of the judgment",
-    "archivee": "Judgment archived in the case-law database."
+    "archivee": "Judgment archived in the case-law database.",
+    "phJuridictionDecision": "The court that handed down the decision"
   },
   "publications": {
     "titre": "Counsel filings",
@@ -948,7 +971,10 @@
     "accuserReception": "Acknowledge receipt",
     "accuserReceptionTitre": "Acknowledge receipt of the hearing report?",
     "accuserReceptionMessage": "The hearing report is already visible to the legal department. Acknowledging receipt only records that you have received it.",
-    "receptionAccusee": "Hearing report receipt acknowledged."
+    "receptionAccusee": "Hearing report receipt acknowledged.",
+    "phMotifRejetPublication": "Why the submission is rejected",
+    "phCommentaire": "Your comment, for the Legal Director",
+    "phCorrespondance": "The message sent to the provider"
   },
   "constitutions": {
     "redigeePar": "Last drafted by {nom}",
@@ -1011,7 +1037,18 @@
     "lettreCorpsAide": "Dotted lines mark what remains to be filled in: leave them if the value will be written by hand.",
     "lettreSignataire": "Signatory",
     "redigerLettre": "Draft the letter",
-    "consulterLettre": "View the letter"
+    "consulterLettre": "View the letter",
+    "phLettreNumero": "Assigned at signing if you leave it empty",
+    "phLettreLieu": "The city the letter is sent from",
+    "phLettreDestinataire": "The bailiff’s or lawyer’s name",
+    "phLettreQualite": "Bailiff, Lawyer…",
+    "phLettreVille": "The recipient’s city",
+    "phLettreConcerne": "The matter concerned",
+    "phLettreObjet": "What the letter asks, in one line",
+    "phLettreCorps": "The body of the letter",
+    "phLettreSignataire": "The department that writes, not a person",
+    "phMotifRejet": "Why the retainer is refused",
+    "phMotifDemande": "Why this provider, on this file"
   },
   "repertoire": {
     "titre": "Counsel directory",
@@ -1025,7 +1062,8 @@
     "charge": "{nombre, plural, =0 {No active case} one {# active case} other {# active cases}}",
     "performanceAide": "Performance: share of favourable deliberations on counsel’s cases; 0% until a deliberation is delivered.",
     "vide": "No counsel in the directory.",
-    "videRecherche": "No counsel matches this search."
+    "videRecherche": "No counsel matches this search.",
+    "phRechercheAvocat": "Lawyer’s name"
   },
   "frais": {
     "titre": "Counsel fees",
@@ -1108,7 +1146,8 @@
     "payerTitre": "Mark the request as paid?",
     "payerMessage": "Only once the payment has been confirmed through the Bank’s channels. The lawyer and the Legal Department will be notified.",
     "payee": "Payment recorded: the lawyer and the Legal Department have been notified.",
-    "aucunePiece": "No attachment on this claim."
+    "aucunePiece": "No attachment on this claim.",
+    "phMotifRejetFrais": "Why the claim is rejected"
   },
   "audiences": {
     "aucune": "No hearing scheduled.",
@@ -1163,7 +1202,11 @@
     "dateAvantOuverture": "This date precedes the case opening.",
     "compteRenduAvocat": "Counsel report",
     "champJuridiction": "Court",
-    "champJuridictionAide": "Where the hearing will be held. The case court by default; change it for an appeal."
+    "champJuridictionAide": "Where the hearing will be held. The case court by default; change it for an appeal.",
+    "phAlarmeObjet": "What must not be forgotten",
+    "phAudienceJuridiction": "Where the hearing will be held",
+    "phCompteRendu": "What was said and decided at the hearing",
+    "phAnnulationMotif": "Why the hearing is cancelled"
   },
   "deliberes": {
     "aucun": "No deliberation.",
@@ -1221,7 +1264,9 @@
     "colonneMotif": "Reason",
     "colonneEnregistree": "Recorded on",
     "auDelaDuSeuil": "Above threshold",
-    "aucuneProrogation": "No postponement."
+    "aucuneProrogation": "No postponement.",
+    "phProrogationMotif": "Why the deliberation is extended",
+    "phRabattementMotif": "Why the hearing is reopened"
   },
   "calendrier": {
     "titre": "Hearing calendar",
@@ -1509,7 +1554,9 @@
     "pieceJointe": "Attachment (optional)",
     "pieceJointeAide": "The document supporting your report: court record, hearing note. The report stands without it.",
     "compteNonRattacheTitre": "Your account is not linked to the directory yet",
-    "compteNonRattacheTexte": "A lawyer must be registered in the directory by the Legal Department, with their login identifier, before using the portal. This is not a mistake on your side: contact the Legal Department so they can complete your registration."
+    "compteNonRattacheTexte": "A lawyer must be registered in the directory by the Legal Department, with their login identifier, before using the portal. This is not a mistake on your side: contact the Legal Department so they can complete your registration.",
+    "phPublicationContenu": "What you are sending to the Legal Department",
+    "phFraisMontant": "The amount claimed, in FCFA"
   },
   "audit": {
     "titre": "Audit",
@@ -1567,7 +1614,8 @@
     "verifierInconnue": "No archive matches this file.",
     "verifierInconnueAide": "The document has been altered, or it does not come from this application. Share this fingerprint to investigate.",
     "verifierEchec": "Verification failed. Try again with the original file.",
-    "verifierContexte": "Computing a fingerprint requires a secure connection (HTTPS)."
+    "verifierContexte": "Computing a fingerprint requires a secure connection (HTTPS).",
+    "phDossier": "The file identifier"
   },
   "historique": {
     "actions": {

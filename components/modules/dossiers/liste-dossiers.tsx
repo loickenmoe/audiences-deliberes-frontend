@@ -157,6 +157,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         <Champ id="filtre-reference" label={t("rechercheReference")} className="w-44">
           <Input
             id="filtre-reference"
+            placeholder={t("phFiltreReference")}
             key={filtres.reference}
             defaultValue={filtres.reference}
             // Au `blur` : écrire dans l'URL à chaque frappe produirait une requête par caractère.
@@ -167,6 +168,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         <Champ id="filtre-juridiction" label={t("rechercheJuridiction")} className="w-44">
           <Input
             id="filtre-juridiction"
+            placeholder={t("phFiltreJuridiction")}
             key={filtres.juridiction}
             defaultValue={filtres.juridiction}
             onBlur={(evenement) => definirFiltre("juridiction", evenement.target.value || undefined)}

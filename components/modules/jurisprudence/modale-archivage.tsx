@@ -127,7 +127,8 @@ export function ModaleArchivage({
           <Input id="nature-decision" maxLength={50} value={natureDecision} onChange={(e) => setNatureDecision(e.target.value)} />
         </Champ>
         <Champ id="juridiction-decision" label={t("champJuridiction")} obligatoire erreur={erreurs.juridiction}>
-          <Input id="juridiction-decision" maxLength={100} value={juridiction} onChange={(e) => setJuridiction(e.target.value)} />
+          <Input id="juridiction-decision"
+  placeholder={t("phJuridictionDecision")} maxLength={100} value={juridiction} onChange={(e) => setJuridiction(e.target.value)} />
         </Champ>
         <Champ id="date-decision-jurisprudence" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
           <Input id="date-decision-jurisprudence" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />

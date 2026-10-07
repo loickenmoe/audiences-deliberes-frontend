@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -14,6 +14,16 @@ import { ENUMERATIONS_TRADUITES, Role } from "@/types/enums";
  */
 
 type Langue = (typeof LANGUES)[number];
+
+/** Tous les `.tsx` sous une racine : de quoi chercher une clé dans les écrans, pas dans un index. */
+function fichiersTsx(racine: string): string[] {
+  return readdirSync(racine, { withFileTypes: true }).flatMap((entree) => {
+    const chemin = join(racine, entree.name);
+    if (entree.isDirectory()) return fichiersTsx(chemin);
+    return entree.name.endsWith(".tsx") ? [chemin] : [];
+  });
+}
+
 
 const messages = Object.fromEntries(
   LANGUES.map((langue) => [
@@ -160,5 +170,38 @@ describe("traductions distinctes", () => {
     for (const chemin of aVerifier) {
       expect(lire("fr", chemin), chemin).not.toBe(lire("en", chemin));
     }
+  });
+});
+
+/**
+ * Les placeholders explicatifs (N5, observation 4).
+ *
+ * **Le risque propre à ces clés-ci.** Un placeholder vit dans un attribut, pas dans le texte de
+ * l'écran : si quelqu'un le retire d'un champ, rien ne manque visiblement, aucun test ne tombe, et
+ * la clé reste dans les deux fichiers de langue en faisant croire que le texte est toujours là.
+ * Ce garde-fou lie les deux : une clé `ph…` déclarée doit être posée sur un champ.
+ */
+describe("placeholders explicatifs", () => {
+  const source = ["components", "app"]
+    .flatMap((racine) => fichiersTsx(join(process.cwd(), racine)))
+    .map((chemin) => readFileSync(chemin, "utf8"))
+    .join("\n");
+
+  const declarees = Object.entries(messages.fr as Record<string, Record<string, string>>)
+    .flatMap(([espace, cles]) =>
+      Object.keys(cles)
+        .filter((cle) => /^(ph|placeholder)[A-Z]/.test(cle))
+        .map((cle) => `${espace}.${cle}`),
+    );
+
+  it("il y en a, et les deux langues les portent toutes les deux", () => {
+    expect(declarees.length).toBeGreaterThanOrEqual(48);
+  });
+
+  it("chaque placeholder déclaré est posé sur un champ", () => {
+    const orphelines = declarees.filter(
+      (chemin) => !source.includes(`"${chemin.split(".")[1]}"`),
+    );
+    expect(orphelines, "clés de placeholder que plus aucun champ n'emploie").toEqual([]);
   });
 });

@@ -455,7 +455,12 @@
     "risqueEncouru": "Risque encouru",
     "juridiction": "Juridiction",
     "retourListe": "Retour à la liste des clients",
-    "clientCree": "Client {reference} créé."
+    "clientCree": "Client {reference} créé.",
+    "phNom": "Le nom tel qu’il figure sur les pièces",
+    "phEmail": "nom@domaine.cm",
+    "phTelephone": "9 chiffres commençant par 6, ou +indicatif hors Cameroun",
+    "phFiltreNom": "Nom du client",
+    "phFiltreReference": "CLI-2026-…"
   },
   "agences": {
     "titre": "Agences",
@@ -491,7 +496,8 @@
     "aucuneAgence": "Aucune agence",
     "aucuneAgenceTexte": "Le référentiel est vide. Créez une agence : sans elle, aucun dossier ne peut être ouvert.",
     "aucuneAgenceRecherche": "Aucune agence ne correspond à cette recherche. Essayez un fragment de code ou de nom plus court.",
-    "reessayer": "Réessayer"
+    "reessayer": "Réessayer",
+    "phRechercheAgence": "Code, nom ou ville"
   },
   "intervenants": {
     "titre": "Intervenants",
@@ -522,7 +528,9 @@
     "compteObligatoire": "L’identifiant avec lequel l’avocat se connecte, par exemple avocat.dupont. Il en a besoin pour déposer ses demandes de frais et ses publications.",
     "comptePrestataire": "Un autre prestataire n’a pas de compte : il est notifié par courriel.",
     "notification": "Accepte les notifications hors de l’application",
-    "notificationAide": "SMS, WhatsApp et courriel personnel, vers les coordonnées de cette fiche. Les canaux réellement utilisés sont réglés par la Direction Juridique."
+    "notificationAide": "SMS, WhatsApp et courriel personnel, vers les coordonnées de cette fiche. Les canaux réellement utilisés sont réglés par la Direction Juridique.",
+    "phNom": "Le nom tel qu’il figure sur les pièces",
+    "phEmail": "nom@domaine.cm"
   },
   "dossiers": {
     "titre": "Dossiers",
@@ -605,7 +613,10 @@
     "ajouterDemandeur": "Ajouter un demandeur",
     "ajouterDefendeur": "Ajouter un défendeur",
     "partieRang": "{partie} {rang}",
-    "retirerPartie": "Retirer {partie} {rang}"
+    "retirerPartie": "Retirer {partie} {rang}",
+    "phSeuilMontant": "Le montant à partir duquel le dossier est sensible",
+    "phFiltreReference": "DOS-2026-…",
+    "phFiltreJuridiction": "Nom de la juridiction"
   },
   "fiche": {
     "retour": "Retour aux dossiers",
@@ -702,7 +713,13 @@
     "derogationArbitree": "Dérogation arbitrée.",
     "ongletAudiences": "Audiences",
     "ongletAlarmes": "Alarmes",
-    "ongletDeliberes": "Délibérés"
+    "ongletDeliberes": "Délibérés",
+    "phMotifDerogation": "Pourquoi le seuil doit être dépassé",
+    "phMotifArbitrage": "Ce qui justifie la décision",
+    "phMotifDiligence": "Ce qui rend ce dossier sensible",
+    "phMotifRejetDiligence": "Pourquoi la diligence est refusée",
+    "phNouveauSeuil": "Le seuil demandé, en FCFA",
+    "phSeuilDiligence": "Le montant à partir duquel le dossier est sensible"
   },
   "documents": {
     "types": {
@@ -782,7 +799,8 @@
     "champMotifRejet": "Motif du rejet",
     "rejetee": "Demande rejetée : le juriste est prévenu.",
     "aucuneEnAttente": "Aucune demande en attente.",
-    "aucune": "Aucune demande de suppression."
+    "aucune": "Aucune demande de suppression.",
+    "phMotifRejetSuppression": "Pourquoi la suppression est refusée"
   },
   "rapportJournalier": {
     "titre": "Rapport journalier GED",
@@ -840,7 +858,11 @@
     "condamnationEnregistree": "Condamnation enregistrée.",
     "statutAria": "Statut de paiement - {nature}",
     "mettreAJour": "Mettre à jour",
-    "statutMisAJour": "Statut de paiement mis à jour."
+    "statutMisAJour": "Statut de paiement mis à jour.",
+    "phBeneficiaire": "Qui emporte l’adjudication",
+    "phComptabilisation": "La référence de l’écriture comptable",
+    "phReliquat": "Ce qui reste dû après l’adjudication",
+    "phNatureCondamnation": "Ce à quoi la partie est condamnée"
   },
   "jurisprudence": {
     "titre": "Base jurisprudentielle",
@@ -872,7 +894,8 @@
     "champNature": "Nature de la décision",
     "champJuridiction": "Juridiction",
     "champDate": "Date de la décision",
-    "archivee": "Décision archivée dans la base jurisprudentielle."
+    "archivee": "Décision archivée dans la base jurisprudentielle.",
+    "phJuridictionDecision": "La juridiction qui a rendu la décision"
   },
   "publications": {
     "titre": "Publications des avocats",
@@ -948,7 +971,10 @@
     "accuserReception": "Accuser réception",
     "accuserReceptionTitre": "Accuser réception du compte rendu ?",
     "accuserReceptionMessage": "Le compte rendu est déjà consultable par la Direction Juridique. L’accusé de réception indique seulement que vous l’avez reçu.",
-    "receptionAccusee": "Réception du compte rendu accusée."
+    "receptionAccusee": "Réception du compte rendu accusée.",
+    "phMotifRejetPublication": "Pourquoi la publication est rejetée",
+    "phCommentaire": "Votre observation, à l’attention du DJ",
+    "phCorrespondance": "Le message transmis au prestataire"
   },
   "constitutions": {
     "redigeePar": "Dernière rédaction par {nom}",
@@ -1011,7 +1037,18 @@
     "lettreCorpsAide": "Les pointillés marquent ce qui reste à compléter : laissez-les si la valeur sera portée à la main.",
     "lettreSignataire": "Signataire",
     "redigerLettre": "Rédiger la lettre",
-    "consulterLettre": "Consulter la lettre"
+    "consulterLettre": "Consulter la lettre",
+    "phLettreNumero": "Attribué à la signature si vous le laissez vide",
+    "phLettreLieu": "La ville d’où part la lettre",
+    "phLettreDestinataire": "Le nom de l’huissier ou de l’avocat",
+    "phLettreQualite": "Huissier de Justice, Avocat…",
+    "phLettreVille": "La ville du destinataire",
+    "phLettreConcerne": "L’affaire visée",
+    "phLettreObjet": "Ce que la lettre demande, en une ligne",
+    "phLettreCorps": "Le texte de la lettre",
+    "phLettreSignataire": "Le service qui écrit, pas une personne",
+    "phMotifRejet": "Pourquoi la constitution est refusée",
+    "phMotifDemande": "Pourquoi ce prestataire, sur ce dossier"
   },
   "repertoire": {
     "titre": "Répertoire des avocats",
@@ -1025,7 +1062,8 @@
     "charge": "{nombre, plural, =0 {Aucun dossier actif} one {# dossier actif} other {# dossiers actifs}}",
     "performanceAide": "Performance : part des délibérés favorables sur les dossiers de l’avocat ; 0 % tant qu’aucun délibéré n’est rendu.",
     "vide": "Aucun avocat dans le répertoire.",
-    "videRecherche": "Aucun avocat ne correspond à cette recherche."
+    "videRecherche": "Aucun avocat ne correspond à cette recherche.",
+    "phRechercheAvocat": "Nom de l’avocat"
   },
   "frais": {
     "titre": "Frais d’avocats",
@@ -1108,7 +1146,8 @@
     "payerTitre": "Marquer la demande comme payée ?",
     "payerMessage": "À faire une fois le paiement confirmé par les circuits de la Banque. L’avocat et la Direction Juridique en seront notifiés.",
     "payee": "Paiement enregistré : l’avocat et la Direction Juridique sont notifiés.",
-    "aucunePiece": "Aucune pièce jointe à cette demande."
+    "aucunePiece": "Aucune pièce jointe à cette demande.",
+    "phMotifRejetFrais": "Pourquoi la demande est rejetée"
   },
   "audiences": {
     "aucune": "Aucune audience planifiée.",
@@ -1163,7 +1202,11 @@
     "dateAvantOuverture": "Cette date précède l’ouverture du dossier.",
     "compteRenduAvocat": "Compte rendu de l’avocat",
     "champJuridiction": "Juridiction",
-    "champJuridictionAide": "Là où l’audience se tiendra. Celle du dossier par défaut ; à changer pour un appel ou un pourvoi."
+    "champJuridictionAide": "Là où l’audience se tiendra. Celle du dossier par défaut ; à changer pour un appel ou un pourvoi.",
+    "phAlarmeObjet": "Ce qu’il ne faudra pas oublier",
+    "phAudienceJuridiction": "Là où l’audience se tiendra",
+    "phCompteRendu": "Ce qui s’est dit et décidé à l’audience",
+    "phAnnulationMotif": "Pourquoi l’audience est annulée"
   },
   "deliberes": {
     "aucun": "Aucun délibéré.",
@@ -1221,7 +1264,9 @@
     "colonneMotif": "Motif",
     "colonneEnregistree": "Enregistrée le",
     "auDelaDuSeuil": "Au-delà du seuil",
-    "aucuneProrogation": "Aucune prorogation."
+    "aucuneProrogation": "Aucune prorogation.",
+    "phProrogationMotif": "Pourquoi le délibéré est prorogé",
+    "phRabattementMotif": "Pourquoi les débats sont rouverts"
   },
   "calendrier": {
     "titre": "Calendrier des audiences",
@@ -1509,7 +1554,9 @@
     "pieceJointe": "Pièce jointe (facultative)",
     "pieceJointeAide": "Le document qui étaye votre compte rendu : plumitif du greffe, note d’audience. Le compte rendu reste valable sans.",
     "compteNonRattacheTitre": "Votre compte n’est pas encore rattaché au répertoire",
-    "compteNonRattacheTexte": "Un avocat doit être inscrit au répertoire des intervenants par la Direction Juridique, avec son identifiant de connexion, avant de pouvoir utiliser le portail. Ce n’est pas une erreur de votre part : contactez la Direction Juridique pour qu’elle procède à votre inscription."
+    "compteNonRattacheTexte": "Un avocat doit être inscrit au répertoire des intervenants par la Direction Juridique, avec son identifiant de connexion, avant de pouvoir utiliser le portail. Ce n’est pas une erreur de votre part : contactez la Direction Juridique pour qu’elle procède à votre inscription.",
+    "phPublicationContenu": "Ce que vous transmettez à la Direction Juridique",
+    "phFraisMontant": "Le montant demandé, en FCFA"
   },
   "audit": {
     "titre": "Audit",
@@ -1567,7 +1614,8 @@
     "verifierInconnue": "Aucune archive ne correspond à ce fichier.",
     "verifierInconnueAide": "Le document a été modifié, ou il ne provient pas de cette application. Transmettez cette empreinte pour comprendre.",
     "verifierEchec": "La vérification a échoué. Réessayez avec le fichier d’origine.",
-    "verifierContexte": "Le calcul d’empreinte exige une connexion sécurisée (HTTPS)."
+    "verifierContexte": "Le calcul d’empreinte exige une connexion sécurisée (HTTPS).",
+    "phDossier": "L’identifiant du dossier"
   },
   "historique": {
     "actions": {

@@ -147,6 +147,7 @@ export function ModaleLettre({
               <span aria-hidden className="text-[length:var(--taille-sm)]">N°</span>
               <Input
                 id="lettre-numero"
+                placeholder={t("phLettreNumero")}
                 aria-label={t("lettreNumero")}
                 className="w-20"
                 inputMode="numeric"
@@ -176,6 +177,7 @@ export function ModaleLettre({
           <Champ id="lettre-lieu" label={t("lettreLieu")}>
             <Input
               id="lettre-lieu"
+              placeholder={t("phLettreLieu")}
               value={saisie.lieu}
               disabled={!modifiable}
               onChange={(evenement) => changer("lieu", evenement.target.value)}
@@ -186,6 +188,7 @@ export function ModaleLettre({
           <Champ id="lettre-destinataire" label={t("lettreDestinataire")}>
             <Input
               id="lettre-destinataire"
+              placeholder={t("phLettreDestinataire")}
               value={saisie.destinataireNom ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("destinataireNom", evenement.target.value)}
@@ -194,6 +197,7 @@ export function ModaleLettre({
           <Champ id="lettre-qualite" label={t("lettreQualite")}>
             <Input
               id="lettre-qualite"
+              placeholder={t("phLettreQualite")}
               value={saisie.destinataireQualite ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("destinataireQualite", evenement.target.value)}
@@ -202,6 +206,7 @@ export function ModaleLettre({
           <Champ id="lettre-ville" label={t("lettreVille")}>
             <Input
               id="lettre-ville"
+              placeholder={t("phLettreVille")}
               value={saisie.destinataireVille ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("destinataireVille", evenement.target.value)}
@@ -211,6 +216,7 @@ export function ModaleLettre({
           <Champ id="lettre-concerne" label={t("lettreConcerne")}>
             <Input
               id="lettre-concerne"
+              placeholder={t("phLettreConcerne")}
               value={saisie.concerne ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("concerne", evenement.target.value)}
@@ -219,6 +225,7 @@ export function ModaleLettre({
           <Champ id="lettre-objet" label={t("lettreObjet")} obligatoire>
             <Input
               id="lettre-objet"
+              placeholder={t("phLettreObjet")}
               value={saisie.objet}
               disabled={!modifiable}
               onChange={(evenement) => changer("objet", evenement.target.value)}
@@ -228,6 +235,7 @@ export function ModaleLettre({
           <Champ id="lettre-corps" label={t("lettreCorps")} obligatoire aide={t("lettreCorpsAide")}>
             <Textarea
               id="lettre-corps"
+              placeholder={t("phLettreCorps")}
               rows={10}
               value={saisie.corps}
               disabled={!modifiable}
@@ -238,6 +246,7 @@ export function ModaleLettre({
           <Champ id="lettre-signataire" label={t("lettreSignataire")} obligatoire>
             <Input
               id="lettre-signataire"
+              placeholder={t("phLettreSignataire")}
               value={saisie.signataire}
               disabled={!modifiable}
               onChange={(evenement) => changer("signataire", evenement.target.value)}

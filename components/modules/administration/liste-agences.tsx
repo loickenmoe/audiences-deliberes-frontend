@@ -99,6 +99,7 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
         <Champ id="recherche-agence" label={t("rechercher")} aide={t("rechercherAide")} className="w-80">
           <Input
             id="recherche-agence"
+            placeholder={t("phRechercheAgence")}
             value={recherche}
             onChange={(evenement) => {
               setRecherche(evenement.target.value);

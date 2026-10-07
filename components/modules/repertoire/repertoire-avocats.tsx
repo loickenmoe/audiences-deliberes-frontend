@@ -32,6 +32,7 @@ export function RepertoireAvocats() {
       <Champ id="recherche-avocat" label={t("rechercheNom")} className="w-64">
         <Input
           id="recherche-avocat"
+          placeholder={t("phRechercheAvocat")}
           defaultValue={filtres.nom}
           // Au `blur` : écrire dans l'URL à chaque frappe produirait une requête par caractère.
           onBlur={(evenement) => definirFiltre("nom", evenement.target.value.trim() || undefined)}

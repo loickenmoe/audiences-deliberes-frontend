@@ -285,6 +285,7 @@ function PanneauValidation({ publication }: { publication: Publication }) {
         <Champ id="motif-rejet-publication" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
           <Textarea
             id="motif-rejet-publication"
+            placeholder={t("phMotifRejetPublication")}
             rows={4}
             maxLength={MOTIF_MAX}
             enErreur={!!erreur}
@@ -376,6 +377,7 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
           <Champ id="commentaire-publication" label={t("commenter")} aide={t("commenterAide")} erreur={erreurCommentaire ?? undefined}>
             <Textarea
               id="commentaire-publication"
+              placeholder={t("phCommentaire")}
               rows={3}
               enErreur={!!erreurCommentaire}
               value={commentaire}
@@ -409,6 +411,7 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
             >
               <Textarea
                 id="correspondance-publication"
+                placeholder={t("phCorrespondance")}
                 rows={4}
                 enErreur={!!erreurCorrespondance}
                 value={correspondance}

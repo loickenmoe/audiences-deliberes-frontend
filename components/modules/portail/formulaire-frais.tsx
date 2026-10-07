@@ -129,6 +129,7 @@ export function FormulaireFrais() {
         >
           <Input
             id="frais-montant"
+            placeholder={t("phFraisMontant")}
             name="montant"
             inputMode="numeric"
             required

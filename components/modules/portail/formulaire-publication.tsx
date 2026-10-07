@@ -193,6 +193,7 @@ export function FormulairePublication() {
             <Champ id="publication-contenu" label={t("contenu")} obligatoire className="max-w-2xl">
               <Textarea
                 id="publication-contenu"
+                placeholder={t("phPublicationContenu")}
                 name="contenu"
                 rows={8}
                 required

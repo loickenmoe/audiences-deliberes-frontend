@@ -442,6 +442,7 @@ function ModaleRejet({
       <Champ id="motif-rejet-frais" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
         <Textarea
           id="motif-rejet-frais"
+          placeholder={t("phMotifRejetFrais")}
           rows={4}
           maxLength={MOTIF_MAX}
           enErreur={!!erreur}
