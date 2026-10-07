@@ -569,7 +569,6 @@
     "champEstSensible": "Case requiring special attention",
     "champSeuilMontant": "Proposed threshold (FCFA)",
     "champTypeClientSensible": "Client type",
-    "aideNature": "The case category follows from it: it decides which documents are required.",
     "placeholderJuridiction": "The court before which the case is brought",
     "placeholderRisque": "What the bank stands to lose",
     "placeholderDemandeurs": "Who brings the action",

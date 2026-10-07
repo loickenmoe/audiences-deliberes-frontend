@@ -422,7 +422,6 @@ export function FormulaireDossier({
               id="nature"
               label={t("champNature")}
               obligatoire
-              aide={t("aideNature")}
               erreur={errors.nature?.message}
             >
               <Select id="nature" enErreur={!!errors.nature} {...register("nature")}>
