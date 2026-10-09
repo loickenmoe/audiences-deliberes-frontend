@@ -3589,6 +3589,46 @@
         }
       }
     },
+    "/api/v1/rapports/nominatif": {
+      "get": {
+        "tags": [
+          "reporting-controller"
+        ],
+        "operationId": "rapportNominatif",
+        "parameters": [
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RapportNominatifResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/publications": {
       "get": {
         "tags": [
@@ -7656,6 +7696,14 @@
             "type": "integer",
             "format": "int64"
           },
+          "deliberesFavorables": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deliberesTotal": {
+            "type": "integer",
+            "format": "int64"
+          },
           "indicateurPerformance": {
             "type": "number",
             "format": "double"
@@ -7755,6 +7803,68 @@
           "totalElements": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ActiviteNominative": {
+        "type": "object",
+        "properties": {
+          "utilisateurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "profil": {
+            "type": "string"
+          },
+          "dossiersOuverts": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "audiencesPlanifiees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "comptesRendusSaisis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deliberesEnregistres": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lettresRedigees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fraisTraites": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "delaiMoyenSaisieCompteRendu": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "RapportNominatifResponse": {
+        "type": "object",
+        "properties": {
+          "dateDebut": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateFin": {
+            "type": "string",
+            "format": "date"
+          },
+          "lignes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActiviteNominative"
+            }
           }
         }
       },

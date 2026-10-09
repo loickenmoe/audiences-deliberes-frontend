@@ -166,6 +166,14 @@ export const CAPACITES = {
   /** `PUT /demandes-explication/{id}/reponse` — l'avocat, et seulement pour la sienne (403). */
   repondreExplication: ["ROLE_AVOCAT"],
 
+  /**
+   * `GET /rapports/nominatif` — DJ et DJA seuls (observation 14, N6).
+   *
+   * Ce rapport **nomme des personnes**. Il est lu sur leurs rôles propres, jamais par
+   * `ROLE_JURISTE` qui est composite (Q-81) : chaque juriste y lirait l'activité de ses collègues.
+   */
+  consulterRapportNominatif: ["ROLE_DJ", "ROLE_DJA"],
+
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */
   deposerDocument: ["ROLE_SAISIE"],

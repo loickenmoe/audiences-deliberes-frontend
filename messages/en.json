@@ -1062,12 +1062,14 @@
     "colonneCourriel": "Email",
     "colonneTelephone": "Phone",
     "colonneCharge": "Workload",
-    "colonnePerformance": "Performance",
+    "colonnePerformance": "Rulings won",
     "charge": "{nombre, plural, =0 {No active case} one {# active case} other {# active cases}}",
-    "performanceAide": "Performance: share of favourable deliberations on counsel’s cases; 0% until a deliberation is delivered.",
+    "performanceAide": "Rulings handed down in the bank’s favour on the lawyer’s files, out of the rulings handed down. With no ruling there is nothing to measure - that is not a poor performance.",
     "vide": "No counsel in the directory.",
     "videRecherche": "No counsel matches this search.",
-    "phRechercheAvocat": "Lawyer’s name"
+    "phRechercheAvocat": "Lawyer’s name",
+    "deliberesGagnes": "{gagnes} won out of {total} rulings",
+    "aucunDelibere": "No ruling yet"
   },
   "frais": {
     "titre": "Counsel fees",
@@ -1803,5 +1805,30 @@
     "envoyer": "Send",
     "videTitre": "No explanation request",
     "videTexte": "Nothing has been requested so far."
+  },
+  "nominatif": {
+    "titre": "Activity by person",
+    "description": "What each person did over the period. The application counts; the judgement is yours - thirty simple files are not worth two difficult cases.",
+    "dateDebut": "From",
+    "dateFin": "To",
+    "periodeInversee": "The end date comes before the start date.",
+    "generer": "Show",
+    "enCours": "Computing…",
+    "avantGeneration": "Choose a period, then show.",
+    "vide": "No activity over this period",
+    "videTexte": "Nothing was recorded between these two dates.",
+    "legende": "Activity by person from {debut} to {fin}",
+    "colonnePersonne": "Person",
+    "colonneDossiers": "Files opened",
+    "colonneAudiences": "Hearings scheduled",
+    "colonneComptesRendus": "Reports recorded",
+    "colonneDeliberes": "Rulings recorded",
+    "colonneLettres": "Letters drafted",
+    "colonneFrais": "Fee claims checked",
+    "colonneDelai": "Average recording delay",
+    "delaiAide": "Average days between a hearing and the recording of its report. With no report recorded there is nothing to measure.",
+    "delaiJours": "{jours} d",
+    "delaiSansObjet": "Not applicable",
+    "personneRetiree": "Removed account (#{identifiant})"
   }
 }

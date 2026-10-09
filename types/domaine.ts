@@ -871,8 +871,52 @@ export interface DemandeExplication {
 }
 
 /**
- * Avocat du répertoire (#37), trié par charge croissante. `indicateurCharge` : dossiers actifs ;
- * `indicateurPerformance` : part des délibérés favorables, entre 0 et 1 (0 sans délibéré).
+ * L'activité d'une personne sur une période (observation 14, N6).
+ *
+ * `delaiMoyenSaisieCompteRendu` est **nul** quand elle n'a saisi aucun compte rendu : zéro se
+ * lirait comme une saisie le jour même, c'est-à-dire comme la meilleure performance possible, et
+ * l'absence de mesure n'est pas une mesure excellente.
+ *
+ * `fraisTraites` additionne les deux contrôles - conformité et opportunité - parce qu'ils sont deux
+ * gestes distincts sur la même demande, et n'en montrer qu'un rendrait invisible la moitié du
+ * travail.
+ */
+export interface ActiviteNominative {
+  utilisateurId: number;
+  nom: string | null;
+  profil: string | null;
+  dossiersOuverts: number;
+  audiencesPlanifiees: number;
+  comptesRendusSaisis: number;
+  deliberesEnregistres: number;
+  lettresRedigees: number;
+  fraisTraites: number;
+  delaiMoyenSaisieCompteRendu: number | null;
+}
+
+/**
+ * Le rapport d'activité par personne (observation 14, N6).
+ *
+ * **Des indicateurs, pas une note.** L'application compte ; le responsable apprécie. Ni note, ni
+ * classement, ni total global : les lignes suivent l'ordre des **noms**, parce qu'un tri par volume
+ * ferait du rapport un palmarès où le premier passerait pour le meilleur.
+ */
+export interface RapportNominatif {
+  dateDebut: string;
+  dateFin: string;
+  lignes: ActiviteNominative[];
+}
+
+/**
+ * Avocat du répertoire (#37), trié par charge croissante.
+ *
+ * `indicateurCharge` : dossiers actifs. `deliberesFavorables` / `deliberesTotal` : ce que l'écran
+ * montre depuis le 2026-10-07 - « 3 sur 4 » dit ce que « 75 % » résumait, **et sur combien
+ * d'affaires**. Un taux de 100 % sur un délibéré unique ne vaut pas le même jugement qu'un taux de
+ * 70 % sur trente, et c'est pourtant le premier qui paraissait le meilleur.
+ *
+ * `indicateurPerformance` reste dans le contrat - la même requête le produit - mais n'est plus
+ * affiché : « le métier veut les chiffres, pas les pourcentages » (2026-10-06).
  */
 export interface AvocatRepertoire {
   id: number;
@@ -880,6 +924,8 @@ export interface AvocatRepertoire {
   email: string | null;
   telephone: string | null;
   indicateurCharge: number;
+  deliberesFavorables: number;
+  deliberesTotal: number;
   indicateurPerformance: number;
 }
 

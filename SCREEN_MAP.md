@@ -208,6 +208,7 @@ transition reste manuelle via l'endpoint générique d'étape.
 |---|---|---|---|---|---|---|
 | 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ et DJA** (Q-95) | `GET /tableau-de-bord` | F15 | ✅ |
 | 40 | Générer un rapport d'activité | `/rapports` | **JUR**, et la direction par son composite (Q-81) | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ✅ |
+| 40 bis | Activité par personne *(second bloc de l'écran 40)* | `/rapports` | **DJ et DJA seuls** (Q-132) | `GET /rapports/nominatif?dateDebut&dateFin` | N6 | ✅ |
 
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
@@ -216,6 +217,14 @@ transition reste manuelle via l'endpoint générique d'étape.
 `nbDemandesFraisEnAttente`, `nbProrogationsAlerte`, `tauxSuccesRecouvrement`, `provisionsReprises`.
 **40** — `type ∈ {JOURNALIER…ANNUEL}`, `format ∈ {JSON, PDF, EXCEL, CSV}`, **204 si aucune donnée**
 sur la période : traiter comme un état vide, pas comme une erreur.
+
+**40 bis** — le bloc *Activité par personne* (observation 14, Q-132) partage la route de l'écran 40,
+mais **pas ses droits** : `peut(roles, "consulterRapportNominatif")` le rend, et il n'est vrai que
+pour `ROLE_DJ` et `ROLE_DJA`. Le juriste atteint `/rapports` par son rôle, le DJ et la DJA par le
+même composite (Q-81) : rien dans l'URL ne distingue les trois, c'est la **section** qui manque au
+juriste. Période libre, deux bornes seulement — ni `type`, ni `format` : le rapport n'existe qu'à
+l'écran. **204 = état vide**, comme l'écran 40. Ni note, ni classement, ni total global ; les lignes
+suivent l'ordre des **noms**.
 
 ## 10. Administration (Épic 7)
 

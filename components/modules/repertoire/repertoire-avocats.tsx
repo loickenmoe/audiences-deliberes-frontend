@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { Pourcentage } from "@/components/metier";
 import { Champ, Input } from "@/components/ui/champ";
 import { useRepertoire } from "@/hooks/useConstitutions";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
@@ -73,7 +72,23 @@ export function RepertoireAvocats() {
                   </td>
                   <td className="px-4 py-2">{avocat.telephone ?? "—"}</td>
                   <td className="px-4 py-2" data-nombres>{t("charge", { nombre: avocat.indicateurCharge })}</td>
-                  <td className="px-4 py-2"><Pourcentage valeur={avocat.indicateurPerformance} /></td>
+                  {/*
+                    Les chiffres, non le taux (métier, 2026-10-06). « 3 sur 4 » dit ce que « 75 % »
+                    résumait, **et sur combien d'affaires** : un taux de 100 % sur un délibéré
+                    unique ne vaut pas le même jugement qu'un taux de 70 % sur trente, et c'est
+                    pourtant le premier qui paraissait le meilleur.
+
+                    Aucun délibéré n'est pas une contre-performance : c'est l'absence de mesure, et
+                    l'écran le dit plutôt que d'afficher un zéro qui se lirait comme un échec.
+                  */}
+                  <td className="px-4 py-2" data-nombres>
+                    {avocat.deliberesTotal === 0
+                      ? t("aucunDelibere")
+                      : t("deliberesGagnes", {
+                          gagnes: avocat.deliberesFavorables,
+                          total: avocat.deliberesTotal,
+                        })}
+                  </td>
                 </tr>
               ))}
             </tbody>

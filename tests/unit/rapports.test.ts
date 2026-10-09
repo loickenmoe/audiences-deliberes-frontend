@@ -38,6 +38,42 @@ const RAPPORT = {
   provisionsReprises: 1_250_000,
 };
 
+/**
+ * Deux lignes suffisent à poser ce qui compte dans le rapport nominatif (N6) : un délai mesurable,
+ * et un délai **absent** parce que la personne n'a saisi aucun compte rendu. Zéro se lirait comme
+ * une saisie le jour même, c'est-à-dire comme la meilleure performance possible.
+ */
+const NOMINATIF = {
+  dateDebut: "2026-09-01",
+  dateFin: "2026-09-30",
+  lignes: [
+    {
+      utilisateurId: 7,
+      nom: "Awa Ndiaye",
+      profil: "JURISTE",
+      dossiersOuverts: 4,
+      audiencesPlanifiees: 6,
+      comptesRendusSaisis: 5,
+      deliberesEnregistres: 2,
+      lettresRedigees: 3,
+      fraisTraites: 1,
+      delaiMoyenSaisieCompteRendu: 2.5,
+    },
+    {
+      utilisateurId: 9,
+      nom: null,
+      profil: null,
+      dossiersOuverts: 1,
+      audiencesPlanifiees: 0,
+      comptesRendusSaisis: 0,
+      deliberesEnregistres: 0,
+      lettresRedigees: 0,
+      fraisTraites: 0,
+      delaiMoyenSaisieCompteRendu: null,
+    },
+  ],
+};
+
 const serveur = setupServer(
   http.get(`${BASE}/tableau-de-bord`, ({ request }) => {
     derniere = { methode: request.method, url: new URL(request.url) };
@@ -53,6 +89,14 @@ const serveur = setupServer(
       nbAffairesVidees: 5,
       provisionsReprises: 3_000_000,
     });
+  }),
+  http.get(`${BASE}/rapports/nominatif`, ({ request }) => {
+    const url = new URL(request.url);
+    derniere = { methode: request.method, url };
+    if (url.searchParams.get("dateDebut")?.startsWith("2000")) {
+      return new HttpResponse(null, { status: 204 });
+    }
+    return HttpResponse.json(NOMINATIF);
   }),
   http.get(`${BASE}/rapports`, ({ request }) => {
     const url = new URL(request.url);
@@ -140,6 +184,49 @@ describe("rapport d'activité", () => {
     );
 
     expect(contenu).toBeNull();
+  });
+});
+
+/**
+ * L'activité par personne (observation 14, N6). Le service n'a qu'une responsabilité — poser les
+ * deux bornes et traduire le 204 — mais c'est elle qui décide si l'écran affiche un état vide ou une
+ * erreur, et une page de zéros laisserait croire que personne n'a rien fait.
+ */
+describe("rapport nominatif", () => {
+  it("n'envoie que les deux bornes, sans étiquette de période", async () => {
+    await reportingService.rapportNominatif("2026-09-01", "2026-09-30");
+
+    expect(derniere?.url.pathname).toBe("/api/v1/rapports/nominatif");
+    const params = derniere!.url.searchParams;
+    expect(params.get("dateDebut")).toBe("2026-09-01");
+    expect(params.get("dateFin")).toBe("2026-09-30");
+    // Contrairement à `GET /rapports`, il n'y a ni `type` ni `format` : le rapport n'existe qu'à
+    // l'écran, et son intervalle est libre.
+    expect(params.get("type")).toBeNull();
+    expect(params.get("format")).toBeNull();
+  });
+
+  it("rend les lignes telles quelles, dans l'ordre reçu du serveur", async () => {
+    const rapport = await reportingService.rapportNominatif("2026-09-01", "2026-09-30");
+
+    expect(rapport).not.toBeNull();
+    const lignes = rapport!.lignes;
+    expect(lignes).toHaveLength(2);
+    expect(lignes[0]).toMatchObject({
+      nom: "Awa Ndiaye",
+      comptesRendusSaisis: 5,
+      delaiMoyenSaisieCompteRendu: 2.5,
+    });
+    // Un compte retiré du référentiel laisse ses traces sans nom : l'écran les nomme « compte
+    // retiré », il ne les masque pas.
+    expect(lignes[1]).toMatchObject({ nom: null, delaiMoyenSaisieCompteRendu: null });
+  });
+
+  /** Même règle que le rapport périodique : le 204 est un **état vide**, jamais une exception. */
+  it("rend null sur une période sans activité, sans lever d'erreur", async () => {
+    const rapport = await reportingService.rapportNominatif("2000-01-01", "2000-01-02");
+
+    expect(rapport).toBeNull();
   });
 });
 

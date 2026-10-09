@@ -1062,12 +1062,14 @@
     "colonneCourriel": "Courriel",
     "colonneTelephone": "Téléphone",
     "colonneCharge": "Charge",
-    "colonnePerformance": "Performance",
+    "colonnePerformance": "Délibérés gagnés",
     "charge": "{nombre, plural, =0 {Aucun dossier actif} one {# dossier actif} other {# dossiers actifs}}",
-    "performanceAide": "Performance : part des délibérés favorables sur les dossiers de l’avocat ; 0 % tant qu’aucun délibéré n’est rendu.",
+    "performanceAide": "Délibérés rendus en faveur de la banque sur les dossiers de l’avocat, rapportés au nombre de délibérés rendus. Sans délibéré, il n’y a rien à mesurer - ce n’est pas une contre-performance.",
     "vide": "Aucun avocat dans le répertoire.",
     "videRecherche": "Aucun avocat ne correspond à cette recherche.",
-    "phRechercheAvocat": "Nom de l’avocat"
+    "phRechercheAvocat": "Nom de l’avocat",
+    "deliberesGagnes": "{gagnes} gagnés sur {total} délibérés",
+    "aucunDelibere": "Aucun délibéré rendu"
   },
   "frais": {
     "titre": "Frais d’avocats",
@@ -1803,5 +1805,30 @@
     "envoyer": "Envoyer",
     "videTitre": "Aucune demande d’explication",
     "videTexte": "Rien n’a été demandé à ce jour."
+  },
+  "nominatif": {
+    "titre": "Activité par personne",
+    "description": "Ce que chacun a fait sur la période. L’application compte ; c’est à vous d’apprécier - trente dossiers simples ne valent pas deux affaires difficiles.",
+    "dateDebut": "Du",
+    "dateFin": "Au",
+    "periodeInversee": "La date de fin précède celle de début.",
+    "generer": "Afficher",
+    "enCours": "Calcul en cours…",
+    "avantGeneration": "Choisissez une période, puis affichez.",
+    "vide": "Aucune activité sur cette période",
+    "videTexte": "Rien n’a été enregistré entre ces deux dates.",
+    "legende": "Activité par personne du {debut} au {fin}",
+    "colonnePersonne": "Personne",
+    "colonneDossiers": "Dossiers ouverts",
+    "colonneAudiences": "Audiences planifiées",
+    "colonneComptesRendus": "Comptes rendus saisis",
+    "colonneDeliberes": "Délibérés enregistrés",
+    "colonneLettres": "Lettres rédigées",
+    "colonneFrais": "Frais contrôlés",
+    "colonneDelai": "Délai moyen de saisie",
+    "delaiAide": "Jours écoulés en moyenne entre une audience et la saisie de son compte rendu. Sans compte rendu saisi, il n’y a rien à mesurer.",
+    "delaiJours": "{jours} j",
+    "delaiSansObjet": "Sans objet",
+    "personneRetiree": "Compte retiré (#{identifiant})"
   }
 }

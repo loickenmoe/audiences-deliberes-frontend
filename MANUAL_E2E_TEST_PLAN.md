@@ -137,6 +137,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-033 | Ma signature enregistrée, et la lettre corrigée par le SH | SH → JUR | Haute | REC-E2E-016 | ☐ |
 | REC-E2E-034 | La lettre appartient à son demandeur ; l'Assistante rédige | JUR → DJ → SH → ASS | Haute | REC-E2E-016 | ☐ |
 | REC-E2E-035 | Comptes rendus manquants : alerte à la direction, demande d'explication, réponse | JUR → DJ → AVO | Haute | REC-E2E-013 | ☐ |
+| REC-E2E-036 | Activité par personne : des indicateurs, pas une note | DJ → DJA → JUR | Haute | Activité des fiches précédentes | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1028,6 +1029,63 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-036 - Activité par personne : des indicateurs, pas une note
+
+### Objectif
+Valider l'observation 14 telle qu'elle a été tranchée le 2026-10-07 (« sans note ») et livrée en
+Q-132 : le rapport nominatif **compte** ce que chacun a fait, sans le noter, sans le classer, et
+**seuls le DJ et la DJA le voient**. Second volet : le dernier pourcentage de l'application a quitté
+le répertoire des avocats.
+
+### Acteurs
+DJ (`dj.test`) et DJA (`dja.test`), qui lisent le rapport ; juriste (`juriste.test`), qui ne doit pas
+le voir tout en gardant le sien.
+
+### Préconditions
+Aucune préparation particulière. La base de recette doit porter de l'activité - c'est le cas dès que
+les fiches précédentes ont été jouées. Si elle est vierge, l'étape 4 affichera l'état vide, ce qui
+est le comportement attendu mais ne permet pas de vérifier les colonnes.
+
+### Parcours
+
+| Étape | Rôle | Action à effectuer dans l'interface | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| 1 | DJ | Menu « Générer un rapport » | Sous le rapport périodique, un second bloc : « **Activité par personne** » | | ☐ |
+| 2 | DJ | Lire le bloc **sans rien cliquer** | « Choisissez une période, puis affichez. » **Aucun nom n'est affiché** : le rapport nomme des personnes, il ne se déclenche pas à l'ouverture | | ☐ |
+| 3 | DJ | Mettre « Au » **avant** « Du », puis chercher le bouton | « La date de fin précède celle de début. » et « Afficher » est **désactivé** | | ☐ |
+| 4 | DJ | Rétablir une période large (p. ex. du 01/01/2020 au 31/12/2030), puis « Afficher » | Un tableau : Personne, Dossiers ouverts, Audiences planifiées, Comptes rendus saisis, Délibérés enregistrés, Lettres rédigées, Frais contrôlés, Délai moyen de saisie | | ☐ |
+| 5 | DJ | **Parcourir le tableau du regard** | **Aucun pourcentage, aucune note, aucun score, aucune colonne « total »** | | ☐ |
+| 6 | DJ | Lire l'ordre des lignes | Les noms sont **par ordre alphabétique**, pas par volume d'activité : le premier n'est pas « le meilleur » | | ☐ |
+| 7 | DJ | Chercher une ligne dont la colonne de délai dit « **Sans objet** » | Cette personne n'a saisi aucun compte rendu sur la période. Elle n'affiche **pas 0** : un 0 se lirait comme une saisie le jour même | | ☐ |
+| 8 | DJ | Survoler l'en-tête « Délai moyen de saisie » | Une infobulle explique ce qui est mesuré, et qu'il n'y a rien à mesurer sans compte rendu | | ☐ |
+| 9 | DJ | Choisir une période sans activité (p. ex. du 01/01/2000 au 02/01/2000) et afficher | « Aucune activité sur cette période » : un **état vide**, pas un message d'erreur | | ☐ |
+| 10 | DJA | Refaire les étapes 1 et 4 avec le compte de la DJA | Même résultat : l'un des deux peut être absent le jour où la direction veut regarder | | ☐ |
+| 11 | JUR | Ouvrir « Générer un rapport » avec le compte juriste | Le **rapport périodique est là, intact**, mais le bloc « Activité par personne » est **absent** | | ☐ |
+| 12 | DJ | Basculer en anglais sur cet écran | « Activity by person », les colonnes et le bouton « Show » suivent | | ☐ |
+| 13 | JUR | Menu « Répertoire des avocats », colonne de performance | « **X gagnés sur Y délibérés** », et non un pourcentage. « Aucun délibéré » quand rien n'a été jugé | | ☐ |
+
+### Résultat final attendu
+La direction a lu l'activité de chacun sur une période de son choix, en nombres, sans note ni
+classement. Le juriste n'a pas vu ce tableau et n'a rien perdu de son rapport. Le dernier
+pourcentage de l'application a disparu du répertoire.
+
+### Points de contrôle
+- **L'application compte, le responsable apprécie.** C'est la ligne arrêtée le 2026-10-07, et elle
+  se vérifie à l'œil : ni note, ni classement, ni total global.
+- **L'ordre des noms est une décision, pas un hasard.** Trier par volume ferait du rapport un
+  palmarès - la note, réintroduite par la mise en page.
+- **Le périmètre est plus étroit que celui de l'écran** : `/rapports` est ouvert au juriste, le
+  rapport nominatif ne l'est pas. Il nomme des collègues, et le serveur le tient sur les rôles
+  propres du DJ et de la DJA - pas sur `ROLE_JURISTE`, qui est composite (Q-81) et l'aurait donné à
+  chaque juriste, donc à chacun des nommés.
+- **« Sans objet » n'est pas zéro**, et **« Compte retiré » n'est pas une erreur** : un utilisateur
+  sorti du référentiel garde ses lignes, parce que c'est précisément le « qui » qui est en jeu.
+- ⚠ **Deux indicateurs sont volontairement absents** : les dossiers gagnés par personne - l'issue
+  d'un délibéré appartient au dossier, pas à celui qui l'a saisi - et le temps passé, que
+  l'application n'enregistre pas. Leur absence est une décision, non un oubli.
 
 ---
 

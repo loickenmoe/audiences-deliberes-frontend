@@ -178,3 +178,107 @@ test("les écrans de reporting sont traduits", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Activity report", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show report" })).toBeVisible();
 });
+
+/**
+ * L'activité par personne (observation 14, N6) — REC-E2E-036.
+ *
+ * Trois choses se tiennent ici, et aucune des trois ne se vérifie en test unitaire :
+ *
+ * 1. **Qui la voit.** Le rapport nomme des collègues. Il est réservé au DJ et à la DJA, et le
+ *    serveur le tient sur leurs rôles propres : l'adosser à `ROLE_JURISTE`, composite depuis Q-81,
+ *    le donnerait à chaque juriste, donc à chacun des nommés.
+ * 2. **Des indicateurs, pas une note.** Ni pourcentage, ni score, ni classement par volume -
+ *    l'application compte, le responsable apprécie. C'est la ligne arrêtée avec le métier, et un
+ *    test est le seul moyen qu'elle survive à la prochaine demande de « total global ».
+ * 3. **Le 204 d'une période vide**, comme pour le rapport périodique (RG-REP-02) : un état vide,
+ *    pas une erreur.
+ */
+const BORNES_LARGES = ["2020-01-01", "2030-12-31"] as const;
+
+/** Les deux champs de l'écran nominatif ; le rapport périodique porte les siens, `#rapport-*`. */
+async function posePeriodeNominative(page: Page, debut: string, fin: string) {
+  await page.locator("#nominatif-debut").fill(debut);
+  await page.locator("#nominatif-fin").fill(fin);
+  // « Afficher » tout court : le rapport périodique porte « Afficher le rapport ».
+  await page.getByRole("button", { name: "Afficher", exact: true }).click();
+}
+
+test("le DJ lit l'activité de chacun, et une période vide y reste un état vide", async ({ browser }) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/rapports");
+  await expect(dj.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
+
+  // Rien ne part avant le clic, et surtout rien ne s'affiche : le rapport nomme des personnes, il
+  // ne se déclenche pas en ouvrant l'écran.
+  await expect(dj.getByText("Choisissez une période, puis affichez.", { exact: true })).toBeVisible();
+
+  await posePeriodeNominative(dj, ...BORNES_LARGES);
+  const tableau = dj.getByRole("table", { name: /Activité par personne du/ });
+  await expect(tableau).toBeVisible({ timeout: 30_000 });
+  for (const colonne of [
+    "Personne",
+    "Dossiers ouverts",
+    "Audiences planifiées",
+    "Comptes rendus saisis",
+    "Délibérés enregistrés",
+    "Lettres rédigées",
+    "Frais contrôlés",
+    "Délai moyen de saisie",
+  ]) {
+    await expect(tableau.getByRole("columnheader", { name: colonne })).toBeVisible();
+  }
+  await expect(tableau.locator("tbody tr").first()).toBeVisible();
+
+  /*
+   * Des indicateurs, pas une note. Un pourcentage dans ce tableau serait un taux de réussite
+   * individuel, c'est-à-dire exactement ce que le métier a refusé.
+   */
+  expect(await tableau.innerText()).not.toContain("%");
+
+  /*
+   * L'ordre est celui des **noms**. Trier par volume ferait du rapport un palmarès, où le premier
+   * passerait pour le meilleur - alors que trente dossiers simples ne valent pas deux affaires
+   * difficiles.
+   */
+  const personnes = await tableau.locator("tbody tr td:nth-child(1)").allInnerTexts();
+  const nomsSeuls = personnes.map((cellule) => cellule.split("\n")[0].trim());
+  expect(nomsSeuls).toEqual([...nomsSeuls].sort((a, b) => a.localeCompare(b, "fr")));
+
+  // RG-REP-02 : période sans activité → 204, affiché comme un état vide et non comme une erreur.
+  await posePeriodeNominative(dj, "2000-01-01", "2000-01-02");
+  await expect(dj.getByText("Aucune activité sur cette période")).toBeVisible({ timeout: 30_000 });
+  await expect(dj.getByRole("main").getByRole("alert")).toHaveCount(0);
+
+  await dj.context().close();
+});
+
+test("la DJA lit l'activité par personne ; le juriste garde son rapport sans la voir", async ({ browser }) => {
+  const dja = await pageConnectee(browser, "dja.test");
+  await dja.goto("/rapports");
+  await expect(dja.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
+  await dja.context().close();
+
+  /*
+   * Le point sensible. Le juriste atteint `/rapports` par son rôle, et le DJ comme la DJA
+   * l'atteignent par le même composite : rien dans l'URL ne distingue les trois. C'est la section
+   * qui doit manquer au juriste, sans rien lui retirer de ce qu'il avait.
+   */
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto("/rapports");
+  await expect(juriste.getByRole("heading", { name: "Rapport d’activité", level: 1 })).toBeVisible();
+  await expect(juriste.getByRole("heading", { name: "Activité par personne" })).toHaveCount(0);
+  await expect(juriste.locator("#nominatif-debut")).toHaveCount(0);
+  await juriste.context().close();
+});
+
+test("l'activité par personne est traduite", async ({ page }) => {
+  await seConnecter(page, "dja.test");
+  await page.goto("/rapports");
+  await expect(page.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Activity by person", level: 2 })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("button", { name: "Show", exact: true })).toBeVisible();
+});

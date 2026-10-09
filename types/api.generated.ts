@@ -1060,6 +1060,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rapports/nominatif": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["rapportNominatif"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications": {
         parameters: {
             query?: never;
@@ -2375,6 +2391,10 @@ export interface components {
             telephone?: string;
             /** Format: int64 */
             indicateurCharge?: number;
+            /** Format: int64 */
+            deliberesFavorables?: number;
+            /** Format: int64 */
+            deliberesTotal?: number;
             /** Format: double */
             indicateurPerformance?: number;
         };
@@ -2412,6 +2432,33 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+        };
+        ActiviteNominative: {
+            /** Format: int64 */
+            utilisateurId?: number;
+            nom?: string;
+            profil?: string;
+            /** Format: int64 */
+            dossiersOuverts?: number;
+            /** Format: int64 */
+            audiencesPlanifiees?: number;
+            /** Format: int64 */
+            comptesRendusSaisis?: number;
+            /** Format: int64 */
+            deliberesEnregistres?: number;
+            /** Format: int64 */
+            lettresRedigees?: number;
+            /** Format: int64 */
+            fraisTraites?: number;
+            /** Format: double */
+            delaiMoyenSaisieCompteRendu?: number;
+        };
+        RapportNominatifResponse: {
+            /** Format: date */
+            dateDebut?: string;
+            /** Format: date */
+            dateFin?: string;
+            lignes?: components["schemas"]["ActiviteNominative"][];
         };
         PageResponsePublicationResponse: {
             content?: components["schemas"]["PublicationResponse"][];
@@ -4830,6 +4877,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    rapportNominatif: {
+        parameters: {
+            query: {
+                dateDebut: string;
+                dateFin: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RapportNominatifResponse"];
                 };
             };
         };

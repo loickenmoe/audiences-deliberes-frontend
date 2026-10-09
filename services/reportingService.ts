@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api/client";
-import type { Rapport, TableauDeBord } from "@/types/domaine";
+import type { Rapport, RapportNominatif, TableauDeBord } from "@/types/domaine";
 import type { FormatRapport, TypeRapport } from "@/types/enums";
 
 /** Bornes d'un rapport. `type` n'est qu'une étiquette de période (backend Q-63). */
@@ -32,6 +32,19 @@ export const reportingService = {
       params: { ...periode, format: "JSON" },
     });
     return reponse.status === 204 || !reponse.data ? null : (reponse.data as Rapport);
+  },
+
+  /**
+   * L'activité de chacun sur une période (observation 14, N6) — DJ et DJA seuls.
+   *
+   * **`null` quand le backend répond 204**, comme le rapport périodique : une période sans activité
+   * est un état vide, et une page de zéros laisserait croire que personne n'a rien fait.
+   */
+  rapportNominatif: async (dateDebut: string, dateFin: string): Promise<RapportNominatif | null> => {
+    const reponse = await apiClient.get<RapportNominatif | "">("/rapports/nominatif", {
+      params: { dateDebut, dateFin },
+    });
+    return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportNominatif);
   },
 
   /**

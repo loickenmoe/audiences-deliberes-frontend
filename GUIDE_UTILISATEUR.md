@@ -419,6 +419,32 @@ activité affiche un état vide - ce n'est pas une erreur, il n'y a rien à rapp
 
 ![Les rapports d'activité, sur une période choisie.](images/guide/20-rapports.png)
 
+**Activité par personne** (sous le rapport, réservé au DJ et à la DJA). Choisissez une période, puis
+affichez : pour chacun, les dossiers ouverts, les audiences planifiées, les comptes rendus saisis,
+les délibérés enregistrés, les lettres rédigées, les frais contrôlés, et le **délai moyen** entre
+une audience et la saisie de son compte rendu. Rien ne s'affiche avant que vous l'ayez demandé.
+
+**Ce tableau compte ; il ne juge pas.** Il n'y a ni note, ni classement, ni total : trente dossiers
+simples ne valent pas deux affaires difficiles, et l'application n'a aucun moyen de le savoir. C'est
+pourquoi les lignes suivent l'ordre des **noms** et non celui des volumes - un tri par activité
+ferait du tableau un palmarès.
+
+Trois lectures à connaître :
+
+- **« Sans objet » dans la colonne du délai** signifie qu'aucun compte rendu n'a été saisi sur la
+  période. Un 0 se lirait comme une saisie le jour même, soit l'inverse de ce que l'absence dit ;
+- **« Compte retiré »** désigne un utilisateur qui n'est plus au référentiel. Ses actions restent
+  comptées : les masquer ferait disparaître de l'activité réelle ;
+- une période **sans activité** affiche un état vide, comme pour le rapport.
+
+Deux chiffres que vous pourriez chercher n'y sont pas, et c'est voulu : les **dossiers gagnés par
+personne** - l'issue d'un délibéré appartient au dossier, pas à celui qui l'a saisi - et le **temps
+passé** : l'application enregistre des actions datées, jamais des durées de travail.
+
+**Répertoire des avocats.** La colonne de performance affiche désormais « **3 gagnés sur
+4 délibérés** » au lieu d'un pourcentage, et « Aucun délibéré » quand il n'y a rien à compter - un
+0 % se lisait comme un échec là où rien n'avait encore été jugé.
+
 **Vue consolidée d'un client** : toutes ses procédures, groupées par catégorie, depuis la fiche du
 client.
 

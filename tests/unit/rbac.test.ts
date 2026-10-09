@@ -95,6 +95,19 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     expect(peut(SH, "consulterRepertoire")).toBe(false);
   });
 
+  /**
+   * `GET /rapports/nominatif` est `hasAnyRole('DJ','DJA')` (N6, observation 14). Le rapport **nomme
+   * des collègues** : il se tient sur les rôles propres de la direction, jamais sur `ROLE_JURISTE`,
+   * composite depuis Q-81 - l'y adosser le donnerait à chaque juriste, donc à tous les nommés.
+   */
+  it("le rapport nominatif est réservé au DJ et à la DJA, sans fuite par le composite", () => {
+    expect(peut(DJ, "consulterRapportNominatif")).toBe(true);
+    expect(peut(DJA, "consulterRapportNominatif")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterRapportNominatif")).toBe(false);
+    }
+  });
+
   it("la signature des constitutions est réservée au supérieur hiérarchique", () => {
     expect(peut(SH, "signerConstitution")).toBe(true);
     expect(peut(JURISTE, "signerConstitution")).toBe(false);
