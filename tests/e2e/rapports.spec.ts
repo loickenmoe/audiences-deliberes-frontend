@@ -456,6 +456,36 @@ test("le DJ ouvre la fiche complète d'un collègue depuis son nom", async ({ pa
   await page.context().close();
 });
 
+/**
+ * **L'entrée de menu, et pourquoi ce parcours existe.** La fiche d'activité a été livrée le
+ * 2026-10-13 sans entrée de navigation : la seule porte vers « Mon compte » était le nom dans
+ * l'en-tête, souligné et sans étiquette, et ce nom est masqué sous 640 px (F17) - la page était donc
+ * purement inatteignable sur un écran étroit. Le porteur du projet ne l'a pas trouvée. Livrer une
+ * fonction qu'on ne peut pas atteindre, c'est ne pas l'avoir livrée.
+ */
+test("chaque profil interne trouve « Mon compte » dans le menu ; l'avocat non", async ({ browser }) => {
+  for (const identifiant of ["juriste.test", "assistante.test", "sh.test", "dj.test", "dja.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    const entree = page
+      .getByRole("navigation", { name: "Navigation principale" })
+      .getByRole("link", { name: "Mon compte" });
+    await expect(entree).toBeVisible();
+    await entree.click();
+    await page.waitForURL(/\/mon-compte/, { timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
+    await page.context().close();
+  }
+
+  // L'avocat ne porte pas ROLE_CONSULTATION : ni l'entrée, ni la page.
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await expect(
+    avocat.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Mon compte" }),
+  ).toHaveCount(0);
+  await avocat.goto("/mon-compte");
+  await expect(avocat.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+  await avocat.context().close();
+});
+
 test("la fiche d'activité est traduite", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/mon-compte");

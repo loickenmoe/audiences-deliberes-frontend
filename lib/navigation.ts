@@ -16,6 +16,7 @@ import {
   Settings,
   Trash2,
   Users,
+  UserCircle,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -57,6 +58,21 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "repertoire", href: "/repertoire/avocats", icone: UsersRound, capacite: "consulterRepertoire", livre: true },
   { cle: "explications", href: "/demandes-explication", icone: MessageSquare, capacite: "consulterExplications", livre: true },
   { cle: "jurisprudence", href: "/jurisprudences", icone: Library, capacite: "consulterJurisprudence", livre: true },
+  /*
+   * Mon compte, et ce qui s’y trouve : ma signature (N8) et **mon activité** (Q-133).
+   *
+   * **Cette entrée manquait, et son absence rendait la page introuvable.** La seule porte était le
+   * nom dans l’en-tête, souligné et sans étiquette - et ce nom est **masqué sous 640 px** (F17),
+   * donc la page était purement inatteignable sur un écran étroit. Tant que « Mon compte » ne
+   * portait qu’une signature déposée une fois pour toutes, s’en passer se défendait ; elle porte
+   * désormais un rapport que chacun consulte sur la période qu’il choisit. Signalé par le porteur
+   * du projet le 2026-10-13.
+   *
+   * La capacité est `consulterMonActivite` et non `consulterReferentiels` : c’est ce que la page
+   * porte de plus utile, et cette capacité dit exactement à qui - les cinq profils internes, pas
+   * l’avocat, qui n’a aucune des natures d’action comptées.
+   */
+  { cle: "monCompte", href: "/mon-compte", icone: UserCircle, capacite: "consulterMonActivite", livre: true },
   { cle: "tableauDeBord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: true },
   { cle: "rapports", href: "/rapports", icone: FileBarChart, capacite: "genererRapport", livre: true },
   { cle: "demandesSuppression", href: "/ged/demandes-suppression", icone: Trash2, capacite: "arbitrerSuppressions", livre: true },

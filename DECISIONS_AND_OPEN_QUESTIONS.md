@@ -1611,6 +1611,33 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-55 — « Mon compte » était introuvable, et inatteignable sur un écran étroit — corrigé
+
+**Signalé par le porteur du projet le 2026-10-13**, le lendemain de la livraison de la fiche
+d'activité (backend Q-133) : il demandait que chaque utilisateur puisse voir et télécharger son
+propre rapport. C'était livré, poussé, et testé vert. Il ne l'avait pas trouvé.
+
+**La cause.** La seule porte vers *Mon compte* était **le nom dans l'en-tête** : souligné, sans
+étiquette, sans icône, et sans entrée dans la navigation. Et ce nom est **masqué en dessous de
+640 px** (F17, pour que l'en-tête ne déborde pas sur un mobile de 375 px) : sur un écran étroit, la
+page n'était atteignable que par son URL.
+
+**Pourquoi l'entrée manquait, et pourquoi l'argument ne tient plus.** Le code le disait noir sur
+blanc : « l'identité mène au compte : c'est là qu'on cherche "ma signature" (N8), et non dans une
+entrée de menu que six profils sur sept n'ouvriraient jamais. » C'était juste quand la page ne
+portait qu'une signature, déposée une fois pour toutes. Elle porte désormais un **rapport que chacun
+consulte sur la période qu'il choisit**, et la fréquence d'usage a changé de nature.
+
+**Le correctif.** Une entrée **Mon compte** dans la navigation, adossée à `consulterMonActivite` -
+les cinq profils internes, pas l'avocat. Le lien de l'en-tête reste : deux portes vers le même
+endroit ne gênent personne, et l'une des deux fonctionne sur mobile.
+
+**La leçon, et elle n'est pas nouvelle.** Trois suites vertes et une recette détaillée n'ont rien vu,
+parce qu'aucune ne posait la question « **comment l'utilisateur arrive-t-il ici ?** ». Les parcours
+e2e atteignaient la page par `page.goto("/mon-compte")`, ce que personne ne fait. Un parcours vérifie
+désormais que chaque profil interne **trouve l'entrée, clique, et arrive** - et que l'avocat ne la
+voit pas. Livrer une fonction qu'on ne peut pas atteindre, c'est ne pas l'avoir livrée.
+
 ### ✅ QF-47 — L'en-tête défilait avec le contenu, emportant la cloche et la déconnexion — corrigé
 
 **Signalé par le porteur du projet le 2026-09-16** : « je pense que le header doit être fixe donc ne

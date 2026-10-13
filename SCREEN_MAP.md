@@ -223,6 +223,8 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 « Mon activité » sur **Mon compte** (écran 44), et « Activité de ‹ personne › » sous le tableau 40 bis
 quand le DJ ou la DJA clique un nom.
 
+**Comment on y arrive.** Entrée **Mon compte** du menu de gauche, ouverte à `consulterMonActivite` - donc aux cinq profils internes, pas à l'avocat. Cette entrée a manqué jusqu'au 2026-10-13 : la seule porte était le nom dans l'en-tête, souligné et sans étiquette, et ce nom est **masqué sous 640 px** (F17) - la page était donc inatteignable sur un écran étroit. S'en passer se défendait tant que l'écran ne portait qu'une signature déposée une fois pour toutes ; il porte désormais un rapport que chacun consulte sur la période qu'il choisit.
+
 **Pourquoi « Mon compte » et non l'écran 40.** « Chaque utilisateur doit être capable de télécharger
 ses propres rapports » (métier, 2026-10-13) - or `/rapports` exige `ROLE_JURISTE` : l'Assistante et le
 supérieur hiérarchique n'y entrent pas. Les y laisser entrer leur montrerait le rapport périodique du

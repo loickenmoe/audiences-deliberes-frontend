@@ -358,6 +358,8 @@ d'insister.
 
 ## 7 quater. Mon activité
 
+**Où cela se trouve.** Entrée **Mon compte** dans le menu de gauche - ou votre nom, en haut à droite de l'écran. Le bloc « Mon activité » est sous « Ma signature ».
+
 **Ce que vous avez fait, sur la période que vous choisissez.** Dans *Mon compte*, sous votre
 signature : choisissez deux dates, affichez, et chaque nature d'action que vous avez accomplie
 s'affiche avec son nombre. Rien ne part avant que vous l'ayez demandé.

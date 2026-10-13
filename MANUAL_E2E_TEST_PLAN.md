@@ -1056,7 +1056,7 @@ Trois emplacements suffisent à cette fiche, et aucune étape n'en sort :
 
 | Nom employé ci-dessous | Comment y aller |
 |---|---|
-| **Mon compte** | Cliquez **votre nom, en haut à droite** de l'écran, puis *Mon compte*. La page porte deux blocs : « Ma signature », puis « **Mon activité** » juste en dessous |
+| **Mon compte** | Entrée **Mon compte** du menu de gauche *(ajoutée le 2026-10-13 : elle manquait, et la page était inatteignable sur un écran étroit)*. Ou, au choix, votre nom en haut à droite. La page porte deux blocs : « Ma signature », puis « **Mon activité** » juste en dessous |
 | **Rapports** | Entrée **Rapports** du menu de gauche (la navigation principale). La page porte « Rapport d'activité » en titre, puis le bloc « **Activité par personne** » en dessous - ce second bloc n'apparaît que pour le DJ et la DJA |
 | **Configuration** | Entrée **Configuration** du menu de gauche (DJ et DJA seulement) |
 
