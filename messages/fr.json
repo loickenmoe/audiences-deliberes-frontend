@@ -1576,7 +1576,14 @@
     "compteNonRattacheTitre": "Votre compte n’est pas encore rattaché au répertoire",
     "compteNonRattacheTexte": "Un avocat doit être inscrit au répertoire des intervenants par la Direction Juridique, avec son identifiant de connexion, avant de pouvoir utiliser le portail. Ce n’est pas une erreur de votre part : contactez la Direction Juridique pour qu’elle procède à votre inscription.",
     "phPublicationContenu": "Ce que vous transmettez à la Direction Juridique",
-    "phFraisMontant": "Le montant demandé, en FCFA"
+    "phFraisMontant": "Le montant demandé, en FCFA",
+    "montantAide": "En FCFA. Les espaces sont acceptés : « 1 500 000 » convient.",
+    "piecesFichier": "Pièce justificative (obligatoire)",
+    "fraisDossierManquant": "Choisissez le dossier concerné.",
+    "fraisReferenceManquante": "Indiquez la référence de la facture.",
+    "fraisMontantManquant": "Indiquez le montant demandé.",
+    "fraisMontantInvalide": "Le montant doit être un nombre supérieur à zéro. Les espaces et la virgule décimale sont acceptés.",
+    "fraisPiecesManquantes": "Chargez au moins une pièce justificative."
   },
   "audit": {
     "titre": "Audit",

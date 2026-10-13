@@ -1,6 +1,8 @@
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { normaliserMontant } from "@/components/modules/portail/formulaire-frais";
+
 import { DetailFrais } from "@/components/modules/frais/detail-frais";
 import type { DemandeFrais } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
@@ -122,5 +124,42 @@ describe("pièces d'une demande de frais", () => {
     rendre(<DetailFrais demandeId={7} roles={["ROLE_ASSISTANTE"]} />);
 
     expect(screen.getByText("Aucune pièce jointe à cette demande.")).toBeInTheDocument();
+  });
+});
+
+/**
+ * La normalisation du montant (QF-56).
+ *
+ * **Le défaut, tel qu'il a été vécu en recette** : l'avocat écrit « 12 000 » - comme il l'écrit
+ * partout, et comme l'application l'affiche elle-même -, le bouton « Déposer » reste éteint, et rien
+ * ne dit pourquoi. La validation exigeait des chiffres collés.
+ */
+describe("normalisation du montant", () => {
+  it("accepte les espaces, y compris ceux qu'on ne voit pas", () => {
+    expect(normaliserMontant("12 000")).toBe("12000");
+    /*
+     * L'insécable (U+00A0) et l'insécable étroite (U+202F) arrivent par copier-coller depuis un
+     * tableur ou depuis l'application elle-même. Elles sont **invisibles à l'œil** : un refus sans
+     * message aurait été indéchiffrable.
+     */
+    expect(normaliserMontant("12\u00a0000")).toBe("12000");
+    expect(normaliserMontant("1\u202f500\u202f000")).toBe("1500000");
+  });
+
+  it("traduit la virgule décimale en point", () => {
+    // `Number("12,5")` vaut NaN : sans cette traduction, le montant partait vide ou refusé.
+    expect(normaliserMontant("12,5")).toBe("12.5");
+    expect(normaliserMontant("1 500,75")).toBe("1500.75");
+  });
+
+  it("laisse intact ce qui est déjà un nombre", () => {
+    expect(normaliserMontant("12000")).toBe("12000");
+    expect(normaliserMontant("12000.5")).toBe("12000.5");
+  });
+
+  /** Elle normalise, elle ne valide pas : c'est au formulaire de refuser ce qui n'est pas un nombre. */
+  it("ne rend pas valide ce qui ne l'est pas", () => {
+    expect(normaliserMontant("abc")).toBe("abc");
+    expect(normaliserMontant("12 000 F")).toBe("12000F");
   });
 });

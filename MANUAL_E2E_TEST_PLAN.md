@@ -142,6 +142,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-038 | Activite des avocats : la sienne, et celle que la direction lit | AVO → DJ → JUR | Haute | REC-E2E-037 | ☐ |
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
+| REC-E2E-041 | Depot de frais : montant avec espaces, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1033,6 +1034,78 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-041 - Dépôt de frais : montant avec espaces, champs manquants, aperçu sur la ligne
+
+### Objectif
+Valider les corrections de QF-56, signalées en recette le 2026-10-13 sur le formulaire de dépôt
+d'une demande de frais : le montant s'écrit avec des espaces, ce qui manque est **nommé** au lieu
+d'un bouton éteint, la pièce justificative porte son astérisque, et l'œil d'aperçu est sur la même
+ligne que le téléversement.
+
+### Acteurs
+Avocat (`avocat.test`).
+
+### Préconditions
+Un dossier affecté à cet avocat, et un fichier PDF ou image sous la main.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Déposer une demande** | Avec un compte avocat : entrée **Déposer une demande** du menu de gauche |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | AVO | Menu de gauche, **Déposer une demande** | Ouvrir, et regarder le bloc « Pièces justificatives » | Il porte une **astérisque rouge** : rien ne disait qu'une pièce est obligatoire | | ☐ |
+| 2 | AVO | Le bouton **Déposer** | Le regarder sans rien remplir | Il est **actif**, et non grisé | | ☐ |
+| 3 | AVO | Même bouton | Cliquer **sans rien remplir** | **Quatre messages**, chacun sous son champ : le dossier, la référence, le montant, la pièce. On reste sur le formulaire | | ☐ |
+| 4 | AVO | Champ **Montant** | Écrire `mille`, puis cliquer Déposer | Un message **différent** : le montant doit être un nombre supérieur à zéro, et il nomme ce qui est accepté | | ☐ |
+| 5 | AVO | Champ **Référence de la facture** | Y écrire quelque chose | Le message de ce champ **disparaît aussitôt** : corriger efface le reproche | | ☐ |
+| 6 | AVO | Champ **Montant** | Effacer, puis écrire `1 250 000` **avec les espaces** | Accepté. C'est le défaut signalé : le bouton restait éteint sans un mot | | ☐ |
+| 7 | AVO | Même champ | Essayer `1 250 000,50` | Accepté aussi : la virgule décimale est admise | | ☐ |
+| 8 | AVO | Même champ | Coller un montant **copié depuis un tableur ou depuis l'application** | Accepté : les espaces insécables, invisibles à l'œil, sont retirés eux aussi | | ☐ |
+| 9 | AVO | Bloc des pièces, **Choisir un fichier** | Joindre un PDF au **nom court** | Le nom du fichier et son poids s'affichent, et un bouton « **Aperçu** » apparaît **sur la même ligne** - pas au-dessus | | ☐ |
+| 9 bis | AVO | Même bloc | Retirer, puis joindre un PDF au **nom très long** (par exemple `facture-honoraires-cabinet-fotso-et-associes-septembre-2026.pdf`) | Le bouton « Aperçu » reste **sur la même ligne** : c'est le **nom qui est coupé**, avec des points de suspension. Survolez-le, il s'affiche en entier | | ☐ |
+| 9 ter | AVO | Réduisez la fenêtre à la largeur d'un téléphone, ou ouvrez l'écran sur mobile | Regarder, puis faire défiler | **Aucun défilement horizontal** : la page ne part pas sur la droite. Le nom se coupe davantage, voilà tout | | ☐ |
+| 10 | AVO | Ce bouton **Aperçu** | Cliquer | Le fichier s'ouvre dans une fenêtre, sans quitter le formulaire. Fermer | | ☐ |
+| 11 | AVO | La **croix** à côté du nom du fichier | Cliquer | La pièce est **réellement retirée**. Cliquez Déposer : il réclame une pièce justificative. *(Avant cette correction, le fichier disparaissait de l'écran mais partait quand même)* | | ☐ |
+| 12 | AVO | **Choisir un fichier** deux fois de suite | Joindre deux pièces différentes | La seconde s'affiche dans le téléversement avec son aperçu ; la **première apparaît en dessous**, avec son propre œil et sa propre croix | | ☐ |
+| 13 | AVO | Compléter les quatre champs, puis **Déposer** | Envoyer | « Demande de frais déposée. » et la liste des frais s'ouvre, portant votre référence | | ☐ |
+| 14 | AVO | Même formulaire, bouton **en** | Basculer en anglais, puis cliquer Déposer à vide | Les quatre messages sont en anglais | | ☐ |
+
+### Résultat final attendu
+Une demande a été déposée avec un montant écrit avec des espaces. Les champs manquants se sont
+nommés au lieu d'un bouton éteint, la pièce est signalée obligatoire, son aperçu est sur la même
+ligne, et sa croix la retire vraiment.
+
+### Points de contrôle
+- **Un bouton éteint sans explication est le défaut, pas la protection.** Il laissait chercher lequel
+  des quatre champs était en cause. La tentative est acceptée, et ce qui manque est nommé.
+- **Le montant s'écrit comme on l'écrit.** Les espaces ordinaires, insécables et insécables étroites
+  sont retirés - les deux dernières arrivent par copier-coller et sont invisibles. La virgule
+  décimale est traduite en point.
+- **Un montant illisible n'est pas un montant absent** : deux messages distincts, et celui de
+  l'illisible nomme ce qui est accepté.
+- ⚠ **La croix du téléversement retirait l'affichage sans retirer la pièce.** C'était le plus grave
+  des défauts de cette fiche, et il n'avait pas été signalé : l'avocat pouvait croire avoir enlevé un
+  fichier qu'il envoyait. L'étape 11 le vérifie.
+- **« Sur la même ligne » a été mesuré, pas supposé.** La rangée fait 638 points, le téléversement en
+  prend 436 : il ne restait que 190, et une puce portant une seconde fois le nom du fichier n'y
+  tenait pas. C'est la disposition du formulaire de création de dossier qui est reprise - un bouton
+  d'aperçu seul, le nom étant déjà affiché.
+- **C'est le nom qui cède, pas la disposition.** La rangée ne passe plus à la ligne : le bloc
+  de téléversement se comprime et le nom se tronque. Il reste lisible au survol et dans le nom
+  accessible du bouton d'aperçu - coupé n'est pas perdu.
+- ⚠ **L'étape 9 ter n'est pas facultative.** Empêcher le passage à la ligne risquait de faire
+  déborder la page sur un téléphone, et c'est exactement ce qui est arrivé au premier essai :
+  308 points de débordement, parce qu'un `<fieldset>` refuse par défaut d'être plus étroit que
+  son contenu. Le test de débordement général ne couvre pas cet écran - il se connecte en DJ,
+  qui ne dépose pas de frais -, et ce trou a été comblé.
 
 ---
 

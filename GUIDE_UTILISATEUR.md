@@ -580,6 +580,13 @@ juridiction. Ni client, ni montant en jeu, ni diligence particulière.
 
 ---
 
+**Déposer une demande de frais.** Quatre renseignements, tous obligatoires - l'astérisque rouge les signale : le dossier, la référence de la facture, le montant et au moins une pièce justificative.
+
+- **Le montant s'écrit comme on l'écrit** : « 1 500 000 » convient, avec ou sans espaces, et la virgule décimale est acceptée ;
+- **si quelque chose manque, cliquez quand même sur « Déposer »** : l'application vous dira lequel des quatre, sous le champ concerné. Le bouton ne reste plus éteint sans explication ;
+- **chaque pièce part dès que vous la choisissez.** L'œil à côté du fichier vous permet de la **relire avant d'envoyer** - une fois la demande déposée, la remplacer suppose d'en refaire une. La croix la retire pour de bon ;
+- pour joindre **plusieurs pièces**, choisissez-les l'une après l'autre : les précédentes s'affichent en dessous, chacune avec son œil et sa croix.
+
 ## 12. Questions fréquentes
 
 **Une fonction a disparu de mon menu.** Le menu n'affiche que ce à quoi vous avez droit. Vos rôles

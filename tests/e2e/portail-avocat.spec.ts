@@ -50,6 +50,9 @@ async function json<T>(chemin: string, jetonAcces: string): Promise<T> {
   return (await reponse.json()) as T;
 }
 
+/** Un nom de facture tel qu'un cabinet en produit : c'est la longueur qui cassait la rangée. */
+const NOM_LONG = "facture-honoraires-cabinet-fotso-et-associes-septembre-2026.pdf";
+
 function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
@@ -546,4 +549,161 @@ test("un compte non rattaché au répertoire est expliqué, pas présenté comme
     await expect(avocat.getByText("Le chargement a échoué")).toHaveCount(0);
   }
   await avocat.context().close();
+});
+
+/**
+ * Les quatre défauts du formulaire de frais, relevés en recette (QF-56) — REC-E2E-041.
+ *
+ * **Pourquoi aucun test ne les avait vus.** Les parcours existants remplissent le formulaire
+ * **correctement** : ils écrivent « 450000 », joignent une pièce, et vérifient que le dépôt passe.
+ * Aucun n'avait essayé d'écrire « 12 000 », ni de cliquer « Déposer » les mains vides. Un formulaire
+ * ne se juge pas seulement sur le chemin où tout va bien - c'est l'autre que l'utilisateur emprunte.
+ */
+test("un montant écrit avec des espaces est accepté, comme on l'écrit partout", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await page.goto("/frais/nouvelle");
+
+  const reference = `FAC-E2E-${suffixe()}`;
+  await choisirDossier(page, "frais-dossier");
+  await page.locator("#frais-reference").fill(reference);
+  // Le défaut exact signalé en recette : le bouton restait éteint, sans un mot d'explication.
+  await page.locator("#frais-montant").fill("1 250 000");
+  await page
+    .locator('input[name="piece-justificative"]')
+    .setInputFiles({ name: "facture-espaces.pdf", mimeType: "application/pdf", buffer: PDF });
+  await expect(page.getByText("facture-espaces.pdf")).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole("button", { name: "Déposer", exact: true }).click();
+  // Le dépôt aboutit : la page des frais s'ouvre, et aucun message ne reproche le montant.
+  await page.waitForURL(/\/frais$/, { timeout: 60_000 });
+  await expect(page.getByText(reference)).toBeVisible({ timeout: 30_000 });
+
+  await page.context().close();
+});
+
+/**
+ * Le cœur de la correction : **le bouton n'est plus éteint par l'incomplétude**. Un bouton mort sans
+ * explication laisse chercher lequel des quatre champs est en cause. La tentative est acceptée, et
+ * ce qui manque est nommé champ par champ.
+ */
+test("un dépôt les mains vides nomme ce qui manque, au lieu d'un bouton éteint", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await page.goto("/frais/nouvelle");
+
+  const deposer = page.getByRole("button", { name: "Déposer", exact: true });
+  await expect(deposer).toBeEnabled();
+  await deposer.click();
+
+  // Les quatre champs se plaignent, chacun chez lui.
+  await expect(page.getByText("Choisissez le dossier concerné.")).toBeVisible();
+  await expect(page.getByText("Indiquez la référence de la facture.")).toBeVisible();
+  await expect(page.getByText("Indiquez le montant demandé.")).toBeVisible();
+  await expect(page.getByText("Chargez au moins une pièce justificative.")).toBeVisible();
+  // Rien n'est parti : on est resté sur le formulaire.
+  await expect(page).toHaveURL(/\/frais\/nouvelle/);
+
+  /*
+   * Un montant saisi mais illisible est une autre erreur qu'un montant absent, et le message le dit
+   * - en nommant ce qui est accepté plutôt qu'en refusant sans expliquer.
+   */
+  await page.locator("#frais-montant").fill("mille");
+  await expect(page.getByText("Indiquez le montant demandé.")).toHaveCount(0);
+  await deposer.click();
+  await expect(page.getByText(/Le montant doit être un nombre supérieur à zéro/)).toBeVisible();
+
+  // Corriger un champ en efface le reproche : le laisser serait accuser après coup.
+  await page.locator("#frais-reference").fill("FAC-TEST");
+  await expect(page.getByText("Indiquez la référence de la facture.")).toHaveCount(0);
+
+  await page.context().close();
+});
+
+/**
+ * Le risque introduit par la correction précédente, et qu'il faut tenir.
+ *
+ * **La rangée des pièces ne passe plus à la ligne** : si le nom du fichier ne cédait pas, elle
+ * déborderait de l'écran sur un mobile. Le test de débordement général ne couvre pas cet écran - il
+ * se connecte en DJ, qui ne dépose pas de frais -, et ce trou a été comblé ici plutôt que laissé.
+ */
+test("le formulaire de frais ne déborde pas en mobile, nom de fichier long compris", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 720 });
+  await seConnecter(page, "avocat.test");
+  await page.goto("/frais/nouvelle");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  await page
+    .locator('input[name="piece-justificative"]')
+    .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
+  await expect(page.getByRole("button", { name: `Consulter - ${NOM_LONG}` })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  const debordement = await page.evaluate(() => {
+    const racine = document.documentElement;
+    // Un pixel de tolérance : les arrondis de mise en page en produisent un.
+    return Math.max(0, racine.scrollWidth - racine.clientWidth - 1);
+  });
+  expect(debordement, `le formulaire déborde de ${debordement} px en 375 px`).toBe(0);
+
+  await page.context().close();
+});
+
+test("la pièce justificative est signalée obligatoire", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await page.goto("/frais/nouvelle");
+
+  /*
+   * L'astérisque est **décorative et `aria-hidden`** : à l'intérieur du texte, la légende vaudrait
+   * « Pièces justificatives* » et cesserait de correspondre au mot que l'utilisateur lit. C'est pour
+   * qui écoute que le nom du champ de fichier porte l'information.
+   */
+  const bloc = page.locator("fieldset").filter({ hasText: "Pièces justificatives" });
+  await expect(bloc.locator("legend")).toHaveText("Pièces justificatives*");
+  await expect(page.getByLabel("Pièce justificative (obligatoire)")).toBeAttached();
+
+  await page.context().close();
+});
+
+/**
+ * L'œil d'aperçu **sur la même ligne** que le téléversement (QF-56), comme au formulaire de création
+ * de dossier. Il s'affichait au-dessus, sur une ligne distincte, et le lien entre le fichier choisi
+ * et le bouton qui le relit se perdait.
+ */
+test("l'aperçu d'une pièce s'affiche sur la même ligne que le téléversement", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await page.goto("/frais/nouvelle");
+
+  const televersement = page.getByRole("button", { name: "Choisir un fichier" }).first();
+  await expect(televersement).toBeVisible();
+
+  /*
+   * **Un nom volontairement long**, parce que c'est lui qui cassait la disposition. Ma première
+   * version de ce parcours téléversait « m.pdf » : la rangée tenait, le test passait, et le défaut
+   * restait entier dès qu'un avocat nommait sa facture comme on la nomme. Un test qui choisit ses
+   * données pour qu'elles tiennent ne mesure rien.
+   */
+  await page
+    .locator('input[name="piece-justificative"]')
+    .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
+  const apercu = page.getByRole("button", { name: `Consulter - ${NOM_LONG}` });
+  await expect(apercu).toBeVisible({ timeout: 30_000 });
+
+  // Le nom est tronqué à l'écran mais lisible au survol : il cède, il ne disparaît pas.
+  await expect(page.getByTitle(NOM_LONG)).toBeVisible();
+
+  /*
+   * « Sur la même ligne » se mesure, il ne se devine pas : les deux boîtes doivent se chevaucher
+   * verticalement. Une assertion de texte n'aurait rien dit de la disposition, et c'est précisément
+   * la disposition qui était en cause.
+   */
+  const boiteTeleversement = (await televersement.boundingBox())!;
+  const boiteApercu = (await apercu.boundingBox())!;
+  const basTeleversement = boiteTeleversement.y + boiteTeleversement.height;
+  const basApercu = boiteApercu.y + boiteApercu.height;
+  expect(
+    Math.min(basTeleversement, basApercu) - Math.max(boiteTeleversement.y, boiteApercu.y),
+    "le bouton d'aperçu n'est pas sur la même ligne que le téléversement",
+  ).toBeGreaterThan(0);
+
+  await page.context().close();
 });

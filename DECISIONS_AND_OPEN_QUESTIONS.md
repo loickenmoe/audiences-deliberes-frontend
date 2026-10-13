@@ -1611,6 +1611,88 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-56 — Quatre défauts du formulaire de dépôt de frais — corrigés (2026-10-13)
+
+**Signalés par le porteur du projet** en recette, sur l'écran 30 (dépôt d'une demande de frais par
+l'avocat). Quatre défauts, dont trois partagent une cause.
+
+**1. « 12 000 » dans le Montant était refusé sans un mot.** La validation exigeait des chiffres
+collés (`/^\d+(\.\d+)?$/`) ; le bouton « Déposer » restait éteint, et rien ne disait pourquoi. Or on
+écrit un montant avec des espaces - c'est même ainsi que l'application l'affiche. La saisie est
+désormais **normalisée** : les espaces sont retirés, y compris l'**insécable** (U+00A0) et
+l'**insécable étroite** (U+202F) qui arrivent par copier-coller depuis un tableur et sont invisibles
+à l'œil ; la **virgule décimale** est traduite en point, `Number("12,5")` valant `NaN`.
+
+**2 et 3. Le bouton éteint, sans explication, était la cause commune.** Sans pièce justificative, même
+symptôme : bouton grisé, aucun message. **Le bouton n'est plus désactivé par l'incomplétude** - il ne
+l'est que pendant un envoi. La tentative est acceptée et **ce qui manque est nommé champ par champ**,
+comme le fait déjà le formulaire de création de dossier avec ses pièces attendues. Un bouton mort
+laisse chercher lequel des quatre champs est en cause ; un message le dit.
+
+Un montant *saisi mais illisible* reçoit un autre message qu'un montant *absent*, et ce message nomme
+ce qui est accepté plutôt que de refuser sans expliquer. Corriger un champ en efface le reproche :
+le laisser serait accuser après coup.
+
+**4. L'astérisque d'obligation manquait sur les pièces.** Le bloc est un `<fieldset>`, pas un `Champ`
+- il n'héritait donc pas de l'astérisque. Même patron : elle est **hors du texte** de la légende,
+décorative et `aria-hidden`, pour ne pas devenir « Pièces justificatives* » dans le nom accessible.
+L'information est portée pour qui écoute par le **nom du champ de fichier**, qu'un
+`<input type="file">` masqué ne peut pas assortir d'un `required` sans déclencher la validation du
+navigateur. C'est le parti déjà retenu à la création d'un dossier.
+
+**5. L'œil d'aperçu s'affichait sur une ligne distincte**, au-dessus du téléversement, et le lien
+entre le fichier choisi et le bouton qui le relit se perdait. Le porteur du projet a demandé la
+disposition du formulaire de création de dossier.
+
+**La première tentative a échoué, et la mesure a dit pourquoi.** J'avais mis le téléversement et une
+puce portant le nom du fichier sur une même rangée `flex-wrap` : elle passait à la ligne dès qu'un
+nom réaliste s'y trouvait. Mesuré sur l'écran : la rangée fait **638 points**, le bloc de
+téléversement en prend **436** - sa ligne de contraintes (« Formats acceptés… · Taille maximale… »)
+le rend large -, il reste **190**. Une puce de 280 points n'y tenait pas. Le formulaire de création
+de dossier, lui, ne met qu'un **bouton d'aperçu** à côté, le nom du fichier étant affiché par le
+téléversement lui-même : 90 points, et cela tient. C'est cette disposition qui est reprise.
+
+**Mon premier test passait pourtant.** Il téléversait `m.pdf` - cinq caractères -, et la puce tenait.
+Avec `facture-ligne.pdf`, elle passait à la ligne. Un test qui choisit ses données pour qu'elles
+tiennent ne mesure rien ; l'assertion compare désormais les **boîtes englobantes**, qui doivent se
+chevaucher verticalement, et le nom de fichier du parcours est réaliste.
+
+**Second passage, le même jour : le nom long poussait encore l'œil à la ligne.** La disposition
+tenait pour un nom court et cédait pour un nom réaliste. Deux causes, trouvées par la mesure et non
+par le raisonnement :
+
+1. La rangée gardait `flex-wrap` : il suffisait que le bloc de téléversement s'élargisse - jusqu'à
+   570 des 638 points avec un nom long - pour que les 90 points du bouton passent à la ligne. Elle ne
+   passe plus à la ligne du tout ; c'est le bloc qui se **comprime** (`min-w-0 flex-1`) et son nom de
+   fichier qui se **tronque**, le nom entier restant lisible au survol (`title`) et dans le nom
+   accessible de l'aperçu.
+2. **Le `<fieldset>` refusait de se rétrécir**, et c'est le piège qui m'a coûté le plus de temps : la
+   feuille de style des navigateurs lui impose `min-inline-size: min-content`. Avec une rangée qui ne
+   passe plus à la ligne, il restait à **643 points dans un écran de 375** et faisait défiler toute la
+   page horizontalement. `min-w-0` le corrige.
+
+**Le second défaut a été trouvé par un garde-fou que je venais d'écrire pour ça.** Le test de
+débordement horizontal ne couvre pas cet écran : il se connecte en DJ, qui ne dépose pas de frais.
+J'ai comblé ce trou avant de mesurer, et il a échoué au premier essai - 308 points de débordement.
+Sans lui, la correction partait avec une régression mobile à la place du défaut.
+
+**Et `Televersement` n'a reçu qu'une option.** Le comportement « sur une seule ligne, nom tronqué »
+est opt-in (`surUneLigne`) : ce composant sert aussi à la création d'un dossier, à l'onglet Documents
+et au dépôt d'une publication, où le passage à la ligne ne gêne personne. Leur mise en page n'avait
+pas à changer pour corriger celle-ci.
+
+**6. Un défaut latent trouvé en chemin, et qui était le plus grave des cinq.** La croix du
+téléversement appelait `onChangement(null)`, que le formulaire **ignorait** : le fichier disparaissait
+de l'écran et **partait quand même avec la demande**. L'avocat pouvait croire avoir retiré une pièce
+qu'il envoyait. Elle retire désormais la pièce pour de bon - celle-ci étant déjà en GED dès qu'elle
+est choisie, c'est bien là qu'il faut la retirer.
+
+**Pourquoi aucun test ne les avait vus.** Les parcours existants remplissent le formulaire
+**correctement** : ils écrivent « 450000 », joignent une pièce, et vérifient que le dépôt passe.
+Aucun n'avait essayé d'écrire un montant comme on l'écrit, ni de cliquer « Déposer » les mains vides.
+Un formulaire ne se juge pas seulement sur le chemin où tout va bien - c'est l'autre que
+l'utilisateur emprunte.
+
 ### ✅ QF-55 — « Mon compte » était introuvable, et inatteignable sur un écran étroit — corrigé
 
 **Signalé par le porteur du projet le 2026-10-13**, le lendemain de la livraison de la fiche

@@ -1576,7 +1576,14 @@
     "compteNonRattacheTitre": "Your account is not linked to the directory yet",
     "compteNonRattacheTexte": "A lawyer must be registered in the directory by the Legal Department, with their login identifier, before using the portal. This is not a mistake on your side: contact the Legal Department so they can complete your registration.",
     "phPublicationContenu": "What you are sending to the Legal Department",
-    "phFraisMontant": "The amount claimed, in FCFA"
+    "phFraisMontant": "The amount claimed, in FCFA",
+    "montantAide": "In FCFA. Spaces are accepted: “1 500 000” works.",
+    "piecesFichier": "Supporting document (required)",
+    "fraisDossierManquant": "Choose the case file concerned.",
+    "fraisReferenceManquante": "Enter the invoice reference.",
+    "fraisMontantManquant": "Enter the amount claimed.",
+    "fraisMontantInvalide": "The amount must be a number greater than zero. Spaces and a decimal comma are accepted.",
+    "fraisPiecesManquantes": "Upload at least one supporting document."
   },
   "audit": {
     "titre": "Audit",
