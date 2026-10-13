@@ -587,6 +587,11 @@ juridiction. Ni client, ni montant en jeu, ni diligence particulière.
 - **chaque pièce part dès que vous la choisissez.** L'œil à côté du fichier vous permet de la **relire avant d'envoyer** - une fois la demande déposée, la remplacer suppose d'en refaire une. La croix la retire pour de bon ;
 - pour joindre **plusieurs pièces**, choisissez-les l'une après l'autre : les précédentes s'affichent en dessous, chacune avec son œil et sa croix.
 
+**Déposer une publication.** Même principe pour la pièce : l'œil de relecture est **à côté** du
+fichier choisi, sur la même ligne, que vous déposiez un **compte rendu d'audience** ou un
+**document du dossier**. Un nom de fichier long est coupé à l'écran et s'affiche en entier au
+survol.
+
 ## 12. Questions fréquentes
 
 **Une fonction a disparu de mon menu.** Le menu n'affiche que ce à quoi vous avez droit. Vos rôles

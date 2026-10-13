@@ -1676,6 +1676,21 @@ débordement horizontal ne couvre pas cet écran : il se connecte en DJ, qui ne 
 J'ai comblé ce trou avant de mesurer, et il a échoué au premier essai - 308 points de débordement.
 Sans lui, la correction partait avec une régression mobile à la place du défaut.
 
+**Troisième passage : la même disposition au dépôt de publication**, sur demande du porteur du
+projet. Le défaut y était identique, et dans les **deux natures** - compte rendu d'audience et
+document du dossier : le bouton de relecture était enveloppé dans un `<div>`, qui en faisait un bloc
+occupant toute la largeur et s'affichait donc sous le téléversement.
+
+La correction est la même, et la précaution apprise au second passage avec elle : `min-w-0` sur
+**chaque** conteneur de la chaîne, un élément de flex ayant `min-width: auto` et refusant donc d'être
+plus étroit que son contenu. Trois parcours de plus, dont celui du **débordement mobile** - le dépôt
+de publication n'est pas davantage couvert par le test général, qui se connecte en DJ.
+
+**Ce que ce troisième passage dit du premier.** Le défaut existait aux deux endroits ; seul l'un m'a
+été signalé. J'ai corrigé celui-là sans regarder si le patron se répétait ailleurs - et il se
+répétait, à deux reprises, dans le fichier voisin. La question « où ai-je écrit la même chose ? »
+aurait fait gagner un aller-retour.
+
 **Et `Televersement` n'a reçu qu'une option.** Le comportement « sur une seule ligne, nom tronqué »
 est opt-in (`surUneLigne`) : ce composant sert aussi à la création d'un dossier, à l'onglet Documents
 et au dépôt d'une publication, où le passage à la ligne ne gêne personne. Leur mise en page n'avait

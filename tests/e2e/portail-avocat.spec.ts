@@ -707,3 +707,95 @@ test("l'aperçu d'une pièce s'affiche sur la même ligne que le téléversement
 
   await page.context().close();
 });
+
+/**
+ * La même disposition au dépôt de publication (QF-56), dans les **deux** natures.
+ *
+ * Le bouton de relecture y était enveloppé dans un `<div>`, qui en faisait un bloc occupant toute la
+ * largeur : il s'affichait donc sous le téléversement, exactement comme au dépôt de frais.
+ */
+async function ouvrirDepotPublication(page: Page, nature: "compteRendu" | "document") {
+  await page.goto("/publications/nouvelle");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
+  if (nature === "document") {
+    // Les deux natures sont deux choix décrits, pas deux onglets : on coche celui qu'on veut.
+    await page.getByRole("radio").nth(1).check();
+  }
+}
+
+/** Les deux boîtes doivent se chevaucher verticalement : « sur la même ligne » se mesure. */
+async function surLaMemeLigne(page: Page, nomFichier: string) {
+  const televersement = page.getByRole("button", { name: "Choisir un fichier" }).first();
+  const relire = page.getByRole("button", { name: `Consulter - ${nomFichier}` });
+  await expect(relire).toBeVisible({ timeout: 30_000 });
+
+  const boiteTeleversement = (await televersement.boundingBox())!;
+  const boiteRelire = (await relire.boundingBox())!;
+  const chevauchement =
+    Math.min(boiteTeleversement.y + boiteTeleversement.height, boiteRelire.y + boiteRelire.height) -
+    Math.max(boiteTeleversement.y, boiteRelire.y);
+  expect(chevauchement, "le bouton de relecture n'est pas sur la même ligne que le téléversement").toBeGreaterThan(
+    0,
+  );
+}
+
+test("la relecture d'une pièce de compte rendu est sur la même ligne, nom long compris", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await ouvrirDepotPublication(page, "compteRendu");
+
+  await page
+    .locator('input[name="piece-jointe"]')
+    .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
+
+  await surLaMemeLigne(page, NOM_LONG);
+  // Tronqué à l'écran, lisible au survol : le nom cède, il ne disparaît pas.
+  await expect(page.getByTitle(NOM_LONG)).toBeVisible();
+
+  await page.context().close();
+});
+
+test("la relecture d'un document du dossier est sur la même ligne, nom long compris", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await ouvrirDepotPublication(page, "document");
+
+  await page
+    .locator('input[name="fichier"]')
+    .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
+
+  await surLaMemeLigne(page, NOM_LONG);
+  await expect(page.getByTitle(NOM_LONG)).toBeVisible();
+
+  await page.context().close();
+});
+
+/**
+ * Le risque que la correction introduit, et qu'il faut tenir dans les deux natures : une rangée qui
+ * ne passe plus à la ligne peut déborder de l'écran si le nom ne cède pas. Le test de débordement
+ * général ne couvre pas cet écran non plus - il se connecte en DJ, qui ne dépose pas de publication.
+ */
+test("le dépôt de publication ne déborde pas en mobile, dans les deux natures", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 720 });
+  await seConnecter(page, "avocat.test");
+
+  for (const [nature, champ] of [
+    ["compteRendu", "piece-jointe"],
+    ["document", "fichier"],
+  ] as const) {
+    await ouvrirDepotPublication(page, nature);
+    await page
+      .locator(`input[name="${champ}"]`)
+      .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
+    await expect(page.getByRole("button", { name: `Consulter - ${NOM_LONG}` })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    const debordement = await page.evaluate(() => {
+      const racine = document.documentElement;
+      // Un pixel de tolérance : les arrondis de mise en page en produisent un.
+      return Math.max(0, racine.scrollWidth - racine.clientWidth - 1);
+    });
+    expect(debordement, `la nature « ${nature} » déborde de ${debordement} px en 375 px`).toBe(0);
+  }
+
+  await page.context().close();
+});

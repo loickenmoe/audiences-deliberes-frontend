@@ -203,13 +203,32 @@ export function FormulairePublication() {
             </Champ>
 
             {/* Q-98 : la pièce qui étaye le récit. Facultative — le compte rendu reste un texte. */}
-            <div className="flex flex-col gap-1">
+            <div className="flex min-w-0 flex-col gap-1">
               <p className="text-[length:var(--taille-sm)] font-medium">{t("pieceJointe")}</p>
               <p className="max-w-prose text-[length:var(--taille-xs)] text-texte-tertiaire">
                 {t("pieceJointeAide")}
               </p>
-              <Televersement nom="piece-jointe" label={t("pieceJointe")} onChangement={setFichier} />
-              <BoutonRelire fichier={fichier} onOuverture={() => setApercu(true)} libelle={tdoc("consulter")} />
+              {/*
+                **Le téléversement et la relecture sur une seule ligne** (QF-56), comme au dépôt de
+                frais : le bouton s'affichait en dessous, et le lien entre le fichier choisi et le
+                bouton qui le relit se perdait. Le bloc se comprime, son nom de fichier se tronque -
+                lisible au survol -, et le bouton garde sa place.
+
+                `min-w-0` sur la rangée **et** sur le bloc qui la contient : un élément de flex a
+                `min-width: auto` et refuse donc d'être plus étroit que son contenu. Sans cela, un
+                nom de fichier long fait défiler toute la page sur un téléphone - mesuré à 308 points
+                au premier passage de cette correction.
+              */}
+              <div className="flex min-w-0 items-center gap-3">
+                <Televersement
+                  className="min-w-0 flex-1"
+                  surUneLigne
+                  nom="piece-jointe"
+                  label={t("pieceJointe")}
+                  onChangement={setFichier}
+                />
+                <BoutonRelire fichier={fichier} onOuverture={() => setApercu(true)} libelle={tdoc("consulter")} />
+              </div>
             </div>
           </>
         ) : (
@@ -231,8 +250,17 @@ export function FormulairePublication() {
               </Select>
             </Champ>
 
-            <Televersement nom="fichier" label={t("fichier")} onChangement={setFichier} />
-            <BoutonRelire fichier={fichier} onOuverture={() => setApercu(true)} libelle={tdoc("consulter")} />
+            {/* Même disposition que pour la pièce du compte rendu ci-dessus (QF-56). */}
+            <div className="flex min-w-0 items-center gap-3">
+              <Televersement
+                className="min-w-0 flex-1"
+                surUneLigne
+                nom="fichier"
+                label={t("fichier")}
+                onChangement={setFichier}
+              />
+              <BoutonRelire fichier={fichier} onOuverture={() => setApercu(true)} libelle={tdoc("consulter")} />
+            </div>
           </>
         )}
 
@@ -268,7 +296,14 @@ export function FormulairePublication() {
   );
 }
 
-/** Le bouton de relecture : il n'apparaît que lorsqu'un fichier est effectivement choisi. */
+/**
+ * Le bouton de relecture : il n'apparaît que lorsqu'un fichier est effectivement choisi.
+ *
+ * **Il n'est plus enveloppé dans un `<div>`** (QF-56) : ce conteneur en faisait un bloc, qui prenait
+ * toute la largeur et s'affichait donc sur la ligne suivante du téléversement. Il est désormais
+ * rendu tel quel dans la rangée, avec `shrink-0` pour qu'un nom de fichier long ne le comprime pas -
+ * c'est le nom qui doit céder.
+ */
 function BoutonRelire({
   fichier,
   onOuverture,
@@ -280,16 +315,15 @@ function BoutonRelire({
 }) {
   if (!fichier) return null;
   return (
-    <div>
-      <Button
-        variante="secondaire"
-        taille="sm"
-        onClick={onOuverture}
-        aria-label={`${libelle} - ${fichier.name}`}
-      >
-        <Eye size={14} aria-hidden />
-        {libelle}
-      </Button>
-    </div>
+    <Button
+      variante="secondaire"
+      taille="sm"
+      className="shrink-0"
+      onClick={onOuverture}
+      aria-label={`${libelle} - ${fichier.name}`}
+    >
+      <Eye size={14} aria-hidden />
+      {libelle}
+    </Button>
   );
 }

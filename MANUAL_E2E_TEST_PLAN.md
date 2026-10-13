@@ -142,7 +142,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-038 | Activite des avocats : la sienne, et celle que la direction lit | AVO → DJ → JUR | Haute | REC-E2E-037 | ☐ |
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
-| REC-E2E-041 | Depot de frais : montant avec espaces, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1037,7 +1037,7 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
-## REC-E2E-041 - Dépôt de frais : montant avec espaces, champs manquants, aperçu sur la ligne
+## REC-E2E-041 - Dépôts de l'avocat : montant, champs manquants, aperçu sur la ligne
 
 ### Objectif
 Valider les corrections de QF-56, signalées en recette le 2026-10-13 sur le formulaire de dépôt
@@ -1077,6 +1077,9 @@ Un dossier affecté à cet avocat, et un fichier PDF ou image sous la main.
 | 12 | AVO | **Choisir un fichier** deux fois de suite | Joindre deux pièces différentes | La seconde s'affiche dans le téléversement avec son aperçu ; la **première apparaît en dessous**, avec son propre œil et sa propre croix | | ☐ |
 | 13 | AVO | Compléter les quatre champs, puis **Déposer** | Envoyer | « Demande de frais déposée. » et la liste des frais s'ouvre, portant votre référence | | ☐ |
 | 14 | AVO | Même formulaire, bouton **en** | Basculer en anglais, puis cliquer Déposer à vide | Les quatre messages sont en anglais | | ☐ |
+| 15 | AVO | Menu de gauche, **Déposer une publication**, nature « **Compte rendu d'audience** » | Joindre une pièce au **nom très long** | Le bouton « **Consulter** » reste **sur la même ligne** que le téléversement, et le nom est coupé. Survolez-le, il s'affiche en entier | | ☐ |
+| 16 | AVO | Même écran, nature « **Document du dossier** » | Joindre un fichier au nom très long | Même résultat : la relecture sur la ligne, le nom coupé | | ☐ |
+| 17 | AVO | Réduire à la largeur d'un téléphone, puis refaire les étapes 15 et 16 | Regarder, puis faire défiler | **Aucun défilement horizontal** dans l'une ni l'autre nature | | ☐ |
 
 ### Résultat final attendu
 Une demande a été déposée avec un montant écrit avec des espaces. Les champs manquants se sont
@@ -1098,6 +1101,9 @@ ligne, et sa croix la retire vraiment.
   prend 436 : il ne restait que 190, et une puce portant une seconde fois le nom du fichier n'y
   tenait pas. C'est la disposition du formulaire de création de dossier qui est reprise - un bouton
   d'aperçu seul, le nom étant déjà affiché.
+- **Les deux formulaires de dépôt suivent la même règle** (étapes 15 à 17). Le défaut existait aux
+  deux endroits ; un seul avait été signalé. Le patron se répétait dans le fichier voisin, et dans ses
+  deux natures.
 - **C'est le nom qui cède, pas la disposition.** La rangée ne passe plus à la ligne : le bloc
   de téléversement se comprime et le nom se tronque. Il reste lisible au survol et dans le nom
   accessible du bouton d'aperçu - coupé n'est pas perdu.
