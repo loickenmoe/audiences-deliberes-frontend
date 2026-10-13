@@ -1898,5 +1898,26 @@
     "horsRepertoire": "Retiré du répertoire",
     "fermerFiche": "Fermer la fiche",
     "afficherAccessible": "Afficher l’activité des avocats"
+  },
+  "detailIndicateur": {
+    "voirDetail": "Voir le détail",
+    "voirDetailDe": "Voir le détail de « {libelle} »",
+    "titre": "{libelle}",
+    "sousTitre": "{total} élément(s)",
+    "colonneIntitule": "Intitulé",
+    "colonnePrecision": "Précision",
+    "colonneDossier": "Dossier",
+    "colonneDate": "Date",
+    "colonneMontant": "Montant",
+    "sansDossier": "Hors dossier",
+    "dossierSupprime": "Dossier supprimé",
+    "ouvrirDossier": "Ouvrir le dossier {reference}",
+    "ouvrirFrais": "Ouvrir la demande de frais",
+    "vide": "Rien à afficher.",
+    "pagePrecedente": "Page précédente",
+    "pageSuivante": "Page suivante",
+    "positionPage": "Page {page} sur {total}",
+    "restrictionRecouvrement": "Ce décompte ne porte que sur les dossiers de recouvrement.",
+    "uneLigneParAlerte": "Une ligne par alerte envoyée : une même prorogation peut en produire plusieurs, et le même dossier paraître deux fois."
   }
 }

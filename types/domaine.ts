@@ -943,6 +943,45 @@ export interface ActionDetaillee {
 }
 
 /**
+ * Les blocs du tableau de bord que l'on peut ouvrir (Q-137).
+ *
+ * Un par bloc affiché, et aucun de plus : le taux de succès du recouvrement a quitté l'écran le
+ * 2026-10-06 au profit des trois décomptes qu'il résumait, et un indicateur qui ne s'affiche plus
+ * ne se détaille pas.
+ */
+export type IndicateurTableauDeBord =
+  | "DOSSIERS_ACTIFS"
+  | "AFFAIRES_VIDEES"
+  | "AUDIENCES_PLANIFIEES"
+  | "FRAIS_EN_ATTENTE"
+  | "PROROGATIONS_ALERTE"
+  | "LITIGES_GAGNES"
+  | "LITIGES_PERDUS"
+  | "DECISIONS_MIXTES"
+  | "PROVISIONS_REPRISES";
+
+/**
+ * Une ligne derrière un bloc du tableau de bord (Q-137).
+ *
+ * **Une seule forme pour les neuf indicateurs**, bien que les objets comptés soient de natures
+ * différentes - des dossiers, des audiences, des demandes de frais, des délibérés, des alertes, des
+ * adjudications. Neuf formes auraient donné neuf tableaux, chacun avec ses colonnes et ses défauts ;
+ * le bloc d'où l'on vient dit déjà ce qu'on regarde.
+ *
+ * `dossierId` est nul pour un objet qui n'en dépend pas - une alerte hors dossier. La ligne reste
+ * affichée sans lien, sans quoi le nombre de lignes ne tomberait plus sur le nombre affiché.
+ */
+export interface DetailIndicateur {
+  id: number;
+  dossierId: number | null;
+  referenceDossier: string | null;
+  intitule: string | null;
+  precision: string | null;
+  date: string | null;
+  montant: number | null;
+}
+
+/**
  * Un avocat et ses dépôts sur la période (Q-136).
  *
  * `avocatId` est nul si son inscription au répertoire a été retirée depuis : ses dépôts restent

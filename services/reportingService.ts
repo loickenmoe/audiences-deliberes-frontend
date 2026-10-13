@@ -1,6 +1,8 @@
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
   ActionDetaillee,
+  DetailIndicateur,
+  IndicateurTableauDeBord,
   Rapport,
   RapportActivite,
   RapportAvocats,
@@ -63,6 +65,27 @@ export const reportingService = {
       params: { dateDebut, dateFin },
     });
     return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportNominatif);
+  },
+
+  /**
+   * Le détail d'un bloc du tableau de bord (Q-137) — DJ et DJA.
+   *
+   * **Ce que le serveur garantit, et qui vaut d'être dit** : la liste rend exactement ce que le bloc
+   * compte, prédicat pour prédicat. Le total de la page est donc celui du bloc - l'écran n'a pas à
+   * recompter, et surtout il ne doit pas : sommer les lignes d'une page donnerait un chiffre plus
+   * petit dès la deuxième.
+   *
+   * Paginé, parce qu'un bloc peut valoir trois cents : une modale qui charge tout met plus de temps
+   * à s'ouvrir que l'utilisateur n'en met à renoncer.
+   */
+  detailTableauDeBord: async (
+    indicateur: IndicateurTableauDeBord,
+    page: number,
+  ): Promise<PageReponse<DetailIndicateur>> => {
+    const { data } = await apiClient.get<PageReponse<DetailIndicateur>>("/tableau-de-bord/details", {
+      params: { indicateur, page, size: 20 },
+    });
+    return data;
   },
 
   /**

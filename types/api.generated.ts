@@ -996,6 +996,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tableau-de-bord/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detailTableauDeBord"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/repertoire/avocats": {
         parameters: {
             query?: never;
@@ -2446,6 +2462,26 @@ export interface components {
             nbAffairesVidees?: number;
             /** Format: double */
             provisionsReprises?: number;
+        };
+        DetailIndicateurResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            dossierId?: number;
+            referenceDossier?: string;
+            intitule?: string;
+            precision?: string;
+            /** Format: date */
+            date?: string;
+            /** Format: double */
+            montant?: number;
+        };
+        PageResponseDetailIndicateurResponse: {
+            content?: components["schemas"]["DetailIndicateurResponse"][];
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
         };
         AvocatRepertoireResponse: {
             /** Format: int64 */
@@ -4910,6 +4946,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TableauDeBordResponse"];
+                };
+            };
+        };
+    };
+    detailTableauDeBord: {
+        parameters: {
+            query: {
+                indicateur: "DOSSIERS_ACTIFS" | "AFFAIRES_VIDEES" | "AUDIENCES_PLANIFIEES" | "FRAIS_EN_ATTENTE" | "PROROGATIONS_ALERTE" | "LITIGES_GAGNES" | "LITIGES_PERDUS" | "DECISIONS_MIXTES" | "PROVISIONS_REPRISES";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseDetailIndicateurResponse"];
                 };
             };
         };

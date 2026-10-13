@@ -215,6 +215,8 @@ transition reste manuelle via l'endpoint générique d'étape.
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
 
+**39** — **chaque bloc s'ouvre sur son détail** depuis Q-137 : un bouton nommé « Voir le détail » par bloc, dont le nom accessible porte l'indicateur, et une modale paginée dont chaque ligne mène à sa fiche - le dossier sur l'onglet qui correspond, ou la demande de frais sur son propre écran. Le **total affiché est celui du serveur**, jamais une somme des lignes montrées. Deux restrictions que les libellés ne disent pas sont dites par le détail : les trois indicateurs de litiges ne portent que sur le recouvrement, et les prorogations comptent une ligne par alerte.
+
 **39** — 6 indicateurs temps réel : `nbDossiersActifs`, `nbAudiencesPlanifiees`,
 `nbDemandesFraisEnAttente`, `nbProrogationsAlerte`, `tauxSuccesRecouvrement`, `provisionsReprises`.
 **40** — `type ∈ {JOURNALIER…ANNUEL}`, `format ∈ {JSON, PDF, EXCEL, CSV}`, **204 si aucune donnée**

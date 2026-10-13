@@ -462,6 +462,20 @@ du recouvrement » ; il porte désormais ce que ce taux résumait. Trois précis
 
 ![Le tableau de bord du Directeur Juridique.](images/guide/19-tableau-de-bord.png)
 
+**Chaque bloc s'ouvre** (depuis le 2026-10-13). Sous le chiffre, *Voir le détail* affiche la liste de ce qu'il compte, et **chaque ligne mène à sa fiche** : le dossier sur l'onglet qui correspond - Audiences pour une audience, Délibérés pour un délibéré, Décisions pour une provision -, ou directement la demande de frais pour le bloc des frais en attente.
+
+Deux précisions que le détail affiche, et qu'il vaut la peine de lire :
+
+- **« Litiges gagnés », « perdus » et « Décisions mixtes » ne comptent que les dossiers de
+  recouvrement.** C'est ainsi depuis l'origine - l'indicateur descend du taux de succès du
+  recouvrement -, mais les libellés ne le disaient pas. Dites-moi si vous voulez qu'ils portent
+  sur tous les dossiers : c'est votre arbitrage, et je n'ai pas changé vos chiffres sans lui ;
+- **« Alertes de prorogation » compte une ligne par alerte envoyée**, non par dossier : une même
+  prorogation peut prévenir plusieurs personnes, et le même dossier paraître deux fois.
+
+Le nombre annoncé en haut de la liste est celui du bloc. La liste, elle, se parcourt page par
+page : additionner ce qu'une page montre donnerait un chiffre plus petit.
+
 **Rapports** : choisissez une période, affichez, puis exportez en PDF, Excel ou CSV. Une période sans
 activité affiche un état vide - ce n'est pas une erreur, il n'y a rien à rapporter.
 

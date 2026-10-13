@@ -319,6 +319,7 @@ nuls tant que la décision n'est pas rendue.
 | 48 | PUT | `/configurations/{cle}` | **DJ + DJA** (Q-108) | 41 | F14 | ✅ |
 | 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ✅ |
 | 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
+| — | GET | `/tableau-de-bord/details?indicateur&page&size` 🆕 Q-137 | **DJ + DJA** | 39 (modale de détail) | Q-137 | ✅ |
 | — | GET | `/rapports/activite?dateDebut&dateFin&utilisateurId&avocatId` 🆕 Q-133, élargi Q-135 | **CONS + AVOCAT** — chacun sur lui-même ; DJ et DJA sur quiconque, avocats compris | 44 (Mon compte), 40, 30 (Mon espace), 34 (répertoire) | Q-135 | ✅ |
 | — | GET | `/rapports/activite/export?…&format` 🆕 Q-133, élargi Q-135 | **CONS + AVOCAT** | 44, 40, 30, 34 | Q-135 | ✅ |
 | — | GET | `/rapports/activite/details?…&code&page&size` 🆕 Q-133, élargi Q-135 | **CONS + AVOCAT** | 44, 40, 30, 34 (modale) | Q-135 | ✅ |

@@ -720,3 +720,134 @@ test("le tableau des avocats est traduit", async ({ page }) => {
     timeout: 30_000,
   });
 });
+
+/**
+ * Le détail des blocs du tableau de bord (Q-137) — REC-E2E-039.
+ *
+ * **Ce qu'aucun test unitaire ne peut tenir ici** : que les **neuf** blocs s'ouvrent, qu'une ligne
+ * mène réellement à sa fiche, et que le total annoncé par la modale soit celui du bloc - la
+ * concordance des deux chiffres est ce qui fait leur crédibilité, et elle se vérifie à l'œil.
+ */
+const BLOCS_DU_TABLEAU = [
+  "Dossiers actifs",
+  "Affaires vidées",
+  "Audiences planifiées",
+  "Frais en attente",
+  "Alertes de prorogation",
+  "Litiges gagnés",
+  "Litiges perdus",
+  "Décisions mixtes",
+  "Provisions reprises",
+] as const;
+
+test("les neuf blocs du tableau de bord s'ouvrent tous sur leur détail", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/tableau-de-bord");
+  await expect(page.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
+
+  for (const libelle of BLOCS_DU_TABLEAU) {
+    const ouvrir = page.getByRole("button", { name: `Voir le détail de « ${libelle} »` });
+    await expect(ouvrir, `le bloc « ${libelle} » n'offre pas son détail`).toBeVisible();
+    await ouvrir.click();
+
+    const modale = page.getByRole("dialog");
+    await expect(modale).toBeVisible();
+    // Le titre répète le mot sur lequel on a cliqué : sans cela, neuf modales se ressemblent.
+    await expect(modale.getByRole("heading", { name: libelle })).toBeVisible({ timeout: 30_000 });
+    // Soit des lignes, soit un état vide - jamais une erreur.
+    await expect(
+      modale.getByRole("table").or(modale.getByText("Rien à afficher.")),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(modale.getByRole("alert")).toHaveCount(0);
+
+    await modale.getByRole("button", { name: "Fermer" }).click();
+    await expect(modale).toBeHidden();
+  }
+
+  await page.context().close();
+});
+
+test("une ligne du détail mène à la fiche du dossier, sur l'onglet qui correspond", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/tableau-de-bord");
+
+  await page.getByRole("button", { name: "Voir le détail de « Dossiers actifs »" }).click();
+  const modale = page.getByRole("dialog");
+  await expect(modale.getByRole("table")).toBeVisible({ timeout: 30_000 });
+
+  const versDossier = modale.getByRole("link", { name: /^Ouvrir le dossier / }).first();
+  await expect(versDossier).toBeVisible();
+  await versDossier.click();
+  await page.waitForURL(/\/dossiers\/\d+/, { timeout: 60_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+  /*
+   * L'onglet d'arrivée doit exister. C'est l'assertion qui manquait sur la fiche d'activité, et dont
+   * l'absence avait laissé passer un onglet « frais » que la fiche dossier n'a pas : un onglet
+   * inconnu retombe silencieusement sur la synthèse, et la promesse était fausse sans bruit.
+   */
+  const onglet = new URL(page.url()).searchParams.get("onglet");
+  if (onglet !== null) {
+    expect([
+      "synthese",
+      "etapes",
+      "audiences",
+      "deliberes",
+      "alarmes",
+      "decisions",
+      "historique",
+      "documents",
+      "publications",
+    ]).toContain(onglet);
+  }
+
+  await page.context().close();
+});
+
+/**
+ * Les trois indicateurs de litiges ne comptent que les dossiers de **recouvrement** - l'indicateur
+ * descend du taux de succès du recouvrement, qui ne portait que sur eux. Le libellé du bloc ne le
+ * dit pas ; le détail, lui, le dit, et c'est la première occasion qu'a la Direction de s'en
+ * apercevoir. Signalé pour arbitrage, et non corrigé en silence.
+ */
+test("le détail dit les restrictions que le libellé du bloc ne dit pas", async ({ page }) => {
+  await seConnecter(page, "dja.test");
+  await page.goto("/tableau-de-bord");
+
+  await page.getByRole("button", { name: "Voir le détail de « Litiges gagnés »" }).click();
+  await expect(
+    page.getByRole("dialog").getByText("Ce décompte ne porte que sur les dossiers de recouvrement."),
+  ).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
+
+  await page.getByRole("button", { name: "Voir le détail de « Alertes de prorogation »" }).click();
+  await expect(page.getByRole("dialog").getByText(/Une ligne par alerte envoyée/)).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await page.context().close();
+});
+
+test("le juriste n'atteint pas le détail, faute d'atteindre le tableau de bord", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/tableau-de-bord");
+
+  await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Voir le détail de / })).toHaveCount(0);
+});
+
+test("le détail du tableau de bord est traduit", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/tableau-de-bord");
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.getByRole("button", { name: "View details of “Active case files”" }).click();
+  const modale = page.getByRole("dialog");
+  await expect(modale).toBeVisible();
+  await expect(
+    modale.getByRole("table").or(modale.getByText("Nothing to show.")),
+  ).toBeVisible({ timeout: 30_000 });
+});

@@ -140,6 +140,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-036 | Activité par personne : des indicateurs, pas une note | DJ → DJA → JUR | Haute | Activité des fiches précédentes | ☐ |
 | REC-E2E-037 | Mon activite : la telecharger, et cliquer jusqu'au dossier | JUR → ASS → SH → DJ | Haute | REC-E2E-036 | ☐ |
 | REC-E2E-038 | Activite des avocats : la sienne, et celle que la direction lit | AVO → DJ → JUR | Haute | REC-E2E-037 | ☐ |
+| REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1031,6 +1032,83 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-039 - Tableau de bord : chaque bloc s'ouvre sur son détail
+
+### Objectif
+Valider la demande du 2026-10-13 (Q-137) : **un clic sur un bloc du tableau de bord ouvre la liste
+de ce qu'il compte**, et chaque ligne mène à sa fiche. Et vérifier la seule propriété qui compte
+vraiment : **le nombre annoncé par la liste est celui du bloc**. Afficher « 12 » et lister neuf
+lignes ferait douter des deux chiffres.
+
+### Acteurs
+DJ (`dj.test`) et DJA (`dja.test`) ; juriste (`juriste.test`), qui ne doit atteindre ni l'écran ni
+le détail.
+
+### Préconditions
+Aucune préparation. La base de recette doit porter des dossiers, des audiences et des frais - c'est
+le cas dès que les fiches précédentes ont été jouées. Un bloc à zéro affichera « Rien à afficher. »,
+ce qui est le comportement attendu.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Tableau de bord** | Entrée **Tableau de bord** du menu de gauche (DJ et DJA seulement). Neuf blocs, chacun portant son chiffre, sa phrase d'explication, et dessous un lien « **Voir le détail** » |
+
+Sur la **fiche d'un dossier**, les onglets sont : *Synthèse*, *Étapes*, *Audiences*, *Délibérés*,
+*Alarmes*, *Décisions*, *Historique*, *Documents*, *Publications*. **Il n'y a pas d'onglet
+« Frais »** : le bloc des frais mène donc directement à la demande, sur son propre écran.
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | DJ | Menu de gauche, **Tableau de bord** | Ouvrir | Neuf blocs, et **sous chaque chiffre** un lien « Voir le détail » | | ☐ |
+| 2 | DJ | Bloc « **Dossiers actifs** » | Noter le chiffre, puis « Voir le détail » | Une fenêtre s'ouvre, titrée « Dossiers actifs », et annonçant « **N élément(s)** » - **le même N que le bloc** | | ☐ |
+| 3 | DJ | Cette fenêtre | Lire le tableau | Intitulé (le client), Précision (la nature), Dossier. Autant de pages qu'il faut, et le total ne change pas d'une page à l'autre | | ☐ |
+| 4 | DJ | Colonne **Dossier** | Cliquer une référence | La fiche du dossier s'ouvre | | ☐ |
+| 5 | DJ | Revenir au tableau de bord, bloc « **Audiences planifiées** » | « Voir le détail », puis cliquer une référence | La fiche s'ouvre **sur l'onglet Audiences** | | ☐ |
+| 6 | DJ | Bloc « **Frais en attente** » | « Voir le détail », puis cliquer le lien de la colonne Dossier | On arrive sur **la demande de frais elle-même**, pas sur le dossier : la fiche dossier n'a pas d'onglet Frais | | ☐ |
+| 7 | DJ | Bloc « **Litiges gagnés** » | « Voir le détail » | Sous le titre : « **Ce décompte ne porte que sur les dossiers de recouvrement.** » C'est le cas depuis l'origine, et le libellé du bloc ne le disait pas | | ☐ |
+| 8 | DJ | Même fenêtre | Cliquer une référence | La fiche s'ouvre **sur l'onglet Délibérés** | | ☐ |
+| 9 | DJ | Bloc « **Alertes de prorogation** » | « Voir le détail » | Sous le titre : « **Une ligne par alerte envoyée…** ». Le même dossier peut donc paraître deux fois, et c'est voulu : c'est ce que le bloc compte | | ☐ |
+| 10 | DJ | Bloc « **Provisions reprises** » | Noter le **montant**, puis « Voir le détail » | Une colonne **Montant**. L'invariant n'est pas le nombre de lignes mais la **somme** : additionnez les montants de toutes les pages, vous devez retrouver le montant du bloc | | ☐ |
+| 11 | DJ | Même fenêtre | Cliquer une référence | La fiche s'ouvre **sur l'onglet Décisions** | | ☐ |
+| 12 | DJ | Les quatre blocs restants (« Affaires vidées », « Litiges perdus », « Décisions mixtes », et revérifier « Dossiers actifs ») | Ouvrir chacun | Chacun s'ouvre, annonce **son** total, et n'affiche **aucun message d'erreur**. Un bloc à zéro dit « Rien à afficher. » | | ☐ |
+| 13 | DJ | N'importe quelle fenêtre de détail | Fermer par **Échap**, puis par le bouton de fermeture | Les deux ferment la fenêtre | | ☐ |
+| 14 | DJ | Un bloc dont le total dépasse 20 | « Voir le détail », puis « Page suivante » | La deuxième page s'affiche, et **le total annoncé ne bouge pas** : c'est celui du bloc, pas celui de la page | | ☐ |
+| 15 | DJA | Se connecter en DJA, Tableau de bord | Ouvrir un bloc | Même résultat : les deux profils de direction y accèdent | | ☐ |
+| 16 | JUR | Se connecter en juriste, forcer `/tableau-de-bord` | Observer | « Vous n'avez pas les droits nécessaires », et aucun lien « Voir le détail » | | ☐ |
+| 17 | DJ | Tableau de bord, **au clavier seulement** | Parcourir avec Tab jusqu'à un lien « Voir le détail », puis Entrée | Le lien est **atteignable au clavier** et s'actionne. Le bloc entier n'est pas cliquable, et c'est volontaire | | ☐ |
+| 18 | DJ | Bouton **en** en haut de l'écran | Basculer en anglais, puis ouvrir un bloc | « View details », les colonnes et le titre suivent | | ☐ |
+
+### Résultat final attendu
+Les neuf blocs du tableau de bord se sont ouverts sur la liste de ce qu'ils comptent, le total
+annoncé était à chaque fois celui du bloc, et les lignes ont mené aux fiches - sur le bon onglet.
+
+### Points de contrôle
+- **Le total de la liste est celui du bloc.** C'est la propriété qui fait la crédibilité des deux
+  chiffres, et la seule que je ne pouvais pas garantir sans la vérifier contre la base réelle : un
+  test d'intégration confronte les deux requêtes pour les neuf indicateurs.
+- **Le total ne se recalcule pas à l'écran.** La liste est paginée ; additionner ce qu'une page
+  montre donnerait un chiffre plus petit, qui contredirait le bloc d'où l'on vient.
+- **Les prorogations comptent une ligne par alerte**, non par dossier : une prorogation prévenant
+  plusieurs personnes en produit plusieurs. Regrouper donnerait une liste plus courte que le nombre
+  affiché.
+- **Les provisions reprises ont un autre invariant** : c'est une somme d'argent, et c'est la somme
+  des montants listés qui doit tomber juste, pas le nombre de lignes.
+- **Le bloc n'est pas cliquable, le lien l'est.** Un `<div>` qui réagit au clic au milieu d'une
+  liste de définitions n'est ni atteignable au clavier ni annoncé comme une action, et un nombre
+  cliquable s'annoncerait « 12 » sans dire ce qu'il ouvre. Le nom accessible du lien porte
+  l'indicateur : neuf liens « Voir le détail » sur un même écran ne se distinguent pas autrement.
+- ⚠ **Un arbitrage vous attend.** « Litiges gagnés », « Litiges perdus » et « Décisions mixtes » ne
+  comptent que les dossiers de **recouvrement** - héritage du taux de succès qu'ils ont remplacé le
+  2026-10-06. Leurs libellés ne le disent pas, et le détail le dit désormais. Les élargir à tous les
+  dossiers changerait des nombres que vous lisez depuis une semaine : je ne l'ai pas fait sans votre
+  mot.
 
 ---
 

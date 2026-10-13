@@ -1898,5 +1898,26 @@
     "horsRepertoire": "Removed from the directory",
     "fermerFiche": "Close the sheet",
     "afficherAccessible": "Show lawyer activity"
+  },
+  "detailIndicateur": {
+    "voirDetail": "View details",
+    "voirDetailDe": "View details of “{libelle}”",
+    "titre": "{libelle}",
+    "sousTitre": "{total} item(s)",
+    "colonneIntitule": "Title",
+    "colonnePrecision": "Detail",
+    "colonneDossier": "Case file",
+    "colonneDate": "Date",
+    "colonneMontant": "Amount",
+    "sansDossier": "Not case-related",
+    "dossierSupprime": "Case file deleted",
+    "ouvrirDossier": "Open case file {reference}",
+    "ouvrirFrais": "Open the fee claim",
+    "vide": "Nothing to show.",
+    "pagePrecedente": "Previous page",
+    "pageSuivante": "Next page",
+    "positionPage": "Page {page} of {total}",
+    "restrictionRecouvrement": "This count covers debt-recovery case files only.",
+    "uneLigneParAlerte": "One row per alert sent: a single extension may produce several, and the same case file may appear twice."
   }
 }

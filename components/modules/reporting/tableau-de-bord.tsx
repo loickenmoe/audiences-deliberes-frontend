@@ -13,15 +13,16 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { MontantFcfa } from "@/components/metier";
+import { DetailIndicateurModale } from "@/components/modules/reporting/detail-indicateur";
 import { Button } from "@/components/ui/button";
 import { useTableauDeBord } from "@/hooks/useReporting";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
-import type { TableauDeBord } from "@/types/domaine";
+import type { IndicateurTableauDeBord, TableauDeBord } from "@/types/domaine";
 
 /**
  * Écran 39 — tableau de bord exécutif (FR-REP-02, US 8.5).
@@ -45,6 +46,18 @@ import type { TableauDeBord } from "@/types/domaine";
 export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("tableauDeBord");
   const requete = useTableauDeBord();
+
+  /*
+   * Le bloc dont on regarde le détail (Q-137). Son libellé voyage avec lui : la modale le répète en
+   * titre, et l'utilisateur doit retrouver le mot sur lequel il a cliqué.
+   *
+   * **Déclaré avant les retours anticipés**, et pas seulement par goût : un `useState` placé après
+   * un `if (…) return` ne s'exécute pas au même rang d'un rendu à l'autre, ce que React interdit.
+   */
+  const [ouvert, setOuvert] = useState<{
+    indicateur: IndicateurTableauDeBord;
+    libelle: string;
+  } | null>(null);
 
   if (requete.isLoading) return <EtatChargement lignes={6} />;
   if (requete.error) {
@@ -86,6 +99,8 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           icone={<FolderOpen size={18} aria-hidden />}
           libelle={t("nbDossiersActifs")}
           aide={t("nbDossiersActifsAide")}
+          indicateur="DOSSIERS_ACTIFS"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbDossiersActifs} />}
         />
         {/* Posé juste après les dossiers actifs : il en est le complément, et se lit avec lui. */}
@@ -93,24 +108,32 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           icone={<CircleCheckBig size={18} aria-hidden />}
           libelle={t("nbAffairesVidees")}
           aide={t("nbAffairesVideesAide")}
+          indicateur="AFFAIRES_VIDEES"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbAffairesVidees} />}
         />
         <Indicateur
           icone={<CalendarDays size={18} aria-hidden />}
           libelle={t("nbAudiencesPlanifiees")}
           aide={t("nbAudiencesPlanifieesAide")}
+          indicateur="AUDIENCES_PLANIFIEES"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbAudiencesPlanifiees} />}
         />
         <Indicateur
           icone={<Receipt size={18} aria-hidden />}
           libelle={t("nbDemandesFraisEnAttente")}
           aide={t("nbDemandesFraisEnAttenteAide")}
+          indicateur="FRAIS_EN_ATTENTE"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbDemandesFraisEnAttente} />}
         />
         <Indicateur
           icone={<AlarmClock size={18} aria-hidden />}
           libelle={t("nbProrogationsAlerte")}
           aide={t("nbProrogationsAlerteAide")}
+          indicateur="PROROGATIONS_ALERTE"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbProrogationsAlerte} />}
           alerte={donnees.nbProrogationsAlerte > 0}
         />
@@ -118,27 +141,41 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           icone={<Trophy size={18} aria-hidden />}
           libelle={t("nbLitigesGagnes")}
           aide={t("nbLitigesGagnesAide")}
+          indicateur="LITIGES_GAGNES"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbLitigesGagnes} />}
         />
         <Indicateur
           icone={<ThumbsDown size={18} aria-hidden />}
           libelle={t("nbLitigesPerdus")}
           aide={t("nbLitigesPerdusAide")}
+          indicateur="LITIGES_PERDUS"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbLitigesPerdus} />}
         />
         <Indicateur
           icone={<Scale size={18} aria-hidden />}
           libelle={t("nbLitigesMixtes")}
           aide={t("nbLitigesMixtesAide")}
+          indicateur="DECISIONS_MIXTES"
+          onDetail={setOuvert}
           valeur={<Nombre valeur={donnees.nbLitigesMixtes} />}
         />
         <Indicateur
           icone={<Wallet size={18} aria-hidden />}
           libelle={t("provisionsReprises")}
           aide={t("provisionsReprisesAide")}
+          indicateur="PROVISIONS_REPRISES"
+          onDetail={setOuvert}
           valeur={<MontantFcfa valeur={donnees.provisionsReprises} />}
         />
       </dl>
+
+      <DetailIndicateurModale
+        indicateur={ouvert?.indicateur ?? null}
+        libelle={ouvert?.libelle ?? ""}
+        onFermeture={() => setOuvert(null)}
+      />
     </div>
   );
 }
@@ -154,6 +191,8 @@ function Indicateur({
   aide,
   valeur,
   alerte = false,
+  indicateur,
+  onDetail,
 }: {
   icone: ReactNode;
   libelle: string;
@@ -161,7 +200,11 @@ function Indicateur({
   valeur: ReactNode;
   /** Un compteur d'alertes non nul se signale — la couleur double le chiffre, elle ne le remplace pas. */
   alerte?: boolean;
+  /** Renseigné, le bloc s'ouvre sur le détail de ce qu'il compte (Q-137). */
+  indicateur?: IndicateurTableauDeBord;
+  onDetail?: (choix: { indicateur: IndicateurTableauDeBord; libelle: string }) => void;
 }) {
+  const tDetail = useTranslations("detailIndicateur");
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-bordure bg-surface p-4">
       <dt className="flex items-center gap-2 text-[length:var(--taille-sm)] font-medium text-texte-secondaire">
@@ -175,6 +218,23 @@ function Indicateur({
           {valeur}
         </span>
         <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{aide}</span>
+        {/*
+          Un bouton nommé, et non le bloc entier rendu cliquable. Un `<div>` qui réagit au clic au
+          milieu d'une liste de définitions n'est ni atteignable au clavier ni annoncé comme une
+          action ; et un nombre cliquable s'annoncerait « 12 », sans dire ce qu'il ouvre. Le nom
+          accessible porte l'indicateur, parce que neuf boutons « Voir le détail » sur un même écran
+          ne se distinguent pas autrement.
+        */}
+        {indicateur && onDetail ? (
+          <button
+            type="button"
+            className="self-start text-[length:var(--taille-xs)] text-lien underline underline-offset-4 hover:no-underline"
+            onClick={() => onDetail({ indicateur, libelle })}
+            aria-label={tDetail("voirDetailDe", { libelle })}
+          >
+            {tDetail("voirDetail")}
+          </button>
+        ) : null}
       </dd>
     </div>
   );

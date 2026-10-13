@@ -145,6 +145,34 @@ const serveur = setupServer(
     }
     return HttpResponse.json(ACTIVITE);
   }),
+  http.get(`${BASE}/tableau-de-bord/details`, ({ request }) => {
+    const url = new URL(request.url);
+    derniere = { methode: request.method, url };
+    return HttpResponse.json({
+      content: [
+        {
+          id: 42,
+          dossierId: 42,
+          referenceDossier: "DOS-2026-0042",
+          intitule: "SARL Mbarga",
+          precision: "Recouvrement de créance",
+          date: null,
+          montant: 12_000_000,
+        },
+        {
+          id: 43,
+          dossierId: null,
+          referenceDossier: null,
+          intitule: "Seuil de charge dépassé",
+          precision: null,
+          date: null,
+          montant: null,
+        },
+      ],
+      totalPages: 3,
+      totalElements: 47,
+    });
+  }),
   http.get(`${BASE}/rapports/nominatif/avocats`, ({ request }) => {
     const url = new URL(request.url);
     derniere = { methode: request.method, url };
@@ -313,6 +341,43 @@ describe("rapport nominatif", () => {
     const rapport = await reportingService.rapportNominatif("2000-01-01", "2000-01-02");
 
     expect(rapport).toBeNull();
+  });
+});
+
+/**
+ * Le détail d'un bloc du tableau de bord (Q-137). Ce que le service doit garantir : qu'il demande le
+ * bon indicateur, et qu'il rende le **total du serveur** - jamais une somme des lignes montrées, qui
+ * contredirait le bloc d'où l'on vient dès la deuxième page.
+ */
+describe("détail d'un bloc du tableau de bord", () => {
+  it("envoie l'indicateur demandé et la page", async () => {
+    await reportingService.detailTableauDeBord("DOSSIERS_ACTIFS", 2);
+
+    expect(derniere?.url.pathname).toBe("/api/v1/tableau-de-bord/details");
+    const params = derniere!.url.searchParams;
+    expect(params.get("indicateur")).toBe("DOSSIERS_ACTIFS");
+    expect(params.get("page")).toBe("2");
+    expect(params.get("size")).toBe("20");
+  });
+
+  it("rend le total du serveur, et non le nombre de lignes de la page", async () => {
+    const page = await reportingService.detailTableauDeBord("DOSSIERS_ACTIFS", 0);
+
+    expect(page.content).toHaveLength(2);
+    // 47 éléments sur 3 pages : c'est le total qui doit s'afficher, pas les 2 lignes reçues.
+    expect(page.totalElements).toBe(47);
+    expect(page.totalPages).toBe(3);
+  });
+
+  it("rend une ligne hors dossier telle quelle, sans l'écarter", async () => {
+    const page = await reportingService.detailTableauDeBord("PROROGATIONS_ALERTE", 0);
+
+    /*
+     * Une alerte sans dossier reste dans la liste : l'écarter ferait que le nombre de lignes ne
+     * tombe plus sur le nombre affiché par le bloc, et c'est cette concordance qui fait la
+     * crédibilité des deux chiffres.
+     */
+    expect(page.content[1]).toMatchObject({ dossierId: null, referenceDossier: null });
   });
 });
 
@@ -488,9 +553,19 @@ describe("onglets vises par la fiche d'activité", () => {
     // passerait sans rien garder. La borne basse le dit tout haut.
     expect(reels.size, "les onglets de la fiche dossier ne se lisent plus").toBeGreaterThan(5);
 
-    const carte = sourceDe("components/modules/reporting/fiche-activite.tsx");
-    const vises = [...carte.matchAll(/^ {2}[A-Z_]+: "([a-z]+)",$/gm)].map((trouve) => trouve[1]);
-    expect(vises.length, "la carte des onglets ne se lit plus").toBeGreaterThan(20);
+    /*
+     * **Les deux cartes**, et non la seule première. Une seconde est arrivée avec Q-137, pour le
+     * détail des blocs du tableau de bord : un garde-fou qui ne regarde qu'un fichier ne protège
+     * que lui, et c'est précisément le défaut qu'il est né pour fermer.
+     */
+    const cartes = [
+      "components/modules/reporting/fiche-activite.tsx",
+      "components/modules/reporting/detail-indicateur.tsx",
+    ].map(sourceDe);
+    const vises = cartes.flatMap((carte) =>
+      [...carte.matchAll(/^ {2}[A-Z_]+: "([a-z]+)",$/gm)].map((trouve) => trouve[1]),
+    );
+    expect(vises.length, "les cartes des onglets ne se lisent plus").toBeGreaterThan(25);
 
     const inconnus = [...new Set(vises)].filter((onglet) => !reels.has(onglet));
     expect(inconnus, "onglets visés qui n'existent pas sur la fiche dossier").toEqual([]);
