@@ -1483,7 +1483,10 @@
     "nbLitigesMixtesAide": "Ni gagnées ni perdues. Les compter séparément évite de les attribuer d’office à l’un des deux camps.",
     "provisionsReprises": "Provisions reprises",
     "provisionsReprisesAide": "Montant total repris sur les adjudications enregistrées.",
-    "versRapports": "Générer un rapport"
+    "versRapports": "Générer un rapport",
+    "perimetre": "Périmètre",
+    "perimetreToutes": "Toutes catégories",
+    "perimetreAide": "Les neuf indicateurs suivent ce choix, et leur détail aussi. Recouvrement et litiges d'exploitation s'additionnent pour faire le total."
   },
   "rapports": {
     "titre": "Rapport d’activité",
@@ -1508,7 +1511,10 @@
     "videTexte": "Élargissez les dates ou choisissez une autre période : aucun dossier, aucune audience, aucune demande de frais ni aucun délibéré n’y figure.",
     "exportVide": "Rien à exporter : la période est sans activité.",
     "exportReussi": "Rapport {format} téléchargé.",
-    "avantGeneration": "Choisissez une période, puis affichez le rapport."
+    "avantGeneration": "Choisissez une période, puis affichez le rapport.",
+    "perimetre": "Périmètre",
+    "perimetreToutes": "Toutes catégories",
+    "perimetreAide": "Les sept indicateurs du rapport suivent ce choix, à l'écran comme dans les exports."
   },
   "portail": {
     "espaceTitre": "Mon espace",

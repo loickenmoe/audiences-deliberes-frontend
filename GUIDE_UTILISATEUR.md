@@ -462,6 +462,16 @@ du recouvrement » ; il porte désormais ce que ce taux résumait. Trois précis
 
 ![Le tableau de bord du Directeur Juridique.](images/guide/19-tableau-de-bord.png)
 
+**Deux catégories, un sélecteur** (depuis le 2026-10-13). En tête d'écran, *Périmètre* propose **Toutes catégories**, **Recouvrement** et **Litiges d'exploitation**. Les neuf indicateurs suivent votre choix, et leur détail aussi : c'est deux tableaux de bord complets, pas une ventilation.
+
+Trois choses à savoir :
+
+- **Les sous-totaux s'additionnent.** Recouvrement + Litiges d'exploitation = Toutes catégories, pour chacun des neuf blocs. Si cela ne tombait pas juste, ce serait un défaut - et deux tests le vérifient à chaque livraison ;
+- **vos chiffres d'avant n'ont pas disparu.** « Litiges gagnés » ne comptait que le recouvrement ; choisissez le périmètre **Recouvrement** et vous retrouvez exactement le même nombre. En **Toutes catégories**, il compte désormais tout votre contentieux - ce qu'il promettait sans le faire ;
+- **le périmètre est dans l'adresse** : vous pouvez envoyer à quelqu'un le lien du tableau de bord du recouvrement, et un rechargement ne vous ramène pas sur « toutes catégories ».
+
+**Le rapport d'activité porte le même sélecteur**, et le fichier exporté nomme son périmètre : `rapport-mensuel-recouvrement-….xlsx`. Un document qui circule doit dire ce qu'il couvre.
+
 **Chaque bloc s'ouvre** (depuis le 2026-10-13). Sous le chiffre, *Voir le détail* affiche la liste de ce qu'il compte, et **chaque ligne mène à sa fiche** : le dossier sur l'onglet qui correspond - Audiences pour une audience, Délibérés pour un délibéré, Décisions pour une provision -, ou directement la demande de frais pour le bloc des frais en attente.
 
 Deux précisions que le détail affiche, et qu'il vaut la peine de lire :

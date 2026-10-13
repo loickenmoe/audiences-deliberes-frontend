@@ -12,6 +12,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { messageErreur } from "@/lib/api/errors";
 import { reportingService } from "@/services/reportingService";
 import type { DetailIndicateur, IndicateurTableauDeBord } from "@/types/domaine";
+import type { CategorieDossier } from "@/types/enums";
 
 /**
  * L'onglet de la fiche dossier où chaque indicateur se regarde.
@@ -65,19 +66,24 @@ function lienDeLaLigne(
 export function DetailIndicateurModale({
   indicateur,
   libelle,
+  categorie,
   onFermeture,
 }: {
   /** `null` ferme la modale. Le composant reste monté : son état de page se réinitialise à l'ouverture. */
   indicateur: IndicateurTableauDeBord | null;
   libelle: string;
+  /** Le périmètre du bloc d'où l'on vient (Q-138). Absent = les deux catégories. */
+  categorie?: CategorieDossier;
   onFermeture: () => void;
 }) {
   const t = useTranslations("detailIndicateur");
   const [page, setPage] = useState(0);
 
   const detail = useQuery({
-    queryKey: ["detail-indicateur", indicateur, page],
-    queryFn: () => reportingService.detailTableauDeBord(indicateur!, page),
+    // Le périmètre fait partie de la clé : sans lui, rouvrir un bloc après avoir changé de
+    // catégorie montrerait la liste de la précédente.
+    queryKey: ["detail-indicateur", indicateur, categorie ?? "TOUTES", page],
+    queryFn: () => reportingService.detailTableauDeBord(indicateur!, page, categorie),
     enabled: indicateur !== null,
   });
 
@@ -86,14 +92,14 @@ export function DetailIndicateurModale({
   const avecMontant = lignes.some((ligne) => ligne.montant !== null);
   const avecDate = lignes.some((ligne) => ligne.date !== null);
 
-  const restriction =
-    indicateur === "LITIGES_GAGNES" ||
-    indicateur === "LITIGES_PERDUS" ||
-    indicateur === "DECISIONS_MIXTES"
-      ? t("restrictionRecouvrement")
-      : indicateur === "PROROGATIONS_ALERTE"
-        ? t("uneLigneParAlerte")
-        : undefined;
+  /*
+   * **La phrase sur le recouvrement a disparu avec Q-138**, et c'est le signe que le problème est
+   * réglé à la source : les trois indicateurs de litiges ne sont plus figés sur une catégorie, ils
+   * suivent le périmètre choisi en tête d'écran. Ce qu'une note expliquait, le sélecteur le dit.
+   *
+   * Celle sur les alertes reste : elle ne parle pas de périmètre mais de ce qu'une ligne représente.
+   */
+  const restriction = indicateur === "PROROGATIONS_ALERTE" ? t("uneLigneParAlerte") : undefined;
 
   return (
     <Dialog

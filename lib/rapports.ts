@@ -43,7 +43,14 @@ export const EXTENSION_RAPPORT = { PDF: "pdf", EXCEL: "xlsx", CSV: "csv" } as co
 
 /** Nom daté : « rapport.pdf » ne dit rien quand on en archive plusieurs. */
 export function nomFichierRapport(periode: PeriodeRapport, format: keyof typeof EXTENSION_RAPPORT): string {
-  return `rapport-${periode.type.toLowerCase()}-${periode.dateDebut}_${periode.dateFin}.${EXTENSION_RAPPORT[format]}`;
+  /*
+   * Le périmètre figure dans le nom depuis Q-138, et seulement quand il en est un : un rapport de
+   * recouvrement et un rapport toutes catégories portent des chiffres différents sur la même
+   * période. Deux fichiers nommés pareil se confondraient dans un dossier, et c'est celui qu'on
+   * garde qui déciderait de ce qu'on croit.
+   */
+  const perimetre = periode.categorie === undefined ? "" : `-${periode.categorie.toLowerCase()}`;
+  return `rapport-${periode.type.toLowerCase()}${perimetre}-${periode.dateDebut}_${periode.dateFin}.${EXTENSION_RAPPORT[format]}`;
 }
 
 /**

@@ -349,6 +349,76 @@ describe("rapport nominatif", () => {
  * bon indicateur, et qu'il rende le **total du serveur** - jamais une somme des lignes montrées, qui
  * contredirait le bloc d'où l'on vient dès la deuxième page.
  */
+/**
+ * Le périmètre de catégories (Q-138). Ce que le service doit garantir : qu'« absent » signifie
+ * vraiment les deux catégories - c'est-à-dire qu'il n'envoie **rien**, et laisse le serveur décider -
+ * et que le détail reçoive le même périmètre que le bloc d'où l'on vient.
+ */
+describe("périmètre de catégories", () => {
+  it("n'envoie aucune catégorie pour « toutes catégories »", async () => {
+    await reportingService.tableauDeBord();
+
+    expect(derniere?.url.pathname).toBe("/api/v1/tableau-de-bord");
+    expect(derniere!.url.searchParams.has("categorie")).toBe(false);
+  });
+
+  it("transmet la catégorie choisie au tableau de bord", async () => {
+    await reportingService.tableauDeBord("EXPLOITATION_LITIGES");
+
+    expect(derniere!.url.searchParams.get("categorie")).toBe("EXPLOITATION_LITIGES");
+  });
+
+  it("transmet le même périmètre au détail d'un bloc", async () => {
+    await reportingService.detailTableauDeBord("LITIGES_GAGNES", 0, "RECOUVREMENT");
+
+    const params = derniere!.url.searchParams;
+    expect(params.get("indicateur")).toBe("LITIGES_GAGNES");
+    expect(params.get("categorie")).toBe("RECOUVREMENT");
+  });
+
+  it("transmet le périmètre au rapport périodique et à ses exports", async () => {
+    const periode = {
+      type: "MENSUEL",
+      dateDebut: "2026-08-14",
+      dateFin: "2026-09-14",
+      categorie: "RECOUVREMENT",
+    } as const;
+
+    await reportingService.genererRapport(periode);
+    expect(derniere!.url.searchParams.get("categorie")).toBe("RECOUVREMENT");
+
+    await reportingService.exporterRapport(periode, "CSV");
+    expect(derniere!.url.searchParams.get("categorie")).toBe("RECOUVREMENT");
+  });
+});
+
+/**
+ * Le nom du fichier porte le périmètre, et seulement quand il en est un : un rapport de
+ * recouvrement et un rapport toutes catégories portent des chiffres différents sur la même période,
+ * et deux fichiers nommés pareil se confondraient dans un dossier.
+ */
+describe("nom du rapport exporté selon le périmètre", () => {
+  it("ne nomme pas le périmètre quand il n'y en a pas", () => {
+    expect(
+      nomFichierRapport({ type: "MENSUEL", dateDebut: "2026-08-14", dateFin: "2026-09-14" }, "PDF"),
+    ).toBe("rapport-mensuel-2026-08-14_2026-09-14.pdf");
+  });
+
+  it("nomme le périmètre quand une catégorie est choisie", () => {
+    expect(
+      nomFichierRapport(
+        {
+          type: "MENSUEL",
+          dateDebut: "2026-08-14",
+          dateFin: "2026-09-14",
+          categorie: "EXPLOITATION_LITIGES",
+        },
+        "EXCEL",
+      ),
+    ).toBe("rapport-mensuel-exploitation_litiges-2026-08-14_2026-09-14.xlsx");
+  });
+});
+
 describe("détail d'un bloc du tableau de bord", () => {
   it("envoie l'indicateur demandé et la page", async () => {
     await reportingService.detailTableauDeBord("DOSSIERS_ACTIFS", 2);

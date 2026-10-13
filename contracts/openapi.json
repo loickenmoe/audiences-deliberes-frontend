@@ -2019,13 +2019,13 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "RECENT",
               "enum": [
                 "RECENT",
                 "ANCIEN",
                 "REFERENCE",
                 "RISQUE"
-              ],
-              "default": "RECENT"
+              ]
             }
           },
           {
@@ -3395,6 +3395,20 @@
           "reporting-controller"
         ],
         "operationId": "tableauDeBord",
+        "parameters": [
+          {
+            "name": "categorie",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECOUVREMENT",
+                "EXPLOITATION_LITIGES"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -3432,6 +3446,18 @@
                 "LITIGES_PERDUS",
                 "DECISIONS_MIXTES",
                 "PROVISIONS_REPRISES"
+              ]
+            }
+          },
+          {
+            "name": "categorie",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RECOUVREMENT",
+                "EXPLOITATION_LITIGES"
               ]
             }
           },
@@ -3621,18 +3647,30 @@
             }
           },
           {
-            "name": "format",
+            "name": "categorie",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
               "enum": [
+                "RECOUVREMENT",
+                "EXPLOITATION_LITIGES"
+              ]
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "JSON",
+              "enum": [
                 "JSON",
                 "PDF",
                 "EXCEL",
                 "CSV"
-              ],
-              "default": "JSON"
+              ]
             }
           }
         ],
@@ -4150,12 +4188,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "TOUT",
               "enum": [
                 "HORS_DOSSIER",
                 "UN_DOSSIER",
                 "TOUT"
-              ],
-              "default": "TOUT"
+              ]
             }
           },
           {
@@ -4411,12 +4449,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "TOUT",
               "enum": [
                 "HORS_DOSSIER",
                 "UN_DOSSIER",
                 "TOUT"
-              ],
-              "default": "TOUT"
+              ]
             }
           },
           {
@@ -4524,11 +4562,11 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "PDF",
               "enum": [
                 "PDF",
                 "EXCEL"
-              ],
-              "default": "PDF"
+              ]
             }
           }
         ],
@@ -5313,12 +5351,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "JSON",
               "enum": [
                 "JSON",
                 "PDF",
                 "EXCEL"
-              ],
-              "default": "JSON"
+              ]
             }
           }
         ],

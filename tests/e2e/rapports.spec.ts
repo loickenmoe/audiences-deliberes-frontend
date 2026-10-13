@@ -805,20 +805,28 @@ test("une ligne du détail mène à la fiche du dossier, sur l'onglet qui corres
 });
 
 /**
- * Les trois indicateurs de litiges ne comptent que les dossiers de **recouvrement** - l'indicateur
- * descend du taux de succès du recouvrement, qui ne portait que sur eux. Le libellé du bloc ne le
- * dit pas ; le détail, lui, le dit, et c'est la première occasion qu'a la Direction de s'en
- * apercevoir. Signalé pour arbitrage, et non corrigé en silence.
+ * Le détail dit ce que le libellé du bloc ne dit pas — mais **plus la restriction au recouvrement**.
+ *
+ * **Ce test affirmait l'inverse jusqu'à Q-138**, et c'était juste alors : les trois indicateurs de
+ * litiges étaient figés sur le recouvrement, le libellé du bloc ne le disait pas, et le détail
+ * portait la phrase qui l'expliquait. Le métier a demandé un vrai suivi des deux catégories : le
+ * périmètre est désormais choisi en tête d'écran, et une note n'a plus à rattraper un libellé.
+ *
+ * Reste celle sur les alertes : elle ne parle pas de périmètre mais de ce qu'une **ligne**
+ * représente - une alerte envoyée, et non un dossier.
  */
-test("le détail dit les restrictions que le libellé du bloc ne dit pas", async ({ page }) => {
+test("le détail dit ce qu'une ligne représente, sans plus parler de périmètre", async ({ page }) => {
   await seConnecter(page, "dja.test");
   await page.goto("/tableau-de-bord");
 
   await page.getByRole("button", { name: "Voir le détail de « Litiges gagnés »" }).click();
+  const modale = page.getByRole("dialog");
   await expect(
-    page.getByRole("dialog").getByText("Ce décompte ne porte que sur les dossiers de recouvrement."),
+    modale.getByRole("table").or(modale.getByText("Rien à afficher.")),
   ).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
+  // La phrase a disparu avec le sélecteur : c'est le signe que le problème est réglé à la source.
+  await expect(modale.getByText("Ce décompte ne porte que sur les dossiers de recouvrement.")).toHaveCount(0);
+  await modale.getByRole("button", { name: "Fermer" }).click();
 
   await page.getByRole("button", { name: "Voir le détail de « Alertes de prorogation »" }).click();
   await expect(page.getByRole("dialog").getByText(/Une ligne par alerte envoyée/)).toBeVisible({
@@ -850,4 +858,152 @@ test("le détail du tableau de bord est traduit", async ({ page }) => {
   await expect(
     modale.getByRole("table").or(modale.getByText("Nothing to show.")),
   ).toBeVisible({ timeout: 30_000 });
+});
+
+/**
+ * Le périmètre de catégories (Q-138) — REC-E2E-040.
+ *
+ * **L'invariant est la seule chose qui rende cet écran crédible** : Recouvrement + Litiges
+ * d'exploitation = Toutes catégories, pour les neuf indicateurs. Un test d'intégration le tient
+ * contre la base ; ce parcours le vérifie **à travers l'écran**, qui est l'endroit où un sous-total
+ * faux se verrait.
+ */
+const BLOCS_MESURES = [
+  "Dossiers actifs",
+  "Affaires vidées",
+  "Audiences planifiées",
+  "Frais en attente",
+  "Alertes de prorogation",
+  "Litiges gagnés",
+  "Litiges perdus",
+  "Décisions mixtes",
+] as const;
+
+/** Les valeurs des blocs du tableau de bord, lues dans l'ordre d'affichage. */
+async function valeursDesBlocs(page: Page): Promise<Record<string, number>> {
+  const valeurs: Record<string, number> = {};
+  for (const libelle of BLOCS_MESURES) {
+    const bloc = page.locator("div").filter({
+      has: page.getByRole("term").filter({ hasText: new RegExp(`^${libelle}$`) }),
+    });
+    const texte = await bloc.first().getByRole("definition").first().innerText();
+    valeurs[libelle] = Number.parseInt(texte.replace(/[^\d]/g, ""), 10) || 0;
+  }
+  return valeurs;
+}
+
+async function choisirPerimetre(page: Page, option: string) {
+  await page.locator("#tdb-perimetre").selectOption({ label: option });
+  // Le périmètre vit dans l'URL : attendre qu'il y soit, sinon on lit les chiffres d'avant.
+  await expect(page.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
+}
+
+test("les deux catégories s'additionnent pour faire le total, à l'écran", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/tableau-de-bord");
+
+  // Le défaut est « Toutes catégories » : c'est ce que l'écran montrait avant Q-138.
+  await expect(page.locator("#tdb-perimetre")).toHaveValue("");
+
+  const toutes = await valeursDesBlocs(page);
+
+  await choisirPerimetre(page, "Recouvrement");
+  await expect(page).toHaveURL(/categorie=RECOUVREMENT/);
+  const recouvrement = await valeursDesBlocs(page);
+
+  await choisirPerimetre(page, "Litiges d’exploitation");
+  await expect(page).toHaveURL(/categorie=EXPLOITATION_LITIGES/);
+  const exploitation = await valeursDesBlocs(page);
+
+  /*
+   * L'invariant, bloc par bloc. S'il tombe faux, c'est qu'une requête a oublié sa jointure sur le
+   * dossier - et un tableau de bord dont les sous-totaux ne s'additionnent pas, personne ne le
+   * regarde deux fois.
+   */
+  for (const libelle of BLOCS_MESURES) {
+    expect(
+      recouvrement[libelle]! + exploitation[libelle]!,
+      `« ${libelle} » : ${recouvrement[libelle]} + ${exploitation[libelle]} devrait faire ${toutes[libelle]}`,
+    ).toBe(toutes[libelle]);
+  }
+
+  await page.context().close();
+});
+
+/**
+ * Les trois compteurs de litiges **ne sont plus figés sur le recouvrement** (Q-138). La garantie
+ * faite au porteur du projet : son chiffre d'hier reste lisible, sous le périmètre « Recouvrement ».
+ */
+test("le détail d'un bloc suit le périmètre choisi", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/tableau-de-bord?categorie=RECOUVREMENT");
+  await expect(page.locator("#tdb-perimetre")).toHaveValue("RECOUVREMENT");
+
+  await page.getByRole("button", { name: "Voir le détail de « Dossiers actifs »" }).click();
+  const modale = page.getByRole("dialog");
+  await expect(modale).toBeVisible();
+  await expect(
+    modale.getByRole("table").or(modale.getByText("Rien à afficher.")),
+  ).toBeVisible({ timeout: 30_000 });
+
+  /*
+   * La note « ce décompte ne porte que sur les dossiers de recouvrement » a disparu avec Q-138, et
+   * c'est le signe que le problème est réglé à la source : le sélecteur dit le périmètre, une note
+   * n'a plus à l'expliquer.
+   */
+  await expect(modale.getByText("Ce décompte ne porte que sur les dossiers de recouvrement.")).toHaveCount(0);
+
+  await page.context().close();
+});
+
+test("le périmètre se partage par l'URL et survit au rechargement", async ({ page }) => {
+  await seConnecter(page, "dja.test");
+  await page.goto("/tableau-de-bord?categorie=EXPLOITATION_LITIGES");
+
+  await expect(page.locator("#tdb-perimetre")).toHaveValue("EXPLOITATION_LITIGES");
+  await page.reload();
+  // Un rechargement ne doit pas ramener sur « toutes catégories » sans qu'on l'ait demandé.
+  await expect(page.locator("#tdb-perimetre")).toHaveValue("EXPLOITATION_LITIGES");
+
+  await page.context().close();
+});
+
+/**
+ * Le rapport périodique suit le même périmètre, sinon l'écran et le PDF ne voudraient plus dire la
+ * même chose par « Litiges gagnés ». Et le nom du fichier le porte : un document qui voyage doit
+ * dire ce qu'il couvre.
+ */
+test("le rapport périodique porte le périmètre, jusque dans le nom du fichier", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/rapports");
+
+  await expect(page.locator("#rapport-perimetre")).toHaveValue("");
+  await page.locator("#rapport-perimetre").selectOption({ label: "Recouvrement" });
+  await page.locator("#rapport-debut").fill("2020-01-01");
+  await page.locator("#rapport-fin").fill("2030-12-31");
+  await page.getByRole("button", { name: "Afficher le rapport" }).click();
+  await expect(page.getByText("Litiges gagnés")).toBeVisible({ timeout: 30_000 });
+
+  await page.locator("#format-export").selectOption("EXCEL");
+  const telechargement = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Exporter" }).click();
+  const fichier = await telechargement;
+  expect(fichier.suggestedFilename()).toBe(
+    "rapport-mensuel-recouvrement-2020-01-01_2030-12-31.xlsx",
+  );
+
+  await page.context().close();
+});
+
+test("le sélecteur de périmètre est traduit", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/tableau-de-bord");
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByLabel("Scope", { exact: true })).toBeVisible();
+  await page.locator("#tdb-perimetre").selectOption({ label: "Debt recovery" });
+  await expect(page).toHaveURL(/categorie=RECOUVREMENT/);
 });

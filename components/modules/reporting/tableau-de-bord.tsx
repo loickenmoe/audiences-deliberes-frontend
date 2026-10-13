@@ -19,10 +19,13 @@ import { EtatChargement, EtatErreur } from "@/components/global";
 import { MontantFcfa } from "@/components/metier";
 import { DetailIndicateurModale } from "@/components/modules/reporting/detail-indicateur";
 import { Button } from "@/components/ui/button";
+import { Champ, Select } from "@/components/ui/champ";
 import { useTableauDeBord } from "@/hooks/useReporting";
+import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
 import type { IndicateurTableauDeBord, TableauDeBord } from "@/types/domaine";
+import { CategorieDossier } from "@/types/enums";
 
 /**
  * Écran 39 — tableau de bord exécutif (FR-REP-02, US 8.5).
@@ -45,7 +48,18 @@ import type { IndicateurTableauDeBord, TableauDeBord } from "@/types/domaine";
  */
 export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("tableauDeBord");
-  const requete = useTableauDeBord();
+  const tCategorie = useTranslations("domaine.CategorieDossier");
+  /*
+   * Le périmètre vit dans l'URL (Q-138) : un lien vers « le tableau de bord du recouvrement » se
+   * partage, et un rechargement ne ramène pas l'utilisateur sur « toutes catégories » sans qu'il
+   * l'ait demandé. **Toutes catégories par défaut** - c'est ce que l'écran montrait avant, et
+   * personne n'est surpris le premier matin.
+   */
+  const { filtres, definirFiltre } = useFiltresUrl({ categorie: "" });
+  const perimetre = (CategorieDossier as readonly string[]).includes(filtres.categorie)
+    ? (filtres.categorie as CategorieDossier)
+    : undefined;
+  const requete = useTableauDeBord(perimetre);
 
   /*
    * Le bloc dont on regarde le détail (Q-137). Son libellé voyage avec lui : la modale le répète en
@@ -83,15 +97,36 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
           <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
           <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
         </div>
-        {/* Le DJ et la DJA portent `ROLE_JURISTE` depuis Q-81 : le rapport leur est accessible. */}
-        {peut(roles, "genererRapport") ? (
-          <Link
-            href="/rapports"
-            className="text-[length:var(--taille-sm)] underline underline-offset-4 hover:text-marque-texte"
-          >
-            {t("versRapports")}
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap items-end gap-4">
+          {/*
+            Le périmètre commande les neuf indicateurs **et** leur détail. Il est posé dans
+            l'en-tête, avant les chiffres : lu après, il laisserait le temps de se tromper sur ce
+            qu'on vient de voir.
+          */}
+          <Champ id="tdb-perimetre" label={t("perimetre")} aide={t("perimetreAide")} className="w-64">
+            <Select
+              id="tdb-perimetre"
+              value={filtres.categorie}
+              onChange={(evenement) => definirFiltre("categorie", evenement.target.value)}
+            >
+              <option value="">{t("perimetreToutes")}</option>
+              {CategorieDossier.map((categorie) => (
+                <option key={categorie} value={categorie}>
+                  {tCategorie(categorie)}
+                </option>
+              ))}
+            </Select>
+          </Champ>
+          {/* Le DJ et la DJA portent `ROLE_JURISTE` depuis Q-81 : le rapport leur est accessible. */}
+          {peut(roles, "genererRapport") ? (
+            <Link
+              href="/rapports"
+              className="pb-2 text-[length:var(--taille-sm)] underline underline-offset-4 hover:text-marque-texte"
+            >
+              {t("versRapports")}
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -174,6 +209,7 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
       <DetailIndicateurModale
         indicateur={ouvert?.indicateur ?? null}
         libelle={ouvert?.libelle ?? ""}
+        categorie={perimetre}
         onFermeture={() => setOuvert(null)}
       />
     </div>

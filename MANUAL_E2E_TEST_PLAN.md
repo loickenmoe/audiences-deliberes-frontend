@@ -141,6 +141,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-037 | Mon activite : la telecharger, et cliquer jusqu'au dossier | JUR → ASS → SH → DJ | Haute | REC-E2E-036 | ☐ |
 | REC-E2E-038 | Activite des avocats : la sienne, et celle que la direction lit | AVO → DJ → JUR | Haute | REC-E2E-037 | ☐ |
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
+| REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1032,6 +1033,84 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-040 - Périmètre de catégories : recouvrement, exploitation, et leur somme
+
+### Objectif
+Valider la décision du 2026-10-13 (Q-138) : le tableau de bord se recadre sur **Toutes catégories**
+(défaut), **Recouvrement** ou **Litiges d'exploitation**, et les neuf indicateurs suivent — leur
+détail aussi, et le rapport d'activité également.
+
+**Et vérifier l'invariant, qui est la seule chose qui rende cet écran crédible** :
+Recouvrement + Litiges d'exploitation = Toutes catégories, pour chacun des neuf blocs. C'est à
+l'écran que vous le verrez le mieux : un sous-total qui ne tombe pas juste est un défaut.
+
+**Ce que ce jalon a fermé.** Avant lui, six indicateurs portaient sur les deux catégories et trois
+sur le recouvrement seul, sans que rien le distingue. Un dossier de litiges d'exploitation jugé ne
+faisait donc bouger **aucun** compteur de résultat, et son délibéré n'était compté nulle part.
+
+**Ce qu'il n'a pas changé.** Vos chiffres d'avant restent reproductibles : « Litiges gagnés » sous le
+périmètre **Recouvrement** donne exactement le nombre que vous lisiez.
+
+### Acteurs
+DJ (`dj.test`) et DJA (`dja.test`).
+
+### Préconditions
+Aucune préparation. Pour que l'étape 4 soit parlante, il faut au moins un dossier de chaque
+catégorie - c'est le cas dès que les fiches précédentes ont été jouées. Si la colonne exploitation
+est à zéro, l'invariant se vérifie quand même, mais ne prouve rien d'intéressant.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Tableau de bord** | Entrée **Tableau de bord** du menu de gauche. Le sélecteur **Périmètre** est en haut à droite de l'en-tête, à côté du lien vers les rapports |
+| **Rapports** | Entrée **Rapports** du menu de gauche. Le sélecteur **Périmètre** est dans le formulaire, **avant** les dates |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | DJ | Menu de gauche, **Tableau de bord** | Ouvrir, et regarder le sélecteur | Il affiche « **Toutes catégories** ». C'est ce que l'écran montrait avant ce jalon : personne n'est surpris | | ☐ |
+| 2 | DJ | L'en-tête | Lire la phrase sous le sélecteur | Elle dit que les neuf indicateurs suivent ce choix, et que les deux catégories s'additionnent | | ☐ |
+| 3 | DJ | Les neuf blocs | **Noter les neuf chiffres** sur un papier | | | ☐ |
+| 4 | DJ | Sélecteur → **Recouvrement**, puis → **Litiges d'exploitation** | Noter les neuf chiffres à chaque fois | **Pour chacun des neuf blocs : recouvrement + exploitation = le chiffre de l'étape 3.** C'est l'invariant, et c'est lui qu'il faut vérifier au papier | | ☐ |
+| 5 | DJ | Sélecteur → **Recouvrement**, bloc « **Litiges gagnés** » | Comparer au chiffre que vous lisiez avant ce jalon | **Le même.** Les trois compteurs de litiges ne sont plus figés sur le recouvrement, mais ce périmètre reproduit exactement l'ancien comptage | | ☐ |
+| 6 | DJ | Sélecteur → **Toutes catégories**, même bloc | Comparer | **Plus grand, ou égal.** Il compte désormais tout votre contentieux - ce que son libellé promettait sans le faire | | ☐ |
+| 7 | DJ | Sélecteur → **Litiges d'exploitation**, bloc « Dossiers actifs » | « Voir le détail » | La liste **ne contient que des dossiers d'exploitation**. Le détail suit le périmètre, comme le chiffre | | ☐ |
+| 8 | DJ | Même fenêtre, bloc « Litiges gagnés » en périmètre Recouvrement | Ouvrir le détail | **Plus de phrase** « ce décompte ne porte que sur les dossiers de recouvrement » : le sélecteur le dit, une note n'a plus à le rattraper | | ☐ |
+| 9 | DJ | La barre d'adresse | Regarder l'URL après avoir choisi un périmètre | Elle porte `?categorie=RECOUVREMENT` ou `?categorie=EXPLOITATION_LITIGES`. **Copiez-la et envoyez-la à la DJA** : elle ouvrira le même périmètre | | ☐ |
+| 10 | DJ | Même page | **Recharger** (F5) | Le périmètre **ne revient pas** à « Toutes catégories » : il survit au rechargement | | ☐ |
+| 11 | DJA | Coller l'URL reçue de l'étape 9 | Ouvrir | Le même périmètre, les mêmes chiffres | | ☐ |
+| 12 | DJ | Menu **Rapports**, sélecteur **Périmètre** | Choisir **Recouvrement**, puis une période large, puis « Afficher le rapport » | Les sept indicateurs du rapport portent sur le recouvrement. Les trois nombres de litiges valent ceux du bloc correspondant | | ☐ |
+| 13 | DJ | Même écran | Changer l'**étiquette de période** (Mensuel → Trimestriel) | Le périmètre **n'est pas effacé** : il répond à une autre question que la période | | ☐ |
+| 14 | DJ | Même écran, format **Excel** | Exporter | Le fichier s'appelle `rapport-mensuel-**recouvrement**-…xlsx`. Ouvrez-le : ses chiffres sont ceux de l'écran | | ☐ |
+| 15 | DJ | Sélecteur du rapport → **Toutes catégories**, exporter à nouveau | Comparer les deux fichiers | Le nom **ne porte plus de périmètre**, et les chiffres de litiges sont plus grands. Deux fichiers distincts pour deux périmètres : ils ne se confondent pas dans un dossier | | ☐ |
+| 16 | DJ | Tableau de bord, bouton **en** | Basculer en anglais | « Scope », « All categories », « Debt recovery », « Operational disputes » | | ☐ |
+
+### Résultat final attendu
+Le tableau de bord et le rapport se lisent sous trois périmètres. Pour chacun des neuf blocs, les
+deux catégories s'additionnent pour faire le total. Les chiffres lus avant ce jalon se retrouvent
+sous le périmètre Recouvrement.
+
+### Points de contrôle
+- **L'invariant des sommes est le contrôle le plus important de cette fiche.** Il ne repose pas sur
+  mon code mais sur la base : la catégorie d'un dossier est obligatoire et vaut l'une de deux valeurs
+  exactement, si bien que les deux périmètres partitionnent l'ensemble. Deux tests le vérifient - un
+  contre PostgreSQL, requête par requête, et un à travers l'écran.
+- **Rien n'a été changé en silence.** Les trois compteurs de litiges ont perdu leur filtre figé, mais
+  le périmètre Recouvrement reproduit leur ancien comptage. Le périmètre a reçu un nom, c'est tout.
+- **Le rapport porte le même sélecteur, et il le fallait** : sans lui, ses trois nombres auraient
+  changé sans que rien l'explique, le serveur ayant cessé de les figer.
+- **Le nom du fichier porte le périmètre** quand il en a un. Un rapport de recouvrement et un rapport
+  toutes catégories portent des chiffres différents sur la même période.
+- **Le taux de succès suit désormais le périmètre**, et son nom est devenu historique : sous « toutes
+  catégories » il ne mesure plus le seul recouvrement. Aucun écran ne l'affiche depuis le 2026-10-06.
+- ⚠ **Les seuils et les alertes restent globaux.** Les décliner par catégorie inventerait une règle
+  métier que personne n'a posée. Si vous voulez un seuil de charge propre au recouvrement, c'est une
+  décision à prendre, pas une suite logique de ce jalon.
 
 ---
 

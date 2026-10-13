@@ -1483,7 +1483,10 @@
     "nbLitigesMixtesAide": "Neither won nor lost. Counting them apart avoids assigning them to either side by default.",
     "provisionsReprises": "Provisions released",
     "provisionsReprisesAide": "Total released on recorded auction sales.",
-    "versRapports": "Generate a report"
+    "versRapports": "Generate a report",
+    "perimetre": "Scope",
+    "perimetreToutes": "All categories",
+    "perimetreAide": "All nine indicators follow this choice, and so do their details. Debt recovery and operational disputes add up to the total."
   },
   "rapports": {
     "titre": "Activity report",
@@ -1508,7 +1511,10 @@
     "videTexte": "Widen the dates or pick another period: no case file, hearing, fee claim or deliberation falls within it.",
     "exportVide": "Nothing to export: the period has no activity.",
     "exportReussi": "{format} report downloaded.",
-    "avantGeneration": "Pick a period, then show the report."
+    "avantGeneration": "Pick a period, then show the report.",
+    "perimetre": "Scope",
+    "perimetreToutes": "All categories",
+    "perimetreAide": "All seven report indicators follow this choice, on screen and in the exports."
   },
   "portail": {
     "espaceTitre": "My workspace",

@@ -9,7 +9,7 @@ import type {
   RapportNominatif,
   TableauDeBord,
 } from "@/types/domaine";
-import type { FormatRapport, TypeRapport } from "@/types/enums";
+import type { CategorieDossier, FormatRapport, TypeRapport } from "@/types/enums";
 
 /**
  * Qui l'on regarde, pour la fiche d'activité (Q-133, étendu aux avocats en Q-135).
@@ -27,6 +27,8 @@ export interface PeriodeRapport {
   type: TypeRapport;
   dateDebut: string;
   dateFin: string;
+  /** Périmètre de catégories (Q-138). Absent = les deux. */
+  categorie?: CategorieDossier;
 }
 
 /**
@@ -37,9 +39,20 @@ export interface PeriodeRapport {
  * ce qui rend le parcours de pilotage P9 jouable et ce qui ferme QF-04.
  */
 export const reportingService = {
-  /** #50 — indicateurs temps réel, tous dossiers confondus. */
-  tableauDeBord: async (): Promise<TableauDeBord> => {
-    const { data } = await apiClient.get<TableauDeBord>("/tableau-de-bord");
+  /**
+   * #50 — indicateurs temps réel, recadrables par catégorie depuis Q-138.
+   *
+   * **`categorie` absent signifie les deux catégories**, et c'est le défaut de l'écran. Six des neuf
+   * indicateurs portaient déjà sur tout, trois sur le recouvrement seul : un dossier d'exploitation
+   * jugé ne faisait bouger aucun compteur de résultat. Le périmètre unique ferme cet écart.
+   *
+   * L'invariant que le serveur garantit, et sur lequel l'écran peut s'appuyer :
+   * **Recouvrement + Litiges d'exploitation = Toutes catégories**, pour les neuf.
+   */
+  tableauDeBord: async (categorie?: CategorieDossier): Promise<TableauDeBord> => {
+    const { data } = await apiClient.get<TableauDeBord>("/tableau-de-bord", {
+      params: { categorie },
+    });
     return data;
   },
 
@@ -81,9 +94,12 @@ export const reportingService = {
   detailTableauDeBord: async (
     indicateur: IndicateurTableauDeBord,
     page: number,
+    categorie?: CategorieDossier,
   ): Promise<PageReponse<DetailIndicateur>> => {
     const { data } = await apiClient.get<PageReponse<DetailIndicateur>>("/tableau-de-bord/details", {
-      params: { indicateur, page, size: 20 },
+      // Le même périmètre que le bloc d'où l'on vient : un détail scopé autrement que le nombre
+      // qu'il détaille ferait douter des deux.
+      params: { indicateur, page, size: 20, categorie },
     });
     return data;
   },

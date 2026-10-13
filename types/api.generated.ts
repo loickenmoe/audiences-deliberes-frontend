@@ -4932,7 +4932,9 @@ export interface operations {
     };
     tableauDeBord: {
         parameters: {
-            query?: never;
+            query?: {
+                categorie?: "RECOUVREMENT" | "EXPLOITATION_LITIGES";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4954,6 +4956,7 @@ export interface operations {
         parameters: {
             query: {
                 indicateur: "DOSSIERS_ACTIFS" | "AFFAIRES_VIDEES" | "AUDIENCES_PLANIFIEES" | "FRAIS_EN_ATTENTE" | "PROROGATIONS_ALERTE" | "LITIGES_GAGNES" | "LITIGES_PERDUS" | "DECISIONS_MIXTES" | "PROVISIONS_REPRISES";
+                categorie?: "RECOUVREMENT" | "EXPLOITATION_LITIGES";
                 page?: number;
                 size?: number;
             };
@@ -5046,6 +5049,7 @@ export interface operations {
                 type: "JOURNALIER" | "HEBDOMADAIRE" | "MENSUEL" | "TRIMESTRIEL" | "ANNUEL";
                 dateDebut: string;
                 dateFin: string;
+                categorie?: "RECOUVREMENT" | "EXPLOITATION_LITIGES";
                 format?: "JSON" | "PDF" | "EXCEL" | "CSV";
             };
             header?: never;
