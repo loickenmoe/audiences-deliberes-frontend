@@ -209,7 +209,8 @@ transition reste manuelle via l'endpoint générique d'étape.
 | 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ et DJA** (Q-95) | `GET /tableau-de-bord` | F15 | ✅ |
 | 40 | Générer un rapport d'activité | `/rapports` | **JUR**, et la direction par son composite (Q-81) | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ✅ |
 | 40 bis | Activité par personne *(second bloc de l'écran 40)* | `/rapports` | **DJ et DJA seuls** (Q-132) | `GET /rapports/nominatif?dateDebut&dateFin` | N6 | ✅ |
-| 40 ter | Fiche d'activité d'une personne *(ouverte depuis un nom du tableau 40 bis)* | `/rapports` | **DJ et DJA** (Q-133) | `GET /rapports/activite`, `…/export`, `…/details` | Q-133 | ✅ |
+| 40 ter | Fiche d'activité d'une personne *(ouverte depuis un nom du tableau 40 bis ou 40 quater)* | `/rapports` | **DJ et DJA** (Q-133) | `GET /rapports/activite`, `…/export`, `…/details` | Q-133 | ✅ |
+| 40 quater | Activité des avocats *(troisième bloc de l'écran 40)* | `/rapports` | **DJ et DJA** (Q-136) | `GET /rapports/nominatif/avocats?dateDebut&dateFin` | Q-136 | ✅ |
 
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
@@ -219,11 +220,13 @@ transition reste manuelle via l'endpoint générique d'étape.
 **40** — `type ∈ {JOURNALIER…ANNUEL}`, `format ∈ {JSON, PDF, EXCEL, CSV}`, **204 si aucune donnée**
 sur la période : traiter comme un état vide, pas comme une erreur.
 
+**40 quater** — l'**activité des avocats** (Q-136). Signalé en recette : le tableau 40 bis ne montrait que les profils internes. C'était exact - il compte six natures de production interne qu'un avocat n'accomplit jamais, puisqu'il **dépose** et que c'est le juriste qui enregistre - et l'y ajouter n'aurait affiché que des lignes de zéros. D'où un **troisième bloc**, avec quatre colonnes propres, et le nom de l'avocat cliquable vers sa fiche complète (40 ter). Les deux boutons « Afficher » de l'écran portent des **noms accessibles distincts** : un lecteur d'écran annonçait deux fois le même mot sans dire lequel.
+
 **40 ter / 44** — la **fiche d'activité** (Q-133) est le même composant à deux endroits :
 « Mon activité » sur **Mon compte** (écran 44), et « Activité de ‹ personne › » sous le tableau 40 bis
 quand le DJ ou la DJA clique un nom.
 
-**Comment on y arrive.** Entrée **Mon compte** du menu de gauche, ouverte à `consulterMonActivite` - donc aux cinq profils internes, pas à l'avocat. Cette entrée a manqué jusqu'au 2026-10-13 : la seule porte était le nom dans l'en-tête, souligné et sans étiquette, et ce nom est **masqué sous 640 px** (F17) - la page était donc inatteignable sur un écran étroit. S'en passer se défendait tant que l'écran ne portait qu'une signature déposée une fois pour toutes ; il porte désormais un rapport que chacun consulte sur la période qu'il choisit.
+**Comment on y arrive.** Entrée **Mon compte** du menu de gauche, ouverte à `consulterReferentiels` - donc aux cinq profils internes. L'avocat, lui, a **la sienne sur *Mon espace*** (écran 30, Q-135) : *Mon compte* porte aussi « Ma signature », qui n'a pas de sens pour qui ne signe aucune lettre de la banque, et ses lignes de détail ne portent **aucun lien** vers un dossier qu'il ne peut pas ouvrir (QF-01). La direction atteint la fiche d'un avocat **depuis le répertoire** (écran 34), là où elle le juge déjà. Cette entrée a manqué jusqu'au 2026-10-13 : la seule porte était le nom dans l'en-tête, souligné et sans étiquette, et ce nom est **masqué sous 640 px** (F17) - la page était donc inatteignable sur un écran étroit. S'en passer se défendait tant que l'écran ne portait qu'une signature déposée une fois pour toutes ; il porte désormais un rapport que chacun consulte sur la période qu'il choisit.
 
 **Pourquoi « Mon compte » et non l'écran 40.** « Chaque utilisateur doit être capable de télécharger
 ses propres rapports » (métier, 2026-10-13) - or `/rapports` exige `ROLE_JURISTE` : l'Assistante et le

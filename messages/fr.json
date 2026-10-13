@@ -1070,7 +1070,10 @@
     "videRecherche": "Aucun avocat ne correspond à cette recherche.",
     "phRechercheAvocat": "Nom de l’avocat",
     "deliberesGagnes": "{gagnes} gagnés sur {total} délibérés",
-    "aucunDelibere": "Aucun délibéré rendu"
+    "aucunDelibere": "Aucun délibéré rendu",
+    "colonneActivite": "Activité",
+    "voirActivite": "Voir son activité",
+    "fermerActivite": "Fermer l’activité"
   },
   "frais": {
     "titre": "Frais d’avocats",
@@ -1833,7 +1836,8 @@
     "delaiJours": "{jours} j",
     "delaiSansObjet": "Sans objet",
     "personneRetiree": "Compte retiré (#{identifiant})",
-    "fermerFiche": "Fermer la fiche"
+    "fermerFiche": "Fermer la fiche",
+    "genererAccessible": "Afficher l’activité par personne"
   },
   "activite": {
     "titre": "Mon activité",
@@ -1869,6 +1873,30 @@
     "detailDossierSupprime": "Dossier supprimé",
     "detailOuvrir": "Ouvrir le dossier {reference}",
     "detailVide": "Aucune action à afficher.",
-    "fermer": "Fermer"
+    "fermer": "Fermer",
+    "personneSansNom": "cette personne"
+  },
+  "avocatsActivite": {
+    "titre": "Activité des avocats",
+    "description": "Ce que chaque avocat a déposé sur la période. Le tableau précédent ne les montre pas : il compte ce qu’on enregistre en interne, et un avocat dépose.",
+    "dateDebut": "Du",
+    "dateFin": "Au",
+    "periodeInversee": "La date de fin précède celle de début.",
+    "afficher": "Afficher",
+    "enCours": "Calcul en cours…",
+    "avantGeneration": "Choisissez une période, puis affichez.",
+    "vide": "Aucun dépôt sur cette période",
+    "videTexte": "Aucun avocat n’a rien déposé entre ces deux dates.",
+    "legende": "Activité des avocats du {debut} au {fin}",
+    "colonneAvocat": "Avocat",
+    "colonneComptesRendus": "Comptes rendus déposés",
+    "colonneFrais": "Demandes de frais déposées",
+    "colonneAutresDepots": "Autres publications",
+    "colonneExplications": "Explications fournies",
+    "explicationsAide": "Réponses apportées aux demandes d’explication de la Direction.",
+    "avocatSansNom": "Compte #{identifiant}",
+    "horsRepertoire": "Retiré du répertoire",
+    "fermerFiche": "Fermer la fiche",
+    "afficherAccessible": "Afficher l’activité des avocats"
   }
 }

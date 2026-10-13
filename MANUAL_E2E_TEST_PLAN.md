@@ -139,6 +139,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-035 | Comptes rendus manquants : alerte à la direction, demande d'explication, réponse | JUR → DJ → AVO | Haute | REC-E2E-013 | ☐ |
 | REC-E2E-036 | Activité par personne : des indicateurs, pas une note | DJ → DJA → JUR | Haute | Activité des fiches précédentes | ☐ |
 | REC-E2E-037 | Mon activite : la telecharger, et cliquer jusqu'au dossier | JUR → ASS → SH → DJ | Haute | REC-E2E-036 | ☐ |
+| REC-E2E-038 | Activite des avocats : la sienne, et celle que la direction lit | AVO → DJ → JUR | Haute | REC-E2E-037 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -194,8 +195,8 @@ Les six comptes du §3, mot de passe `Password1!`.
 | 8 | JUR | Cliquer la **flèche Retour** du navigateur | On **ne revient pas** dans l'application : l'écran de connexion reste affiché | | ☐ |
 | 9 | DJ | Se connecter avec `dj.test` | L'accueil montre les files du DJ (diligences particulières, dérogations, validations conjointes, suppressions) ; le menu contient « Tableau de bord », « Configuration », « Audit », « Intervenants » | | ☐ |
 | 10 | AST | Se connecter avec `assistante.test` | Files « Frais à contrôler », publications à valider, frais à payer. **Pas** de « Tableau de bord » ni d'« Audit » dans le menu | | ☐ |
-| 11 | SH | Se connecter avec `sh.test` | File « Constitutions à signer » ; menu réduit | | ☐ |
-| 12 | AVO | Se connecter avec `avocat.test` | Menu **externe** : « Mon espace », « Déposer une demande », « Déposer une publication ». Aucun menu interne (Dossiers, Clients, Calendrier…) | | ☐ |
+| 15 | SH | Se connecter avec `sh.test` | File « Constitutions à signer » ; menu réduit | | ☐ |
+| 16 | AVO | Se connecter avec `avocat.test` | Menu **externe** : « Mon espace », « Déposer une demande », « Déposer une publication ». Aucun menu interne (Dossiers, Clients, Calendrier…) | | ☐ |
 
 ### Résultat final attendu
 Chaque profil entre dans l'application, voit un accueil conforme à sa charge de travail, et sa
@@ -295,8 +296,8 @@ facultatives depuis le 2026-09-29 : cette fiche les laisse volontairement vides 
 | 10 | JUR | Onglet « Étapes » | Une étape **Instance** existe, au statut **Ouverture** | | ☐ |
 | 11 | JUR | Dans « Faire passer à », choisir **En cours** → « Appliquer » | L'étape passe à `EN_COURS` ; l'historique enregistre le changement | | ☐ |
 | 12 | JUR | Onglet « Historique » | La création et le changement de statut sont tracés, en français, avec l'auteur et l'heure | | ☐ |
-| 13 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
-| 14 | JUR | Menu « Dossiers », rechercher la référence notée à l'étape 7 | Le dossier apparaît dans la liste avec sa référence et sa catégorie | | ☐ |
+| 17 | JUR | Bouton « Modifier l'affectation », retirer puis remettre un avocat → confirmer | La modification est enregistrée et tracée dans l'historique | | ☐ |
+| 18 | JUR | Menu « Dossiers », rechercher la référence notée à l'étape 7 | Le dossier apparaît dans la liste avec sa référence et sa catégorie | | ☐ |
 | 14 | JUR | Copier l'URL de la fiche avec l'onglet ouvert, la coller dans un nouvel onglet | La même vue se rouvre, **sur le même onglet** de la fiche | | ☐ |
 
 ### Résultat final attendu
@@ -1030,6 +1031,91 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-038 - Activité des avocats : la sienne, et celle que la direction lit
+
+### Objectif
+Valider la demande du 2026-10-13 (Q-135) : le DJ et la DJA lisent l'activité **d'un avocat**, et
+chaque avocat lit et télécharge **la sienne**, sans voir celle d'un confrère.
+
+**Cette fiche corrige aussi une erreur de ma part.** J'avais exclu l'avocat de la fiche d'activité en
+écrivant qu'« aucune des natures comptées n'est la sienne ». C'était faux : il dépose ses demandes de
+frais, ses comptes rendus d'audience, ses autres publications, et répond aux demandes d'explication.
+
+### Acteurs
+Avocat (`avocat.test`) sur sa propre fiche ; DJ (`dj.test`) sur celle d'un avocat ; juriste
+(`juriste.test`) et Assistante (`assistante.test`), qui ne doivent pas y accéder.
+
+### Préconditions
+REC-E2E-037 connue. L'avocat de test doit avoir déposé au moins une demande de frais ou un compte
+rendu - c'est le cas dès que REC-E2E-011 ou REC-E2E-025 ont été jouées. Sinon sa fiche affichera
+l'état vide, ce qui est correct mais ne permet pas de vérifier le détail.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Mon espace** | Avec un compte avocat : entrée **Mon espace** du menu de gauche. Le bloc « **Mon activité** » est **sous** ses dépôts |
+| **Répertoire des avocats** | Entrée **Répertoire des avocats** du menu de gauche. La colonne « **Activité** » est la **dernière** du tableau, et n'apparaît que pour le DJ et la DJA |
+| **Rapports** | Entrée **Rapports** du menu de gauche. Le bloc « **Activité des avocats** » est le **troisième** de la page, sous « Activité par personne » |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | AVO | Menu de gauche, **Mon espace** | Descendre sous ses dépôts | Un bloc « **Mon activité** » | | ☐ |
+| 2 | AVO | Ce bloc, champs **Du** et **Au** | Du **01/01/2020** au **31/12/2030**, puis « Afficher mon activité » | Un tableau : Nature de l'action, Nombre, Détail. On y lit « Dépôt d'une demande de frais », « Dépôt d'un compte rendu d'audience », selon ce qu'il a fait | | ☐ |
+| 3 | AVO | Le tableau | Le parcourir du regard | **Aucun pourcentage, aucune note, aucun total** - comme pour les profils internes | | ☐ |
+| 4 | AVO | **Sous** le tableau | Chercher le délai moyen de saisie | **Absent**, et ce n'est pas un oubli : il *dépose* un compte rendu, c'est le juriste qui l'*enregistre* sur l'audience, et c'est ce second geste que le délai mesure | | ☐ |
+| 5 | AVO | Liste **Format**, puis « Télécharger » | PDF, puis Excel, puis CSV | Trois fichiers `activite-<son nom>-2020-01-01_2030-12-31.*`. Les ouvrir : ils portent son nom et la période | | ☐ |
+| 6 | AVO | Tableau, colonne **Détail** | Cliquer « **Voir les N actions - ...** » | La fenêtre s'ouvre : Date, Action, Dossier | | ☐ |
+| 7 | AVO | La fenêtre, colonne **Dossier** | Essayer de cliquer une référence | **Elle n'est pas cliquable** : c'est du texte. Il n'a pas accès aux fiches de dossier, et un lien ne l'aurait mené qu'à un refus | | ☐ |
+| 8 | AVO | Menu de gauche | Chercher **Mon compte** | **Absent.** Cet écran porte « Ma signature », qui n'a pas de sens pour qui ne signe aucune lettre de la banque | | ☐ |
+| 9 | AVO | Barre d'adresse | Forcer `/mon-compte`, puis `/repertoire/avocats` | « Vous n'avez pas les droits nécessaires » dans les deux cas | | ☐ |
+| 10 | DJ | Menu de gauche, **Rapports**, puis **descendre** sous « Activité par personne » | Regarder | Un troisième bloc : « **Activité des avocats** ». Le tableau au-dessus n’en montre aucun, et c’est normal : il compte ce qu’on **enregistre** en interne, et un avocat **dépose** | | ☐ |
+| 11 | DJ | Ce bloc, champs **Du** et **Au** | Du **01/01/2020** au **31/12/2030**, puis « Afficher » | Quatre colonnes propres : Comptes rendus déposés, Demandes de frais déposées, Autres publications, Explications fournies. **Aucune colonne « Dossiers ouverts »** | | ☐ |
+| 12 | DJ | Ce tableau, **première colonne (Avocat)** | Lire l’ordre, puis cliquer un nom | Par ordre **alphabétique**, pas par volume. Le clic ouvre « Activité de ‹ nom › » sous le tableau | | ☐ |
+| 13 | DJ | Ce tableau | Chercher une ligne marquée « **Retiré du répertoire** », s’il y en a | Ses dépôts restent **comptés** : une inscription retirée n’efface pas ce qui a été fait | | ☐ |
+| 14 | DJ | Menu de gauche, **Répertoire des avocats** | Ouvrir, et regarder la **dernière colonne** | Une colonne « **Activité** », avec un bouton « Voir son activité » par ligne | | ☐ |
+| 15 | DJ | Cette colonne, sur la ligne de l'avocat de test | Cliquer « **Voir son activité** » | « **Activité de ‹ nom ›** » s'ouvre **sous** le tableau, avec ses champs Du / Au et son téléchargement | | ☐ |
+| 16 | DJ | Ce bloc | Mêmes dates, Afficher, puis Télécharger en PDF | Les mêmes lignes que l'avocat a vues. Le fichier porte **le nom de l'avocat**, pas le vôtre | | ☐ |
+| 17 | DJ | Ce bloc, colonne Détail, puis colonne Dossier | Cliquer un décompte, puis une référence | Pour **vous**, la référence **est** un lien : vous arrivez sur la fiche du dossier. La différence avec l'étape 7 est voulue | | ☐ |
+| 18 | DJ | Le bouton « **Fermer l'activité** » | Cliquer | La fiche se referme, le tableau du répertoire reste affiché | | ☐ |
+| 19 | DJ | Même colonne, sur un avocat **jamais connecté** s'il y en a un au référentiel | Cliquer « Voir son activité », puis Afficher | Un message disant qu'il **ne s'est jamais connecté** - et non une fiche vide, qui se lirait comme « il n'a rien fait » | | ☐ |
+| 20 | JUR | Menu de gauche, **Répertoire des avocats** | Ouvrir, et chercher la colonne Activité | **Absente**, et aucun bouton « Voir son activité ». Il choisit un avocat sur sa charge et ses délibérés ; son activité nommée reste à la direction | | ☐ |
+| 21 | ASS | Idem avec le compte Assistante | Même vérification | Même résultat : elle atteint ce répertoire, pas cette colonne | | ☐ |
+| 22 | AVO | **Mon espace**, bouton **en** en haut de l'écran | Basculer en anglais | « My activity », « Show my activity », les colonnes suivent | | ☐ |
+
+### Résultat final attendu
+Un avocat a lu et téléchargé sa propre activité depuis son espace, sans pouvoir ouvrir un dossier ni
+voir celle d'un confrère. La direction a lu la même activité depuis le répertoire, avec les liens
+vers les dossiers.
+
+### Points de contrôle
+- **L'avocat a bien une activité**, et j'avais écrit l'inverse. Quatre natures sont tracées sous son
+  compte : dépôt d'une demande de frais, dépôt d'un compte rendu, dépôt d'une autre publication,
+  réponse à une demande d'explication.
+- **Il ne voit que la sienne**, et c'est le **serveur** qui le tient. Il se désigne par son
+  inscription au répertoire, identifiant qui circule dans ses propres écrans : si ce paramètre
+  ouvrait une seconde porte, il suffirait d'en changer le chiffre pour lire l'activité d'un confrère.
+- **Le droit est vérifié avant le compte.** Un ordre inverse faisait dire au refus, par sa nature, si
+  le confrère visé s'était déjà connecté - une information que personne n'a demandée.
+- **Pas de lien vers les dossiers pour lui, des liens pour la direction** : la même fiche, deux
+  périmètres. Lui proposer un lien qu'il ne peut pas suivre serait une invitation à se faire claquer
+  la porte au nez.
+- **« Jamais connecté » n'est pas « n'a rien fait »** : l'application le dit, plutôt que de rendre
+  une fiche vide qui ferait accuser à tort. Même distinction qu'en QF-45.
+- **Deux tableaux, et non un seul élargi.** Le tableau des internes compte ce qu'on **enregistre** en
+  interne ; un avocat **dépose**, et c'est le juriste qui enregistre. Les réunir n'aurait affiché que
+  des lignes de zéros, ce qui se lirait comme « cet avocat n'a rien fait » là où il a peut-être déposé
+  trente comptes rendus.
+- **Les deux boutons « Afficher » de l'écran portent des noms accessibles distincts.** Un lecteur
+  d'écran annonçait deux fois le même mot sans dire lequel on actionnait.
+- ⚠ **Son délai moyen de saisie est toujours absent**, par construction : il dépose le compte rendu,
+  le juriste l'enregistre, et c'est le second geste que le délai mesure. Le lui imputer lui prêterait
+  un retard qui n'est pas le sien.
 
 ---
 

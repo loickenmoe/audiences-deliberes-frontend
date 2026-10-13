@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { ActiviteDesAvocats } from "@/components/modules/reporting/activite-des-avocats";
 import { ActiviteParPersonne } from "@/components/modules/reporting/activite-par-personne";
 import { FormulaireRapport } from "@/components/modules/reporting/formulaire-rapport";
 import { peut } from "@/lib/rbac";
@@ -25,6 +26,12 @@ export default async function PageRapports() {
     <div className="flex flex-col gap-6">
       <FormulaireRapport />
       {peut(session.roles, "consulterRapportNominatif") ? <ActiviteParPersonne /> : null}
+      {/*
+        Les avocats ont leur propre tableau (Q-136) : le précédent compte six natures de
+        production interne qu'un avocat n'accomplit jamais - il dépose, c'est le juriste qui
+        enregistre. Les réunir n'aurait affiché que des lignes de zéros.
+      */}
+      {peut(session.roles, "consulterRapportNominatif") ? <ActiviteDesAvocats /> : null}
     </div>
   );
 }

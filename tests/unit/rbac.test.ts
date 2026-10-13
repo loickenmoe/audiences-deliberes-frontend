@@ -109,18 +109,34 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133).
+   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133), **avocat compris depuis
+   * Q-135**.
    *
-   * C'est le pendant du test précédent, et la différence compte : lire l'activité **d'un collègue**
-   * reste à la direction, lire **la sienne** est à tout le monde. Adossé à `ROLE_CONSULTATION`, que
-   * les cinq profils internes portent et que l'avocat ne porte pas (QF-01) - exactement le périmètre
-   * voulu, sans énumérer des profils à maintenir.
+   * C'est le pendant du test précédent, et la différence compte : lire l'activité **d'un collègue ou
+   * d'un avocat** reste à la direction, lire **la sienne** est à tout le monde.
+   *
+   * **Ce test affirmait l'inverse, et il avait tort.** J'avais exclu l'avocat en soutenant qu'il
+   * n'aurait rien à y lire : « aucune des natures comptées n'est la sienne ». C'était faux - il
+   * dépose ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond
+   * aux demandes d'explication. Corrigé le 2026-10-13 sur demande du métier.
    */
-  it("chacun lit sa propre activité ; l'avocat reste dehors", () => {
-    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+  it("chacun lit sa propre activité, avocat compris", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH, AVOCAT]) {
       expect(peut(profil, "consulterMonActivite")).toBe(true);
     }
-    expect(peut(AVOCAT, "consulterMonActivite")).toBe(false);
+  });
+
+  /**
+   * Et la frontière, qui est tout l'enjeu : **sa** fiche, pas celle d'un autre. Le serveur l'arbitre
+   * (il refuse une cible qui n'est pas soi sans être DJ ni DJA) ; cette table dit seulement ce que
+   * l'écran propose, et elle ne doit pas proposer plus.
+   */
+  it("l'activité d'autrui reste à la direction, pour les collègues comme pour les avocats", () => {
+    expect(peut(DJ, "consulterRapportNominatif")).toBe(true);
+    expect(peut(DJA, "consulterRapportNominatif")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterRapportNominatif")).toBe(false);
+    }
   });
 
   it("la signature des constitutions est réservée au supérieur hiérarchique", () => {
@@ -193,19 +209,26 @@ describe("périmètre du profil avocat (QF-01)", () => {
   /**
    * Le périmètre de l'avocat s'énumère, et ne s'élargit pas en silence.
    *
-   * Les deux dernières sont arrivées avec N7 temps 2 (2026-10-07) : la direction lui demande de
-   * s'expliquer sur des comptes rendus manquants, il répond. Elles ne lui ouvrent rien du dossier -
-   * il lit les demandes **qui lui sont adressées**, le serveur décidant lesquelles, et ne répond
-   * qu'aux siennes.
+   * Deux sont arrivées avec N7 temps 2 (2026-10-07) : la direction lui demande de s'expliquer sur
+   * des comptes rendus manquants, il répond. Elles ne lui ouvrent rien du dossier - il lit les
+   * demandes **qui lui sont adressées**, le serveur décidant lesquelles, et ne répond qu'aux
+   * siennes.
+   *
+   * La dernière est arrivée le 2026-10-13 (Q-135) : il lit et télécharge **sa propre** activité. Elle
+   * ne lui ouvre rien de plus non plus - le serveur refuse toute autre personne, et son détail ne
+   * porte même pas de lien vers les dossiers, puisqu'il n'a pas d'écran de fiche dossier.
    */
   it("l'avocat n'accède qu'à une poignée de capacités", () => {
     const accordees = (Object.keys(CAPACITES) as Capacite[]).filter((c) => peut(AVOCAT, c));
+    // L'ordre est celui de la déclaration dans la table : « mon activité » a été ajoutée en
+    // dernier, à côté des autres capacités de reporting.
     expect(accordees).toEqual([
       "consulterFrais",
       "deposerFrais",
       "deposerPublication",
       "consulterExplications",
       "repondreExplication",
+      "consulterMonActivite",
     ]);
   });
 });

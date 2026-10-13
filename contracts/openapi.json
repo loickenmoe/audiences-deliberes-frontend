@@ -2019,13 +2019,13 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "RECENT",
               "enum": [
                 "RECENT",
                 "ANCIEN",
                 "REFERENCE",
                 "RISQUE"
-              ],
-              "default": "RECENT"
+              ]
             }
           },
           {
@@ -3565,13 +3565,13 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "JSON",
               "enum": [
                 "JSON",
                 "PDF",
                 "EXCEL",
                 "CSV"
-              ],
-              "default": "JSON"
+              ]
             }
           }
         ],
@@ -3629,6 +3629,46 @@
         }
       }
     },
+    "/api/v1/rapports/nominatif/avocats": {
+      "get": {
+        "tags": [
+          "reporting-controller"
+        ],
+        "operationId": "rapportAvocats",
+        "parameters": [
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RapportAvocatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/rapports/activite": {
       "get": {
         "tags": [
@@ -3656,6 +3696,15 @@
           },
           {
             "name": "utilisateurId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "avocatId",
             "in": "query",
             "required": false,
             "schema": {
@@ -3705,6 +3754,15 @@
           },
           {
             "name": "utilisateurId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "avocatId",
             "in": "query",
             "required": false,
             "schema": {
@@ -3832,6 +3890,15 @@
           },
           {
             "name": "utilisateurId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "avocatId",
             "in": "query",
             "required": false,
             "schema": {
@@ -4022,12 +4089,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "TOUT",
               "enum": [
                 "HORS_DOSSIER",
                 "UN_DOSSIER",
                 "TOUT"
-              ],
-              "default": "TOUT"
+              ]
             }
           },
           {
@@ -4283,12 +4350,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "TOUT",
               "enum": [
                 "HORS_DOSSIER",
                 "UN_DOSSIER",
                 "TOUT"
-              ],
-              "default": "TOUT"
+              ]
             }
           },
           {
@@ -4396,11 +4463,11 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "PDF",
               "enum": [
                 "PDF",
                 "EXCEL"
-              ],
-              "default": "PDF"
+              ]
             }
           }
         ],
@@ -5185,12 +5252,12 @@
             "required": false,
             "schema": {
               "type": "string",
+              "default": "JSON",
               "enum": [
                 "JSON",
                 "PDF",
                 "EXCEL"
-              ],
-              "default": "JSON"
+              ]
             }
           }
         ],
@@ -8109,6 +8176,57 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ActiviteNominative"
+            }
+          }
+        }
+      },
+      "ActiviteAvocat": {
+        "type": "object",
+        "properties": {
+          "utilisateurId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "avocatId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "comptesRendusDeposes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "demandesFraisDeposees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "autresPublicationsDeposees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "explicationsFournies": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RapportAvocatsResponse": {
+        "type": "object",
+        "properties": {
+          "dateDebut": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateFin": {
+            "type": "string",
+            "format": "date"
+          },
+          "lignes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActiviteAvocat"
             }
           }
         }

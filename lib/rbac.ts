@@ -177,15 +177,19 @@ export const CAPACITES = {
   /**
    * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133).
    *
-   * Adossée à `ROLE_CONSULTATION`, que portent les cinq profils internes et que l'avocat ne porte
-   * pas (QF-01) : le rôle transverse exprime exactement le périmètre voulu, sans énumérer des
-   * profils qu'il faudrait maintenir à chaque ajout. Aucune des natures comptées n'est de toute
-   * façon celle d'un avocat - sa fiche serait vide par construction.
+   * **L'avocat y est, et j'avais écrit l'inverse.** J'ai soutenu qu'« aucune des natures comptées
+   * n'est celle d'un avocat - sa fiche serait vide par construction ». C'était **faux** : il dépose
+   * ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond aux
+   * demandes d'explication. Les quatre sont tracées sous son propre compte. Corrigé le 2026-10-13
+   * (backend Q-135), sur demande du métier.
    *
-   * C'est le **serveur** qui décide de quelle personne il s'agit : lire l'activité d'un collègue
-   * demande d'être DJ ou DJA, et se tient sur [[consulterRapportNominatif]].
+   * `ROLE_CONSULTATION` couvre les cinq profils internes, `ROLE_AVOCAT` l'avocat qui ne le porte
+   * pas (QF-01). Deux rôles plutôt que sept profils : ce qui est énuméré ici doit rester court.
+   *
+   * C'est le **serveur** qui décide de quelle personne il s'agit : lire l'activité d'un collègue ou
+   * d'un avocat demande d'être DJ ou DJA, et se tient sur [[consulterRapportNominatif]].
    */
-  consulterMonActivite: ["ROLE_CONSULTATION"],
+  consulterMonActivite: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
 
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */

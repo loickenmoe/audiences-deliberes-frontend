@@ -145,6 +145,37 @@ const serveur = setupServer(
     }
     return HttpResponse.json(ACTIVITE);
   }),
+  http.get(`${BASE}/rapports/nominatif/avocats`, ({ request }) => {
+    const url = new URL(request.url);
+    derniere = { methode: request.method, url };
+    if (url.searchParams.get("dateDebut")?.startsWith("2000")) {
+      return new HttpResponse(null, { status: 204 });
+    }
+    return HttpResponse.json({
+      dateDebut: "2026-09-01",
+      dateFin: "2026-09-30",
+      lignes: [
+        {
+          utilisateurId: 21,
+          avocatId: 5,
+          nom: "Cabinet Fotso",
+          comptesRendusDeposes: 6,
+          demandesFraisDeposees: 3,
+          autresPublicationsDeposees: 0,
+          explicationsFournies: 1,
+        },
+        {
+          utilisateurId: 30,
+          avocatId: null,
+          nom: "Me Ancien",
+          comptesRendusDeposes: 2,
+          demandesFraisDeposees: 0,
+          autresPublicationsDeposees: 0,
+          explicationsFournies: 0,
+        },
+      ],
+    });
+  }),
   http.get(`${BASE}/rapports/nominatif`, ({ request }) => {
     const url = new URL(request.url);
     derniere = { methode: request.method, url };
@@ -286,6 +317,39 @@ describe("rapport nominatif", () => {
 });
 
 /**
+ * Le tableau des avocats (Q-136). Ce qu'il doit garantir : qu'il existe **à part** du tableau
+ * interne, et qu'une inscription retirée n'efface pas les dépôts.
+ */
+describe("activité des avocats", () => {
+  it("se lit sur son propre chemin, distinct du tableau interne", async () => {
+    await reportingService.rapportAvocats("2026-09-01", "2026-09-30");
+
+    expect(derniere?.url.pathname).toBe("/api/v1/rapports/nominatif/avocats");
+  });
+
+  it("rend les dépôts de chaque avocat", async () => {
+    const rapport = await reportingService.rapportAvocats("2026-09-01", "2026-09-30");
+
+    expect(rapport?.lignes).toHaveLength(2);
+    expect(rapport?.lignes[0]).toMatchObject({
+      nom: "Cabinet Fotso",
+      avocatId: 5,
+      comptesRendusDeposes: 6,
+      explicationsFournies: 1,
+    });
+    /*
+     * Une inscription retirée du répertoire laisse ses dépôts : `avocatId` est nul, et l'écran
+     * ouvre alors la fiche par le compte. Les masquer ferait disparaître de l'activité réelle.
+     */
+    expect(rapport?.lignes[1]).toMatchObject({ avocatId: null, comptesRendusDeposes: 2 });
+  });
+
+  it("rend null sur une période sans dépôt", async () => {
+    expect(await reportingService.rapportAvocats("2000-01-01", "2000-01-02")).toBeNull();
+  });
+});
+
+/**
  * La fiche d'activité (Q-133). Ce que le service doit garantir : que « moi » ne transporte aucun
  * identifiant, que le 204 reste un état vide, et que le nom du fichier téléchargé soit celui que le
  * serveur a construit de son côté.
@@ -301,9 +365,32 @@ describe("fiche d'activité", () => {
   });
 
   it("transmet l'identifiant quand la direction regarde un collègue", async () => {
-    await reportingService.rapportActivite("2026-09-01", "2026-09-30", 9);
+    await reportingService.rapportActivite("2026-09-01", "2026-09-30", { utilisateurId: 9 });
 
     expect(derniere!.url.searchParams.get("utilisateurId")).toBe("9");
+  });
+
+  /**
+   * Un avocat se désigne par son **inscription au répertoire**, non par un compte : la direction le
+   * connaît par là, et l'identifiant d'utilisateur n'y figure pas (Q-135).
+   */
+  it("désigne un avocat par son inscription, et non par un compte", async () => {
+    await reportingService.rapportActivite("2026-09-01", "2026-09-30", { avocatId: 5 });
+
+    const params = derniere!.url.searchParams;
+    expect(params.get("avocatId")).toBe("5");
+    // Jamais les deux : le serveur les refuse ensemble, et l'écran ne doit pas les proposer.
+    expect(params.has("utilisateurId")).toBe(false);
+  });
+
+  it("transmet l'inscription à l'export et au détail, comme à la fiche", async () => {
+    await reportingService.exporterActivite("2026-09-01", "2026-09-30", "PDF", { avocatId: 5 });
+    expect(derniere!.url.searchParams.get("avocatId")).toBe("5");
+
+    await reportingService.detailsActivite("PUBLICATION_CR_DEPOSE", "2026-09-01", "2026-09-30", 0, {
+      avocatId: 5,
+    });
+    expect(derniere!.url.searchParams.get("avocatId")).toBe("5");
   });
 
   it("rend les natures accomplies, et elles seules", async () => {

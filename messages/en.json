@@ -1070,7 +1070,10 @@
     "videRecherche": "No counsel matches this search.",
     "phRechercheAvocat": "Lawyer’s name",
     "deliberesGagnes": "{gagnes} won out of {total} rulings",
-    "aucunDelibere": "No ruling yet"
+    "aucunDelibere": "No ruling yet",
+    "colonneActivite": "Activity",
+    "voirActivite": "View their activity",
+    "fermerActivite": "Close the activity"
   },
   "frais": {
     "titre": "Counsel fees",
@@ -1833,7 +1836,8 @@
     "delaiJours": "{jours} d",
     "delaiSansObjet": "Not applicable",
     "personneRetiree": "Removed account (#{identifiant})",
-    "fermerFiche": "Close the sheet"
+    "fermerFiche": "Close the sheet",
+    "genererAccessible": "Show activity by person"
   },
   "activite": {
     "titre": "My activity",
@@ -1869,6 +1873,30 @@
     "detailDossierSupprime": "Case file deleted",
     "detailOuvrir": "Open case file {reference}",
     "detailVide": "No action to show.",
-    "fermer": "Close"
+    "fermer": "Close",
+    "personneSansNom": "this person"
+  },
+  "avocatsActivite": {
+    "titre": "Lawyer activity",
+    "description": "What each lawyer filed over the period. The previous table does not show them: it counts what is recorded internally, and a lawyer files.",
+    "dateDebut": "From",
+    "dateFin": "To",
+    "periodeInversee": "The end date comes before the start date.",
+    "afficher": "Show",
+    "enCours": "Computing…",
+    "avantGeneration": "Choose a period, then show.",
+    "vide": "Nothing filed over this period",
+    "videTexte": "No lawyer filed anything between these two dates.",
+    "legende": "Lawyer activity from {debut} to {fin}",
+    "colonneAvocat": "Lawyer",
+    "colonneComptesRendus": "Hearing reports filed",
+    "colonneFrais": "Fee claims filed",
+    "colonneAutresDepots": "Other filings",
+    "colonneExplications": "Explanations provided",
+    "explicationsAide": "Replies given to the Legal Department’s explanation requests.",
+    "avocatSansNom": "Account #{identifiant}",
+    "horsRepertoire": "Removed from the directory",
+    "fermerFiche": "Close the sheet",
+    "afficherAccessible": "Show lawyer activity"
   }
 }

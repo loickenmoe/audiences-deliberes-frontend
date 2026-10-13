@@ -1076,6 +1076,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rapports/nominatif/avocats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["rapportAvocats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rapports/activite": {
         parameters: {
             query?: never;
@@ -2507,6 +2523,28 @@ export interface components {
             /** Format: date */
             dateFin?: string;
             lignes?: components["schemas"]["ActiviteNominative"][];
+        };
+        ActiviteAvocat: {
+            /** Format: int64 */
+            utilisateurId?: number;
+            /** Format: int64 */
+            avocatId?: number;
+            nom?: string;
+            /** Format: int64 */
+            comptesRendusDeposes?: number;
+            /** Format: int64 */
+            demandesFraisDeposees?: number;
+            /** Format: int64 */
+            autresPublicationsDeposees?: number;
+            /** Format: int64 */
+            explicationsFournies?: number;
+        };
+        RapportAvocatsResponse: {
+            /** Format: date */
+            dateDebut?: string;
+            /** Format: date */
+            dateFin?: string;
+            lignes?: components["schemas"]["ActiviteAvocat"][];
         };
         LigneActivite: {
             /** @enum {string} */
@@ -4990,12 +5028,36 @@ export interface operations {
             };
         };
     };
+    rapportAvocats: {
+        parameters: {
+            query: {
+                dateDebut: string;
+                dateFin: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RapportAvocatsResponse"];
+                };
+            };
+        };
+    };
     activite: {
         parameters: {
             query: {
                 dateDebut: string;
                 dateFin: string;
                 utilisateurId?: number;
+                avocatId?: number;
             };
             header?: never;
             path?: never;
@@ -5020,6 +5082,7 @@ export interface operations {
                 dateDebut: string;
                 dateFin: string;
                 utilisateurId?: number;
+                avocatId?: number;
                 format: "JSON" | "PDF" | "EXCEL" | "CSV";
             };
             header?: never;
@@ -5046,6 +5109,7 @@ export interface operations {
                 dateFin: string;
                 code: "DOSSIER_CREE" | "DOSSIER_AFFECTATION_MODIFIEE" | "ETAPE_STATUT_MODIFIE" | "ETAPE_OUVERTE_AUTOMATIQUEMENT" | "ETAPE_POSITIONNEE_DIRECTEMENT" | "DEROGATION_SEUIL_DEMANDEE" | "DEROGATION_SEUIL_ARBITREE" | "SENSIBILITE_PROPOSEE" | "SENSIBILITE_ARBITREE" | "SENSIBILITE_RETIREE" | "AUDIENCE_PLANIFIEE" | "AUDIENCE_DOUBLON_CONFIRME" | "AUDIENCE_COMPTE_RENDU_ENREGISTRE" | "AUDIENCE_ANNULEE" | "ALARME_CREEE" | "ALARME_REPROGRAMMEE" | "ALARME_TRAITEE" | "DELIBERE_MISE_EN_DELIBERE" | "DELIBERE_ENREGISTRE" | "DELIBERE_VIDE" | "DELIBERE_PROROGE" | "DELIBERE_RABATTU" | "DELIBERE_EXPEDITION_MODIFIEE" | "FRAIS_DEMANDE_DEPOSEE" | "FRAIS_CONFORMITE_CONTROLEE" | "FRAIS_OPPORTUNITE_CONTROLEE" | "FRAIS_VALIDATION_CONJOINTE" | "FRAIS_PAIEMENT_ENREGISTRE" | "DOCUMENT_CHARGE" | "DOCUMENT_SUPPRESSION_DEMANDEE" | "DOCUMENT_SUPPRIME_DIRECTEMENT" | "DOCUMENT_SUPPRESSION_ARBITREE" | "CONSTITUTION_DEMANDEE" | "CONSTITUTION_ARBITREE" | "LETTRE_CONSTITUTION_REDIGEE" | "PUBLICATION_CR_DEPOSE" | "PUBLICATION_AUTRE_DEPOSEE" | "PUBLICATION_ARBITREE" | "PUBLICATION_COMMENTEE" | "PUBLICATION_CORRESPONDANCE_TRANSMISE" | "ADJUDICATION_ENREGISTREE" | "CONDAMNATION_ENREGISTREE" | "CONDAMNATION_STATUT_MODIFIE" | "JURISPRUDENCE_INDEXEE" | "CONFIGURATION_MODIFIEE" | "CLIENT_MODIFIE" | "INTERVENANT_MODIFIE" | "EXPLICATION_DEMANDEE" | "EXPLICATION_REPONDUE" | "AUDIT_CONSULTE" | "AUDIT_EXPORTE" | "ARCHIVE_TELECHARGEE" | "NON_CLASSEE";
                 utilisateurId?: number;
+                avocatId?: number;
                 page?: number;
                 size?: number;
             };

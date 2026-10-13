@@ -1,12 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
+import { FicheActivite } from "@/components/modules/reporting/fiche-activite";
+import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { useRepertoire } from "@/hooks/useConstitutions";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
+import { peut } from "@/lib/rbac";
 
 const DEFAUTS = { nom: "" };
 
@@ -15,11 +19,18 @@ const DEFAUTS = { nom: "" };
  * utile pour choisir à qui confier un dossier. La charge compte les dossiers actifs ; la performance,
  * la part des délibérés favorables sur ses dossiers (0 % tant qu'aucun n'est rendu).
  */
-export function RepertoireAvocats() {
+export function RepertoireAvocats({ roles }: { roles: string[] }) {
   const t = useTranslations("repertoire");
   const { filtres, definirFiltre } = useFiltresUrl(DEFAUTS);
   const requete = useRepertoire(filtres.nom);
   const avocats = requete.data?.content ?? [];
+  /*
+    L'activité d'un avocat **nomme une personne** : elle se tient sur les rôles propres du DJ et de
+    la DJA, jamais sur `ROLE_JURISTE`, composite depuis Q-81 - sans quoi chaque juriste, et
+    l'Assistante qui atteint aussi cet écran, liraient ce qu'elle protège.
+  */
+  const peutLireLActivite = peut(roles, "consulterRapportNominatif");
+  const [avocatOuvert, setAvocatOuvert] = useState<{ id: number; nom: string } | null>(null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -59,6 +70,14 @@ export function RepertoireAvocats() {
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonneTelephone")}</th>
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonneCharge")}</th>
                 <th scope="col" className="px-4 py-2 font-medium" title={t("performanceAide")}>{t("colonnePerformance")}</th>
+                {/*
+                  Ajoutée **en dernier**, et c'est volontaire : deux parcours e2e visent la charge
+                  par son rang (4e colonne). Insérer au milieu les aurait fait échouer sans que le
+                  produit ait changé.
+                */}
+                {peutLireLActivite ? (
+                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneActivite")}</th>
+                ) : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-bordure">
@@ -89,6 +108,16 @@ export function RepertoireAvocats() {
                           total: avocat.deliberesTotal,
                         })}
                   </td>
+                  {peutLireLActivite ? (
+                    <td className="px-4 py-2">
+                      <Button
+                        variante="discrete"
+                        onClick={() => setAvocatOuvert({ id: avocat.id, nom: avocat.nom })}
+                      >
+                        {t("voirActivite")}
+                      </Button>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -96,6 +125,24 @@ export function RepertoireAvocats() {
         </div>
       )}
       <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("performanceAide")}</p>
+
+      {/*
+        La fiche s'ouvre **sous** le tableau et non en modale : on y choisit une période, on y
+        télécharge, et une modale rendrait tout cela étroit. `key` force un remontage au changement
+        d'avocat, sans quoi la période et le rapport déjà affichés resteraient ceux du précédent.
+      */}
+      {avocatOuvert !== null ? (
+        <div className="flex flex-col gap-2">
+          <Button variante="discrete" className="self-start" onClick={() => setAvocatOuvert(null)}>
+            {t("fermerActivite")}
+          </Button>
+          <FicheActivite
+            key={avocatOuvert.id}
+            cible={{ avocatId: avocatOuvert.id }}
+            nomAffiche={avocatOuvert.nom}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -943,6 +943,38 @@ export interface ActionDetaillee {
 }
 
 /**
+ * Un avocat et ses dépôts sur la période (Q-136).
+ *
+ * `avocatId` est nul si son inscription au répertoire a été retirée depuis : ses dépôts restent
+ * comptés - les masquer ferait disparaître de l'activité réelle - et l'écran ouvre alors sa fiche par
+ * son compte, faute d'inscription à désigner.
+ */
+export interface ActiviteAvocat {
+  utilisateurId: number;
+  avocatId: number | null;
+  nom: string | null;
+  comptesRendusDeposes: number;
+  demandesFraisDeposees: number;
+  autresPublicationsDeposees: number;
+  explicationsFournies: number;
+}
+
+/**
+ * L'activité des avocats sur une période (Q-136), pendant de [[RapportNominatif]].
+ *
+ * **Pourquoi un rapport à part.** Le tableau nominatif compte six natures de production interne -
+ * ouvrir un dossier, enregistrer un compte rendu, contrôler des frais - dont un avocat n'accomplit
+ * aucune : il **dépose**, c'est le juriste qui enregistre. L'y faire figurer n'aurait affiché qu'une
+ * ligne de zéros. Deux populations, deux jeux d'indicateurs, une même règle : ni note, ni classement
+ * par volume, les lignes suivant l'ordre des noms.
+ */
+export interface RapportAvocats {
+  dateDebut: string;
+  dateFin: string;
+  lignes: ActiviteAvocat[];
+}
+
+/**
  * Le rapport d'activité par personne (observation 14, N6).
  *
  * **Des indicateurs, pas une note.** L'application compte ; le responsable apprécie. Ni note, ni

@@ -389,6 +389,19 @@ votre travail, qui n'est pas celui de votre voisin.
 fiche complète de cette personne s'ouvre sous le tableau, avec sa période, son téléchargement et ses
 détails. Le tableau compare six indicateurs de production ; la fiche montre tout le reste.
 
+**Les avocats ont leur propre tableau**, sous *Activité par personne* : « **Activité des avocats** ». Il fallait le séparer - le premier compte ce qu'on **enregistre** en interne, et un avocat **dépose** : l'y mêler n'aurait affiché que des zéros. Ses quatre colonnes sont les siennes : comptes rendus déposés, demandes de frais déposées, autres publications, explications fournies. Cliquez un nom pour ouvrir sa fiche complète. Un avocat **retiré du répertoire** garde ses dépôts, et l'écran le signale.
+
+**Et depuis le répertoire** : dans *Répertoire des avocats*, colonne **Activité**,
+*Voir son activité*. C'est là que vous le jugez déjà, à côté de sa charge et de ses délibérés gagnés,
+au moment où vous lui confiez un dossier. Un avocat inscrit mais **jamais connecté** vous le dit
+franchement : il n'a pas de compte, donc aucune action tracée - ce qui n'est pas la même chose que
+n'avoir rien fait.
+
+**Pour l'avocat.** Sa propre activité est dans *Mon espace*, sous ses dépôts : ses demandes de frais,
+ses comptes rendus d'audience, ses autres publications, ses réponses aux demandes d'explication. Il la
+télécharge comme vous la vôtre. Ses lignes de détail portent la **référence du dossier sans lien** : il
+n'a pas accès aux fiches de dossier, et un lien ne l'aurait mené qu'à un refus.
+
 ---
 
 ## 8. Documents (GED)

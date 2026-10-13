@@ -68,11 +68,13 @@ export const NAVIGATION: EntreeNavigation[] = [
    * désormais un rapport que chacun consulte sur la période qu’il choisit. Signalé par le porteur
    * du projet le 2026-10-13.
    *
-   * La capacité est `consulterMonActivite` et non `consulterReferentiels` : c’est ce que la page
-   * porte de plus utile, et cette capacité dit exactement à qui - les cinq profils internes, pas
-   * l’avocat, qui n’a aucune des natures d’action comptées.
+   * **La capacité est celle de la page, `consulterReferentiels`, et pas `consulterMonActivite`.**
+   * Depuis que l’avocat lit lui aussi son activité (Q-135), `consulterMonActivite` l’inclut : s’y
+   * adosser lui aurait proposé une entrée menant à un refus de droits, *Mon compte* portant aussi
+   * « Ma signature », qui n’a pas de sens pour lui - il ne signe aucune lettre de la banque. Son
+   * activité est sur *Mon espace*, l’écran qui est le sien.
    */
-  { cle: "monCompte", href: "/mon-compte", icone: UserCircle, capacite: "consulterMonActivite", livre: true },
+  { cle: "monCompte", href: "/mon-compte", icone: UserCircle, capacite: "consulterReferentiels", livre: true },
   { cle: "tableauDeBord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: true },
   { cle: "rapports", href: "/rapports", icone: FileBarChart, capacite: "genererRapport", livre: true },
   { cle: "demandesSuppression", href: "/ged/demandes-suppression", icone: Trash2, capacite: "arbitrerSuppressions", livre: true },

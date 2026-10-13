@@ -199,8 +199,12 @@ const BORNES_LARGES = ["2020-01-01", "2030-12-31"] as const;
 async function posePeriodeNominative(page: Page, debut: string, fin: string) {
   await page.locator("#nominatif-debut").fill(debut);
   await page.locator("#nominatif-fin").fill(fin);
-  // « Afficher » tout court : le rapport périodique porte « Afficher le rapport ».
-  await page.getByRole("button", { name: "Afficher", exact: true }).click();
+  /*
+   * Par son **nom accessible**, et non par son texte visible. Deux tableaux coexistent sur cet écran
+   * depuis Q-136, tous deux avec un bouton « Afficher » : le texte seul ne dit pas lequel. Le nom
+   * accessible le dit, et c'est aussi ce qu'un lecteur d'écran annonce.
+   */
+  await page.getByRole("button", { name: "Afficher l’activité par personne" }).click();
 }
 
 test("le DJ lit l'activité de chacun, et une période vide y reste un état vide", async ({ browser }) => {
@@ -208,9 +212,13 @@ test("le DJ lit l'activité de chacun, et une période vide y reste un état vid
   await dj.goto("/rapports");
   await expect(dj.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
 
-  // Rien ne part avant le clic, et surtout rien ne s'affiche : le rapport nomme des personnes, il
-  // ne se déclenche pas en ouvrant l'écran.
-  await expect(dj.getByText("Choisissez une période, puis affichez.", { exact: true })).toBeVisible();
+  /*
+   * Rien ne part avant le clic, et surtout rien ne s'affiche : le rapport nomme des personnes, il ne
+   * se déclenche pas en ouvrant l'écran. **Deux** blocs portent cette phrase depuis Q-136 - celui
+   * des internes et celui des avocats -, et c'est bien ce qu'on veut vérifier : ni l'un ni l'autre
+   * ne se déclenche seul.
+   */
+  await expect(dj.getByText("Choisissez une période, puis affichez.", { exact: true })).toHaveCount(2);
 
   await posePeriodeNominative(dj, ...BORNES_LARGES);
   const tableau = dj.getByRole("table", { name: /Activité par personne du/ });
@@ -280,7 +288,7 @@ test("l'activité par personne est traduite", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Activity by person", level: 2 })).toBeVisible({
     timeout: 30_000,
   });
-  await expect(page.getByRole("button", { name: "Show", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show activity by person" })).toBeVisible();
 });
 
 /**
@@ -496,4 +504,219 @@ test("la fiche d'activité est traduite", async ({ page }) => {
     timeout: 30_000,
   });
   await expect(page.getByRole("button", { name: "Show my activity" })).toBeVisible();
+});
+
+/**
+ * L'activité d'un avocat (Q-135) — REC-E2E-038.
+ *
+ * **Ce jalon corrige une affirmation fausse.** J'avais exclu l'avocat de la fiche d'activité en
+ * soutenant qu'il n'aurait rien à y lire : « aucune des natures comptées n'est la sienne ». Il
+ * dépose ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond
+ * aux demandes d'explication - quatre natures, toutes tracées sous son compte.
+ *
+ * Trois choses se tiennent ici, et aucune ne se vérifie en test unitaire : que l'avocat atteigne sa
+ * fiche **sur son propre écran**, que ses lignes de détail ne lui proposent **aucun lien** vers un
+ * dossier qu'il ne peut pas ouvrir, et que la direction atteigne la sienne **depuis le répertoire**,
+ * là où elle le juge déjà.
+ */
+test("un avocat lit et télécharge sa propre activité, sans lien vers les dossiers", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await page.goto("/portail");
+  await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
+
+  await page.locator("#activite-debut-moi").fill("2020-01-01");
+  await page.locator("#activite-fin-moi").fill("2030-12-31");
+  await page.getByRole("button", { name: "Afficher mon activité" }).click();
+
+  const tableau = page.getByRole("table", { name: /Activité du/ });
+  await expect(tableau).toBeVisible({ timeout: 30_000 });
+  await expect(tableau.locator("tbody tr").first()).toBeVisible();
+  // Ni note, ni score, pour lui comme pour les autres.
+  expect(await tableau.innerText()).not.toContain("%");
+
+  // Il télécharge la sienne, dans les trois formats.
+  for (const [format, extension] of [
+    ["PDF", "pdf"],
+    ["Excel", "xlsx"],
+    ["CSV", "csv"],
+  ] as const) {
+    await page.locator("#activite-format-moi").selectOption({ label: format });
+    const telechargement = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Télécharger" }).click();
+    const fichier = await telechargement;
+    expect(fichier.suggestedFilename()).toMatch(
+      new RegExp(`^activite-.+-2020-01-01_2030-12-31\\.${extension}$`),
+    );
+  }
+
+  /*
+   * Le point qui lui est propre : **aucun lien vers un dossier**. Il n'a pas d'écran de fiche
+   * dossier (QF-01), et lui en proposer un l'aurait mené à un refus de droits - une invitation à se
+   * faire claquer la porte au nez. Il lit la référence, qui lui suffit.
+   */
+  await tableau.getByRole("button", { name: /^Voir les \d+ actions - / }).first().click();
+  const modale = page.getByRole("dialog");
+  await expect(modale).toBeVisible();
+  await expect(modale.getByRole("columnheader", { name: "Dossier" })).toBeVisible();
+  await expect(modale.getByRole("link")).toHaveCount(0);
+
+  await page.context().close();
+});
+
+test("l'avocat n'atteint ni Mon compte, ni l'activité d'un confrère", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+
+  // « Mon compte » porte aussi « Ma signature », qui n'a pas de sens pour lui : ni entrée, ni page.
+  await expect(
+    page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Mon compte" }),
+  ).toHaveCount(0);
+  await page.goto("/mon-compte");
+  await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+
+  // Et le répertoire, d'où la direction ouvre l'activité d'un avocat, lui reste fermé.
+  await page.goto("/repertoire/avocats");
+  await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+
+  await page.context().close();
+});
+
+/**
+ * La direction atteint l'activité d'un avocat **depuis le répertoire** : c'est là qu'elle le juge
+ * déjà, à côté de sa charge et de ses délibérés gagnés, au moment où elle lui confie un dossier.
+ */
+test("le DJ ouvre l'activité d'un avocat depuis le répertoire ; le juriste n'en a pas la possibilité", async ({
+  browser,
+}) => {
+  const dj = await pageConnectee(browser, "dj.test");
+  await dj.goto("/repertoire/avocats");
+  await expect(dj.locator("tbody tr").first()).toBeVisible({ timeout: 30_000 });
+
+  const ligne = dj.locator("tbody tr").first();
+  const nom = (await ligne.locator("td:nth-child(1)").innerText()).trim();
+  await ligne.getByRole("button", { name: "Voir son activité" }).click();
+
+  await expect(dj.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toBeVisible();
+  await expect(dj.getByRole("button", { name: "Fermer l’activité" })).toBeVisible();
+  await dj.getByRole("button", { name: "Fermer l’activité" }).click();
+  await expect(dj.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toHaveCount(0);
+  await dj.context().close();
+
+  /*
+   * Le juriste et l'Assistante atteignent ce répertoire - c'est leur outil de choix d'un avocat -
+   * mais l'activité d'une personne nommée reste à la direction. La colonne n'existe pas pour eux.
+   */
+  for (const identifiant of ["juriste.test", "assistante.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    await page.goto("/repertoire/avocats");
+    await expect(page.locator("tbody tr").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("columnheader", { name: "Activité" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Voir son activité" })).toHaveCount(0);
+    await page.context().close();
+  }
+});
+
+test("la fiche d'activité de l'avocat est traduite", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  await page.goto("/portail");
+  await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My activity", level: 2 })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("button", { name: "Show my activity" })).toBeVisible();
+});
+
+/**
+ * Le tableau comparatif des avocats (Q-136) — complète REC-E2E-038.
+ *
+ * **Ce que ce parcours garde.** Le porteur du projet a relevé que « Activité par personne » ne
+ * montrait que les profils internes. C'était exact : ses six colonnes comptent des natures de
+ * production interne qu'un avocat n'accomplit jamais - il dépose, c'est le juriste qui enregistre.
+ * Les réunir n'aurait affiché que des lignes de zéros. D'où **deux tableaux sur le même écran**, et
+ * ce parcours vérifie qu'ils y sont tous les deux, avec leurs colonnes propres.
+ */
+test("le DJ lit les deux tableaux : les internes, puis les avocats", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/rapports");
+
+  // Les deux blocs coexistent, et ne se confondent pas.
+  await expect(page.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activité des avocats", level: 2 })).toBeVisible();
+
+  // Rien avant le clic : les deux tableaux nomment des personnes.
+  await expect(page.getByText("Choisissez une période, puis affichez.", { exact: true })).toHaveCount(2);
+
+  await page.locator("#avocats-debut").fill("2020-01-01");
+  await page.locator("#avocats-fin").fill("2030-12-31");
+  await page.getByRole("button", { name: "Afficher l’activité des avocats" }).click();
+
+  const tableau = page.getByRole("table", { name: /Activité des avocats du/ });
+  await expect(tableau).toBeVisible({ timeout: 30_000 });
+  /*
+   * Ses colonnes sont celles de ce qu'un avocat **fait**, et aucune n'est celle du tableau interne.
+   * C'est tout l'objet de ce jalon : quatre colonnes utiles plutôt que six colonnes de zéros.
+   */
+  for (const colonne of [
+    "Avocat",
+    "Comptes rendus déposés",
+    "Demandes de frais déposées",
+    "Autres publications",
+    "Explications fournies",
+  ]) {
+    await expect(tableau.getByRole("columnheader", { name: colonne })).toBeVisible();
+  }
+  await expect(tableau.getByRole("columnheader", { name: "Dossiers ouverts" })).toHaveCount(0);
+  await expect(tableau.locator("tbody tr").first()).toBeVisible();
+  expect(await tableau.innerText()).not.toContain("%");
+
+  // Par nom, comme les internes : un avocat chargé n'est pas un avocat méritant.
+  const noms = await tableau.locator("tbody tr td:nth-child(1)").allInnerTexts();
+  const premiers = noms.map((cellule) => cellule.split("\n")[0].trim());
+  expect(premiers).toEqual([...premiers].sort((a, b) => a.localeCompare(b, "fr")));
+
+  // Son nom ouvre sa fiche complète, comme pour un collègue.
+  const nom = premiers[0]!;
+  await tableau.locator("tbody tr td:nth-child(1) button").first().click();
+  await expect(page.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toBeVisible();
+
+  await page.context().close();
+});
+
+test("une période sans dépôt laisse le tableau des avocats sur un état vide", async ({ page }) => {
+  await seConnecter(page, "dja.test");
+  await page.goto("/rapports");
+
+  await page.locator("#avocats-debut").fill("2026-12-31");
+  await page.locator("#avocats-fin").fill("2026-01-01");
+  await expect(page.getByText("La date de fin précède celle de début.")).toBeVisible();
+
+  await page.locator("#avocats-debut").fill("2000-01-01");
+  await page.locator("#avocats-fin").fill("2000-01-02");
+  await page.getByRole("button", { name: "Afficher l’activité des avocats" }).click();
+  await expect(page.getByText("Aucun dépôt sur cette période")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+
+  await page.context().close();
+});
+
+test("le juriste ne voit aucun des deux tableaux nominatifs", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/rapports");
+
+  await expect(page.getByRole("heading", { name: "Rapport d’activité", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activité par personne" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Activité des avocats" })).toHaveCount(0);
+  await expect(page.locator("#avocats-debut")).toHaveCount(0);
+});
+
+test("le tableau des avocats est traduit", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/rapports");
+  await expect(page.getByRole("heading", { name: "Activité des avocats", level: 2 })).toBeVisible();
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Lawyer activity", level: 2 })).toBeVisible({
+    timeout: 30_000,
+  });
 });

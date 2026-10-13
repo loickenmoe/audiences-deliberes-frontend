@@ -3,10 +3,22 @@ import type {
   ActionDetaillee,
   Rapport,
   RapportActivite,
+  RapportAvocats,
   RapportNominatif,
   TableauDeBord,
 } from "@/types/domaine";
 import type { FormatRapport, TypeRapport } from "@/types/enums";
+
+/**
+ * Qui l'on regarde, pour la fiche d'activité (Q-133, étendu aux avocats en Q-135).
+ *
+ * **Rien du tout signifie « moi »** : c'est le serveur qui sait qui je suis, et l'écran n'a donc pas
+ * à transporter son propre identifiant. Un collègue se désigne par son **compte**, un avocat par son
+ * **inscription au répertoire** - la direction le connaît par là, et l'identifiant d'utilisateur n'y
+ * figure pas. Les deux ensemble sont refusés par le serveur : servir l'un en ignorant l'autre
+ * laisserait croire qu'on a lu l'activité demandée.
+ */
+export type CibleActivite = { utilisateurId: number } | { avocatId: number };
 
 /** Bornes d'un rapport. `type` n'est qu'une étiquette de période (backend Q-63). */
 export interface PeriodeRapport {
@@ -54,6 +66,21 @@ export const reportingService = {
   },
 
   /**
+   * L'activité des avocats sur une période (Q-136) — DJ et DJA.
+   *
+   * Le pendant du rapport nominatif, pour l'autre population. Les deux ne tiennent pas dans un même
+   * tableau : un avocat n'accomplit aucune des six natures de production interne que l'autre compte.
+   *
+   * **`null` sur 204**, comme les autres : aucun dépôt sur la période.
+   */
+  rapportAvocats: async (dateDebut: string, dateFin: string): Promise<RapportAvocats | null> => {
+    const reponse = await apiClient.get<RapportAvocats | "">("/rapports/nominatif/avocats", {
+      params: { dateDebut, dateFin },
+    });
+    return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportAvocats);
+  },
+
+  /**
    * La fiche d'activité d'une personne (Q-133) — **chacun sur lui-même**, le DJ et la DJA sur
    * quiconque.
    *
@@ -66,10 +93,10 @@ export const reportingService = {
   rapportActivite: async (
     dateDebut: string,
     dateFin: string,
-    utilisateurId?: number,
+    cible?: CibleActivite,
   ): Promise<RapportActivite | null> => {
     const reponse = await apiClient.get<RapportActivite | "">("/rapports/activite", {
-      params: { dateDebut, dateFin, utilisateurId },
+      params: { dateDebut, dateFin, ...cible },
     });
     return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportActivite);
   },
@@ -86,10 +113,10 @@ export const reportingService = {
     dateDebut: string,
     dateFin: string,
     format: Exclude<FormatRapport, "JSON">,
-    utilisateurId?: number,
+    cible?: CibleActivite,
   ): Promise<Blob | null> => {
     const reponse = await apiClient.get<Blob>("/rapports/activite/export", {
-      params: { dateDebut, dateFin, format, utilisateurId },
+      params: { dateDebut, dateFin, format, ...cible },
       responseType: "blob",
     });
     if (reponse.status === 204) return null;
@@ -110,10 +137,10 @@ export const reportingService = {
     dateDebut: string,
     dateFin: string,
     page: number,
-    utilisateurId?: number,
+    cible?: CibleActivite,
   ): Promise<PageReponse<ActionDetaillee>> => {
     const { data } = await apiClient.get<PageReponse<ActionDetaillee>>("/rapports/activite/details", {
-      params: { code, dateDebut, dateFin, page, size: 20, utilisateurId },
+      params: { code, dateDebut, dateFin, page, size: 20, ...cible },
     });
     return data;
   },

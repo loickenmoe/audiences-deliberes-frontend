@@ -83,7 +83,16 @@ export function ActiviteParPersonne() {
             onChange={(evenement) => setFin(evenement.target.value)}
           />
         </Champ>
-        <Button onClick={() => generer.mutate()} disabled={!valide || generer.isPending}>
+        {/*
+          Le texte visible reste « Afficher » - court, à côté de son titre de section -, mais le nom
+          accessible dit **quoi**. Deux tableaux coexistent sur cet écran depuis Q-136, chacun avec
+          son bouton : annoncer « Afficher » deux fois ne dit pas lequel on actionne.
+        */}
+        <Button
+          onClick={() => generer.mutate()}
+          disabled={!valide || generer.isPending}
+          aria-label={t("genererAccessible")}
+        >
           {generer.isPending ? t("enCours") : t("generer")}
         </Button>
       </div>
@@ -187,7 +196,7 @@ export function ActiviteParPersonne() {
           </Button>
           <FicheActivite
             key={personneOuverte.id}
-            utilisateurId={personneOuverte.id}
+            cible={{ utilisateurId: personneOuverte.id }}
             nomAffiche={personneOuverte.nom}
           />
         </div>
