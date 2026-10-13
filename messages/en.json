@@ -1679,7 +1679,9 @@
       "AUDIT_CONSULTE": "Audit consulted",
       "NON_CLASSEE": "Unclassified action",
       "AUDIT_EXPORTE": "Audit export",
-      "ARCHIVE_TELECHARGEE": "Audit archive downloaded"
+      "ARCHIVE_TELECHARGEE": "Audit archive downloaded",
+      "EXPLICATION_DEMANDEE": "Explanation requested from a lawyer",
+      "EXPLICATION_REPONDUE": "Reply to an explanation request"
     },
     "details": {
       "accord": "Approval",
@@ -1829,6 +1831,43 @@
     "delaiAide": "Average days between a hearing and the recording of its report. With no report recorded there is nothing to measure.",
     "delaiJours": "{jours} d",
     "delaiSansObjet": "Not applicable",
-    "personneRetiree": "Removed account (#{identifiant})"
+    "personneRetiree": "Removed account (#{identifiant})",
+    "fermerFiche": "Close the sheet"
+  },
+  "activite": {
+    "titre": "My activity",
+    "titreAutre": "Activity of {personne}",
+    "description": "What you did over the period, by nature of action. The application counts - it does not judge.",
+    "descriptionAutre": "Everything this person recorded over the period.",
+    "dateDebut": "From",
+    "dateFin": "To",
+    "periodeInversee": "The end date comes before the start date.",
+    "afficher": "Show my activity",
+    "enCours": "Computing…",
+    "avantGeneration": "Choose a period, then show.",
+    "vide": "No activity over this period",
+    "videTexte": "Nothing was recorded in your name between these two dates.",
+    "videTexteAutre": "Nothing was recorded in this person’s name between these two dates.",
+    "legende": "Activity from {debut} to {fin}",
+    "colonneNature": "Nature of action",
+    "colonneNombre": "Count",
+    "colonneDetail": "Detail",
+    "voirDetail": "View the {nombre} actions - {nature}",
+    "delai": "Average delay before recording a report",
+    "delaiJours": "{jours} d",
+    "delaiAide": "Average days between a hearing and the recording of its report.",
+    "telecharger": "Download",
+    "formatExport": "Format",
+    "telechargementEchoue": "The download failed.",
+    "detailTitre": "{nature}",
+    "detailDescription": "From {debut} to {fin}. Click a row to open the related case file.",
+    "detailColonneDate": "Date",
+    "detailColonneAction": "Action",
+    "detailColonneDossier": "Case file",
+    "detailHorsDossier": "Not case-related",
+    "detailDossierSupprime": "Case file deleted",
+    "detailOuvrir": "Open case file {reference}",
+    "detailVide": "No action to show.",
+    "fermer": "Close"
   }
 }

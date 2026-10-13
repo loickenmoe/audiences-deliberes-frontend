@@ -4,12 +4,16 @@
  * Reporting (#49, #50) : ce qui part sur le fil, le traitement du **204** — une période sans
  * activité est un état vide, pas une erreur — et le calcul des bornes proposées par l'écran 40.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import {
   EXTENSION_RAPPORT,
+  nomFichierActivite,
   nomFichierRapport,
   periodeParDefaut,
   periodeValide,
@@ -74,6 +78,20 @@ const NOMINATIF = {
   ],
 };
 
+/** Une fiche d'activité : deux natures accomplies, et un délai mesurable. */
+const ACTIVITE = {
+  utilisateurId: 7,
+  nom: "Awa Ndiaye",
+  profil: "JURISTE",
+  dateDebut: "2026-09-01",
+  dateFin: "2026-09-30",
+  lignes: [
+    { code: "AUDIENCE_PLANIFIEE", total: 9 },
+    { code: "DOSSIER_CREE", total: 4 },
+  ],
+  delaiMoyenSaisieCompteRendu: 2.5,
+};
+
 const serveur = setupServer(
   http.get(`${BASE}/tableau-de-bord`, ({ request }) => {
     derniere = { methode: request.method, url: new URL(request.url) };
@@ -89,6 +107,43 @@ const serveur = setupServer(
       nbAffairesVidees: 5,
       provisionsReprises: 3_000_000,
     });
+  }),
+  http.get(`${BASE}/rapports/activite/details`, ({ request }) => {
+    derniere = { methode: request.method, url: new URL(request.url) };
+    return HttpResponse.json({
+      content: [
+        {
+          id: 11,
+          code: "AUDIENCE_PLANIFIEE",
+          action: "Planification d’une audience",
+          dateAction: "2026-09-12T09:30:00",
+          dossierId: 42,
+          referenceDossier: "DOS-2026-0042",
+        },
+        {
+          id: 12,
+          code: "AUDIENCE_PLANIFIEE",
+          action: "Planification d’une audience",
+          dateAction: "2026-09-10T09:30:00",
+          dossierId: null,
+          referenceDossier: null,
+        },
+      ],
+      totalPages: 1,
+      totalElements: 2,
+    });
+  }),
+  http.get(`${BASE}/rapports/activite/export`, ({ request }) => {
+    derniere = { methode: request.method, url: new URL(request.url) };
+    return new HttpResponse("Nature;Nombre", { status: 200, headers: { "Content-Type": "text/csv" } });
+  }),
+  http.get(`${BASE}/rapports/activite`, ({ request }) => {
+    const url = new URL(request.url);
+    derniere = { methode: request.method, url };
+    if (url.searchParams.get("dateDebut")?.startsWith("2000")) {
+      return new HttpResponse(null, { status: 204 });
+    }
+    return HttpResponse.json(ACTIVITE);
   }),
   http.get(`${BASE}/rapports/nominatif`, ({ request }) => {
     const url = new URL(request.url);
@@ -227,6 +282,131 @@ describe("rapport nominatif", () => {
     const rapport = await reportingService.rapportNominatif("2000-01-01", "2000-01-02");
 
     expect(rapport).toBeNull();
+  });
+});
+
+/**
+ * La fiche d'activité (Q-133). Ce que le service doit garantir : que « moi » ne transporte aucun
+ * identifiant, que le 204 reste un état vide, et que le nom du fichier téléchargé soit celui que le
+ * serveur a construit de son côté.
+ */
+describe("fiche d'activité", () => {
+  it("n'envoie aucun identifiant pour sa propre activité", async () => {
+    await reportingService.rapportActivite("2026-09-01", "2026-09-30");
+
+    expect(derniere?.url.pathname).toBe("/api/v1/rapports/activite");
+    // C'est le serveur qui sait qui je suis : transporter mon identifiant depuis l'écran
+    // ouvrirait la question de savoir ce qui se passe si j'en envoie un autre.
+    expect(derniere!.url.searchParams.has("utilisateurId")).toBe(false);
+  });
+
+  it("transmet l'identifiant quand la direction regarde un collègue", async () => {
+    await reportingService.rapportActivite("2026-09-01", "2026-09-30", 9);
+
+    expect(derniere!.url.searchParams.get("utilisateurId")).toBe("9");
+  });
+
+  it("rend les natures accomplies, et elles seules", async () => {
+    const fiche = await reportingService.rapportActivite("2026-09-01", "2026-09-30");
+
+    expect(fiche?.lignes).toHaveLength(2);
+    expect(fiche?.lignes[0]).toEqual({ code: "AUDIENCE_PLANIFIEE", total: 9 });
+    expect(fiche?.delaiMoyenSaisieCompteRendu).toBe(2.5);
+  });
+
+  it("rend null sur une période sans activité", async () => {
+    expect(await reportingService.rapportActivite("2000-01-01", "2000-01-02")).toBeNull();
+  });
+
+  it("exporte dans le format demandé", async () => {
+    const contenu = await reportingService.exporterActivite("2026-09-01", "2026-09-30", "CSV");
+
+    expect(derniere?.url.searchParams.get("format")).toBe("CSV");
+    expect(await contenu!.text()).toContain("Nature");
+  });
+
+  it("détaille un décompte, page par page", async () => {
+    const page = await reportingService.detailsActivite(
+      "AUDIENCE_PLANIFIEE",
+      "2026-09-01",
+      "2026-09-30",
+      0,
+    );
+
+    const params = derniere!.url.searchParams;
+    expect(params.get("code")).toBe("AUDIENCE_PLANIFIEE");
+    expect(params.get("page")).toBe("0");
+    expect(params.get("size")).toBe("20");
+    expect(page.content).toHaveLength(2);
+    expect(page.content[0]?.referenceDossier).toBe("DOS-2026-0042");
+    // Une action hors dossier reste dans la liste : la masquer ferait disparaître de l'activité
+    // réelle, et le décompte ne tomberait plus sur le nombre de lignes.
+    expect(page.content[1]?.dossierId).toBeNull();
+  });
+});
+
+/**
+ * Le nom du fichier est construit **deux fois** : par le serveur dans `Content-Disposition`, que
+ * CORS n'expose pas, et par l'écran pour nommer le téléchargement. Ces assertions sont le seul
+ * endroit où les deux règles se confrontent.
+ */
+describe("nom de la fiche d'activité téléchargée", () => {
+  it("porte la personne, la période et l'extension du format", () => {
+    expect(
+      nomFichierActivite({ nom: "Awa Ndiaye", utilisateurId: 7 }, "2026-09-01", "2026-09-30", "EXCEL"),
+    ).toBe("activite-awa-ndiaye-2026-09-01_2026-09-30.xlsx");
+  });
+
+  /** Sans la passe de décomposition, « Hervé » donnait « herv- » : l'accent ne tombe pas dans [a-z0-9]. */
+  it("retire les accents avant de passer en minuscules", () => {
+    expect(
+      nomFichierActivite({ nom: "Hervé Épée", utilisateurId: 3 }, "2026-01-01", "2026-01-31", "PDF"),
+    ).toBe("activite-herve-epee-2026-01-01_2026-01-31.pdf");
+  });
+
+  /** Un compte retiré du référentiel n'a plus de nom : le fichier porte alors son identifiant. */
+  it("se rabat sur l'identifiant quand le nom manque", () => {
+    expect(nomFichierActivite({ nom: null, utilisateurId: 9 }, "2026-01-01", "2026-01-31", "CSV")).toBe(
+      "activite-9-2026-01-01_2026-01-31.csv",
+    );
+  });
+});
+
+/**
+ * Le clic d'une action mene a la fiche du dossier, **sur l'onglet correspondant**. Encore faut-il
+ * que l'onglet existe.
+ *
+ * **Ce que ce test a attrape.** La premiere version de la carte envoyait les cinq natures de frais
+ * sur un onglet `frais` qui n'existe pas : la fiche dossier n'en a pas, les demandes de frais vivant
+ * sur leur propre ecran. Rien ne cassait - un onglet inconnu retombe silencieusement sur la synthese
+ * - et le parcours e2e passait, parce qu'il verifiait seulement qu'on arrivait sur une fiche. La
+ * promesse faite a l'utilisateur, elle, etait fausse.
+ *
+ * Les deux listes sont lues **dans le code qui les declare**, et non recopiees ici : une copie
+ * vieillirait sans bruit, ce qui est exactement le defaut que ce test ferme.
+ */
+describe("onglets vises par la fiche d'activité", () => {
+  function sourceDe(chemin: string): string {
+    return readFileSync(join(process.cwd(), chemin), "utf8");
+  }
+
+  it("ne nomme que des onglets réellement déclarés par la fiche dossier", () => {
+    const declaration = sourceDe("components/modules/dossiers/fiche-dossier.tsx");
+    const bloc = declaration.slice(
+      declaration.indexOf("const ONGLETS = ["),
+      declaration.indexOf("] as const;"),
+    );
+    const reels = new Set([...bloc.matchAll(/"([a-z]+)"/g)].map((trouve) => trouve[1]));
+    // Si la declaration changeait de forme, l'extraction rendrait un ensemble vide et ce test
+    // passerait sans rien garder. La borne basse le dit tout haut.
+    expect(reels.size, "les onglets de la fiche dossier ne se lisent plus").toBeGreaterThan(5);
+
+    const carte = sourceDe("components/modules/reporting/fiche-activite.tsx");
+    const vises = [...carte.matchAll(/^ {2}[A-Z_]+: "([a-z]+)",$/gm)].map((trouve) => trouve[1]);
+    expect(vises.length, "la carte des onglets ne se lit plus").toBeGreaterThan(20);
+
+    const inconnus = [...new Set(vises)].filter((onglet) => !reels.has(onglet));
+    expect(inconnus, "onglets visés qui n'existent pas sur la fiche dossier").toEqual([]);
   });
 });
 

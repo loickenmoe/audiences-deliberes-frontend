@@ -108,6 +108,21 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     }
   });
 
+  /**
+   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133).
+   *
+   * C'est le pendant du test précédent, et la différence compte : lire l'activité **d'un collègue**
+   * reste à la direction, lire **la sienne** est à tout le monde. Adossé à `ROLE_CONSULTATION`, que
+   * les cinq profils internes portent et que l'avocat ne porte pas (QF-01) - exactement le périmètre
+   * voulu, sans énumérer des profils à maintenir.
+   */
+  it("chacun lit sa propre activité ; l'avocat reste dehors", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(peut(profil, "consulterMonActivite")).toBe(true);
+    }
+    expect(peut(AVOCAT, "consulterMonActivite")).toBe(false);
+  });
+
   it("la signature des constitutions est réservée au supérieur hiérarchique", () => {
     expect(peut(SH, "signerConstitution")).toBe(true);
     expect(peut(JURISTE, "signerConstitution")).toBe(false);

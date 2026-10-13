@@ -174,6 +174,19 @@ export const CAPACITES = {
    */
   consulterRapportNominatif: ["ROLE_DJ", "ROLE_DJA"],
 
+  /**
+   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133).
+   *
+   * Adossée à `ROLE_CONSULTATION`, que portent les cinq profils internes et que l'avocat ne porte
+   * pas (QF-01) : le rôle transverse exprime exactement le périmètre voulu, sans énumérer des
+   * profils qu'il faudrait maintenir à chaque ajout. Aucune des natures comptées n'est de toute
+   * façon celle d'un avocat - sa fiche serait vide par construction.
+   *
+   * C'est le **serveur** qui décide de quelle personne il s'agit : lire l'activité d'un collègue
+   * demande d'être DJ ou DJA, et se tient sur [[consulterRapportNominatif]].
+   */
+  consulterMonActivite: ["ROLE_CONSULTATION"],
+
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */
   deposerDocument: ["ROLE_SAISIE"],

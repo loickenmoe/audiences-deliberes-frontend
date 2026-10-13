@@ -1,5 +1,11 @@
-import { apiClient } from "@/lib/api/client";
-import type { Rapport, RapportNominatif, TableauDeBord } from "@/types/domaine";
+import { apiClient, type PageReponse } from "@/lib/api/client";
+import type {
+  ActionDetaillee,
+  Rapport,
+  RapportActivite,
+  RapportNominatif,
+  TableauDeBord,
+} from "@/types/domaine";
 import type { FormatRapport, TypeRapport } from "@/types/enums";
 
 /** Bornes d'un rapport. `type` n'est qu'une étiquette de période (backend Q-63). */
@@ -45,6 +51,71 @@ export const reportingService = {
       params: { dateDebut, dateFin },
     });
     return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportNominatif);
+  },
+
+  /**
+   * La fiche d'activité d'une personne (Q-133) — **chacun sur lui-même**, le DJ et la DJA sur
+   * quiconque.
+   *
+   * `utilisateurId` absent signifie « moi » : c'est le serveur qui sait qui je suis, et l'écran n'a
+   * donc pas à transporter son propre identifiant. Renseigné, il n'est servi qu'à la direction - le
+   * serveur refuse, l'écran ne le propose simplement pas aux autres.
+   *
+   * **`null` sur 204** : la personne n'a rien fait sur la période. Un état vide, pas une erreur.
+   */
+  rapportActivite: async (
+    dateDebut: string,
+    dateFin: string,
+    utilisateurId?: number,
+  ): Promise<RapportActivite | null> => {
+    const reponse = await apiClient.get<RapportActivite | "">("/rapports/activite", {
+      params: { dateDebut, dateFin, utilisateurId },
+    });
+    return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportActivite);
+  },
+
+  /**
+   * La même fiche en document : « chaque utilisateur doit être capable de télécharger ses propres
+   * rapports » (métier, 2026-10-09).
+   *
+   * Le nom du fichier vient du **serveur**, dans l'en-tête `Content-Disposition`, que CORS n'expose
+   * pas en lecture — l'appelant le reconstruit donc avec `nomFichierActivite`, à partir des mêmes
+   * éléments. Les deux doivent rester d'accord, et un test unitaire s'en assure.
+   */
+  exporterActivite: async (
+    dateDebut: string,
+    dateFin: string,
+    format: Exclude<FormatRapport, "JSON">,
+    utilisateurId?: number,
+  ): Promise<Blob | null> => {
+    const reponse = await apiClient.get<Blob>("/rapports/activite/export", {
+      params: { dateDebut, dateFin, format, utilisateurId },
+      responseType: "blob",
+    });
+    if (reponse.status === 204) return null;
+    const data = reponse.data;
+    if (!data) return null;
+    return data instanceof Blob ? data : new Blob([data as BlobPart]);
+  },
+
+  /**
+   * Les actions derrière un décompte (Q-133) : « cliquer sur un élément doit renvoyer aux détails de
+   * la dite tâche ».
+   *
+   * Paginé, parce qu'un décompte peut valoir cent : une modale qui charge cent lignes d'un coup met
+   * plus de temps à s'ouvrir que l'utilisateur n'en met à renoncer.
+   */
+  detailsActivite: async (
+    code: string,
+    dateDebut: string,
+    dateFin: string,
+    page: number,
+    utilisateurId?: number,
+  ): Promise<PageReponse<ActionDetaillee>> => {
+    const { data } = await apiClient.get<PageReponse<ActionDetaillee>>("/rapports/activite/details", {
+      params: { code, dateDebut, dateFin, page, size: 20, utilisateurId },
+    });
+    return data;
   },
 
   /**

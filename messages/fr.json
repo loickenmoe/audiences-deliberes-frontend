@@ -1679,7 +1679,9 @@
       "AUDIT_CONSULTE": "Consultation de l’audit",
       "NON_CLASSEE": "Action non classée",
       "AUDIT_EXPORTE": "Export de l’audit",
-      "ARCHIVE_TELECHARGEE": "Téléchargement d’une archive d’audit"
+      "ARCHIVE_TELECHARGEE": "Téléchargement d’une archive d’audit",
+      "EXPLICATION_DEMANDEE": "Demande d'explication adressée à un avocat",
+      "EXPLICATION_REPONDUE": "Réponse à une demande d'explication"
     },
     "details": {
       "accord": "Accord",
@@ -1829,6 +1831,43 @@
     "delaiAide": "Jours écoulés en moyenne entre une audience et la saisie de son compte rendu. Sans compte rendu saisi, il n’y a rien à mesurer.",
     "delaiJours": "{jours} j",
     "delaiSansObjet": "Sans objet",
-    "personneRetiree": "Compte retiré (#{identifiant})"
+    "personneRetiree": "Compte retiré (#{identifiant})",
+    "fermerFiche": "Fermer la fiche"
+  },
+  "activite": {
+    "titre": "Mon activité",
+    "titreAutre": "Activité de {personne}",
+    "description": "Ce que vous avez fait sur la période, nature par nature. L’application compte - elle ne juge pas.",
+    "descriptionAutre": "Tout ce que cette personne a enregistré sur la période.",
+    "dateDebut": "Du",
+    "dateFin": "Au",
+    "periodeInversee": "La date de fin précède celle de début.",
+    "afficher": "Afficher mon activité",
+    "enCours": "Calcul en cours…",
+    "avantGeneration": "Choisissez une période, puis affichez.",
+    "vide": "Aucune activité sur cette période",
+    "videTexte": "Rien n’a été enregistré à votre nom entre ces deux dates.",
+    "videTexteAutre": "Rien n’a été enregistré au nom de cette personne entre ces deux dates.",
+    "legende": "Activité du {debut} au {fin}",
+    "colonneNature": "Nature de l’action",
+    "colonneNombre": "Nombre",
+    "colonneDetail": "Détail",
+    "voirDetail": "Voir les {nombre} actions - {nature}",
+    "delai": "Délai moyen de saisie d’un compte rendu",
+    "delaiJours": "{jours} j",
+    "delaiAide": "Jours écoulés en moyenne entre une audience et la saisie de son compte rendu.",
+    "telecharger": "Télécharger",
+    "formatExport": "Format",
+    "telechargementEchoue": "Le téléchargement a échoué.",
+    "detailTitre": "{nature}",
+    "detailDescription": "Du {debut} au {fin}. Cliquez une ligne pour ouvrir le dossier concerné.",
+    "detailColonneDate": "Date",
+    "detailColonneAction": "Action",
+    "detailColonneDossier": "Dossier",
+    "detailHorsDossier": "Hors dossier",
+    "detailDossierSupprime": "Dossier supprimé",
+    "detailOuvrir": "Ouvrir le dossier {reference}",
+    "detailVide": "Aucune action à afficher.",
+    "fermer": "Fermer"
   }
 }

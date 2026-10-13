@@ -282,3 +282,188 @@ test("l'activité par personne est traduite", async ({ page }) => {
   });
   await expect(page.getByRole("button", { name: "Show", exact: true })).toBeVisible();
 });
+
+/**
+ * La fiche d'activité (Q-133) — REC-E2E-037.
+ *
+ * Les deux demandes du métier du 2026-10-09 : **télécharger son propre rapport** sur la période
+ * choisie, et **cliquer sur un élément** pour arriver aux détails de la tâche.
+ *
+ * Ce qu'un test unitaire ne peut pas tenir ici : que l'Assistante et le supérieur hiérarchique, qui
+ * n'entrent pas sur `/rapports`, y aient tout de même accès - c'est la raison pour laquelle la fiche
+ * vit sur « Mon compte » -, et que le clic aboutisse réellement sur la fiche d'un dossier.
+ */
+async function afficherMonActivite(page: Page) {
+  await page.goto("/mon-compte");
+  await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
+  await page.locator("#activite-debut-moi").fill("2020-01-01");
+  await page.locator("#activite-fin-moi").fill("2030-12-31");
+  await page.getByRole("button", { name: "Afficher mon activité" }).click();
+}
+
+test("un juriste affiche son activité, la télécharge, puis clique jusqu'au dossier", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+
+  // Rien avant le clic : la fiche nomme une personne, elle ne se déclenche pas à l'ouverture.
+  await page.goto("/mon-compte");
+  await expect(page.getByText("Choisissez une période, puis affichez.", { exact: true })).toBeVisible();
+  // Et le téléchargement n'est pas proposé avant : on n'emporte pas un document qu'on n'a pas vu.
+  await expect(page.getByRole("button", { name: "Télécharger" })).toHaveCount(0);
+
+  await afficherMonActivite(page);
+  const tableau = page.getByRole("table", { name: /Activité du/ });
+  await expect(tableau).toBeVisible({ timeout: 30_000 });
+  await expect(tableau.getByRole("columnheader", { name: "Nature de l’action" })).toBeVisible();
+  await expect(tableau.locator("tbody tr").first()).toBeVisible();
+
+  // Ni note, ni score : le refus posé avec le métier se vérifie à l'œil.
+  expect(await tableau.innerText()).not.toContain("%");
+
+  /*
+   * « Chaque utilisateur doit être capable de télécharger ses propres rapports » : les trois
+   * formats, et un nom de fichier qui porte la personne et la période - le serveur le construit
+   * aussi de son côté, l'en-tête n'étant pas exposée en CORS.
+   */
+  for (const [format, extension] of [
+    ["PDF", "pdf"],
+    ["Excel", "xlsx"],
+    ["CSV", "csv"],
+  ] as const) {
+    await page.locator("#activite-format-moi").selectOption({ label: format });
+    const telechargement = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Télécharger" }).click();
+    const fichier = await telechargement;
+    expect(fichier.suggestedFilename()).toMatch(
+      new RegExp(`^activite-.+-2020-01-01_2030-12-31\\.${extension}$`),
+    );
+  }
+
+  /*
+   * « Cliquer sur un élément doit directement le renvoyer aux détails de la dite tâche. » Le
+   * décompte ouvre les actions comptées ; une action ouvre le dossier concerné.
+   */
+  await tableau.getByRole("button", { name: /^Voir les \d+ actions - / }).first().click();
+  const modale = page.getByRole("dialog");
+  await expect(modale).toBeVisible();
+  await expect(modale.getByRole("columnheader", { name: "Dossier" })).toBeVisible();
+
+  const versDossier = modale.getByRole("link", { name: /^Ouvrir le dossier / }).first();
+  await expect(versDossier).toBeVisible({ timeout: 30_000 });
+  await versDossier.click();
+  await page.waitForURL(/\/dossiers\/\d+/, { timeout: 60_000 });
+  // On arrive sur la fiche du dossier, pas sur une page d'erreur.
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+  /*
+   * **Et sur un onglet qui existe.** Cette assertion manquait, et son absence a laissé passer une
+   * carte qui envoyait les frais sur un onglet « frais » - la fiche dossier n'en a pas. Rien ne
+   * cassait, un onglet inconnu retombant sur la synthèse : la promesse faite à l'utilisateur était
+   * fausse en silence. Vérifier « on arrive sur une fiche » ne suffisait pas.
+   */
+  const onglet = new URL(page.url()).searchParams.get("onglet");
+  if (onglet !== null) {
+    expect([
+      "synthese",
+      "etapes",
+      "audiences",
+      "deliberes",
+      "alarmes",
+      "decisions",
+      "historique",
+      "documents",
+      "publications",
+    ]).toContain(onglet);
+  }
+
+  await page.context().close();
+});
+
+/**
+ * Le cœur du choix d'emplacement. `/rapports` exige `ROLE_JURISTE` : l'Assistante et le SH n'y
+ * entrent pas, et leur ouvrir cet écran leur montrerait le rapport périodique du service, dont
+ * l'appel échouerait sous leurs yeux. « Mon compte » est le seul écran que les cinq profils
+ * internes partagent.
+ */
+test("l'Assistante et le SH ont leur fiche, là où ils peuvent l'atteindre", async ({ browser }) => {
+  for (const identifiant of ["assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    await page.goto("/rapports");
+    await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+
+    await page.goto("/mon-compte");
+    await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
+    await page.locator("#activite-debut-moi").fill("2020-01-01");
+    await page.locator("#activite-fin-moi").fill("2030-12-31");
+    await page.getByRole("button", { name: "Afficher mon activité" }).click();
+    /*
+     * Fidèle, et non comparable : le tableau de la direction tient sur six colonnes de production,
+     * dont aucune n'est le métier du SH. Sa fiche, elle, porte ce qu'il a fait - ou un état vide,
+     * jamais une page de zéros.
+     */
+    await expect(
+      page.getByRole("table", { name: /Activité du/ }).or(page.getByText("Aucune activité sur cette période")),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+    await page.context().close();
+  }
+});
+
+test("une période sans activité reste un état vide, et une période inversée est refusée", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/mon-compte");
+
+  await page.locator("#activite-debut-moi").fill("2026-12-31");
+  await page.locator("#activite-fin-moi").fill("2026-01-01");
+  await expect(page.getByText("La date de fin précède celle de début.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Afficher mon activité" })).toBeDisabled();
+
+  await page.locator("#activite-debut-moi").fill("2000-01-01");
+  await page.locator("#activite-fin-moi").fill("2000-01-02");
+  await page.getByRole("button", { name: "Afficher mon activité" }).click();
+  await expect(page.getByText("Aucune activité sur cette période")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  // Pas de document à emporter pour une période vide.
+  await expect(page.getByRole("button", { name: "Télécharger" })).toHaveCount(0);
+
+  await page.context().close();
+});
+
+/**
+ * Les deux niveaux se rejoignent ici : le DJ compare six colonnes, puis ouvre le nom d'une personne
+ * pour voir **tout** ce qu'elle a fait. C'est ce que le métier a demandé le 2026-10-09 en corrigeant
+ * la première version, qui s'arrêtait aux six colonnes.
+ */
+test("le DJ ouvre la fiche complète d'un collègue depuis son nom", async ({ page }) => {
+  await seConnecter(page, "dj.test");
+  await page.goto("/rapports");
+  await posePeriodeNominative(page, ...BORNES_LARGES);
+
+  const tableau = page.getByRole("table", { name: /Activité par personne du/ });
+  await expect(tableau).toBeVisible({ timeout: 30_000 });
+  const premier = tableau.locator("tbody tr td:nth-child(1) button").first();
+  const nom = (await premier.innerText()).trim();
+  await premier.click();
+
+  await expect(page.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toBeVisible();
+  // La fiche du collègue a ses propres bornes, distinctes de celles de « Mon activité » : deux
+  // blocs sur un même écran ne peuvent pas partager leurs identifiants.
+  await expect(page.locator("#activite-debut-moi")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fermer la fiche" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Fermer la fiche" }).click();
+  await expect(page.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toHaveCount(0);
+
+  await page.context().close();
+});
+
+test("la fiche d'activité est traduite", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/mon-compte");
+  await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
+
+  await page.getByRole("button", { name: "en", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My activity", level: 2 })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("button", { name: "Show my activity" })).toBeVisible();
+});

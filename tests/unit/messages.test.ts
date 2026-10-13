@@ -109,6 +109,44 @@ describe("couverture du domaine", () => {
     expect(absents, "événements que la supervision afficherait en code brut").toEqual([]);
   });
 
+  /**
+   * **Le troisième bloc qui nomme des codes, et le troisième trou de la même famille.**
+   *
+   * `historique.actions` traduit les natures d'action de l'audit et de la fiche d'activité. Il
+   * portait **51 libellés pour 53 codes** : `EXPLICATION_DEMANDEE` et `EXPLICATION_REPONDUE`, livrés
+   * avec N7 temps 2 le 2026-10-07, y manquaient - l'écran d'audit les affichait donc en code brut au
+   * Directeur Juridique pendant six jours.
+   *
+   * **Pourquoi les deux gardes existantes ne pouvaient pas le voir.** Celle du domaine tire sa liste
+   * de `types/enums.ts`, où les 53 natures d'action ne figurent pas - elles sont trop nombreuses et
+   * ne servent qu'à l'affichage. Celle de la supervision ne regarde qu'un autre bloc.
+   *
+   * **La liste vient donc du contrat**, `contracts/openapi.json`, qui porte l'énumération telle que
+   * le backend l'expose et qui est régénérée à chaque jalon. Pas de dépendance au dépôt backend : la
+   * source est dans ce dépôt, et elle ne peut pas vieillir sans que le contrat vieillisse aussi.
+   */
+  it.each(LANGUES)("chaque nature d'action du contrat a un libellé en %s", (langue) => {
+    const contrat = JSON.parse(
+      readFileSync(join(process.cwd(), "contracts/openapi.json"), "utf8"),
+    ) as {
+      components: {
+        schemas: {
+          HistoriqueActionResponse: { properties: { code: { enum: string[] } } };
+        };
+      };
+    };
+    const natures = contrat.components.schemas.HistoriqueActionResponse.properties.code.enum;
+
+    // Si le contrat cessait un jour de porter l'énumération, ce test passerait sur un tableau vide
+    // sans rien garder. La borne basse le dit tout haut.
+    expect(natures.length, "le contrat ne porte plus l'énumération des natures d'action").toBeGreaterThan(50);
+
+    const absents = natures.filter(
+      (nature) => typeof lire(langue, `historique.actions.${nature}`) !== "string",
+    );
+    expect(absents, "natures que l'audit et la fiche d'activité afficheraient en code brut").toEqual([]);
+  });
+
   it.each(LANGUES)("chaque rôle Keycloak a un libellé en %s", (langue) => {
     const absents = Role.filter((role) => typeof lire(langue, `roles.${role}`) !== "string");
     expect(absents).toEqual([]);

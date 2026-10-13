@@ -895,6 +895,54 @@ export interface ActiviteNominative {
 }
 
 /**
+ * Une nature d'action et son décompte, dans la fiche d'activité d'une personne (Q-133).
+ *
+ * `code` est une valeur de `TypeActionHistorique` ; son libellé se lit dans `historique.actions`,
+ * parce que l'application est bilingue et que le serveur n'a qu'un libellé français (QF-24).
+ */
+export interface LigneActivite {
+  code: string;
+  total: number;
+}
+
+/**
+ * La fiche d'activité d'une personne sur une période (Q-133).
+ *
+ * **Pourquoi elle existe à côté de [[RapportNominatif]].** Le tableau de la direction compare des
+ * personnes sur six colonnes choisies ; cette fiche doit refléter **fidèlement** ce qu'une personne
+ * a fait - décision du métier du 2026-10-09, qui a renversé l'arbitrage précédent. Une Assistante
+ * ou un supérieur hiérarchique n'ouvre pas de dossiers : six colonnes les montreraient vides.
+ *
+ * Seules les natures **réellement accomplies** figurent dans `lignes` : une fiche n'est pas
+ * l'inventaire de ce qu'on n'a pas fait.
+ */
+export interface RapportActivite {
+  utilisateurId: number;
+  nom: string | null;
+  profil: string | null;
+  dateDebut: string;
+  dateFin: string;
+  lignes: LigneActivite[];
+  delaiMoyenSaisieCompteRendu: number | null;
+}
+
+/**
+ * Une action derrière un décompte de la fiche (Q-133) : ce qui rend le décompte cliquable.
+ *
+ * `dossierId` est nul pour une action hors dossier - une modification de configuration, une
+ * correction du référentiel. La ligne s'affiche quand même, sans lien : la masquer ferait
+ * disparaître de l'activité réelle, et le décompte ne tomberait plus sur le nombre de lignes.
+ */
+export interface ActionDetaillee {
+  id: number;
+  code: string;
+  action: string;
+  dateAction: string;
+  dossierId: number | null;
+  referenceDossier: string | null;
+}
+
+/**
  * Le rapport d'activité par personne (observation 14, N6).
  *
  * **Des indicateurs, pas une note.** L'application compte ; le responsable apprécie. Ni note, ni

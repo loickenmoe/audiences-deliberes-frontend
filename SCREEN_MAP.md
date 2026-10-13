@@ -209,6 +209,7 @@ transition reste manuelle via l'endpoint générique d'étape.
 | 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ et DJA** (Q-95) | `GET /tableau-de-bord` | F15 | ✅ |
 | 40 | Générer un rapport d'activité | `/rapports` | **JUR**, et la direction par son composite (Q-81) | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ✅ |
 | 40 bis | Activité par personne *(second bloc de l'écran 40)* | `/rapports` | **DJ et DJA seuls** (Q-132) | `GET /rapports/nominatif?dateDebut&dateFin` | N6 | ✅ |
+| 40 ter | Fiche d'activité d'une personne *(ouverte depuis un nom du tableau 40 bis)* | `/rapports` | **DJ et DJA** (Q-133) | `GET /rapports/activite`, `…/export`, `…/details` | Q-133 | ✅ |
 
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
@@ -217,6 +218,23 @@ transition reste manuelle via l'endpoint générique d'étape.
 `nbDemandesFraisEnAttente`, `nbProrogationsAlerte`, `tauxSuccesRecouvrement`, `provisionsReprises`.
 **40** — `type ∈ {JOURNALIER…ANNUEL}`, `format ∈ {JSON, PDF, EXCEL, CSV}`, **204 si aucune donnée**
 sur la période : traiter comme un état vide, pas comme une erreur.
+
+**40 ter / 44** — la **fiche d'activité** (Q-133) est le même composant à deux endroits :
+« Mon activité » sur **Mon compte** (écran 44), et « Activité de ‹ personne › » sous le tableau 40 bis
+quand le DJ ou la DJA clique un nom.
+
+**Pourquoi « Mon compte » et non l'écran 40.** « Chaque utilisateur doit être capable de télécharger
+ses propres rapports » (métier, 2026-10-13) - or `/rapports` exige `ROLE_JURISTE` : l'Assistante et le
+supérieur hiérarchique n'y entrent pas. Les y laisser entrer leur montrerait le rapport périodique du
+service, auquel ils n'ont pas droit et dont l'appel échouerait sous leurs yeux. « Mon compte » est le
+seul écran que les cinq profils internes partagent.
+
+**Ce que la fiche porte, et que le tableau 40 bis ne porte pas** : **toutes** les natures d'action
+accomplies, et non six indicateurs choisis. Le métier a demandé une image **fidèle** de ce que la
+personne a fait ; six colonnes montreraient l'Assistante et le SH presque vides. Chaque décompte
+s'ouvre sur ses actions, et chaque action mène à la fiche du dossier concerné, sur l'onglet qui
+correspond à sa nature. Téléchargeable en PDF, Excel et CSV - **documents en français**, comme tous
+les PDF du projet (QF-24).
 
 **40 bis** — le bloc *Activité par personne* (observation 14, Q-132) partage la route de l'écran 40,
 mais **pas ses droits** : `peut(roles, "consulterRapportNominatif")` le rend, et il n'est vrai que

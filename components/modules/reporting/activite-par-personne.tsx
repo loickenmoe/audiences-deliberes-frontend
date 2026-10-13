@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { EtatErreur, EtatVide } from "@/components/global";
+import { FicheActivite } from "@/components/modules/reporting/fiche-activite";
 import { Button } from "@/components/ui/button";
 import { Champ, Input } from "@/components/ui/champ";
 import { messageErreur } from "@/lib/api/errors";
@@ -37,6 +38,9 @@ export function ActiviteParPersonne() {
   const [fin, setFin] = useState(defaut.fin);
   const [rapport, setRapport] = useState<RapportNominatif | null>(null);
   const [affiche, setAffiche] = useState(false);
+  // La personne dont on regarde la fiche complete. Le tableau compare six colonnes ; la fiche
+  // porte tout ce que la personne a fait - c'est la fidelite demandee par le metier (Q-133).
+  const [personneOuverte, setPersonneOuverte] = useState<{ id: number; nom: string } | null>(null);
 
   const valide = debut <= fin;
 
@@ -118,7 +122,23 @@ export function ActiviteParPersonne() {
                       Un compte retiré du référentiel laisse ses traces : les afficher sans nom les
                       rendrait anonymes, alors que c'est précisément le « qui » qui est en jeu.
                     */}
-                    {ligne.nom ?? t("personneRetiree", { identifiant: ligne.utilisateurId })}
+                    {/*
+                      Le nom ouvre la fiche complete de la personne. Le tableau ne porte que six
+                      colonnes pour rester comparable ; tout le reste de son activite est la,
+                      derriere son nom.
+                    */}
+                    <button
+                      type="button"
+                      className="text-left text-lien underline hover:no-underline"
+                      onClick={() =>
+                        setPersonneOuverte({
+                          id: ligne.utilisateurId,
+                          nom: ligne.nom ?? t("personneRetiree", { identifiant: ligne.utilisateurId }),
+                        })
+                      }
+                    >
+                      {ligne.nom ?? t("personneRetiree", { identifiant: ligne.utilisateurId })}
+                    </button>
                     {ligne.profil ? (
                       <span className="block text-[length:var(--taille-xs)] font-normal text-texte-tertiaire">
                         {ligne.profil}
@@ -150,6 +170,28 @@ export function ActiviteParPersonne() {
           </table>
         </div>
       )}
+
+      {/*
+        La fiche s'ouvre **sous** le tableau et non dans une modale : on y choisit une periode, on y
+        telecharge, on y clique vers des dossiers. Une modale rendrait tout cela etroit, et la
+        navigation vers un dossier la fermerait de toute facon.
+      */}
+      {personneOuverte !== null ? (
+        <div className="flex flex-col gap-2">
+          <Button
+            variante="discrete"
+            className="self-start"
+            onClick={() => setPersonneOuverte(null)}
+          >
+            {t("fermerFiche")}
+          </Button>
+          <FicheActivite
+            key={personneOuverte.id}
+            utilisateurId={personneOuverte.id}
+            nomAffiche={personneOuverte.nom}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }

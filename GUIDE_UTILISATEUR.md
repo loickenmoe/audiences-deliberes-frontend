@@ -356,6 +356,39 @@ par une nouvelle demande.
 reste visible dans votre file, que vous pouvez filtrer sur « en attente » - c'est à vous de décider
 d'insister.
 
+## 7 quater. Mon activité
+
+**Ce que vous avez fait, sur la période que vous choisissez.** Dans *Mon compte*, sous votre
+signature : choisissez deux dates, affichez, et chaque nature d'action que vous avez accomplie
+s'affiche avec son nombre. Rien ne part avant que vous l'ayez demandé.
+
+**Télécharger.** Une fois la fiche affichée, choisissez PDF, Excel ou CSV. Le fichier porte votre
+nom et la période, pour que plusieurs téléchargements se distinguent sans être ouverts. Les
+documents sont en français, comme tous les PDF de l'application.
+
+**Cliquer pour voir le détail.** En face de chaque nombre, *Voir les N actions* ouvre la liste de
+ces actions : leur date, ce qui a été fait, et le dossier concerné. **Cliquez la référence du
+dossier et vous arrivez sur sa fiche**, sur l'onglet correspondant - une audience sur l'onglet
+Audiences, un contrôle de frais sur l'onglet Frais.
+
+Deux lectures à connaître :
+
+- **« Hors dossier »** : certaines actions n'en touchent aucun - un réglage des paramètres, une
+  correction du référentiel des clients. Elles sont comptées, sans lien à suivre ;
+- le **délai moyen de saisie d'un compte rendu** est donné sous le tableau, séparément : ce n'est
+  pas un décompte d'actions, et il ne s'additionne pas avec eux. Il est **absent** - et non à zéro -
+  si vous n'avez saisi aucun compte rendu sur la période.
+
+**Ce tableau compte ; il ne juge pas.** Il n'y a ni note, ni classement, ni total. Il porte **toutes**
+les natures d'action que vous avez accomplies, et non une liste choisie : votre fiche doit refléter
+votre travail, qui n'est pas celui de votre voisin.
+
+**Pour le DJ et la DJA.** Dans *Activité par personne* (écran des rapports), **cliquez un nom** : la
+fiche complète de cette personne s'ouvre sous le tableau, avec sa période, son téléchargement et ses
+détails. Le tableau compare six indicateurs de production ; la fiche montre tout le reste.
+
+---
+
 ## 8. Documents (GED)
 
 Les pièces se joignent à la création d'un dossier ou depuis l'onglet *Documents*. Les formats admis
