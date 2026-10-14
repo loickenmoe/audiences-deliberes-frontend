@@ -84,6 +84,10 @@ non une par lettre.
 Le nombre de résultats s'affiche sous la liste et se met à jour avec elle. Le lien de votre
 recherche reste partageable : l'adresse porte vos filtres.
 
+**Les listes de l'application se cherchent toutes de la même façon** : les dossiers, les clients,
+la jurisprudence et le répertoire des avocats. Dans tous les cas, tapez et la liste suit ; la
+touche **Entrée** cherche sans attendre si vous êtes pressé.
+
 **Les pièces se joignent à la création, et elles sont obligatoires** (depuis le 2026-09-29) : le
 dossier de crédit d'origine et le PV de transfert pour un recouvrement, l'incident de compte et les
 éléments justificatifs pour un litige d'exploitation. Tant qu'un fichier manque, l'enregistrement

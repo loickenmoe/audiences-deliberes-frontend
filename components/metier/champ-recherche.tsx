@@ -65,11 +65,34 @@ export function ChampRecherche({
     setSaisie(valeur);
   }, [valeur]);
 
+  /*
+   * Le minuteur en cours, gardé pour pouvoir l'**annuler**. Sans cette référence, Entrée envoyait
+   * la recherche puis le minuteur l'envoyait une seconde fois : deux requêtes et deux écritures
+   * d'URL pour la même saisie, soit précisément ce que ce délai existe pour éviter. Trouvé par le
+   * test de la touche Entrée.
+   */
+  const minuteur = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function annuler() {
+    if (minuteur.current === null) return;
+    clearTimeout(minuteur.current);
+    minuteur.current = null;
+  }
+
+  /** Chercher sans attendre la pause : c'est ce que fait la touche Entrée. */
+  function chercherMaintenant(saisieCourante: string) {
+    annuler();
+    rappel.current(saisieCourante);
+  }
+
   useEffect(() => {
     // Déjà en vigueur : rien à propager, et surtout pas de requête à relancer.
     if (saisie === valeur) return;
-    const minuteur = setTimeout(() => rappel.current(saisie), delai);
-    return () => clearTimeout(minuteur);
+    minuteur.current = setTimeout(() => {
+      minuteur.current = null;
+      rappel.current(saisie);
+    }, delai);
+    return annuler;
   }, [saisie, valeur, delai]);
 
   return (
@@ -79,6 +102,18 @@ export function ChampRecherche({
         placeholder={placeholder}
         value={saisie}
         onChange={(evenement) => setSaisie(evenement.target.value)}
+        /*
+          **Entrée cherche tout de suite**, sans attendre la pause.
+          Deux écrans offraient déjà ce raccourci avant QF-57 - la base jurisprudentielle et le
+          répertoire des avocats. Le fil de la frappe le rend inutile, mais le retirer aurait enlevé
+          une habitude à qui l'avait prise, et la touche est celle que tout le monde presse après
+          avoir tapé une recherche.
+        */
+        onKeyDown={(evenement) => {
+          if (evenement.key !== "Enter") return;
+          evenement.preventDefault();
+          chercherMaintenant(evenement.currentTarget.value);
+        }}
       />
     </Champ>
   );

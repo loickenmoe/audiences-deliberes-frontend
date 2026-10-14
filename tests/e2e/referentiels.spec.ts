@@ -329,3 +329,27 @@ test("les écrans clients et intervenants sont traduits", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Service providers", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "New provider" })).toBeVisible();
 });
+
+/**
+ * Le fil de la frappe sur les filtres des **Clients** (QF-57).
+ *
+ * Même correction que sur la liste des dossiers, et même assertion décisive : le champ **garde le
+ * focus**. Le commentaire d'origine de cet écran invoquait « une requête et une entrée d'historique
+ * par caractère » - la seconde moitié était fausse, les filtres s'écrivant avec `router.replace`.
+ */
+test("les filtres des clients cherchent au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/clients");
+
+  const nom = page.getByLabel("Nom du client", { exact: true });
+  await nom.fill("SARL");
+  await expect(page).toHaveURL(/nom=SARL/, { timeout: 30_000 });
+  await expect(nom, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  const reference = page.getByLabel("Référence client", { exact: true });
+  await reference.fill("CLI");
+  await expect(page).toHaveURL(/reference=CLI/, { timeout: 30_000 });
+  await expect(reference, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  await page.context().close();
+});

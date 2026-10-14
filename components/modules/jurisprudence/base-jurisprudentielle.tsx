@@ -5,11 +5,10 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { BarreFiltres, Pagination } from "@/components/metier";
+import { BarreFiltres, ChampRecherche, Pagination } from "@/components/metier";
 import { ListeJurisprudences } from "@/components/modules/jurisprudence/liste-jurisprudences";
 import { ModaleArchivage } from "@/components/modules/jurisprudence/modale-archivage";
 import { Button } from "@/components/ui/button";
-import { Champ, Input } from "@/components/ui/champ";
 import { useJurisprudences } from "@/hooks/useDecisions";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
@@ -29,19 +28,26 @@ export function BaseJurisprudentielle({ roles }: { roles: readonly string[] }) {
   const [archivage, setArchivage] = useState(false);
   const jurisprudences = requete.data?.content ?? [];
 
+  /**
+   * Un filtre texte, au fil de la frappe (QF-57).
+   *
+   * Les trois se validaient au `blur` ou sur Entrée : il fallait quitter le champ ou valider pour
+   * voir le résultat. `ChampRecherche` cherche après une pause de 300 ms - une requête par pause, pas
+   * par caractère, qui était la seule objection valable - et garde le raccourci Entrée pour qui en
+   * avait pris l'habitude.
+   *
+   * Le `trim` reste ici : c'est l'appelant qui décide de ce qu'il met dans l'URL, et un filtre fait
+   * d'espaces ne filtre rien.
+   */
   function champ(cle: keyof typeof DEFAUTS, libelle: string) {
     return (
-      <Champ id={`filtre-${cle}`} label={libelle} className="w-52">
-        <Input
-          id={`filtre-${cle}`}
-          defaultValue={filtres[cle]}
-          // Au `blur` ou à la touche Entrée : pas une requête par caractère.
-          onBlur={(e) => definirFiltre(cle, e.target.value.trim() || undefined)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") definirFiltre(cle, e.currentTarget.value.trim() || undefined);
-          }}
-        />
-      </Champ>
+      <ChampRecherche
+        id={`filtre-${cle}`}
+        label={libelle}
+        valeur={filtres[cle]}
+        onChangement={(valeur) => definirFiltre(cle, valeur.trim() || undefined)}
+        className="w-52"
+      />
     );
   }
 

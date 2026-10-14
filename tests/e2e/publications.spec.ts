@@ -638,3 +638,24 @@ test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", asyn
   await expect(ligneJuriste.getByRole("button", { name: "Consulter la lettre" })).toBeVisible();
   await juriste.context().close();
 });
+
+/**
+ * Le fil de la frappe sur le **répertoire des avocats** (QF-57).
+ *
+ * Dernier des quatre écrans dont les filtres texte n'agissaient qu'en quittant le champ. Le
+ * raccourci Entrée y existait aussi : il est conservé.
+ */
+test("le filtre du répertoire des avocats cherche au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/repertoire/avocats");
+
+  const champ = page.getByLabel("Rechercher un avocat", { exact: true });
+  await champ.fill("Me");
+  await expect(page).toHaveURL(/nom=Me/, { timeout: 30_000 });
+  await expect(champ, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  await champ.press("Enter");
+  await expect(page).toHaveURL(/nom=Me/, { timeout: 30_000 });
+
+  await page.context().close();
+});

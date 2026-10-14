@@ -290,3 +290,33 @@ test("une décision archivée depuis la fiche y reste listée", async ({ page })
   const archivees = page.getByRole("region", { name: "Décisions archivées" });
   await expect(archivees.getByRole("row", { name: /TGI Douala/ })).toContainText("Jugement");
 });
+
+/**
+ * Le fil de la frappe sur la **base jurisprudentielle** (QF-57).
+ *
+ * Ses trois filtres se validaient au `blur` **ou sur Entrée**. Le raccourci est conservé - il
+ * existait, et le retirer aurait enlevé une habitude à qui l'avait prise -, mais il n'est plus
+ * nécessaire : la recherche part d'elle-même après une pause.
+ */
+test("les filtres de la base jurisprudentielle cherchent au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/jurisprudences");
+
+  const motCle = page.getByLabel("Mot-clé", { exact: true });
+  await motCle.fill("bail");
+  await expect(page).toHaveURL(/motCle=bail/, { timeout: 30_000 });
+  await expect(motCle, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  /*
+   * Par son identifiant, et non par son libellé : la modale d'archivage porte elle aussi un champ
+   * « Juridiction », et un `<dialog>` fermé reste dans le DOM - deux éléments répondent donc au même
+   * libellé. C'est le même piège qu'en QF-52, sur les deux modales de l'écran 42.
+   */
+  // Et la touche Entrée cherche sans attendre la pause, comme avant QF-57.
+  const juridiction = page.locator("#filtre-juridiction");
+  await juridiction.fill("TPI");
+  await juridiction.press("Enter");
+  await expect(page).toHaveURL(/juridiction=TPI/, { timeout: 30_000 });
+
+  await page.context().close();
+});

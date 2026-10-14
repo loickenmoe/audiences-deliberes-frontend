@@ -143,7 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
-| REC-E2E-042 | Filtres de la liste des dossiers : recherche au fil de la frappe | JUR | Haute | REC-E2E-029 | ☐ |
+| REC-E2E-042 | Filtres des listes : recherche au fil de la frappe | JUR | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1038,7 +1038,7 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
-## REC-E2E-042 - Filtres de la liste des dossiers : recherche au fil de la frappe
+## REC-E2E-042 - Filtres des listes : recherche au fil de la frappe
 
 ### Objectif
 Valider QF-57, signalé en recette le 2026-10-14 : les champs **Référence** et **Juridiction** de la
@@ -1076,6 +1076,11 @@ préfixe - c'est le cas dès que les fiches précédentes ont été jouées.
 | 10 | JUR | Champ Référence | Taper un mot entier d'un trait, assez vite | La liste ne « clignote » pas à chaque lettre : elle se met à jour **une fois**, quand vous vous arrêtez | | ☐ |
 | 11 | JUR | Le bouton **Retour** du navigateur | Cliquer une fois, après l'étape 10 | Vous **quittez la liste** - vous ne remontez pas les huit états intermédiaires de votre mot. Les filtres ne s'empilent pas dans l'historique | | ☐ |
 | 12 | JUR | Même écran, bouton **en** | Basculer en anglais | Les libellés des deux champs suivent, et le filtrage se comporte pareil | | ☐ |
+| 13 | JUR | Menu de gauche, **Clients** | Taper dans **Nom du client**, puis ne rien faire | La liste suit, le curseur reste dans le champ | | ☐ |
+| 14 | JUR | Même écran, **Référence client** | Idem | Même comportement | | ☐ |
+| 15 | JUR | Menu de gauche, **Jurisprudence** | Taper dans **Mot-clé**, puis ne rien faire | La liste suit sans qu'on quitte le champ | | ☐ |
+| 16 | JUR | Même écran, **Juridiction** | Taper, puis presser **Entrée** | La recherche part **aussitôt**, sans attendre la pause. Ce raccourci existait avant, il est conservé | | ☐ |
+| 17 | JUR | Menu de gauche, **Répertoire des avocats** | Taper dans **Rechercher un avocat**, puis ne rien faire, puis presser Entrée | La liste suit au fil de la frappe, et Entrée cherche tout de suite | | ☐ |
 
 ### Résultat final attendu
 Les deux champs filtrent la liste pendant la frappe, le curseur ne quitte pas le champ, le nombre de
@@ -1093,9 +1098,11 @@ résultats suit, et le lien reste partageable. Un mot tapé d'un trait ne décle
   `router.replace`.
 - **Le nombre de résultats est annoncé**, et pas seulement affiché : un filtre qui agit tout seul
   doit dire ce qu'il a trouvé, y compris à qui n'a pas l'écran sous les yeux.
-- ⚠ **Le même défaut subsiste ailleurs**, et n'a pas été corrigé faute de demande : les filtres des
-  *Clients*, de la *Base jurisprudentielle* et du *Répertoire des avocats* se valident encore en
-  quittant le champ. Le composant est écrit pour être partagé.
+- **Les quatre écrans suivent la même règle** (étapes 13 à 17) : dossiers, clients, base
+  jurisprudentielle et répertoire des avocats. Un seul composant les porte.
+- **La touche Entrée cherche sans attendre** (étapes 16 et 17). Elle existait sur deux de ces
+  écrans ; elle vaut désormais partout. Et elle **annule** la recherche différée en cours : sans
+  cela, la même saisie partait deux fois - défaut trouvé par son propre test.
 
 ---
 

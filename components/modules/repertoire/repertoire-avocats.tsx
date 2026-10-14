@@ -4,9 +4,9 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
+import { ChampRecherche } from "@/components/metier";
 import { FicheActivite } from "@/components/modules/reporting/fiche-activite";
 import { Button } from "@/components/ui/button";
-import { Champ, Input } from "@/components/ui/champ";
 import { useRepertoire } from "@/hooks/useConstitutions";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
@@ -39,18 +39,19 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
-      <Champ id="recherche-avocat" label={t("rechercheNom")} className="w-64">
-        <Input
-          id="recherche-avocat"
-          placeholder={t("phRechercheAvocat")}
-          defaultValue={filtres.nom}
-          // Au `blur` : écrire dans l'URL à chaque frappe produirait une requête par caractère.
-          onBlur={(evenement) => definirFiltre("nom", evenement.target.value.trim() || undefined)}
-          onKeyDown={(evenement) => {
-            if (evenement.key === "Enter") definirFiltre("nom", evenement.currentTarget.value.trim() || undefined);
-          }}
-        />
-      </Champ>
+      {/*
+        **Au fil de la frappe** (QF-57), comme les filtres des dossiers et des clients. Le raccourci
+        Entrée est conservé par `ChampRecherche` : il existait ici avant, et le retirer aurait enlevé
+        une habitude à qui l'avait prise.
+      */}
+      <ChampRecherche
+        id="recherche-avocat"
+        label={t("rechercheNom")}
+        placeholder={t("phRechercheAvocat")}
+        valeur={filtres.nom}
+        onChangement={(valeur) => definirFiltre("nom", valeur.trim() || undefined)}
+        className="w-64"
+      />
 
       {requete.isLoading ? (
         <EtatChargement lignes={5} />

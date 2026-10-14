@@ -1654,10 +1654,27 @@ remplissait le champ puis **cliquait sur le champ voisin** pour provoquer le `bl
 au geste même qui était reproché. Il affirme maintenant le contraire, et l'assertion décisive est que
 le champ **garde le focus** - le filtre s'applique sans qu'on en sorte.
 
-**⚠ Le même `onBlur` subsiste à trois autres endroits**, et je ne les ai pas touchés faute d'en avoir
-reçu la demande : le filtre **Nom** et **Référence** des *Clients*, les filtres de la *Base
-jurisprudentielle*, et le filtre **Nom** du *Répertoire des avocats*. `ChampRecherche` est écrit pour
-être partagé : un mot suffit à les aligner.
+**~~Le même `onBlur` subsiste à trois autres endroits~~ — alignés le jour même**, sur demande du
+porteur du projet : le filtre **Nom** et **Référence** des *Clients*, les trois filtres de la *Base
+jurisprudentielle*, et le filtre **Nom** du *Répertoire des avocats*. Les quatre écrans passent
+désormais par `ChampRecherche`, et les imports de `Champ`/`Input` devenus inutiles ont été retirés.
+
+**Deux capacités préservées au passage.** Les filtres de la base jurisprudentielle et du répertoire
+offraient la touche **Entrée** pour chercher sans attendre ; `ChampRecherche` la porte désormais pour
+tout le monde. Le fil de la frappe la rend inutile, mais la retirer aurait enlevé une habitude à qui
+l'avait prise. Et le `trim` reste **chez l'appelant** : c'est lui qui décide de ce qu'il écrit dans
+l'URL, et un filtre fait d'espaces ne filtre rien.
+
+**Le test de la touche Entrée a trouvé un défaut de mon implémentation**, et c'est le seul vrai
+enseignement de ce second passage. Entrée propageait aussitôt, **puis le minuteur en attente
+propageait une seconde fois la même saisie** : deux requêtes et deux écritures d'URL pour une seule
+recherche, soit exactement ce que ce délai existe pour éviter. Le minuteur est désormais gardé dans
+une référence et **annulé** par Entrée.
+
+**Un piège de sélecteur, déjà rencontré.** Sur la base jurisprudentielle, deux éléments répondent au
+libellé « Juridiction » - le filtre et le champ de la modale d'archivage, un `<dialog>` fermé restant
+dans le DOM. Le parcours cible le filtre par son identifiant. Même cause et même remède qu'en
+QF-52.
 
 ### ✅ QF-56 — Quatre défauts du formulaire de dépôt de frais — corrigés (2026-10-13)
 

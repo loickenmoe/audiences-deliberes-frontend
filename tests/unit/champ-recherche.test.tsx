@@ -159,6 +159,41 @@ describe("champ de recherche au fil de la frappe", () => {
     expect(espion).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * **Entrée cherche tout de suite**, sans attendre la pause.
+   *
+   * Deux écrans offraient déjà ce raccourci avant QF-57 - la base jurisprudentielle et le répertoire
+   * des avocats. Le fil de la frappe le rend inutile, mais le retirer aurait enlevé une habitude à
+   * qui l'avait prise, et c'est la touche que tout le monde presse après avoir tapé une recherche.
+   */
+  it("cherche aussitôt sur Entrée, sans attendre la pause", async () => {
+    const onChangement = vi.fn();
+    poser(onChangement);
+    const champ = screen.getByLabelText("Référence");
+
+    fireEvent.change(champ, { target: { value: "DOS" } });
+    fireEvent.keyDown(champ, { key: "Enter" });
+
+    // Sans attente : c'est tout l'objet du raccourci.
+    expect(onChangement).toHaveBeenCalledWith("DOS");
+
+    // Et le minuteur en cours ne provoque pas un second appel pour la même saisie.
+    await patienter(DELAI + MARGE);
+    expect(onChangement).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignore les autres touches", () => {
+    const onChangement = vi.fn();
+    poser(onChangement);
+    const champ = screen.getByLabelText("Référence");
+
+    fireEvent.change(champ, { target: { value: "DOS" } });
+    fireEvent.keyDown(champ, { key: "a" });
+    fireEvent.keyDown(champ, { key: "Escape" });
+
+    expect(onChangement).not.toHaveBeenCalled();
+  });
+
   /** La valeur de production reste celle du reste du projet : 300 ms, comme `SelecteurCherchable`. */
   it("applique 300 ms par défaut, la valeur déjà retenue ailleurs", () => {
     expect(DELAI_RECHERCHE).toBe(300);
