@@ -3,6 +3,7 @@
 import { Check, FileText, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -38,6 +39,7 @@ async function contenuLettre(documentId: number): Promise<Blob> {
  * constitution et la dépose dans la GED du dossier ; un rejet revient au juriste avec son motif.
  */
 export function FileConstitutions({ roles }: { roles: readonly string[] }) {
+  const router = useRouter();
   const t = useTranslations("constitutions");
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesConstitutions(roles), [roles]);
@@ -64,14 +66,27 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   /** La lettre ouverte dans la modale (Q-115 B2) : rédigeable par le juriste, lue par le SH. */
   const [lettreOuverte, setLettreOuverte] = useState<number | null>(null);
 
+  /**
+   * La signature, puis **l'onglet Documents du dossier** (QF-60).
+   *
+   * La signature dépose la lettre dans la GED du dossier, et rien n'y menait : le SH signait, lisait
+   * « Constitution signée », et restait devant sa file sans voir la pièce qu'il venait de produire.
+   * L'onglet est déjà atteignable par l'URL - `?onglet=documents`, posé pour qu'une pièce manquante
+   * à la création puisse être redéposée.
+   *
+   * `dossierId` est lu **avant** la navigation : `setSignature(null)` vide l'état, et le lire après
+   * donnerait `undefined`.
+   */
   async function signer() {
     if (!signature) return;
+    const dossierId = signature.dossierId;
     try {
       await decider.mutateAsync({ id: signature.id, decision: { decision: "VALIDEE" } });
       toast.success(t("signee"));
+      setSignature(null);
+      router.push(`/dossiers/${dossierId}?onglet=documents`);
     } catch (e) {
       toast.error(messageErreur(e));
-    } finally {
       setSignature(null);
     }
   }

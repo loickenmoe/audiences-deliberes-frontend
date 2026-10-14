@@ -114,6 +114,24 @@ export function ChampRecherche({
           evenement.preventDefault();
           chercherMaintenant(evenement.currentTarget.value);
         }}
+        /*
+          **Quitter le champ cherche aussitôt** (QF-61), et ce n'est pas un retour à `onBlur`.
+
+          Le défaut qu'il corrige est sérieux et n'a rien d'une finesse : on tape une référence, on
+          clique le résultat **dès qu'il apparaît**, et on revient à la liste. La minuterie en cours
+          se déclenchait après le clic, et son `router.replace` écrasait la navigation déjà engagée
+          vers la fiche. C'est le geste le plus naturel qui soit, et il échouait une fois sur deux
+          selon qu'on cliquait dans les 300 ms.
+
+          Cliquer un lien **retire d'abord le focus** : la recherche part donc ici, pendant le
+          `blur`, avant que la navigation ne commence - et c'est alors la navigation qui a le
+          dernier mot. Le fil de la frappe reste entier : ceci ne remplace pas le délai, il le
+          vide quand il n'a plus lieu d'attendre.
+        */
+        onBlur={(evenement) => {
+          if (minuteur.current === null) return;
+          chercherMaintenant(evenement.currentTarget.value);
+        }}
       />
     </Champ>
   );

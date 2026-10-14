@@ -182,6 +182,44 @@ describe("champ de recherche au fil de la frappe", () => {
     expect(onChangement).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * **Quitter le champ cherche aussitôt** (QF-61), et c'est un défaut sérieux qui l'a imposé.
+   *
+   * On tape une référence, on clique le résultat **dès qu'il apparaît**, et on revient à la liste :
+   * la minuterie en cours se déclenchait après le clic, et son `router.replace` écrasait la
+   * navigation déjà engagée vers la fiche. Cliquer un lien retire d'abord le focus - la recherche
+   * part donc pendant le `blur`, avant la navigation, et c'est la navigation qui a le dernier mot.
+   *
+   * Ce n'est pas un retour à `onBlur` : le fil de la frappe reste entier, et ceci ne fait que vider
+   * le délai quand il n'a plus lieu d'attendre.
+   */
+  it("cherche aussitôt en quittant le champ, sans attendre la pause", async () => {
+    const onChangement = vi.fn();
+    poser(onChangement);
+    const champ = screen.getByLabelText("Référence");
+
+    fireEvent.change(champ, { target: { value: "DOS" } });
+    fireEvent.blur(champ);
+
+    // Sans attente : c'est tout l'objet de la correction.
+    expect(onChangement).toHaveBeenCalledWith("DOS");
+
+    // Et le minuteur en cours ne provoque pas un second appel pour la même saisie.
+    await patienter(DELAI + MARGE);
+    expect(onChangement).toHaveBeenCalledTimes(1);
+  });
+
+  /** Quitter un champ sans rien avoir tapé ne relance aucune recherche. */
+  it("ne cherche pas en quittant un champ inchangé", async () => {
+    const onChangement = vi.fn();
+    poser(onChangement, "DOS");
+
+    fireEvent.blur(screen.getByLabelText("Référence"));
+
+    await patienter(MARGE);
+    expect(onChangement).not.toHaveBeenCalled();
+  });
+
   it("ignore les autres touches", () => {
     const onChangement = vi.fn();
     poser(onChangement);

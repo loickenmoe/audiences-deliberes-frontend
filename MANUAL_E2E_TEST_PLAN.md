@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-045 | La constitution, d'un bout à l'autre sans chercher | JUR, SH | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-044 | Le menu de l'avocat : accueil et notifications | AVO, JUR | Haute | — | ☐ |
 | REC-E2E-043 | La correspondance du DJ parvient à l'avocat | AVO, JUR, DJ | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-042 | Filtres des listes : recherche au fil de la frappe | JUR | Haute | REC-E2E-029 | ☐ |
@@ -1040,6 +1041,63 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
 
 ---
 
+## REC-E2E-045 - La constitution, d'un bout à l'autre sans chercher
+
+### Objectif
+Valider QF-60, signalé en recette le 2026-10-14 : la sollicitation enregistrée **ouvre aussitôt la
+rédaction** de la lettre, et la signature du SH **mène à l'onglet Documents** du dossier, où la
+lettre est rangée.
+
+### Acteurs
+Juriste (`juriste.test`), Supérieur hiérarchique (`sh.test`).
+
+### Préconditions
+Un dossier existant, et au moins un prestataire au répertoire - REC-E2E-029 en laisse.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Fiche dossier** | Entrée **Dossiers** du menu de gauche, puis cliquer la ligne du dossier |
+| **Solliciter un prestataire** | Bouton de l'en-tête de la fiche, à droite du titre |
+| **Rédaction de la lettre** | La boîte de dialogue **Lettre de constitution**, qui s'ouvre d'elle-même après l'enregistrement |
+| **Constitutions** (SH) | Connecté en SH : entrée **Constitutions** du menu de gauche, vue **À signer** |
+| **Onglet Documents** | Sur la fiche d'un dossier, le huitième onglet de la barre d'onglets |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | JUR | **Fiche dossier**, en-tête | Cliquer **Solliciter un prestataire** | La boîte **Solliciter la constitution d'un prestataire** s'ouvre | | ☐ |
+| 2 | JUR | Même boîte | Choisir le prestataire, saisir le motif, cliquer **Soumettre** | « Demande envoyée au supérieur hiérarchique pour signature. » **et la boîte Lettre de constitution s'ouvre d'elle-même**. C'est le premier défaut corrigé | | ☐ |
+| 3 | JUR | **Rédaction de la lettre** | Regarder la boîte de sollicitation | Elle a **disparu** : une seule boîte à l'écran, celle de la rédaction | | ☐ |
+| 4 | JUR | Même boîte | Regarder le bloc **Numéro** | Il annonce que le numéro sera attribué **à la signature**. C'est voulu : un numéro réservé maintenant serait brûlé si la demande restait sans suite | | ☐ |
+| 5 | JUR | Même boîte | Rédiger l'objet, le corps et le signataire, puis **Enregistrer la lettre** | « Lettre enregistrée. » La lettre était rédigeable sur-le-champ, sans rien aller chercher | | ☐ |
+| 6 | JUR | Même boîte | Fermer | On est **toujours sur la fiche du dossier**, là où l'on travaillait | | ☐ |
+| 6 bis | JUR | Refaire les étapes 1 et 2 sur un autre dossier, puis cliquer **Annuler** | — | La boîte se ferme sans rien enregistrer de la lettre, et **la demande reste bien envoyée** : on la retrouve dans **Constitutions**. Rédiger n’est pas obligatoire tout de suite | | ☐ |
+| 7 | SH | Menu de gauche, **Constitutions** | Vue **À signer** : trouver la demande, cliquer **Signer la constitution**, puis confirmer | « Constitution signée : la lettre est dans la GED du dossier. » | | ☐ |
+| 8 | SH | — | Regarder où l'on se trouve | **L'onglet Documents du dossier**, et la lettre `lettre-constitution-….pdf` y est listée. C'est le second défaut corrigé : le SH signait sans voir ce qu'il venait de produire | | ☐ |
+| 9 | SH | Cette ligne | Cliquer **Sans en-tête** | Le tirage pour papier préimprimé se télécharge. La pièce est bien celle que la signature a déposée | | ☐ |
+| 10 | SH | Menu de gauche, **Constitutions** | Y revenir, vue **Toutes** | La file est intacte et la demande y figure, signée. La redirection est un enchaînement, pas une porte qui se ferme | | ☐ |
+
+### Résultat final attendu
+Le juriste sollicite et rédige d'un seul mouvement, sans quitter le dossier ; le SH signe et voit
+aussitôt la lettre dans les documents du dossier.
+
+### Points de contrôle
+- **L'étape 2 est le premier défaut corrigé**, et l'étape 8 le second. Ce sont les deux seules
+  étapes à refuser si elles échouent.
+- **L'étape 3 compte** : la sollicitation doit céder la place. Deux boîtes empilées cacheraient la
+  rédaction, et c'est la rédaction qu'on vient d'ouvrir.
+- **L'étape 6 dit où l'on reste.** La rédaction est une boîte de dialogue, pas une page : on ne
+  quitte pas le dossier pour écrire la lettre.
+- **L'étape 10 vérifie ce que la correction ne doit pas casser.** Le SH qui a plusieurs
+  constitutions à signer quitte sa file à chaque signature ; elle doit rester à une entrée de menu.
+- Le bouton de l'étape 2 porte **Soumettre** et non « Enregistrer » : la demande part au supérieur
+  hiérarchique, elle n'est pas un brouillon qu'on garde.
+
+---
+
 ## REC-E2E-044 - Le menu de l'avocat : accueil et notifications
 
 ### Objectif
@@ -1196,6 +1254,7 @@ préfixe - c'est le cas dès que les fiches précédentes ont été jouées.
 | 9 | JUR | Bouton **Effacer les filtres** | Cliquer | Les **deux champs se vident à l'écran**, et la liste revient complète. Sans cela, un mot resterait affiché sans plus rien filtrer | | ☐ |
 | 10 | JUR | Champ Référence | Taper un mot entier d'un trait, assez vite | La liste ne « clignote » pas à chaque lettre : elle se met à jour **une fois**, quand vous vous arrêtez | | ☐ |
 | 11 | JUR | Le bouton **Retour** du navigateur | Cliquer une fois, après l'étape 10 | Vous **quittez la liste** - vous ne remontez pas les huit états intermédiaires de votre mot. Les filtres ne s'empilent pas dans l'historique | | ☐ |
+| 11 bis | JUR | Champ **Référence** | Taper une référence existante et, **dès que la ligne apparaît, cliquer dessus** sans attendre | La **fiche du dossier s'ouvre**. C'est QF-61 : la recherche différée écrasait cette navigation et vous ramenait à la liste | | ☐ |
 | 12 | JUR | Même écran, bouton **en** | Basculer en anglais | Les libellés des deux champs suivent, et le filtrage se comporte pareil | | ☐ |
 | 13 | JUR | Menu de gauche, **Clients** | Taper dans **Nom du client**, puis ne rien faire | La liste suit, le curseur reste dans le champ | | ☐ |
 | 14 | JUR | Même écran, **Référence client** | Idem | Même comportement | | ☐ |

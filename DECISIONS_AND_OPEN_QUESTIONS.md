@@ -1611,6 +1611,97 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-61 - Cliquer un résultat juste après l'avoir cherché renvoyait à la liste - corrigé (2026-10-14)
+
+**Trouvé par la suite e2e**, pas signalé en recette - et c'est un défaut sérieux, pas une finesse.
+
+**Le geste qui échouait est le plus naturel qui soit** : on tape une référence dans le filtre, le
+résultat apparaît, **on le clique**. Une fois sur deux, on revenait à la liste.
+
+**La cause.** La minuterie de 300 ms de [[QF-57]] se déclenchait **après** le clic, et son
+`router.replace` écrasait la navigation déjà engagée vers la fiche. Le journal Playwright le dit
+mot pour mot : « waiting for navigation until load / navigated to
+`/dossiers?reference=DOS-2026-1126` ». La navigation vers la fiche avait bien commencé ; la
+réécriture du filtre l'a remplacée.
+
+**C'est donc un défaut de QF-57**, apparu avec le filtrage au fil de la frappe et resté invisible
+trois passes de suite : il ne se manifeste que si le clic tombe dans la fenêtre de 300 ms, ce qui
+dépend de la vitesse de la machine. Le parcours « le compte rendu validé de l'avocat se retrouve
+depuis son audience » l'a attrapé en devenant **reproductible** sur cette machine.
+
+**La correction : quitter le champ cherche aussitôt.** Cliquer un lien **retire d'abord le focus**.
+La recherche part donc pendant le `blur`, **avant** que la navigation ne commence - et c'est alors la
+navigation qui a le dernier mot.
+
+**Ce n'est pas un retour à `onBlur`**, et la distinction est tout l'enjeu. Le fil de la frappe reste
+entier : le délai subsiste, et le `blur` ne fait que le **vider** quand il n'a plus lieu d'attendre.
+Les deux comportements que QF-57 avait apportés tiennent toujours - une requête par pause, et le
+curseur qui ne quitte pas le champ.
+
+**Un champ quitté sans avoir été modifié ne relance rien** : la condition porte sur la présence d'une
+minuterie en cours, pas sur le seul fait de sortir du champ. Sans cela, chaque passage de focus
+aurait produit une requête.
+
+### ✅ QF-60 - La constitution n'enchaînait ni sur sa rédaction ni sur sa pièce - corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : « Une fois qu'on a cliqué sur solliciter un prestataire,
+choisi le prestataire et renseigné le motif : une fois cliqué sur enregistrer, cela devrait
+directement enregistrer et nous renvoyer sur la page de rédaction de la constitution […]. Aussi une
+fois la constitution signée par le SH, ça devrait également nous renvoyer au niveau de l'onglet
+document du dit dossier afin qu'on puisse voir cette lettre de constitution. »
+
+**Deux ruptures dans une même chaîne**, et la première était déjà prévue par le backend.
+
+| Moment | Ce qui se passait | Ce qui se passe |
+|---|---|---|
+| Sollicitation enregistrée | La modale se fermait, un toast, et l'on restait sur la fiche | La **rédaction de la lettre s'ouvre aussitôt**, sur la demande qui vient d'être créée |
+| Lettre signée par le SH | Un toast « la lettre est dans la GED du dossier », et le SH restait devant sa file | On arrive sur **l'onglet Documents du dossier**, où la lettre est rangée |
+
+**Le backend était fait pour le premier enchaînement depuis le début.** `ConstitutionService` crée la
+lettre **avec la demande**, et le commentaire dit pourquoi : « La lettre naît avec la demande (B2),
+**sans numéro** : le juriste doit pouvoir la rédiger aussitôt, et réserver un numéro dès maintenant
+en brûlerait un à chaque demande sans suite ». Tout était prêt côté serveur ; seul l'écran ne
+l'offrait pas. Il fallait quitter le dossier, trouver la file des constitutions, et y retrouver sa
+demande parmi les autres - alors que la file « à signer » est la plus ancienne d'abord, ce qui
+repousse une demande fraîche derrière les dix premières.
+
+**La rédaction s'ouvre sans quitter le dossier.** Elle n'est pas une page mais une modale, montable
+partout : la fiche la porte désormais, et l'on reste donc là où l'on travaillait. L'écran des
+constitutions reste le chemin normal pour reprendre une lettre plus tard - ceci est un raccourci,
+pas le seul passage.
+
+**L'enchaînement vient après la fermeture, et hors du `try`.** L'enregistrement est acquis dès que le
+serveur a répondu ; si l'ouverture de la rédaction échouait, cela ne doit pas se présenter comme un
+échec de l'enregistrement. Et la sollicitation se ferme **avant** que la rédaction s'ouvre : deux
+boîtes de dialogue empilées cacheraient la seconde. Un test fixe cet ordre.
+
+**Pour la signature, l'URL existait déjà.** `/dossiers/{id}?onglet=documents` avait été posé pour
+qu'une pièce manquante à la création puisse être redéposée ; il suffisait de s'en servir. Le
+`dossierId` est lu **avant** la navigation, `setSignature(null)` vidant l'état juste avant.
+
+**Le parcours e2e existant encodait l'ancien comportement**, et c'est lui qui a confirmé la
+correction : après la signature il cliquait « Toutes » sur l'écran des constitutions, où le SH ne se
+trouve plus. Il affirme désormais la redirection, vérifie que la lettre est visible, puis revient à
+la file - la redirection est un enchaînement, pas une porte qui se ferme.
+
+**Trois autres parcours ont signalé le changement, et c'est ainsi qu'il faut le lire.** Ils cliquaient
+« Constitutions » dans le menu juste après la sollicitation ; la boîte de rédaction, qui s'ouvre
+désormais, interceptait le clic. Trois échecs produits par la correction, et non par un hasard - le
+genre de régression qu'une passe complète existe pour attraper. Ils ferment désormais la boîte avant
+de poursuivre, **ce que fait aussi l'utilisateur qui ne veut pas rédiger tout de suite**. C'est la
+contrepartie assumée d'un enchaînement automatique : il impose un geste à qui ne le voulait pas, et
+ce geste est un seul clic sur « Annuler ».
+
+**Une conséquence à connaître.** Le SH qui a plusieurs constitutions à signer quitte sa file à chaque
+signature. C'est ce qui a été demandé, et la file reste à une entrée de menu ; si cela gêne à
+l'usage, le remède serait de ne rediriger que sur la dernière - ce qu'aucune règle ne permet
+aujourd'hui de deviner.
+
+**Un écart de vocabulaire, relevé sans être corrigé.** La demande parle du bouton « enregistrer » ;
+il porte « **Soumettre** ». Le libellé n'a pas été changé : il dit ce que le geste fait - la demande
+part au supérieur hiérarchique pour signature -, là où « Enregistrer » laisserait croire à un
+brouillon qu'on garde pour soi.
+
 ### ✅ QF-59 - L'avocat n'avait d'onglet ni pour l'accueil ni pour ses notifications - corrigé (2026-10-14)
 
 **Signalé par le porteur du projet** : « Sur la page de l'avocat, je ne vois pas dans la liste des

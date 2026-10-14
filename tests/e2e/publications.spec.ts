@@ -359,6 +359,18 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   await ligne.getByRole("button", { name: `Signer la constitution - ${avocat}` }).click();
   await sh.getByRole("dialog", { name: "Signer la constitution ?" }).getByRole("button", { name: "Signer" }).click();
   await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
+
+  /*
+   * **La signature mène à la pièce qu'elle vient de déposer** (QF-60). Ce parcours encodait
+   * l'ancien comportement : il cliquait « Toutes » ici, sur un écran que le SH ne voit plus. La
+   * signature dépose la lettre dans la GED du dossier, et rien n'y menait - le SH signait, lisait
+   * « Constitution signée », et restait devant sa file sans voir ce qu'il venait de produire.
+   */
+  await sh.waitForURL(new RegExp(`/dossiers/${dossierId}\\?onglet=documents`), { timeout: 60_000 });
+  await expect(sh.getByText(/lettre-constitution-\d+\.pdf/)).toBeVisible({ timeout: 30_000 });
+
+  // La file reste atteignable : la redirection est un enchaînement, pas une porte qui se ferme.
+  await sh.goto("/constitutions");
   await sh.getByRole("button", { name: "Toutes" }).click();
   const signee = await ligneDansLaFile(sh, new RegExp(reference));
   await expect(signee.getByRole("button", { name: `Lettre de constitution - ${reference}` })).toBeVisible();
@@ -436,6 +448,16 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
   await modale.getByLabel("Motif de la demande", { exact: true }).fill("Saisie-attribution urgente");
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+  /*
+   * **La rédaction s'ouvre dans la foulée** (QF-60) : ce parcours-ci reprend la lettre plus tard,
+   * depuis la file, et ferme donc la boîte - ce que fait aussi qui ne veut pas rédiger tout de
+   * suite. Sans cela, elle intercepte le clic sur le menu, et c'est ainsi que ces trois parcours
+   * ont signalé le changement.
+   */
+  await juriste
+    .getByRole("dialog", { name: "Lettre de constitution" })
+    .getByRole("button", { name: "Annuler" })
+    .click();
 
   await menu(juriste).getByRole("link", { name: "Constitutions" }).click();
   await juriste.waitForURL(/\/constitutions/, { timeout: 60_000 });
@@ -529,6 +551,16 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
   await modale.getByLabel("Motif de la demande", { exact: true }).fill("Lettre appartenant à son auteur");
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+  /*
+   * **La rédaction s'ouvre dans la foulée** (QF-60) : ce parcours-ci reprend la lettre plus tard,
+   * depuis la file, et ferme donc la boîte - ce que fait aussi qui ne veut pas rédiger tout de
+   * suite. Sans cela, elle intercepte le clic sur le menu, et c'est ainsi que ces trois parcours
+   * ont signalé le changement.
+   */
+  await juriste
+    .getByRole("dialog", { name: "Lettre de constitution" })
+    .getByRole("button", { name: "Annuler" })
+    .click();
 
   await menu(juriste).getByRole("link", { name: "Constitutions" }).click();
   await juriste.waitForURL(/\/constitutions/, { timeout: 60_000 });
@@ -616,6 +648,16 @@ test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", asyn
   await modale.getByLabel("Motif de la demande", { exact: true }).fill("Sollicitation de l'Assistante");
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(assistante.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+  /*
+   * **La rédaction s'ouvre dans la foulée** (QF-60) : ce parcours-ci reprend la lettre plus tard,
+   * depuis la file, et ferme donc la boîte - ce que fait aussi qui ne veut pas rédiger tout de
+   * suite. Sans cela, elle intercepte le clic sur le menu, et c'est ainsi que ces trois parcours
+   * ont signalé le changement.
+   */
+  await assistante
+    .getByRole("dialog", { name: "Lettre de constitution" })
+    .getByRole("button", { name: "Annuler" })
+    .click();
 
   await menu(assistante).getByRole("link", { name: "Constitutions" }).click();
   await assistante.waitForURL(/\/constitutions/, { timeout: 60_000 });
@@ -658,4 +700,56 @@ test("le filtre du répertoire des avocats cherche au fil de la frappe", async (
   await expect(page).toHaveURL(/nom=Me/, { timeout: 30_000 });
 
   await page.context().close();
+});
+
+/**
+ * **Les deux enchaînements de la constitution** (QF-60, signalé le 2026-10-14).
+ *
+ * Ce qui manquait : une fois la sollicitation enregistrée, rien ne menait à la rédaction de la
+ * lettre. Il fallait quitter le dossier, trouver la file des constitutions, et y retrouver sa
+ * demande parmi les autres. Or le backend était fait pour cet enchaînement depuis le début - la
+ * lettre **naît avec la demande**, sans numéro, « pour que le juriste puisse la rédiger aussitôt ».
+ *
+ * Le second enchaînement - la signature qui mène à l'onglet Documents - est éprouvé par le parcours
+ * « constitution : motif obligatoire… » ci-dessus, qui le traverse déjà de bout en bout.
+ */
+test("enregistrer une sollicitation ouvre aussitôt la rédaction de sa lettre", async ({ browser }) => {
+  const { id: dossierId, reference } = await dossier();
+  const avocat = (await avocatDeTest()).nom;
+
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto(`/dossiers/${dossierId}`);
+  await juriste.getByRole("button", { name: "Solliciter un prestataire" }).click();
+
+  const sollicitation = juriste.getByRole("dialog", { name: "Solliciter la constitution d’un prestataire" });
+  await sollicitation.getByLabel("Prestataire", { exact: true }).selectOption({ label: `${avocat} - Avocat` });
+  await sollicitation
+    .getByLabel("Motif de la demande", { exact: true })
+    .fill("Représentation devant le TGI de Douala");
+  await sollicitation.getByRole("button", { name: "Soumettre" }).click();
+  await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
+
+  /*
+   * **C'est l'enchaînement corrigé** : la rédaction s'ouvre d'elle-même sur la demande qui vient
+   * d'être enregistrée, sans quitter le dossier.
+   */
+  const redaction = juriste.getByRole("dialog", { name: /Lettre de constitution/ });
+  await expect(redaction, "la rédaction ne s'est pas ouverte après l'enregistrement").toBeVisible({
+    timeout: 30_000,
+  });
+  // Et la modale de sollicitation a cédé la place : deux boîtes empilées cacheraient la rédaction.
+  await expect(sollicitation).toBeHidden();
+
+  /*
+   * Elle est **rédigeable sur-le-champ** : la lettre existe déjà côté serveur, et elle est à son
+   * demandeur (Q-126). C'est ce que cet enchaînement rend utile - sans quoi il n'ouvrirait qu'un
+   * formulaire en lecture seule. L'enregistrement de la lettre lui-même est éprouvé par le parcours
+   * « le juriste rédige, le SH corrige… » : ici on vérifie qu'on **peut** écrire, pas l'écriture.
+   */
+  const corps = redaction.getByLabel("Corps de la lettre", { exact: true });
+  await expect(corps).toBeEnabled();
+  await corps.fill(`Nous vous constituons sur le dossier ${reference}.`);
+  await expect(redaction.getByRole("button", { name: "Enregistrer la lettre" })).toBeEnabled();
+
+  await juriste.context().close();
 });

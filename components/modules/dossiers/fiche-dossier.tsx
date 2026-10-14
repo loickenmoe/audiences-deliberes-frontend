@@ -26,6 +26,7 @@ import { OngletEtapes } from "@/components/modules/dossiers/onglet-etapes";
 import { OngletHistorique } from "@/components/modules/dossiers/onglet-historique";
 import { OngletPublications } from "@/components/modules/dossiers/onglet-publications";
 import { OngletSynthese } from "@/components/modules/dossiers/onglet-synthese";
+import { ModaleLettre } from "@/components/modules/constitutions/modale-lettre";
 import { Button } from "@/components/ui/button";
 import { useDossier } from "@/hooks/useDossiers";
 import { messageErreur } from "@/lib/api/errors";
@@ -95,6 +96,13 @@ export function FicheDossier({
    * partagent la même modale, et c'est l'intention qui décide de ce qui est exigé.
    */
   const [diligence, setDiligence] = useState<IntentionDiligence | null>(null);
+  /**
+   * La lettre à rédiger dans la foulée d'une sollicitation (QF-60).
+   *
+   * Elle vit ici et non dans la modale de sollicitation : celle-ci se ferme, et une modale fermée
+   * n'affiche plus rien. L'enchaînement appartient donc à l'écran qui porte les deux.
+   */
+  const [lettreARediger, setLettreARediger] = useState<number | null>(null);
   const refsOnglets = useRef<Record<Onglet, HTMLButtonElement | null>>({
     synthese: null,
     etapes: null,
@@ -317,6 +325,20 @@ export function FicheDossier({
           dossierId={dossier.id}
           ouvert={modale === "constitution"}
           onFermeture={() => setModale(null)}
+          onSollicitee={setLettreARediger}
+        />
+      ) : null}
+      {/*
+        **La rédaction s'ouvre sur la demande qui vient d'être enregistrée** (QF-60), sans quitter le
+        dossier. La lettre existe déjà - le backend la crée avec la demande, sans numéro, pour cette
+        raison même. Elle reste rédigeable plus tard depuis la file des constitutions : ceci est un
+        raccourci, pas le seul chemin.
+      */}
+      {peutSolliciter ? (
+        <ModaleLettre
+          demandeId={lettreARediger}
+          ouvert={lettreARediger !== null}
+          onFermeture={() => setLettreARediger(null)}
         />
       ) : null}
     </div>

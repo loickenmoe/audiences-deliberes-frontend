@@ -16,15 +16,24 @@ import { messageErreur } from "@/lib/api/errors";
  * UC-INT-05 — depuis la fiche, le juriste sollicite la constitution d'un prestataire (avocat ou
  * autre) ; la demande attend la seconde signature du supérieur hiérarchique (RG-INT-08). Affecter un
  * avocat au dossier et le constituer sont deux démarches distinctes (Q-28 backend).
+ *
+ * **Enregistrer enchaîne sur la rédaction** (QF-60). La demande créée est annoncée par
+ * `onSollicitee`, pour que l'appelant ouvre la lettre sans transition. Le backend était fait pour
+ * cela depuis le début : la lettre **naît avec la demande**, sans numéro, « pour que le juriste
+ * puisse la rédiger aussitôt ». Seul l'écran ne l'offrait pas - il fallait quitter le dossier,
+ * trouver la file des constitutions et y retrouver sa demande.
  */
 export function ModaleConstitution({
   dossierId,
   ouvert,
   onFermeture,
+  onSollicitee,
 }: {
   dossierId: number;
   ouvert: boolean;
   onFermeture: () => void;
+  /** La demande enregistrée, pour enchaîner sur la rédaction de sa lettre (QF-60). */
+  onSollicitee?: (demandeId: number) => void;
 }) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
@@ -52,9 +61,16 @@ export function ModaleConstitution({
     setErreurs(suivantes);
     if (suivantes.prestataire || suivantes.motif) return;
     try {
-      await solliciter.mutateAsync({ dossierId, prestataireId: Number(prestataireId), motif: motif.trim() });
+      const demande = await solliciter.mutateAsync({
+        dossierId,
+        prestataireId: Number(prestataireId),
+        motif: motif.trim(),
+      });
       toast.success(t("sollicitee"));
       onFermeture();
+      // L'enregistrement est acquis : la rédaction peut s'ouvrir, et son échec ne le remettrait pas
+      // en cause. C'est pourquoi l'enchaînement vient **après** `onFermeture`, hors du `try`.
+      onSollicitee?.(demande.id);
     } catch (e) {
       setErreurs({ general: messageErreur(e) });
     }
