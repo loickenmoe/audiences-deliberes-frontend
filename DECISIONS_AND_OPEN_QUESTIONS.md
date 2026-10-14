@@ -1611,6 +1611,54 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-57 — Les filtres texte n'agissaient qu'en quittant le champ — corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : sur la liste des **Dossiers**, les champs « Référence » et
+« Juridiction » ne proposaient rien pendant la frappe. Il fallait **sortir du champ** pour voir la
+liste se filtrer - on tape, rien ne se passe, et on ne sait ni si l'application a compris, ni s'il
+faut valider.
+
+**La cause était assumée, et sa justification à moitié caduque.** Les deux champs se validaient sur
+`onBlur`, avec ce commentaire : « écrire dans l'URL à chaque frappe produirait une requête **et une
+entrée d'historique** par caractère ».
+
+| Moitié de la justification | Vérification |
+|---|---|
+| Une entrée d'historique par caractère | **Fausse** : `useFiltresUrl` écrit avec `router.replace`, qui n'empile rien |
+| Une requête par caractère | **Juste** - et c'est précisément ce qu'un délai de frappe règle |
+
+**Le remède était déjà dans le projet, et n'avait pas été appliqué ici.** `SelecteurCherchable`
+laisse la frappe se stabiliser 300 ms avant d'interroger le serveur, avec ce commentaire exact :
+« Laisse la frappe se stabiliser avant d'interroger le serveur ». La même valeur est reprise -
+`ChampRecherche`, dans `components/metier`, avec `DELAI_RECHERCHE = 300`.
+
+**La saisie est locale, le filtre est dans l'URL.** Lier le champ directement à l'URL la réécrirait à
+chaque lettre. L'état local absorbe la frappe et ne propage qu'à la pause - une requête par pause,
+pas par caractère. Et le champ **suit une remise à zéro venue d'ailleurs** : bouton « Effacer les
+filtres », lien partagé, retour arrière. Sans cela il garderait à l'écran un mot qui ne filtre plus
+rien.
+
+**Un piège évité, et il aurait bouclé.** `onChangement` est recréée à chaque rendu par l'appelant -
+une fonction fléchée dans le JSX. Dans les dépendances de l'effet, elle relancerait le minuteur sans
+fin. Elle est gardée dans une référence, comme le fait déjà `SelecteurCherchable`. Un test l'affirme
+en recréant la fonction cinq fois de suite.
+
+**Le nombre de résultats est désormais annoncé.** Filtrer au fil de la frappe change la liste **sans
+action explicite** : le total est bien visible - la pagination le porte - mais dans un simple
+`<span>`, donc il changeait en silence pour qui écoute. Une région `role="status"` discrète, en
+`sr-only` puisque le chiffre est déjà à l'écran, et seulement une fois la requête terminée - pendant
+le chargement, l'état de la table porte son propre `role="status"`.
+
+**Le parcours e2e existant encodait le défaut.** « La recherche par référence passe par l'URL »
+remplissait le champ puis **cliquait sur le champ voisin** pour provoquer le `blur` : il passait grâce
+au geste même qui était reproché. Il affirme maintenant le contraire, et l'assertion décisive est que
+le champ **garde le focus** - le filtre s'applique sans qu'on en sorte.
+
+**⚠ Le même `onBlur` subsiste à trois autres endroits**, et je ne les ai pas touchés faute d'en avoir
+reçu la demande : le filtre **Nom** et **Référence** des *Clients*, les filtres de la *Base
+jurisprudentielle*, et le filtre **Nom** du *Répertoire des avocats*. `ChampRecherche` est écrit pour
+être partagé : un mot suffit à les aligner.
+
 ### ✅ QF-56 — Quatre défauts du formulaire de dépôt de frais — corrigés (2026-10-13)
 
 **Signalés par le porteur du projet** en recette, sur l'écran 30 (dépôt d'une demande de frais par

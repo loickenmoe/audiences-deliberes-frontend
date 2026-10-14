@@ -76,6 +76,14 @@ tard dans la minute : **aucune notification n'est perdue**, seul l'affichage imm
 système** : vous ne la saisissez pas. À l'enregistrement, un message la nomme - « Dossier
 DOS-2026-0001 créé. » - et la fiche s'ouvre sur ce dossier. Le numéro repart à 1 chaque 1er janvier.
 
+**Chercher un dossier.** Les champs *Référence* et *Juridiction* filtrent la liste **au fur et à
+mesure que vous tapez** : vous n'avez plus à sortir du champ ni à valider. L'application attend
+une fraction de seconde que vous ayez fini de taper, puis cherche - une recherche par pause, et
+non une par lettre.
+
+Le nombre de résultats s'affiche sous la liste et se met à jour avec elle. Le lien de votre
+recherche reste partageable : l'adresse porte vos filtres.
+
 **Les pièces se joignent à la création, et elles sont obligatoires** (depuis le 2026-09-29) : le
 dossier de crédit d'origine et le PV de transfert pour un recouvrement, l'incident de compte et les
 éléments justificatifs pour un litige d'exploitation. Tant qu'un fichier manque, l'enregistrement

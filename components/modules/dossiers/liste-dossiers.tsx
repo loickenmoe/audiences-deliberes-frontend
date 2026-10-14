@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { BarreFiltres, CycleEtape, MontantFcfa, TableDonnees } from "@/components/metier";
+import { BarreFiltres, ChampRecherche, CycleEtape, MontantFcfa, TableDonnees } from "@/components/metier";
 import { classesBouton } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { useDossiers } from "@/hooks/useDossiers";
@@ -47,6 +47,7 @@ const DEFAUTS = {
  */
 export function ListeDossiers({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("dossiers");
+  const tm = useTranslations("metier");
   const td = useTranslations("domaine");
   const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
     useFiltresUrl(DEFAUTS);
@@ -154,26 +155,29 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       </header>
 
       <BarreFiltres nbFiltresActifs={nbFiltresActifs} onEffacer={effacer}>
-        <Champ id="filtre-reference" label={t("rechercheReference")} className="w-44">
-          <Input
-            id="filtre-reference"
-            placeholder={t("phFiltreReference")}
-            key={filtres.reference}
-            defaultValue={filtres.reference}
-            // Au `blur` : écrire dans l'URL à chaque frappe produirait une requête par caractère.
-            onBlur={(evenement) => definirFiltre("reference", evenement.target.value || undefined)}
-          />
-        </Champ>
+        {/*
+          **Au fil de la frappe** (QF-57). Les deux champs se validaient sur `onBlur` : il fallait
+          quitter le champ pour voir le résultat, et rien ne disait que l'application avait compris.
+          `ChampRecherche` absorbe la frappe et ne propage qu'après une pause de 300 ms - une requête
+          par pause, pas par caractère, ce qui était la seule objection valable à `onChange`.
+        */}
+        <ChampRecherche
+          id="filtre-reference"
+          label={t("rechercheReference")}
+          placeholder={t("phFiltreReference")}
+          valeur={filtres.reference}
+          onChangement={(valeur) => definirFiltre("reference", valeur || undefined)}
+          className="w-44"
+        />
 
-        <Champ id="filtre-juridiction" label={t("rechercheJuridiction")} className="w-44">
-          <Input
-            id="filtre-juridiction"
-            placeholder={t("phFiltreJuridiction")}
-            key={filtres.juridiction}
-            defaultValue={filtres.juridiction}
-            onBlur={(evenement) => definirFiltre("juridiction", evenement.target.value || undefined)}
-          />
-        </Champ>
+        <ChampRecherche
+          id="filtre-juridiction"
+          label={t("rechercheJuridiction")}
+          placeholder={t("phFiltreJuridiction")}
+          valeur={filtres.juridiction}
+          onChangement={(valeur) => definirFiltre("juridiction", valeur || undefined)}
+          className="w-44"
+        />
 
         <Champ id="filtre-categorie" label={t("filtreCategorie")} className="w-52">
           <Select
@@ -327,6 +331,20 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           {t("mesDossiers")}
         </label>
       </BarreFiltres>
+
+      {/*
+        **Le nombre de résultats, annoncé** (QF-57). Il est déjà visible - la pagination le porte -
+        mais dans un simple `<span>` : il changeait donc en silence pour qui écoute, alors que le
+        filtrage au fil de la frappe modifie la liste sans action explicite. Un filtre qui agit tout
+        seul doit dire ce qu'il a trouvé.
+
+        `sr-only` : le chiffre est déjà à l'écran, le répéter visuellement serait du bruit. Et il
+        n'est annoncé qu'une fois la requête terminée - pendant le chargement, l'état de la table
+        porte son propre `role="status"`.
+      */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {requete.isLoading ? "" : tm("elements", { nombre: requete.data?.totalElements ?? 0 })}
+      </p>
 
       <TableDonnees
         colonnes={colonnes}

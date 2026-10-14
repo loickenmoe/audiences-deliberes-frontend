@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-042 | Filtres de la liste des dossiers : recherche au fil de la frappe | JUR | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
 | REC-E2E-022 | Notifications applicatives : temps réel et supervision | JUR + DJ | Haute | REC-E2E-011 | ☐ |
@@ -1034,6 +1035,67 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-042 - Filtres de la liste des dossiers : recherche au fil de la frappe
+
+### Objectif
+Valider QF-57, signalé en recette le 2026-10-14 : les champs **Référence** et **Juridiction** de la
+liste des dossiers filtrent **pendant la frappe**, sans qu'on ait à sortir du champ ni à valider.
+
+Et vérifier la contrepartie, qui était la seule objection valable au procédé : **une recherche par
+pause, pas une par lettre**.
+
+### Acteurs
+Juriste (`juriste.test`).
+
+### Préconditions
+REC-E2E-029 connue. Au moins quelques dossiers dans la liste, dont les références partagent un
+préfixe - c'est le cas dès que les fiches précédentes ont été jouées.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Dossiers** | Entrée **Dossiers** du menu de gauche. Les champs **Référence** et **Juridiction** sont les deux premiers de la barre de filtres, au-dessus du tableau |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | JUR | Menu de gauche, **Dossiers** | Ouvrir | La barre de filtres, et le tableau en dessous | | ☐ |
+| 2 | JUR | Champ **Référence** | Taper les premiers caractères d'une référence, **puis ne plus rien faire** - ne cliquez nulle part | Après une fraction de seconde, la liste **se filtre toute seule**. C'est le défaut signalé : il fallait avant sortir du champ | | ☐ |
+| 3 | JUR | Même champ | Regarder le curseur | Il est **toujours dans le champ** : vous pouvez continuer à taper. La correction tient à cela | | ☐ |
+| 4 | JUR | Même champ | Continuer à taper pour affiner | La liste suit, toujours sans quitter le champ | | ☐ |
+| 5 | JUR | Sous la liste | Lire le nombre d'éléments | Il se met à jour avec le filtre | | ☐ |
+| 6 | JUR | Champ **Référence** | Taper une référence qui n'existe pas (`ZZZ-INEXISTANT`) | La liste se vide proprement, et le compteur dit **« Aucun élément »** - au lieu de laisser deviner un tableau vide | | ☐ |
+| 7 | JUR | Champ **Juridiction** | Taper le début d'une juridiction, puis ne plus rien faire | Même comportement : la liste suit sans qu'on sorte du champ | | ☐ |
+| 8 | JUR | La barre d'adresse | Regarder l'URL | Elle porte `reference=…` et `juridiction=…`. **Copiez-la** : le lien de votre recherche reste partageable | | ☐ |
+| 9 | JUR | Bouton **Effacer les filtres** | Cliquer | Les **deux champs se vident à l'écran**, et la liste revient complète. Sans cela, un mot resterait affiché sans plus rien filtrer | | ☐ |
+| 10 | JUR | Champ Référence | Taper un mot entier d'un trait, assez vite | La liste ne « clignote » pas à chaque lettre : elle se met à jour **une fois**, quand vous vous arrêtez | | ☐ |
+| 11 | JUR | Le bouton **Retour** du navigateur | Cliquer une fois, après l'étape 10 | Vous **quittez la liste** - vous ne remontez pas les huit états intermédiaires de votre mot. Les filtres ne s'empilent pas dans l'historique | | ☐ |
+| 12 | JUR | Même écran, bouton **en** | Basculer en anglais | Les libellés des deux champs suivent, et le filtrage se comporte pareil | | ☐ |
+
+### Résultat final attendu
+Les deux champs filtrent la liste pendant la frappe, le curseur ne quitte pas le champ, le nombre de
+résultats suit, et le lien reste partageable. Un mot tapé d'un trait ne déclenche qu'une recherche.
+
+### Points de contrôle
+- **Le curseur reste dans le champ** (étape 3). C'est l'étape qui distingue la correction du
+  contournement : le parcours automatisé d'origine cliquait sur le champ voisin pour provoquer la
+  validation, et passait grâce à ce geste - celui-là même qui était reproché.
+- **Une recherche par pause, pas une par lettre** (étape 10). C'était la seule objection valable au
+  procédé, écrite dans le code d'origine. Le délai de 300 ms la règle, et c'est la valeur que le
+  projet utilise déjà pour la recherche des listes déroulantes.
+- **Les filtres ne polluent pas l'historique** (étape 11). L'autre moitié de la justification
+  d'origine supposait le contraire ; elle était déjà caduque, les filtres s'écrivant avec
+  `router.replace`.
+- **Le nombre de résultats est annoncé**, et pas seulement affiché : un filtre qui agit tout seul
+  doit dire ce qu'il a trouvé, y compris à qui n'a pas l'écran sous les yeux.
+- ⚠ **Le même défaut subsiste ailleurs**, et n'a pas été corrigé faute de demande : les filtres des
+  *Clients*, de la *Base jurisprudentielle* et du *Répertoire des avocats* se valident encore en
+  quittant le champ. Le composant est écrit pour être partagé.
 
 ---
 

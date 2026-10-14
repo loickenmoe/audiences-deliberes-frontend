@@ -174,16 +174,83 @@ test("deux dossiers créés à la suite reçoivent deux références distinctes"
   expect(numero(references[1])).toEqual(numero(references[0]) + 1);
 });
 
-test("la recherche par référence passe par l'URL et reste partageable", async ({ page }) => {
+/**
+ * La recherche par référence, **au fil de la frappe** (QF-57).
+ *
+ * **Ce parcours encodait le défaut.** Il remplissait le champ puis **cliquait sur le champ voisin**
+ * pour provoquer le `blur` - et passait grâce à ce contournement, qui était exactement le geste
+ * reproché en recette. L'assertion décisive est désormais que le champ **garde le focus** : le
+ * filtre s'applique sans qu'on en sorte.
+ */
+test("la recherche par référence s'applique sans quitter le champ, et reste partageable", async ({
+  page,
+}) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers");
 
   // Ce filtre n'existait pas côté backend avant M16 (QF-07) : la liste n'était filtrable que par
   // nature, catégorie et juridiction.
-  await page.getByLabel("Référence", { exact: true }).fill("DOS-E2E");
-  await page.getByLabel("Juridiction", { exact: true }).click();
+  const champ = page.getByLabel("Référence", { exact: true });
+  await champ.fill("DOS-E2E");
 
+  // Rien d'autre n'est touché : pas de clic ailleurs, pas de touche Entrée.
   await expect(page).toHaveURL(/reference=DOS-E2E/, { timeout: 30_000 });
+  await expect(champ, "le filtre a exigé de quitter le champ").toBeFocused();
+  await expect(champ).toHaveValue("DOS-E2E");
+});
+
+test("la recherche par juridiction s'applique aussi au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const champ = page.getByLabel("Juridiction", { exact: true });
+  await champ.fill("TPI");
+
+  await expect(page).toHaveURL(/juridiction=TPI/, { timeout: 30_000 });
+  await expect(champ, "le filtre a exigé de quitter le champ").toBeFocused();
+});
+
+/**
+ * Le filtrage au fil de la frappe change la liste **sans action explicite**. Le nombre de résultats
+ * est visible - la pagination le porte - mais dans un simple `<span>` : il changeait donc en silence
+ * pour qui écoute. Une région vocale discrète l'annonce.
+ */
+test("le nombre de résultats est annoncé quand le filtre agit tout seul", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const annonce = page.getByRole("status").filter({ hasText: /élément/ });
+  await expect(annonce).toBeAttached({ timeout: 30_000 });
+
+  await page.getByLabel("Référence", { exact: true }).fill("ZZZ-INEXISTANT");
+  await expect(page).toHaveURL(/reference=ZZZ-INEXISTANT/, { timeout: 30_000 });
+  // Aucun résultat se dit, au lieu de laisser deviner un tableau vide.
+  await expect(annonce).toHaveText(/Aucun élément/, { timeout: 30_000 });
+});
+
+/**
+ * La contrepartie du fil de la frappe, et la seule objection valable à `onChange` : **une requête
+ * par pause, pas par caractère**. Le délai est éprouvé en test unitaire ; ce parcours vérifie qu'un
+ * mot tapé d'un trait ne laisse qu'une seule écriture dans l'URL - sinon l'historique et le réseau
+ * en porteraient une par lettre.
+ */
+test("un mot tapé d'un trait ne produit qu'une écriture d'URL", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const champ = page.getByLabel("Référence", { exact: true });
+  await champ.click();
+  // `pressSequentially` frappe lettre par lettre, contrairement à `fill`.
+  await champ.pressSequentially("DOS-2026", { delay: 30 });
+
+  await expect(page).toHaveURL(/reference=DOS-2026/, { timeout: 30_000 });
+  /*
+   * Les filtres s'écrivent avec `router.replace`, qui n'empile rien : un retour arrière doit donc
+   * quitter la liste, et non remonter les huit états intermédiaires. C'était la moitié de la
+   * justification d'origine du `onBlur`, et elle était déjà caduque.
+   */
+  await page.goBack();
+  await expect(page).not.toHaveURL(/reference=DOS-202/, { timeout: 30_000 });
 });
 
 test("le filtre « mes dossiers » ne montre que le portefeuille de l'utilisateur", async ({

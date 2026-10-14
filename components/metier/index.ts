@@ -1,5 +1,6 @@
 export { BarreFiltres } from "./barre-filtres";
 export { CasesACocher, type OptionCase } from "./cases-a-cocher";
+export { ChampRecherche, DELAI_RECHERCHE } from "./champ-recherche";
 export { CycleEtape } from "./cycle-etape";
 export { DialogueConfirmation } from "./dialogue-confirmation";
 export { GardeSaisie } from "./garde-saisie";
