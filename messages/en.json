@@ -1583,7 +1583,10 @@
     "fraisReferenceManquante": "Enter the invoice reference.",
     "fraisMontantManquant": "Enter the amount claimed.",
     "fraisMontantInvalide": "The amount must be a number greater than zero. Spaces and a decimal comma are accepted.",
-    "fraisPiecesManquantes": "Upload at least one supporting document."
+    "fraisPiecesManquantes": "Upload at least one supporting document.",
+    "colonneCorrespondance": "Letter from the Legal Department",
+    "correspondancePar": "Sent by {nom}",
+    "sansCorrespondance": "None"
   },
   "audit": {
     "titre": "Audit",

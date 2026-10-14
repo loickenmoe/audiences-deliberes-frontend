@@ -1583,7 +1583,10 @@
     "fraisReferenceManquante": "Indiquez la référence de la facture.",
     "fraisMontantManquant": "Indiquez le montant demandé.",
     "fraisMontantInvalide": "Le montant doit être un nombre supérieur à zéro. Les espaces et la virgule décimale sont acceptés.",
-    "fraisPiecesManquantes": "Chargez au moins une pièce justificative."
+    "fraisPiecesManquantes": "Chargez au moins une pièce justificative.",
+    "colonneCorrespondance": "Correspondance de la Direction Juridique",
+    "correspondancePar": "Transmise par {nom}",
+    "sansCorrespondance": "Aucune"
   },
   "audit": {
     "titre": "Audit",

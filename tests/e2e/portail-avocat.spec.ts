@@ -799,3 +799,99 @@ test("le dépôt de publication ne déborde pas en mobile, dans les deux natures
 
   await page.context().close();
 });
+
+/**
+ * **La correspondance du DJ parvient à l'avocat** (QF-58, signalé en recette le 2026-10-14).
+ *
+ * Le défaut : quand le DJ ou la DJA transmet une correspondance sur une publication, l'avocat en est
+ * notifié deux fois - une alerte et une notification prestataire -, mais aucun écran ne la lui
+ * montrait. Une notification qui renvoie vers une page muette dit qu'il y a quelque chose à lire
+ * sans le donner.
+ *
+ * Le dépôt et la transmission passent par l'API : ce sont les préparatifs du parcours, et les faire
+ * à l'écran n'éprouverait que des écrans déjà couverts ailleurs. **Ce qui est vérifié ici, c'est ce
+ * que l'avocat voit.**
+ */
+test("l'avocat lit sur son espace la correspondance que le DJ lui a transmise", async ({ browser }) => {
+  const reference = await creerDossierAffecteALAvocat();
+  const avocat = await jeton("avocat.test");
+
+  // Son dossier, vu de son côté : c'est la seule façon d'en obtenir l'identifiant avec son jeton.
+  const mesDossiers = await json<{ content: { id: number; reference: string }[] }>(
+    `/avocat/mes-dossiers?reference=${reference}`,
+    avocat,
+  );
+  const dossierId = mesDossiers.content.find((d) => d.reference === reference)?.id;
+  expect(dossierId, `le dossier ${reference} doit être visible de l'avocat`).toBeDefined();
+
+  const corps = new FormData();
+  corps.append("file", new Blob([PDF], { type: "application/pdf" }), `conclusions-${suffixe()}.pdf`);
+  const depot = await fetch(
+    `${API}/publications/autres?dossierId=${dossierId}&typeDocument=CONCLUSION`,
+    { method: "POST", headers: { Authorization: `Bearer ${avocat}` }, body: corps },
+  );
+  expect(depot.status, "le dépôt de la publication doit aboutir").toBe(201);
+  const publication = (await depot.json()) as { id: number };
+
+  const message = `Merci de préciser la date de l'audience ${suffixe()}.`;
+  const transmission = await appel(`/publications/${publication.id}/correspondance`, await jeton("dj.test"), {
+    method: "POST",
+    body: JSON.stringify({ contenu: message }),
+  });
+  expect(transmission.status, "la correspondance doit être transmise").toBe(201);
+
+  const page = await pageConnectee(browser, "avocat.test");
+  await page.goto("/portail");
+  await expect(page.getByRole("heading", { name: "Mon espace", level: 1 })).toBeVisible({ timeout: 30_000 });
+
+  // La colonne existe, et la correspondance s'y lit - avec la signature de qui l'a transmise.
+  await expect(
+    page.getByRole("columnheader", { name: "Correspondance de la Direction Juridique" }),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(message)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/Transmise par /).first()).toBeVisible();
+
+  await page.context().close();
+});
+
+/**
+ * **Ce que l'écran de l'avocat ne doit jamais montrer** (QF-58).
+ *
+ * Le juriste ne s'adresse jamais directement à l'avocat (Q-20, US 5.5, RG-INT-07) : il commente pour
+ * le DJ/DJA, qui tranche et transmet une correspondance unique. Un commentaire interne affiché sur
+ * le portail ouvrirait la délibération à celui dont elle discute - et la correction de QF-58 passait
+ * à un argument près de le faire.
+ */
+test("le commentaire interne d'un juriste n'atteint pas le portail de l'avocat", async ({ browser }) => {
+  const reference = await creerDossierAffecteALAvocat();
+  const avocat = await jeton("avocat.test");
+
+  const mesDossiers = await json<{ content: { id: number; reference: string }[] }>(
+    `/avocat/mes-dossiers?reference=${reference}`,
+    avocat,
+  );
+  const dossierId = mesDossiers.content.find((d) => d.reference === reference)?.id;
+
+  const corps = new FormData();
+  corps.append("file", new Blob([PDF], { type: "application/pdf" }), `piece-${suffixe()}.pdf`);
+  const depot = await fetch(
+    `${API}/publications/autres?dossierId=${dossierId}&typeDocument=PIECE`,
+    { method: "POST", headers: { Authorization: `Bearer ${avocat}` }, body: corps },
+  );
+  expect(depot.status).toBe(201);
+  const publication = (await depot.json()) as { id: number };
+
+  const interne = `Délibération interne ${suffixe()} : à rejeter selon moi.`;
+  const commentaire = await appel(`/publications/${publication.id}/commentaires`, await jeton("juriste.test"), {
+    method: "POST",
+    body: JSON.stringify({ contenu: interne }),
+  });
+  expect(commentaire.status, "le juriste doit pouvoir commenter pour le DJ/DJA").toBe(201);
+
+  const page = await pageConnectee(browser, "avocat.test");
+  await page.goto("/portail");
+  await expect(page.getByRole("heading", { name: "Mon espace", level: 1 })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(interne)).toHaveCount(0);
+
+  await page.context().close();
+});

@@ -295,6 +295,12 @@ rendu sans pièce n'affiche simplement pas ce bloc.
 **Correspondance.** Un juriste commente une publication ; le DJ ou la DJA consolide ces commentaires
 en une correspondance unique adressée à l'avocat. C'est la seule voie officielle d'échange.
 
+**La lit-il ? Oui, depuis le 2026-10-14.** Elle apparaît dans *Mon espace* de l'avocat, colonne
+**Correspondance de la Direction Juridique** du tableau *Mes dépôts*, avec le nom de qui l'a
+transmise et la date. L'avocat en était notifié depuis toujours, mais aucune page ne la lui montrait.
+Les **commentaires des juristes** n'y figurent pas, et c'est voulu : ils s'adressent au DJ et à la
+DJA, pas au prestataire dont ils discutent.
+
 **Constitutions.** Un juriste sollicite la constitution d'un prestataire ; le SH signe ; la lettre
 est générée et rangée dans la GED du dossier. L'avocat constitué en est notifié.
 

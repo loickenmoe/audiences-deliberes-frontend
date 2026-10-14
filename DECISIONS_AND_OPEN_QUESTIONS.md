@@ -1611,6 +1611,65 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-58 - L'avocat ne voyait pas la correspondance qui lui était transmise - corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : « Lorsqu'un avocat fait une publication (Compte rendu ou
+document du dossier), le DJ/DJA fait un commentaire. L'avocat doit être capable de voir ses
+commentaires sur sa page (ce qui est actuellement manquant). Il reçoit la notification mais aucune
+page actuellement ne l'affiche. »
+
+**Le modèle distingue deux choses, et c'est une règle, pas un détail de vocabulaire.**
+
+| Objet | Qui écrit | Pour qui | L'avocat le voit |
+|---|---|---|---|
+| **Commentaire** (`CommentairePublication`) | Un juriste | Le DJ / la DJA | **Non, jamais** - US 5.5, RG-INT-07, Q-20 |
+| **Correspondance** (`CorrespondanceAvocat`) | Le DJ ou la DJA, **une seule par publication** | L'avocat | **Oui** - c'est la voie officielle |
+
+C'est la correspondance qui déclenche la notification de l'avocat : `transmettreCorrespondance`
+appelle `alerteService.declencher(NOUVELLE_PUBLICATION, …)` **et**
+`notificationPrestataireService.notifier(CORRESPONDANCE_TRANSMISE, …)`. `commenter`, lui, ne notifie
+que les profils `DJ` et `DJA`. La notification que recevait l'avocat était donc bien celle de la
+**correspondance** - et c'est elle qu'aucun écran ne montrait.
+
+**Le défaut était localisé en un point précis.** `PortailAvocatService.mesPublications` cartographiait
+sa page avec `publicationMapper::toResponse`, la forme à **un seul argument**, qui délègue à
+`toResponse(publication, null, null, null)`. La correspondance était écartée de la charge utile du
+portail. Elle existait en base, l'avocat en était notifié, et elle n'arrivait jamais à son écran.
+
+**La correction, côté backend.** Le portail lit les correspondances de sa page **en une seule
+requête** (`findByPublicationIdIn`) et les joint publication par publication. Dix publications par
+page, une lecture - pas dix.
+
+**Ce qui n'a pas été fait, et c'est délibéré.** Les commentaires internes restent `null` pour
+l'avocat. Les lui ouvrir contredirait US 5.5 / RG-INT-07 / Q-20 : le juriste ne s'adresse jamais
+directement à l'avocat, il écrit pour le DJ/DJA, qui tranche et transmet **une** correspondance. Un
+test unitaire backend et un parcours e2e gardent cette frontière - la correction passait à un
+argument près de la franchir.
+
+**La correction, côté écran.** Une colonne **« Correspondance de la Direction Juridique »** dans
+*Mes dépôts*, à côté du motif de rejet : ce sont les deux seules choses que la Direction Juridique
+adresse à l'avocat, et les deux seules sur lesquelles il peut agir. Elle porte le nom de qui a
+transmis et la date - une lettre sans signature n'en est pas une -, conserve les retours à la ligne
+du message, et **dit l'absence** (« Aucune ») plutôt que de laisser une case vide qui ferait croire
+à un affichage incomplet.
+
+**Une duplication évitée au passage.** La conversion `CorrespondanceAvocat → CorrespondanceResponse`
+existait déjà dans `PublicationService`. En la réécrivant dans le portail, j'aurais créé deux
+écritures d'une même règle, qui divergent toujours : au premier champ ajouté, la signature de
+l'auteur aurait manqué d'un côté. Elle est remontée dans `PublicationMapper`, qui hébergeait déjà
+`nomComplet` pour exactement cette raison, et les deux appelants s'y adressent.
+
+**Question posée, et tranchée le 2026-10-14.** La demande disait « voir ses commentaires », alors que
+ce qui est livré, ce sont les **correspondances**. La question a été posée au porteur du projet :
+fallait-il ouvrir à l'avocat les commentaires internes des juristes ? C'eût été une **modification de
+RG-INT-07** et non un correctif - exposer à un prestataire externe la délibération qui le concerne.
+
+Réponse du porteur du projet : « laisse les commentaires internes et arrête-toi uniquement aux
+correspondances. Je voulais dire correspondance. » **Le périmètre livré est donc le périmètre voulu**,
+et RG-INT-07 reste intacte. Le vocabulaire valait d'être vérifié : le mot employé dans la demande
+désignait l'autre objet du modèle, et le livrer tel quel aurait ouvert une brèche que personne
+n'avait demandée.
+
 ### ✅ QF-57 — Les filtres texte n'agissaient qu'en quittant le champ — corrigé (2026-10-14)
 
 **Signalé par le porteur du projet** : sur la liste des **Dossiers**, les champs « Référence » et

@@ -737,7 +737,12 @@ export interface CorrespondanceAvocat {
 /**
  * Publication d'un avocat (#32, #59) : compte rendu d'audience (`contenu`, `audienceDate`) ou autre
  * publication (`typeDocument`, `nomFichier`). Depuis Q-86 backend, elle est nommée ;
- * `urlTelechargement` (10 minutes), `commentaires` et `correspondance` n'existent que sur le détail.
+ * `urlTelechargement` (10 minutes) et `commentaires` n'existent que sur le détail.
+ *
+ * `correspondance` fait exception depuis QF-58 : la liste `GET /portail/mes-publications` la porte,
+ * parce que c'est le seul écran où l'avocat peut lire ce que le DJ/DJA lui a transmis. `commentaires`,
+ * lui, reste nul pour l'avocat en toute circonstance : la délibération entre le juriste et le DJ/DJA
+ * ne lui est jamais adressée (US 5.5, RG-INT-07).
  */
 export interface Publication {
   id: number;

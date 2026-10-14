@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-043 | La correspondance du DJ parvient à l'avocat | AVO, JUR, DJ | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-042 | Filtres des listes : recherche au fil de la frappe | JUR | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
 | REC-E2E-021 | Pilotage : tableau de bord, rapport, seuils | DJ | Haute | Données des fiches précédentes | ☐ |
@@ -1035,6 +1036,68 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-043 - La correspondance du DJ parvient à l'avocat
+
+### Objectif
+Valider QF-58, signalé en recette le 2026-10-14 : quand le DJ ou la DJA transmet une correspondance
+sur une publication, **l'avocat la lit sur son espace**. Il en recevait la notification sans
+qu'aucune page ne l'affiche.
+
+Et vérifier la frontière qui va avec : **le commentaire interne d'un juriste n'y apparaît pas**
+(US 5.5, RG-INT-07).
+
+### Acteurs
+Avocat (`avocat.test`), Juriste (`juriste.test`), Directeur Juridique (`dj.test`).
+
+### Préconditions
+Un dossier sur lequel `avocat.test` est affecté, **avec une audience planifiée** - REC-E2E-029 en
+laisse. L'audience est nécessaire parce que le parcours passe par un **compte rendu** : une « autre
+publication » reste `Déposé` jusqu'à l'accusé de réception de l'Assistante, et personne d'autre
+qu'elle ne peut l'ouvrir d'ici là. Le compte rendu, lui, est immédiatement consultable par la
+Direction Juridique - le métier l'a tranché.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Déposer une publication** (avocat) | Connecté en avocat : entrée **Déposer une publication** du menu de gauche. Le bloc **Compte rendu d'audience** est le premier des deux |
+| **Mon espace** (avocat) | Connecté en avocat : entrée **Mon espace** du menu de gauche. Le tableau **Mes dépôts** est la première section |
+| **Publications** (interne) | Connecté en juriste ou en DJ : entrée **Publications** du menu de gauche. Cliquer la ligne du dépôt ouvre son détail |
+| **Correspondance** (DJ) | Sur le détail d'une publication, bloc **Correspondance à l'avocat**, en bas de l'écran |
+| **Commentaire** (juriste) | Sur le même détail, bloc **Commentaires des juristes** au-dessus, avec le bouton **Envoyer au DJ/DJA** |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | AVO | Menu de gauche, **Déposer une publication** | Bloc **Compte rendu d'audience** : choisir le dossier, son audience, écrire le récit, puis **Déposer le compte rendu** | « Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique… », et vous êtes ramené sur **Mon espace** | | ☐ |
+| 2 | AVO | **Mon espace**, tableau **Mes dépôts** | Regarder la colonne **Correspondance de la Direction Juridique** sur la ligne du dépôt | Elle affiche **« Aucune »**. L'absence est dite, pas laissée en blanc | | ☐ |
+| 3 | JUR | Menu de gauche, **Publications** | Ouvrir le dépôt de l'étape 1, écrire un commentaire dans le bloc **Commentaires des juristes** et cliquer **Envoyer au DJ/DJA** | Le commentaire est enregistré. C'est la délibération interne | | ☐ |
+| 4 | AVO | **Mon espace**, tableau **Mes dépôts** | Recharger la page et relire la ligne | La colonne affiche **toujours « Aucune »**. **Le commentaire du juriste ne doit pas apparaître** : il ne s'adresse pas à l'avocat | | ☐ |
+| 5 | DJ | Menu de gauche, **Publications** | Ouvrir le même dépôt, bloc **Correspondance à l'avocat**, écrire un message sur plusieurs lignes et cliquer **Transmettre à l’avocat**, puis confirmer | « Correspondance transmise à l'avocat. » | | ☐ |
+| 6 | AVO | Cloche **Notifications**, en haut à droite | Regarder | Une notification signale la correspondance. C'est elle qui existait déjà avant la correction | | ☐ |
+| 7 | AVO | **Mon espace**, tableau **Mes dépôts** | Relire la ligne du dépôt | La colonne porte désormais **le message du DJ**, précédé de **« Transmise par … »** et de la date. **C'est le défaut corrigé** | | ☐ |
+| 8 | AVO | Même cellule | Relire le message ligne à ligne | Les **retours à la ligne du DJ sont conservés** : le texte reçu est celui qui a été écrit | | ☐ |
+| 9 | AVO | Même tableau | Regarder les autres dépôts | Chacun porte **sa** correspondance, ou « Aucune ». Aucune ligne n'hérite de celle d'une autre | | ☐ |
+| 10 | AVO | Même écran, bouton **en** | Basculer en anglais | L'en-tête devient **Letter from the Legal Department**, et l'absence se dit **None** | | ☐ |
+
+### Résultat final attendu
+L'avocat lit sur son espace la correspondance que le DJ lui a transmise, signée et datée, avec sa
+mise en forme. Le commentaire interne du juriste n'y figure à aucun moment.
+
+### Points de contrôle
+- **L'étape 7 est la correction elle-même.** Avant, la notification de l'étape 6 renvoyait vers une
+  page muette : elle disait qu'il y avait quelque chose à lire, sans le donner.
+- **L'étape 4 est la règle, et elle compte autant.** Le juriste ne s'adresse jamais directement à
+  l'avocat (US 5.5, RG-INT-07, Q-20) : il écrit pour le DJ/DJA, qui tranche et transmet **une**
+  correspondance. Si le commentaire de l'étape 3 apparaissait, la correction serait à refuser.
+- **L'absence se dit** (étapes 2 et 9). Une case vide ferait croire à un affichage incomplet là où il
+  n'y a simplement rien à lire : la plupart des dépôts n'appellent aucune correspondance.
+- **Une seule correspondance par publication.** Tenter une seconde transmission à l'étape 5 est
+  refusé par le serveur - c'est voulu : la Banque parle d'une seule voix.
 
 ---
 
