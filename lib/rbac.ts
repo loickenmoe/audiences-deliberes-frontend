@@ -191,6 +191,37 @@ export const CAPACITES = {
    */
   consulterMonActivite: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
 
+  // ── Écrans ouverts à tout compte ──────────────────────────────────────────
+  /**
+   * L'**accueil**, `/` — ouvert à tout compte authentifié, avocat compris.
+   *
+   * Aucun endpoint ne la gouverne : c'est un écran, et depuis QF-19 une **racine unique pour tous
+   * les profils**, dont le contenu s'adapte plutôt que de rediriger. La capacité existe donc pour
+   * que l'entrée de navigation en ait une, et non pour refléter un `@PreAuthorize`.
+   *
+   * **Elle était adossée à [[consulterReferentiels]], et c'était un défaut** (QF-59) : l'avocat ne
+   * porte pas `ROLE_CONSULTATION`, si bien que l'entrée disparaissait de son menu alors que la page
+   * s'ouvrait parfaitement pour lui. Sa seule porte était le logo de la banque - une porte sans
+   * étiquette, qui ne dit pas où elle mène et ne marque pas l'onglet de la page où l'on est.
+   *
+   * `ROLE_CONSULTATION` couvre les cinq profils internes, `ROLE_AVOCAT` l'avocat qui ne le porte
+   * pas (QF-01) : les deux réunis sont la population entière, et deux rôles valent mieux que sept
+   * profils énumérés.
+   */
+  consulterAccueil: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
+  /**
+   * Ses **notifications**, `GET /alertes/mes-notifications` — `@PreAuthorize("isAuthenticated()")`.
+   *
+   * <b>Distincte de [[consulterAccueil]]</b>, bien qu'elle porte aujourd'hui les mêmes rôles :
+   * celle-ci reflète un endpoint, l'autre un écran sans endpoint. Les confondre ferait suivre à
+   * l'une tout resserrement futur de l'autre.
+   *
+   * C'est le **serveur** qui décide desquelles il s'agit : le destinataire est résolu sur le jeton,
+   * il n'est pas un paramètre. Chacun n'y voit donc que les alertes qui lui sont adressées, et
+   * l'écran n'a aucun périmètre à demander.
+   */
+  consulterSesNotifications: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
+
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */
   deposerDocument: ["ROLE_SAISIE"],

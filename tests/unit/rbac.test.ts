@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { NAVIGATION } from "@/lib/navigation";
 import { CAPACITES, type Capacite, aRole, peut, profilPrincipal } from "@/lib/rbac";
 
 /**
@@ -139,6 +140,30 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     }
   });
 
+  /**
+   * **Accueil et Notifications sont ouverts à tout compte, avocat compris** (QF-59).
+   *
+   * Le défaut signalé le 2026-10-14 : les deux entrées de navigation étaient adossées à
+   * `consulterReferentiels`, que l'avocat ne porte pas. Elles disparaissaient de son menu alors que
+   * les deux pages s'ouvraient parfaitement pour lui - il les atteignait par le logo de la banque et
+   * par la cloche, deux portes sans étiquette.
+   *
+   * La référence côté backend : `GET /alertes/mes-notifications` porte
+   * `@PreAuthorize("isAuthenticated()")`, et l'accueil est une racine unique pour tous les profils
+   * depuis QF-19.
+   */
+  it("l'accueil et les notifications sont ouverts à tout compte, avocat compris", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterAccueil")).toBe(true);
+      expect(peut(profil, "consulterSesNotifications")).toBe(true);
+    }
+  });
+
+  /** Et sans la correction, l'avocat en était écarté : c'est ce que ce rappel fixe. */
+  it("l'avocat n'a toujours pas la lecture des référentiels, qui n'était pas la bonne capacité", () => {
+    expect(peut(AVOCAT, "consulterReferentiels")).toBe(false);
+  });
+
   it("la signature des constitutions est réservée au supérieur hiérarchique", () => {
     expect(peut(SH, "signerConstitution")).toBe(true);
     expect(peut(JURISTE, "signerConstitution")).toBe(false);
@@ -214,9 +239,14 @@ describe("périmètre du profil avocat (QF-01)", () => {
    * demandes **qui lui sont adressées**, le serveur décidant lesquelles, et ne répond qu'aux
    * siennes.
    *
-   * La dernière est arrivée le 2026-10-13 (Q-135) : il lit et télécharge **sa propre** activité. Elle
+   * Une autre est arrivée le 2026-10-13 (Q-135) : il lit et télécharge **sa propre** activité. Elle
    * ne lui ouvre rien de plus non plus - le serveur refuse toute autre personne, et son détail ne
    * porte même pas de lien vers les dossiers, puisqu'il n'a pas d'écran de fiche dossier.
+   *
+   * Les **deux dernières** sont arrivées le 2026-10-14 (QF-59) : l'accueil et ses notifications.
+   * Elles n'élargissent rien - les deux pages lui étaient **déjà ouvertes**, et c'est tout le
+   * défaut : seules les entrées de navigation manquaient, adossées à `consulterReferentiels` qu'il
+   * ne porte pas. Il y arrivait par le logo de la banque et par la cloche, sans onglet pour le dire.
    */
   it("l'avocat n'accède qu'à une poignée de capacités", () => {
     const accordees = (Object.keys(CAPACITES) as Capacite[]).filter((c) => peut(AVOCAT, c));
@@ -229,7 +259,59 @@ describe("périmètre du profil avocat (QF-01)", () => {
       "consulterExplications",
       "repondreExplication",
       "consulterMonActivite",
+      "consulterAccueil",
+      "consulterSesNotifications",
     ]);
+  });
+});
+
+/**
+ * Ce que chaque profil **voit dans son menu** (QF-59).
+ *
+ * Ce bloc ne vérifie pas des capacités mais la **navigation**, et c'est lui qui aurait attrapé le
+ * défaut signalé le 2026-10-14 : les capacités étaient justes, l'avocat pouvait bel et bien ouvrir
+ * l'accueil et ses notifications ; c'étaient les **entrées de menu** qui citaient la mauvaise
+ * capacité. Un test sur `CAPACITES` seul serait resté vert.
+ */
+describe("navigation visible par profil (QF-59)", () => {
+  const menu = (roles: readonly string[]) =>
+    NAVIGATION.filter((e) => e.livre && peut(roles, e.capacite)).map((e) => e.cle);
+
+  it("l'avocat trouve l'accueil et ses notifications dans son menu", () => {
+    expect(menu(AVOCAT)).toContain("accueil");
+    expect(menu(AVOCAT)).toContain("notifications");
+  });
+
+  /**
+   * Le menu de l'avocat s'énumère en entier : une entrée qui s'y ajouterait en silence pourrait lui
+   * proposer un écran qu'il n'a pas le droit d'ouvrir - l'erreur contre laquelle met en garde le
+   * commentaire de « Mon compte » dans `lib/navigation.ts`.
+   */
+  it("et rien d'autre ne s'est glissé dans le menu de l'avocat", () => {
+    expect(menu(AVOCAT)).toEqual([
+      "accueil",
+      "monEspace",
+      "deposerFrais",
+      "deposerPublication",
+      "notifications",
+      "frais",
+      "explications",
+    ]);
+  });
+
+  it("les profils internes gardent l'accueil et les notifications", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(menu(profil)).toContain("accueil");
+      expect(menu(profil)).toContain("notifications");
+    }
+  });
+
+  /** Et « Mon compte » reste hors de son menu : il ne signe aucune lettre de la banque (Q-135). */
+  it("« Mon compte » reste réservé aux profils internes", () => {
+    expect(menu(AVOCAT)).not.toContain("monCompte");
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(menu(profil)).toContain("monCompte");
+    }
   });
 });
 

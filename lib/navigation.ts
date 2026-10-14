@@ -41,13 +41,28 @@ export interface EntreeNavigation {
 }
 
 export const NAVIGATION: EntreeNavigation[] = [
-  { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterReferentiels", livre: true },
-  // Portail Avocat (F16) : ces trois entrées sont les seules que voit un prestataire externe, qui ne
-  // porte que `ROLE_AVOCAT`. Elles restent invisibles aux profils internes, sans capacité de dépôt.
+  /*
+   * **Accueil et Notifications sont ouverts à tout compte, avocat compris** (QF-59).
+   *
+   * Les deux entrées étaient adossées à `consulterReferentiels`, que l'avocat ne porte pas : elles
+   * disparaissaient de son menu alors que les deux pages s'ouvraient parfaitement pour lui. Il les
+   * atteignait par le **logo de la banque** et par la **cloche** - deux portes sans étiquette, qui
+   * ne disent pas où elles mènent et ne marquent pas l'onglet de la page où l'on arrive. Signalé
+   * par le porteur du projet le 2026-10-14.
+   *
+   * La capacité citée est celle de la page, pas celle d'un écran voisin : c'est l'erreur contre
+   * laquelle met en garde le commentaire de « Mon compte », plus bas.
+   */
+  { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterAccueil", livre: true },
+  // Portail Avocat (F16) : les trois entrées qui lui sont **propres**, un prestataire externe ne
+  // portant que `ROLE_AVOCAT`. Elles restent invisibles aux profils internes, sans capacité de
+  // dépôt. **Elles n'étaient déjà pas les seules qu'il voie** : « Frais d'avocats » et
+  // « Explications » le nomment aussi dans leurs capacités. QF-59 y ajoute Accueil et ses
+  // Notifications.
   { cle: "monEspace", href: "/portail", icone: Briefcase, capacite: "deposerPublication", livre: true },
   { cle: "deposerFrais", href: "/frais/nouvelle", icone: Receipt, capacite: "deposerFrais", livre: true },
   { cle: "deposerPublication", href: "/publications/nouvelle", icone: FileSignature, capacite: "deposerPublication", livre: true },
-  { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterReferentiels", livre: true },
+  { cle: "notifications", href: "/notifications", icone: BellRing, capacite: "consulterSesNotifications", livre: true },
   { cle: "dossiers", href: "/dossiers", icone: FolderOpen, capacite: "consulterDossiers", livre: true },
   { cle: "clients", href: "/clients", icone: Briefcase, capacite: "consulterReferentiels", livre: true },
   { cle: "calendrier", href: "/audiences/calendrier", icone: CalendarDays, capacite: "consulterCalendrier", livre: true },

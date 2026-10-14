@@ -895,3 +895,64 @@ test("le commentaire interne d'un juriste n'atteint pas le portail de l'avocat",
 
   await page.context().close();
 });
+
+/**
+ * **L'avocat trouve l'accueil et ses notifications dans son menu** (QF-59, signalé le 2026-10-14).
+ *
+ * Le défaut : les deux entrées étaient adossées à `consulterReferentiels`, que l'avocat ne porte
+ * pas. Elles disparaissaient de son menu alors que les deux pages s'ouvraient parfaitement pour lui.
+ * Il y arrivait par le **logo de la banque** et par la **cloche** - deux portes sans étiquette, qui
+ * ne disent pas où elles mènent.
+ *
+ * Et la seconde moitié, qui manquait aussi : arrivé sur la page, **aucun onglet ne la signalait**.
+ * Le commentaire du logo affirmait que « l'entrée Accueil porte déjà `aria-current` » ; c'était vrai
+ * des cinq profils internes, faux de l'avocat, dont le menu n'avait pas cette entrée.
+ */
+test("l'avocat a l'accueil et ses notifications dans son menu, et l'onglet suit", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  const menu = page.getByRole("navigation", { name: "Navigation principale" });
+
+  // Les deux entrées existent - c'est ce qui manquait.
+  const accueil = menu.getByRole("link", { name: "Accueil", exact: true });
+  const notifications = menu.getByRole("link", { name: "Notifications", exact: true });
+  await expect(accueil).toBeVisible();
+  await expect(notifications).toBeVisible();
+
+  await notifications.click();
+  await page.waitForURL(/\/notifications/, { timeout: 60_000 });
+  // L'onglet revendique la page courante : c'est la seconde moitié du défaut.
+  await expect(notifications, "aucun onglet ne signale la page des notifications")
+    .toHaveAttribute("aria-current", "page");
+
+  await accueil.click();
+  await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
+  await expect(accueil, "aucun onglet ne signale la page d'accueil")
+    .toHaveAttribute("aria-current", "page");
+
+  // Le logo mène au même endroit, et n'y revendique rien : deux marqueurs feraient du bruit.
+  await expect(menu.getByRole("link", { name: "Afriland First Bank, retour à l’accueil" }))
+    .not.toHaveAttribute("aria-current", "page");
+
+  await page.context().close();
+});
+
+/**
+ * Et ce que ces deux entrées **n'ouvrent pas** : son menu reste celui d'un prestataire externe.
+ *
+ * QF-59 corrige une navigation, pas un périmètre. Si « Dossiers », « Clients » ou « Mon compte »
+ * apparaissaient, l'entrée mènerait à un refus de droits - l'erreur contre laquelle met en garde le
+ * commentaire de « Mon compte » dans `lib/navigation.ts`.
+ */
+test("le menu de l'avocat ne s'est pas élargi au reste de l'application", async ({ page }) => {
+  await seConnecter(page, "avocat.test");
+  const menu = page.getByRole("navigation", { name: "Navigation principale" });
+
+  for (const absente of ["Dossiers", "Clients", "Mon compte", "Tableau de bord", "Rapports"]) {
+    await expect(
+      menu.getByRole("link", { name: absente, exact: true }),
+      `« ${absente} » ne doit pas être proposé à l'avocat`,
+    ).toHaveCount(0);
+  }
+
+  await page.context().close();
+});

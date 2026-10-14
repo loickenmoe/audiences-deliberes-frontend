@@ -1611,6 +1611,52 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-59 - L'avocat n'avait d'onglet ni pour l'accueil ni pour ses notifications - corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : « Sur la page de l'avocat, je ne vois pas dans la liste des
+onglets, les onglets "Accueil" et "Notifications". Mais lorsque je clique sur la cloche de
+notification, la page de notification s'affiche mais je ne vois pas son onglet. De même, lorsque je
+clique sur le logo de la banque, la page d'accueil s'affiche mais je ne vois pas non plus son
+onglet. »
+
+**La cause, en un mot : les deux entrées citaient la capacité d'un écran voisin.** Elles étaient
+adossées à `consulterReferentiels` - la lecture des clients, des intervenants, des agences -, que
+l'avocat ne porte pas, n'ayant pas `ROLE_CONSULTATION` (QF-01). Elles disparaissaient donc de son
+menu, alors que les deux pages lui sont **parfaitement ouvertes** :
+
+| Page | Ce qui la garde réellement |
+|---|---|
+| Accueil, `/` | `exigerSession()` seule. Depuis QF-19, **une racine unique pour tous les profils**, dont le contenu s'adapte |
+| Notifications, `/notifications` | `GET /alertes/mes-notifications` porte `@PreAuthorize("isAuthenticated()")` - et le destinataire est résolu **sur le jeton**, jamais en paramètre |
+
+**Ce n'est donc pas un élargissement de périmètre, et c'est important.** Rien ne s'ouvre à l'avocat
+qui lui était fermé : seules les **étiquettes** manquaient. Il arrivait sur ces pages par le logo de
+la banque et par la cloche - deux portes qui ne disent pas où elles mènent.
+
+**La seconde moitié du défaut, et la plus discrète.** Arrivé sur la page, **aucun onglet ne la
+signalait**. Le commentaire du logo dans `app-sidebar.tsx` affirmait : « Pas d'`aria-current` en
+revanche - l'entrée "Accueil" ci-dessous le porte déjà ». C'était vrai des cinq profils internes, et
+**faux de l'avocat**, dont le menu n'avait pas cette entrée. Sur son accueil, rien ne revendiquait la
+page courante, ni visuellement ni pour un lecteur d'écran. La correction rend cette phrase vraie.
+
+**Deux capacités, pas une.** `consulterAccueil` et `consulterSesNotifications` portent aujourd'hui
+les mêmes rôles - `["ROLE_CONSULTATION", "ROLE_AVOCAT"]`, soit la population entière. Elles restent
+distinctes selon la doctrine déjà appliquée dans `lib/rbac.ts` à `administrerAgences`,
+`superviserAlertes` et `consulterAudit` : l'une reflète un `@PreAuthorize`, l'autre un écran qui n'a
+pas d'endpoint, et les confondre ferait suivre à l'une tout resserrement futur de l'autre.
+
+**Le test qui aurait attrapé le défaut n'existait pas.** `tests/unit/rbac.test.ts` énumérait les
+**capacités** de l'avocat - elles étaient justes. Ce qui manquait, c'était un test de la
+**navigation** : les entrées de menu citaient la mauvaise capacité, et aucune assertion ne portait
+sur ce que chaque profil voit dans son menu. Ce bloc existe désormais, et énumère le menu de l'avocat
+en entier pour qu'aucune entrée ne s'y glisse en silence vers un écran qu'il n'a pas le droit
+d'ouvrir.
+
+**Une affirmation corrigée au passage.** Le commentaire du portail dans `lib/navigation.ts` disait
+« ces trois entrées sont les seules que voit un prestataire externe ». C'était **déjà faux avant
+QF-59** : « Frais d'avocats » et « Explications » le nomment aussi dans leurs capacités. Son menu
+compte désormais sept entrées, énumérées par un test.
+
 ### ✅ QF-58 - L'avocat ne voyait pas la correspondance qui lui était transmise - corrigé (2026-10-14)
 
 **Signalé par le porteur du projet** : « Lorsqu'un avocat fait une publication (Compte rendu ou

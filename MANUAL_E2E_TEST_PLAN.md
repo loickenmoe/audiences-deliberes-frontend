@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-044 | Le menu de l'avocat : accueil et notifications | AVO, JUR | Haute | — | ☐ |
 | REC-E2E-043 | La correspondance du DJ parvient à l'avocat | AVO, JUR, DJ | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-042 | Filtres des listes : recherche au fil de la frappe | JUR | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-020 | Jurisprudence : archiver, rechercher, consulter | JUR | Moyenne | REC-E2E-019 | ☐ |
@@ -1036,6 +1037,63 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-044 - Le menu de l'avocat : accueil et notifications
+
+### Objectif
+Valider QF-59, signalé en recette le 2026-10-14 : l'avocat trouve **Accueil** et **Notifications**
+dans son menu, et l'onglet correspondant est **mis en évidence** quand il est sur la page.
+
+Et vérifier la contrepartie : son menu ne s'est pas élargi au reste de l'application.
+
+### Acteurs
+Avocat (`avocat.test`), et un profil interne au choix pour la comparaison - Juriste (`juriste.test`).
+
+### Préconditions
+Aucune. Au moins une notification pour l'avocat rend l'étape 5 plus parlante : REC-E2E-043 en laisse
+une, la correspondance transmise.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Menu de gauche** | La colonne d'entrées à gauche de l'écran. En dessous de 1024 px de large, c'est une **bande horizontale** en haut, qui défile |
+| **Logo de la banque** | En haut de cette colonne, au-dessus des entrées. Visible à partir de 1024 px seulement |
+| **Cloche** | L'icône de notification de l'en-tête, en haut à droite |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | AVO | Menu de gauche | Lire la liste des entrées de haut en bas | Elle commence par **Accueil**, et comporte **Notifications**. **C'est le défaut corrigé** : les deux manquaient | | ☐ |
+| 2 | AVO | Menu de gauche | Compter les entrées | Elles sont **sept** : Accueil, Mon espace, Déposer une demande, Déposer une publication, Notifications, Frais d'avocats, Explications | | ☐ |
+| 3 | AVO | Entrée **Notifications** | Cliquer | La page des notifications s'ouvre, et **l'entrée est mise en évidence** : fond gris et filet rouge à gauche. C'est la seconde moitié du défaut - la page s'ouvrait sans que rien ne le dise | | ☐ |
+| 4 | AVO | Entrée **Accueil** | Cliquer | La page d'accueil s'ouvre, et **l'entrée Accueil est mise en évidence** à son tour | | ☐ |
+| 5 | AVO | **Cloche**, en haut à droite | Cliquer | La même page de notifications, et **l'entrée Notifications du menu est mise en évidence**. Avant, on y arrivait sans aucun onglet pour le signaler | | ☐ |
+| 6 | AVO | **Logo de la banque** | Cliquer | La page d'accueil, et **l'entrée Accueil** mise en évidence. Le logo lui-même n'est pas mis en évidence : deux marqueurs feraient du bruit | | ☐ |
+| 7 | AVO | Menu de gauche | Chercher **Dossiers**, **Clients**, **Mon compte**, **Tableau de bord**, **Rapports** | **Aucune n'y est.** QF-59 corrige une navigation, pas un périmètre : une entrée vers un écran interdit ne mènerait qu'à un refus de droits | | ☐ |
+| 8 | JUR | Menu de gauche | Se connecter en juriste et relire son menu | **Accueil** et **Notifications** y sont toujours, et se comportent de même. Rien n'a été retiré aux profils internes | | ☐ |
+| 9 | AVO | Même écran, bouton **en** | Se reconnecter en avocat et basculer en anglais | Les deux entrées deviennent **Home** et **Notifications** | | ☐ |
+| 10 | AVO | Réduire la fenêtre à la largeur d'un téléphone | Regarder le menu | Il devient une **bande horizontale** en haut, qui défile, et les deux entrées y restent atteignables | | ☐ |
+
+### Résultat final attendu
+L'avocat atteint l'accueil et ses notifications depuis son menu, et sait à tout moment sur laquelle
+des deux il se trouve. Son menu compte sept entrées, et aucune ne mène à un écran qui lui serait
+refusé.
+
+### Points de contrôle
+- **L'étape 3 et l'étape 5 vérifient la même chose par deux chemins** : l'entrée de menu, et la
+  cloche. La seconde fonctionnait déjà ; ce qui manquait, c'était l'onglet mis en évidence à
+  l'arrivée.
+- **L'étape 7 est la contrepartie, et elle compte autant.** Rien ne s'ouvre à l'avocat qui lui était
+  fermé : seules les étiquettes manquaient. Si « Dossiers » ou « Mon compte » apparaissaient, la
+  correction serait à refuser.
+- **L'étape 8 garde les profils internes.** La correction change la capacité de deux entrées ; elle
+  ne doit rien retirer à ceux qui les voyaient déjà.
+- **La mise en évidence n'est pas qu'une couleur** : l'entrée porte aussi `aria-current="page"`, pour
+  qui n'a pas l'écran sous les yeux. La couleur seule ne suffirait pas.
 
 ---
 
