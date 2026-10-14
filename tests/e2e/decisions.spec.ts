@@ -320,3 +320,88 @@ test("les filtres de la base jurisprudentielle cherchent au fil de la frappe", a
 
   await page.context().close();
 });
+
+/**
+ * **La décision se relit avant d'être archivée** (QF-62, signalé le 2026-10-14).
+ *
+ * L'œil d'aperçu manquait sur le formulaire d'archivage. Une première correction a posé la seule
+ * propriété `surUneLigne` du téléversement : elle ne règle que la **mise en page**, ce composant ne
+ * rendant aucun bouton d'aperçu - ce sont ses appelants qui le placent à côté. L'œil manquait donc
+ * toujours, et c'est le porteur du projet qui l'a constaté à l'écran.
+ *
+ * Une décision archivée fait jurisprudence et ne se corrige pas : relire avant de valider évite
+ * d'archiver la mauvaise pièce.
+ */
+test("la décision chargée se relit avant d'être archivée", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/jurisprudences");
+  await page.getByRole("button", { name: "Archiver une décision" }).click();
+
+  const modale = page.getByRole("dialog", { name: "Archiver une décision" });
+  // Tant qu'aucun fichier n'est chargé, il n'y a rien à relire : pas de bouton mort.
+  await expect(modale.getByRole("button", { name: /^Consulter - / })).toHaveCount(0);
+
+  const nom = "arret-cour-appel-douala-chambre-civile-septembre-2026.pdf";
+  await modale
+    .locator('input[name="fichier-jurisprudence"]')
+    .setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
+
+  const oeil = modale.getByRole("button", { name: `Consulter - ${nom}` });
+  await expect(oeil, "l'œil d'aperçu est absent du formulaire d'archivage").toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Il est **sur la même ligne** que le téléversement, nom long compris (QF-56).
+  const hauteurTeleversement = await modale.locator('input[name="fichier-jurisprudence"]')
+    .evaluate((entree) => entree.closest("div")?.getBoundingClientRect().height ?? 0);
+  const boiteOeil = await oeil.boundingBox();
+  const boiteNom = await modale.getByText(nom).first().boundingBox();
+  expect(boiteOeil, "l'œil n'est pas rendu").not.toBeNull();
+  expect(boiteNom, "le nom du fichier n'est pas rendu").not.toBeNull();
+  // Deux éléments sur la même ligne se recouvrent verticalement.
+  const memeLigne =
+    boiteOeil!.y < boiteNom!.y + boiteNom!.height && boiteNom!.y < boiteOeil!.y + boiteOeil!.height;
+  expect(memeLigne, `l'œil est passé à la ligne (hauteur ${hauteurTeleversement} px)`).toBe(true);
+
+  // Et il ouvre bien la décision, sans quitter le formulaire ni l'avoir envoyée.
+  await oeil.click();
+  await expect(page.getByRole("dialog", { name: `Aperçu - ${nom}` })).toBeVisible({ timeout: 30_000 });
+
+  await page.context().close();
+});
+
+/**
+ * **La croix de l'aperçu ne ferme que l'aperçu** (QF-63, signalé le 2026-10-14).
+ *
+ * Le bouton « Fermer » passait par l'état React et ne refermait que l'aperçu ; la croix appelait
+ * `dialog.close()` et emportait **aussi** le formulaire d'archivage, perdant toute l'indexation
+ * déjà saisie. Deux voies de sortie pour un même geste, et une seule était juste.
+ */
+test("la croix de l'aperçu laisse le formulaire d'archivage ouvert", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/jurisprudences");
+  await page.getByRole("button", { name: "Archiver une décision" }).click();
+
+  const archivage = page.getByRole("dialog", { name: "Archiver une décision" });
+  const nom = "arret-a-relire.pdf";
+  await archivage
+    .locator('input[name="fichier-jurisprudence"]')
+    .setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
+
+  // Une indexation en cours : c'est elle que la croix faisait perdre.
+  await archivage.getByLabel("Juridiction", { exact: true }).fill("Cour d’appel de Douala");
+
+  await archivage.getByRole("button", { name: `Consulter - ${nom}` }).click();
+  const apercu = page.getByRole("dialog", { name: `Aperçu - ${nom}` });
+  await expect(apercu).toBeVisible({ timeout: 30_000 });
+
+  // **La croix**, qui est la première dans la boîte - le bouton « Fermer » du pied est la seconde,
+  // et c'est lui qui fonctionnait déjà.
+  await apercu.getByRole("button", { name: "Fermer" }).first().click();
+
+  await expect(apercu).toBeHidden({ timeout: 30_000 });
+  await expect(archivage, "la croix a emporté le formulaire d'archivage").toBeVisible();
+  await expect(archivage.getByLabel("Juridiction", { exact: true })).toHaveValue("Cour d’appel de Douala");
+
+  await page.context().close();
+});
