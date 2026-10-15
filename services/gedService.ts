@@ -110,6 +110,15 @@ export const gedService = {
     return data;
   },
 
+  /**
+   * QF-65 — un avocat affecté à ce dossier y est-il constitué ? La règle même qui lui ouvre les
+   * pièces : celui qui partage doit savoir si son geste produira quelque chose chez l'avocat.
+   */
+  etatPartageDossier: async (dossierId: number): Promise<{ avocatConstitue: boolean }> => {
+    const { data } = await apiClient.get<{ avocatConstitue: boolean }>(`/dossiers/${dossierId}/partage-avocat`);
+    return data;
+  },
+
   /** QF-64 — retire le partage, ou annule une proposition. */
   retirerPartageAvocat: async (documentId: number): Promise<PartageAvocat> => {
     const { data } = await apiClient.delete<PartageAvocat>(`/ged/documents/${documentId}/partage-avocat`);

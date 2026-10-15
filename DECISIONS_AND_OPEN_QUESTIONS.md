@@ -1611,6 +1611,42 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-65 - L'absence de constitution se dit ; le SH et l'Assistante partagent (2026-10-15)
+
+**Signalé en recette sur DOS-2026-1303.** Le juriste a partagé le dossier de crédit, puis le DJ le
+PV de transfert. L'avocat ne voyait ni l'un ni l'autre. Le diagnostic sur les données réelles :
+les deux pièces étaient bien **Partagé**, l'avocat bien affecté - mais **aucune constitution**
+n'avait été demandée. La règle de QF-64 jouait exactement comme arbitrée : l'affectation ne fait
+pas le mandat.
+
+**Le défaut n'était pas dans la règle mais dans ce qu'on en disait.** Celui qui partageait lisait
+« Pièce partagée avec l'avocat. » et voyait la colonne passer à **Partagé** : rien ne lui disait que
+l'avocat ne verrait rien avant une signature. Deux endroits le disent désormais :
+- un **bandeau** au-dessus du tableau de l'onglet Documents, tant qu'aucun avocat affecté n'est
+  constitué ;
+- la **confirmation** du partage, qui répète l'avertissement là où la décision se prend.
+
+Le partage reste permis sans constitution, et c'est voulu : il prend effet à la signature, sans
+avoir à repartager. L'écran l'annonce au lieu de le cacher.
+
+**D'où vient l'information.** Une lecture dédiée, `GET /dossiers/{id}/partage-avocat`, plutôt qu'un
+champ de plus dans la réponse du dossier : celle-ci compte déjà trente-sept champs et plusieurs
+constructeurs, et un champ calculé y aurait touché tous les écrans du dossier. La lecture applique
+**la règle même** qui ouvre les pièces à l'avocat - un avocat affecté et constitué -, si bien que le
+bandeau ne peut pas dire autre chose que ce que l'avocat vivra. Tant que la réponse n'est pas
+arrivée, l'écran n'affirme rien.
+
+**Le SH et l'Assistante partagent**, à la demande du porteur du projet : « ils sont à la base des
+juristes ». Même principe que le juriste : sur un dossier sensible, leur geste devient une
+proposition que le DJ ou la DJA valide. La règle du serveur se lisait déjà sur le profil - seuls le
+DJ et la DJA partagent directement -, si bien que l'ouverture n'a demandé que le droit d'accès.
+**La note à l'avocat, elle, reste au juriste** : elle n'a pas été demandée, et rien ne l'ouvre en
+silence.
+
+**Les tests qui encodaient l'ancienne règle** - « ni l'Assistante ni le SH ne partagent » - ont été
+réalignés, et non supprimés : ils affirment désormais le contraire, avec la règle du dossier
+sensible pour ces deux profils.
+
 ### ✅ QF-64 - L'avocat accède aux pièces partagées et à une note par audience (2026-10-15)
 
 **La demande** : donner à l'avocat externe l'accès à certains documents du dossier et aux audiences

@@ -796,7 +796,9 @@
     "rejetPartageDescription": "“{nom}” will stay within the Bank. The lawyer who proposed it will receive your reason.",
     "champMotifRejetPartage": "Reason for rejection",
     "phMotifRejetPartage": "E.g. document covered by banking secrecy",
-    "partageAide": "A shared document is only visible to the counsel assigned and appointed on the case."
+    "partageAide": "A shared document is only visible to the counsel assigned and appointed on the case.",
+    "aucunAvocatConstitue": "No counsel is appointed on this case yet: shared documents will become visible to them once their appointment letter is signed.",
+    "partageSansConstitution": "No counsel is appointed yet: it will only become visible once their appointment letter is signed."
   },
   "suppressions": {
     "titre": "Deletion requests",

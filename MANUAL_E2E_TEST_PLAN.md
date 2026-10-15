@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-047 | Le partage dit l'absence de constitution ; le SH et l'Assistante partagent | JUR, SH, AST, AVO | Haute | REC-E2E-046 | ☐ |
 | REC-E2E-046 | L'avocat accède aux pièces partagées et à la note de ses audiences | JUR, DJ, SH, AVO | Haute | REC-E2E-045 | ☐ |
 | REC-E2E-045 | La constitution, d'un bout à l'autre sans chercher | JUR, SH | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-044 | Le menu de l'avocat : accueil et notifications | AVO, JUR | Haute | — | ☐ |
@@ -1039,6 +1040,54 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-047 - Le partage dit l'absence de constitution ; le SH et l'Assistante partagent
+
+### Objectif
+Valider QF-65 (backend Q-140) : celui qui partage est **prévenu** quand aucun avocat n'est constitué
+sur le dossier - le défaut constaté sur DOS-2026-1303 -, et le **SH** et l'**Assistante** partagent
+comme un juriste, avec la validation du DJ ou de la DJA sur un dossier sensible.
+
+### Acteurs
+Juriste (`juriste.test`), SH (`sh.test`), Assistante (`assistante.test`), Avocat (`avocat.test`).
+
+### Préconditions
+REC-E2E-046 connue. Trois dossiers où `avocat.test` est affecté, chacun avec une pièce :
+**A** constitué, **B** constitué et sensible (**Proposer la diligence particulière**), **C** non
+constitué - DOS-2026-1303 convient pour C s'il n'a toujours pas de constitution.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Onglet Documents** | Menu **Dossiers**, cliquer la ligne du dossier, puis l'onglet **Documents** |
+| **Bandeau** | Le cadre orangé au-dessus du tableau des pièces |
+| **Icône de partage** | Dernière colonne de la ligne, les trois points reliés ; son nom s'affiche au survol |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | JUR | **Onglet Documents** du dossier C | Ouvrir | Le **bandeau** : « Aucun avocat n'est encore constitué sur ce dossier : les pièces partagées lui seront visibles dès la signature de sa lettre de constitution. » **C'est le défaut corrigé** | | ☐ |
+| 2 | JUR | Même onglet | Cliquer l'icône de partage d'une pièce | La confirmation **répète** l'avertissement : « …elle ne lui sera visible qu'à la signature de sa lettre de constitution. » | | ☐ |
+| 3 | JUR | **Onglet Documents** du dossier A | Ouvrir | **Aucun bandeau** : l'avocat est constitué | | ☐ |
+| 4 | SH | **Onglet Documents** du dossier A | Survoler puis cliquer l'icône de partage, confirmer | Elle s'appelle **Partager avec l'avocat**. « Pièce partagée avec l'avocat. » et la colonne passe à **Partagé** | | ☐ |
+| 5 | AST | **Onglet Documents** du dossier B (sensible) | Survoler puis cliquer l'icône de partage, confirmer | Elle s'appelle **Proposer le partage**. La colonne passe à **En attente de validation** | | ☐ |
+| 6 | AST | Même ligne | Chercher la coche et la croix | **Absentes** : la validation reste au DJ et à la DJA | | ☐ |
+| 7 | AST | Même ligne | Cliquer la flèche de retour, confirmer | « Partage retiré. » : qui peut partager peut retirer | | ☐ |
+| 8 | JUR | Fiche du dossier C | **Solliciter un prestataire**, puis signature par le SH (REC-E2E-045) | La demande est signée | | ☐ |
+| 9 | JUR | **Onglet Documents** du dossier C | Rouvrir | Le **bandeau a disparu** | | ☐ |
+| 10 | AVO | **Mon espace**, **Mes dossiers**, dossier C | Choisir le dossier | Les pièces partagées avant la constitution sont **là, sans avoir été repartagées** | | ☐ |
+
+### Points de contrôle
+- **Les étapes 1 et 2 sont la correction** : avant QF-65, rien ne disait que l'avocat ne verrait rien.
+- **L'étape 10** : partager avant la constitution n'était pas une erreur ; le partage prend effet à
+  la signature. L'écran l'annonce, il ne l'interdit pas.
+- **L'étape 6** : le SH et l'Assistante partagent, ils ne valident pas.
+- La **note à l'avocat** (onglet Audiences) reste au seul juriste : ni le SH ni l'Assistante ne
+  voient la bulle de texte.
 
 ---
 

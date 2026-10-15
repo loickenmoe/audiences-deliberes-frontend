@@ -17,6 +17,8 @@ const documents = vi.fn();
 const partager = vi.fn();
 const retirer = vi.fn();
 const arbitrer = vi.fn();
+/** QF-65 : un avocat affecté est-il constitué ? Par défaut oui, pour que le bandeau reste muet. */
+const etat = vi.fn();
 
 vi.mock("@/hooks/useDossiers", () => ({
   useDocumentsDossier: () => documents(),
@@ -28,6 +30,7 @@ vi.mock("@/hooks/useGed", () => ({
   usePartagerDocument: () => ({ mutateAsync: partager, isPending: false }),
   useRetirerPartage: () => ({ mutateAsync: retirer, isPending: false }),
   useArbitrerPartage: () => ({ mutateAsync: arbitrer, isPending: false }),
+  useEtatPartageDossier: () => etat(),
 }));
 
 vi.mock("@/hooks/useLibelles", () => ({
@@ -37,6 +40,7 @@ vi.mock("@/hooks/useLibelles", () => ({
 const JURISTE = ["ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 const DJ = ["ROLE_DJ", "ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 const ASSISTANTE = ["ROLE_ASSISTANTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
+const SH = ["ROLE_SH", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 
 function piece(partageAvocat: StatutPartageAvocat): DocumentDossier {
   return {
@@ -64,6 +68,7 @@ function afficher(roles: string[], statut: StatutPartageAvocat, sensible = false
 }
 
 beforeEach(() => {
+  etat.mockReturnValue({ data: { avocatConstitue: true } });
   partager.mockReset();
   retirer.mockReset();
   arbitrer.mockReset();
@@ -150,11 +155,58 @@ describe("la validation reste au DJ et à la DJA", () => {
   });
 });
 
-describe("qui ne partage pas ne voit aucun geste", () => {
-  it("l'Assistante voit l'état, sans pouvoir le changer", () => {
-    afficher(ASSISTANTE, "NON");
-    expect(screen.getByText("Non partagé")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Partager|Proposer le partage/ })).not.toBeInTheDocument();
+/**
+ * **QF-65 : le SH et l'Assistante partagent**, « ils sont à la base des juristes ». Même principe
+ * que le juriste : sur un dossier sensible, leur geste propose, et le DJ ou la DJA valide.
+ */
+describe("le SH et l'Assistante partagent comme un juriste", () => {
+  it.each([
+    ["l'Assistante", ASSISTANTE],
+    ["le SH", SH],
+  ])("%s partage un dossier ordinaire, et propose un dossier sensible", (_, roles) => {
+    const { unmount } = afficher(roles, "NON");
+    expect(screen.getByRole("button", { name: "Partager avec l'avocat - assignation.pdf" })).toBeInTheDocument();
+    unmount();
+
+    afficher(roles, "NON", true);
+    expect(screen.getByRole("button", { name: "Proposer le partage - assignation.pdf" })).toBeInTheDocument();
+    // Et la validation reste à la direction.
+    expect(screen.queryByRole("button", { name: /^Valider le partage/ })).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * **QF-65 : l'absence de constitution se dit.** Signalé en recette : le juriste partageait, lisait
+ * « Partagé », et l'avocat ne voyait rien, faute de lettre signée.
+ */
+describe("aucun avocat constitué", () => {
+  it("un bandeau le dit, au-dessus du tableau", () => {
+    etat.mockReturnValue({ data: { avocatConstitue: false } });
+    afficher(JURISTE, "NON");
+
+    expect(screen.getByRole("note")).toHaveTextContent(/Aucun avocat n'est encore constitué sur ce dossier/);
+  });
+
+  it("et la confirmation du partage le répète, là où la décision se prend", () => {
+    etat.mockReturnValue({ data: { avocatConstitue: false } });
+    afficher(JURISTE, "NON");
+
+    fireEvent.click(screen.getByRole("button", { name: "Partager avec l'avocat - assignation.pdf" }));
+    expect(
+      screen.getByText(/elle ne lui sera visible qu'à la signature de sa lettre de constitution/),
+    ).toBeInTheDocument();
+  });
+
+  it("un avocat constitué : aucun bandeau", () => {
+    afficher(JURISTE, "NON");
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  /** Tant que la réponse n'est pas arrivée, l'écran n'affirme rien. */
+  it("l'état encore inconnu : aucun bandeau", () => {
+    etat.mockReturnValue({ data: undefined });
+    afficher(JURISTE, "NON");
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 });
 

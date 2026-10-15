@@ -13,6 +13,7 @@ export const CLES = {
   documentsDossier: "documents-dossier",
   demandesSuppression: "demandes-suppression",
   partagesAvocat: "partages-avocat",
+  etatPartageDossier: "etat-partage-dossier",
   piecesDossierAvocat: "pieces-dossier-avocat",
   rapportJournalier: "rapport-journalier",
   derogations: "derogations",

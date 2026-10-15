@@ -294,11 +294,20 @@ describe("partage des pièces avec l'avocat (QF-64)", () => {
     }
   });
 
-  it("ni l'Assistante, ni le SH, ni l'avocat ne partagent", () => {
-    for (const profil of [ASSISTANTE, SH, AVOCAT]) {
-      expect(peut(profil, "partagerDocument")).toBe(false);
+  /**
+   * QF-65 : le SH et l'Assistante partagent, « ils sont à la base des juristes ». La note à
+   * l'avocat, elle, reste au juriste : elle n'a pas été ouverte, et rien ne l'ouvre en silence.
+   */
+  it("le SH et l'Assistante partagent aussi, sans écrire la note à l'avocat", () => {
+    for (const profil of [SH, ASSISTANTE]) {
+      expect(peut(profil, "partagerDocument")).toBe(true);
       expect(peut(profil, "ecrireNoteAvocat")).toBe(false);
     }
+  });
+
+  it("l'avocat ne partage ni n'écrit de note", () => {
+    expect(peut(AVOCAT, "partagerDocument")).toBe(false);
+    expect(peut(AVOCAT, "ecrireNoteAvocat")).toBe(false);
   });
 
   it("la file des partages n'est au menu que du DJ et de la DJA", () => {

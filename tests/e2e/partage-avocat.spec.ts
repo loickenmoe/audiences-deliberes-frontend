@@ -263,3 +263,59 @@ test("la file des partages à valider est réservée au DJ et à la DJA", async 
   ).toHaveCount(0);
   await juriste.context().close();
 });
+
+/**
+ * **QF-65 : l'absence de constitution se dit à celui qui partage.** Signalé en recette sur
+ * DOS-2026-1303 : le juriste partageait, lisait « Partagé », et l'avocat ne voyait rien, faute de
+ * lettre signée. Le partage n'était pas faux - il prend effet à la signature - mais rien ne le disait.
+ */
+test("un bandeau prévient qu'aucun avocat n'est constitué, et disparaît une fois constitué", async ({ browser }) => {
+  const sansConstitution = await dossierAvecAvocat({ constitue: false });
+  const avecConstitution = await dossierAvecAvocat({ constitue: true });
+  const bandeau = /Aucun avocat n'est encore constitué sur ce dossier/;
+
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto(`/dossiers/${sansConstitution.id}?onglet=documents`);
+  await expect(juriste.getByRole("note").filter({ hasText: bandeau })).toBeVisible({ timeout: 30_000 });
+
+  // Et la confirmation le répète, là où la décision se prend.
+  await juriste.getByRole("button", { name: `Partager avec l'avocat - ${sansConstitution.nom}` }).click();
+  await expect(
+    juriste.getByRole("dialog", { name: "Partager cette pièce avec l'avocat ?" })
+      .getByText(/visible qu'à la signature de sa lettre de constitution/),
+  ).toBeVisible();
+  await juriste.getByRole("dialog", { name: "Partager cette pièce avec l'avocat ?" })
+    .getByRole("button", { name: "Annuler" }).click();
+
+  await juriste.goto(`/dossiers/${avecConstitution.id}?onglet=documents`);
+  await expect(juriste.getByRole("row", { name: new RegExp(avecConstitution.nom) })).toBeVisible({ timeout: 30_000 });
+  await expect(juriste.getByRole("note").filter({ hasText: bandeau })).toHaveCount(0);
+  await juriste.context().close();
+});
+
+/**
+ * **QF-65 : le SH et l'Assistante partagent**, « ils sont à la base des juristes ». Même principe
+ * que le juriste : le SH partage un dossier ordinaire, l'Assistante propose sur un dossier sensible.
+ */
+test("le SH partage un dossier ordinaire, l'Assistante propose sur un dossier sensible", async ({ browser }) => {
+  const ordinaire = await dossierAvecAvocat({ constitue: true });
+  const sensible = await dossierAvecAvocat({ constitue: true, sensible: true });
+
+  const sh = await pageConnectee(browser, "sh.test");
+  await sh.goto(`/dossiers/${ordinaire.id}?onglet=documents`);
+  await sh.getByRole("button", { name: `Partager avec l'avocat - ${ordinaire.nom}` }).click({ timeout: 30_000 });
+  await sh.getByRole("dialog", { name: "Partager cette pièce avec l'avocat ?" })
+    .getByRole("button", { name: "Partager avec l'avocat" }).click();
+  await expect(sh.getByText("Pièce partagée avec l'avocat.")).toBeVisible();
+  await sh.context().close();
+
+  const assistante = await pageConnectee(browser, "assistante.test");
+  await assistante.goto(`/dossiers/${sensible.id}?onglet=documents`);
+  await assistante.getByRole("button", { name: `Proposer le partage - ${sensible.nom}` }).click({ timeout: 30_000 });
+  await assistante.getByRole("dialog", { name: "Proposer le partage de cette pièce ?" })
+    .getByRole("button", { name: "Proposer le partage" }).click();
+  await expect(assistante.getByText("Partage proposé : il attend la validation du DJ ou de la DJA.")).toBeVisible();
+  // La validation reste à la direction : aucune coche pour l'Assistante.
+  await expect(assistante.getByRole("button", { name: `Valider le partage - ${sensible.nom}` })).toHaveCount(0);
+  await assistante.context().close();
+});

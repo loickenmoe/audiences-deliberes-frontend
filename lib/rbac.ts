@@ -236,8 +236,12 @@ export const CAPACITES = {
    * DJA l'atteignent par leur `ROLE_JURISTE` composite (Q-81). « Tout juriste partage, sans
    * validation du DJ » : arbitré par le porteur du projet le 2026-10-15. Sur un dossier sensible,
    * c'est le **serveur** qui fait du geste une proposition.
+   *
+   * **Le SH et l'Assistante partagent aussi depuis QF-65** - « ils sont à la base des juristes ».
+   * Ils ne portent pas `ROLE_JURISTE` : ils sont donc nommés. Sur un dossier sensible, leur geste
+   * propose, comme celui du juriste ; seuls le DJ et la DJA partagent directement.
    */
-  partagerDocument: ["ROLE_JURISTE"],
+  partagerDocument: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
   /**
    * `PUT .../partage-avocat/arbitrage`, `GET /ged/partages-avocat` — DJ, DJA (QF-64).
    *

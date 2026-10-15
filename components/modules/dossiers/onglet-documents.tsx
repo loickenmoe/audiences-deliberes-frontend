@@ -14,7 +14,7 @@ import { Televersement } from "@/components/metier/televersement";
 import { Button } from "@/components/ui/button";
 import { Champ, Select } from "@/components/ui/champ";
 import { useDeposerDocument, useDocumentsDossier, useSupprimerDocument } from "@/hooks/useDossiers";
-import { useArbitrerPartage, usePartagerDocument, useRetirerPartage } from "@/hooks/useGed";
+import { useArbitrerPartage, useEtatPartageDossier, usePartagerDocument, useRetirerPartage } from "@/hooks/useGed";
 import { useLibelles } from "@/hooks/useLibelles";
 import { messageErreur } from "@/lib/api/errors";
 import {
@@ -92,6 +92,16 @@ export function OngletDocuments({
   const peutArbitrerPartage = peut(roles, "arbitrerPartages");
   // Sur un dossier sensible, le geste d'un juriste est une proposition ; celui du DJ, un partage.
   const proposition = sensible && !peutArbitrerPartage;
+  /*
+   * **Aucun avocat constitué** (QF-65) : signalé en recette - le juriste partageait, lisait
+   * « Partagé », et l'avocat ne voyait rien, faute de lettre signée. Le partage n'est pas faux pour
+   * autant : il prendra effet à la signature. Mais celui qui partage doit le savoir.
+   *
+   * `=== false` et non `!` : tant que la réponse n'est pas arrivée, on n'affirme rien.
+   */
+  const etatPartage = useEtatPartageDossier(dossierId);
+  const sansAvocatConstitue = etatPartage.data?.avocatConstitue === false;
+  const avertirConstitution = sansAvocatConstitue && (peutPartager || peutArbitrerPartage);
   const peutSupprimer = peut(roles, "supprimerDocument");
   // Le DJ/DJA supprime directement ; les autres profils ne font qu'une demande.
   const suppressionDirecte = peut(roles, "arbitrerSuppressions");
@@ -178,6 +188,15 @@ export function OngletDocuments({
   return (
     <div className="flex flex-col gap-5">
       {peutDeposer ? <DepotPiece dossierId={dossierId} /> : null}
+
+      {avertirConstitution ? (
+        <p
+          role="note"
+          className="rounded border border-attention/40 bg-attention-fond px-4 py-3 text-[length:var(--taille-sm)] text-attention"
+        >
+          {tdoc("aucunAvocatConstitue")}
+        </p>
+      ) : null}
 
       {erreur ? (
         <p
@@ -346,9 +365,11 @@ export function OngletDocuments({
         message={
           geste?.nature === "retirer"
             ? tdoc("retraitMessage", { nom: geste.document.nomFichier })
-            : proposition && geste?.nature === "partager"
-              ? tdoc("propositionMessage", { nom: geste.document.nomFichier })
-              : tdoc("partageMessage", { nom: geste?.document.nomFichier ?? "" })
+            : (proposition && geste?.nature === "partager"
+                ? tdoc("propositionMessage", { nom: geste.document.nomFichier })
+                : tdoc("partageMessage", { nom: geste?.document.nomFichier ?? "" })) +
+              // Le même avertissement qu'au-dessus du tableau, là où la décision se prend.
+              (sansAvocatConstitue ? ` ${tdoc("partageSansConstitution")}` : "")
         }
         libelleConfirmation={
           geste?.nature === "retirer"

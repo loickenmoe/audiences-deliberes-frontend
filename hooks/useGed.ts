@@ -53,6 +53,17 @@ function useInvalidationPartage() {
   };
 }
 
+/**
+ * QF-65 — un avocat affecté y est-il constitué ? Relu à chaque montage de l'onglet : une
+ * constitution signée ailleurs doit y faire disparaître l'avertissement.
+ */
+export function useEtatPartageDossier(dossierId: number) {
+  return useQuery({
+    queryKey: [CLES.etatPartageDossier, dossierId],
+    queryFn: () => gedService.etatPartageDossier(dossierId),
+  });
+}
+
 export function usePartagerDocument() {
   const invalider = useInvalidationPartage();
   return useMutation({ mutationFn: gedService.partagerAvecAvocat, onSuccess: invalider });

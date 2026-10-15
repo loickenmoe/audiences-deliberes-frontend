@@ -796,7 +796,9 @@
     "rejetPartageDescription": "« {nom} » restera réservée à la banque. Le juriste qui l'a proposée recevra votre motif.",
     "champMotifRejetPartage": "Motif du rejet",
     "phMotifRejetPartage": "Ex. : pièce couverte par le secret bancaire",
-    "partageAide": "Une pièce partagée n'est visible que de l'avocat affecté et constitué sur le dossier."
+    "partageAide": "Une pièce partagée n'est visible que de l'avocat affecté et constitué sur le dossier.",
+    "aucunAvocatConstitue": "Aucun avocat n'est encore constitué sur ce dossier : les pièces partagées lui seront visibles dès la signature de sa lettre de constitution.",
+    "partageSansConstitution": "Aucun avocat n'est encore constitué : elle ne lui sera visible qu'à la signature de sa lettre de constitution."
   },
   "suppressions": {
     "titre": "Demandes de suppression",
