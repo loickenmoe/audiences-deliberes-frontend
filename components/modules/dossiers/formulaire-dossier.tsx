@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { CasesACocher, GardeSaisie, SelecteurCherchable } from "@/components/metier";
+import { CasesACocher, GardeSaisie, SelecteurAgence, SelecteurCherchable } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
@@ -21,6 +21,7 @@ import { useIntervenants } from "@/hooks/useIntervenants";
 import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
+import { ListeParties } from "@/components/modules/dossiers/liste-parties";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
 import { piecesDeCategorie, type TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
@@ -97,12 +98,20 @@ export function FormulaireDossier({
           nature: z.string().min(1, tm("champObligatoire")),
           juridictionSaisie: z.string().trim().min(1, tm("champObligatoire")).max(100),
           clientId: z.coerce.number().int().positive(tm("champObligatoire")),
-          demandeur: z.string().optional(),
-          defendeur: z.string().optional(),
+          // Observations 1 et 3 (métier, 2026-10-03) : au moins un de chaque, plusieurs permis.
+          demandeurs: z
+            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
+            .min(1, tm("champObligatoire")),
+          defendeurs: z
+            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
+            .min(1, tm("champObligatoire")),
           risqueEncouru: z.coerce.number().min(0, tm("champObligatoire")),
           recoursExerces: z.string().optional(),
           motifRenvoi: z.string().max(255).optional(),
-          codeAgenceOrigine: z.string().max(20).optional(),
+          // Obligatoire depuis le 2026-10-05 (observation 2) : le code vient du référentiel,
+          // il ne se saisit plus. Celle du contentieux reste facultative - un dossier n'est
+          // pas toujours transféré.
+          codeAgenceOrigine: z.string().min(1, tm("champObligatoire")).max(20),
           codeAgenceContentieuse: z.string().max(20).optional(),
           dossierCreditOrigine: z.string().max(50).optional(),
           pvTransfert: z.string().max(255).optional(),
@@ -156,6 +165,14 @@ export function FormulaireDossier({
     defaultValues: {
       nature: "",
       juridictionSaisie: "",
+      // Une ligne vide de chaque côté : le formulaire s'ouvre sur ce qu'il attend, plutôt que sur
+      // un bloc vide où il faudrait deviner qu'un bouton « Ajouter » existe.
+      demandeurs: [{ nom: "" }],
+      defendeurs: [{ nom: "" }],
+      // Vide, et non absent : le sélecteur reçoit une chaîne, et le résolveur zod signale
+      // « champ obligatoire » plutôt que « attendu string, reçu undefined ».
+      codeAgenceOrigine: "",
+      codeAgenceContentieuse: "",
       estSensible: false,
       juristesAffectes: [],
       avocatsAffectes: [],
@@ -204,14 +221,14 @@ export function FormulaireDossier({
         nature: valeurs.nature,
         juridictionSaisie: valeurs.juridictionSaisie,
         clientId: Number(valeurs.clientId),
-        parties:
-          valeurs.demandeur || valeurs.defendeur
-            ? { demandeur: valeurs.demandeur || undefined, defendeur: valeurs.defendeur || undefined }
-            : undefined,
+        parties: {
+          demandeurs: valeurs.demandeurs.map((partie) => partie.nom.trim()),
+          defendeurs: valeurs.defendeurs.map((partie) => partie.nom.trim()),
+        },
         risqueEncouru: Number(valeurs.risqueEncouru),
         recoursExerces: valeurs.recoursExerces || undefined,
         motifRenvoi: valeurs.motifRenvoi || undefined,
-        codeAgenceOrigine: valeurs.codeAgenceOrigine || undefined,
+        codeAgenceOrigine: valeurs.codeAgenceOrigine,
         codeAgenceContentieuse: valeurs.codeAgenceContentieuse || undefined,
         // N'envoyer que les pièces de la catégorie concernée : celles de l'autre n'ont pas de sens
         // ici et seraient stockées pour rien.
@@ -297,14 +314,32 @@ export function FormulaireDossier({
     switch (type) {
       case "DOSSIER_CREDIT":
         return (
-          <Champ id="dossierCreditOrigine" label={t("champDossierCredit")} erreur={errors.dossierCreditOrigine?.message}>
-            <Input id="dossierCreditOrigine" enErreur={!!errors.dossierCreditOrigine} {...register("dossierCreditOrigine")} />
+          <Champ
+            id="dossierCreditOrigine"
+            label={t("champDossierCredit")}
+            erreur={errors.dossierCreditOrigine?.message}
+          >
+            <Input
+              id="dossierCreditOrigine"
+              placeholder={t("placeholderDossierCredit")}
+              enErreur={!!errors.dossierCreditOrigine}
+              {...register("dossierCreditOrigine")}
+            />
           </Champ>
         );
       case "PV_TRANSFERT":
         return (
-          <Champ id="pvTransfert" label={t("champPvTransfert")} erreur={errors.pvTransfert?.message}>
-            <Input id="pvTransfert" enErreur={!!errors.pvTransfert} {...register("pvTransfert")} />
+          <Champ
+            id="pvTransfert"
+            label={t("champPvTransfert")}
+            erreur={errors.pvTransfert?.message}
+          >
+            <Input
+              id="pvTransfert"
+              placeholder={t("placeholderPvTransfert")}
+              enErreur={!!errors.pvTransfert}
+              {...register("pvTransfert")}
+            />
           </Champ>
         );
       case "INCIDENT_COMPTE":
@@ -316,6 +351,7 @@ export function FormulaireDossier({
           >
             <Input
               id="incidentCompteReference"
+              placeholder={t("placeholderIncidentCompte")}
               enErreur={!!errors.incidentCompteReference}
               {...register("incidentCompteReference")}
             />
@@ -331,6 +367,7 @@ export function FormulaireDossier({
             <Textarea
               id="elementsJustificatifs"
               rows={3}
+              placeholder={t("placeholderElementsJustificatifs")}
               enErreur={!!errors.elementsJustificatifs}
               {...register("elementsJustificatifs")}
             />
@@ -385,7 +422,6 @@ export function FormulaireDossier({
               id="nature"
               label={t("champNature")}
               obligatoire
-              aide={t("aideNature")}
               erreur={errors.nature?.message}
             >
               <Select id="nature" enErreur={!!errors.nature} {...register("nature")}>
@@ -407,6 +443,7 @@ export function FormulaireDossier({
             >
               <Input
                 id="juridictionSaisie"
+                placeholder={t("placeholderJuridiction")}
                 enErreur={!!errors.juridictionSaisie}
                 {...register("juridictionSaisie")}
               />
@@ -434,6 +471,7 @@ export function FormulaireDossier({
                 type="number"
                 min={0}
                 step="1000"
+                placeholder={t("placeholderRisque")}
                 enErreur={!!errors.risqueEncouru}
                 {...register("risqueEncouru")}
               />
@@ -468,24 +506,78 @@ export function FormulaireDossier({
             <CardTitle>{t("sectionParties")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Champ id="demandeur" label={t("champDemandeur")}>
-              <Input id="demandeur" {...register("demandeur")} />
-            </Champ>
-            <Champ id="defendeur" label={t("champDefendeur")}>
-              <Input id="defendeur" {...register("defendeur")} />
-            </Champ>
+            <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+              <ListeParties
+                nom="demandeurs"
+                label={t("champDemandeurs")}
+                placeholder={t("placeholderDemandeurs")}
+                libelleAjout={t("ajouterDemandeur")}
+                control={control}
+                register={register}
+                errors={errors}
+              />
+              <ListeParties
+                nom="defendeurs"
+                label={t("champDefendeurs")}
+                placeholder={t("placeholderDefendeurs")}
+                libelleAjout={t("ajouterDefendeur")}
+                control={control}
+                register={register}
+                errors={errors}
+              />
+            </div>
             <Champ id="recoursExerces" label={t("champRecours")}>
-              <Input id="recoursExerces" {...register("recoursExerces")} />
+              <Input
+                id="recoursExerces"
+                placeholder={t("placeholderRecours")}
+                {...register("recoursExerces")}
+              />
             </Champ>
             <Champ id="motifRenvoi" label={t("champMotifRenvoi")}>
-              <Input id="motifRenvoi" {...register("motifRenvoi")} />
+              <Input
+                id="motifRenvoi"
+                placeholder={t("placeholderMotifRenvoi")}
+                {...register("motifRenvoi")}
+              />
             </Champ>
-            <Champ id="codeAgenceOrigine" label={t("champAgenceOrigine")}>
-              <Input id="codeAgenceOrigine" {...register("codeAgenceOrigine")} />
-            </Champ>
-            <Champ id="codeAgenceContentieuse" label={t("champAgenceContentieuse")}>
-              <Input id="codeAgenceContentieuse" {...register("codeAgenceContentieuse")} />
-            </Champ>
+            {/*
+              Les deux codes d'agence viennent du référentiel (observation 2). La liste affiche
+              « code · nom · ville » : le code pour qui le connaît, le nom pour qui le cherche, la
+              ville pour l'orienter - et l'adresse en seconde ligne, seule à séparer les deux
+              agences homonymes.
+            */}
+            <Controller
+              control={control}
+              name="codeAgenceOrigine"
+              render={({ field }) => (
+                <div className="flex flex-col gap-1">
+                  <SelecteurAgence
+                    id="codeAgenceOrigine"
+                    label={t("champAgenceOrigine")}
+                    obligatoire
+                    valeur={field.value}
+                    onChangement={(code) => field.onChange(code ?? "")}
+                  />
+                  {errors.codeAgenceOrigine?.message ? (
+                    <p className="text-[length:var(--taille-xs)] text-danger">
+                      {errors.codeAgenceOrigine.message}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            />
+            <Controller
+              control={control}
+              name="codeAgenceContentieuse"
+              render={({ field }) => (
+                <SelecteurAgence
+                  id="codeAgenceContentieuse"
+                  label={t("champAgenceContentieuse")}
+                  valeur={field.value}
+                  onChangement={(code) => field.onChange(code ?? "")}
+                />
+              )}
+            />
           </CardContent>
         </Card>
 
@@ -605,6 +697,7 @@ export function FormulaireDossier({
                   >
                     <Input
                       id="seuilMontant"
+                      placeholder={t("phSeuilMontant")}
                       type="number"
                       min={0}
                       step="1000"

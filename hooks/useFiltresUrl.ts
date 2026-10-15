@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { TAILLE_PAGE, TAILLES_PAGE } from "@/hooks/const";
 
@@ -45,9 +45,29 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
     return (TAILLES_PAGE as readonly number[]).includes(brut) ? brut : TAILLE_PAGE;
   }, [parametres]);
 
+  /**
+   * La dernière requête écrite, en attente d'être reflétée par l'URL.
+   *
+   * **Pourquoi elle est nécessaire.** `router.replace` est asynchrone : ni `parametres`, qui date du
+   * dernier rendu, ni `window.location.search`, que la navigation n'a pas encore mis à jour, ne
+   * disent ce qui vient d'être écrit. Deux filtres renseignés coup sur coup partaient donc du même
+   * état, et le second écrivait une URL où le premier avait disparu - l'utilisateur qui saisit une
+   * date de début puis une date de fin perdait la première, sans que rien ne le dise.
+   */
+  const derniereEcriture = useRef<string | null>(null);
+
+  /*
+   * L'URL a rattrapé son retard, ou elle a changé pour une autre raison - retour arrière, lien
+   * collé, navigation. Dans les deux cas le repère n'a plus lieu d'être : c'est l'URL qui fait foi.
+   */
+  const requeteCourante = parametres.toString();
+  useEffect(() => {
+    derniereEcriture.current = null;
+  }, [requeteCourante]);
+
   const ecrire = useCallback(
     (modifications: Record<string, string | undefined>) => {
-      const suivants = new URLSearchParams(parametres.toString());
+      const suivants = new URLSearchParams(derniereEcriture.current ?? requeteCourante);
 
       for (const [cle, valeur] of Object.entries(modifications)) {
         if (valeur === undefined || valeur === "") suivants.delete(cle);
@@ -55,10 +75,11 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
       }
 
       const requete = suivants.toString();
+      derniereEcriture.current = requete;
       // `scroll: false` : changer de page ne doit pas renvoyer l'utilisateur en haut de la liste.
       router.replace(requete ? `${chemin}?${requete}` : chemin, { scroll: false });
     },
-    [chemin, parametres, router],
+    [chemin, requeteCourante, router],
   );
 
   const definirFiltre = useCallback(

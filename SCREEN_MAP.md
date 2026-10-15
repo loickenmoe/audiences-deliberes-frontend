@@ -1,7 +1,12 @@
 # SCREEN_MAP
 
-> Les 42 écrans cibles : route, rôles, endpoints consommés, états, avancement.
-> Dernière mise à jour : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
+> Les 46 écrans cibles : route, rôles, endpoints consommés, états, avancement.
+> Dernière mise à jour : 2026-10-06 (jalon N8 — écran 46 : ma signature enregistrée ; le SH
+> corrige la lettre avant de la signer).
+> Précédente : 2026-10-06 (jalon N4 — écran 45 : la diligence particulière se révise
+> après l'ouverture, dans les deux sens).
+> Précédente : 2026-10-05 (jalon N1 — écran 44 livré : référentiel des agences).
+> Précédente : 2026-09-14 (Q-98 — écran 33 refondu : formulaire continu, pièce facultative sur le compte rendu).
 > Précédente : 2026-09-14 (jalon F17 — accueil contextualisé achevé : **42 écrans sur 42**).
 > Précédente : 2026-09-14 (jalon F16 — écrans 30 et 33 livrés, plus l'espace de l'avocat ; 41 sur 42).
 > Précédente : 2026-09-14 (jalon F15 — écrans 39 et 40 livrés ; 39 écrans sur 42).
@@ -66,6 +71,9 @@
 | 16 | Modification des affectations | modale | JUR, DJ | `PUT /dossiers/{id}/affectation[?forcer=true]` | F7 | ✅ |
 | 17 | Dérogation de seuil | modale | SAI (demande) / DJ, DJA (validation) | `POST /dossiers/{id}/seuil-derogation`, `PUT /dossiers/{id}/seuil-derogation/{auditId}` | F7 | ✅ (arbitrage débloqué par Q-74) |
 | 18 | Validation de sensibilité | modale | DJ, DJA | `POST /dossiers/{id}/sensibilite/validation` | F7 | ✅ |
+| 45 | **Révision de la diligence particulière** | modale | JUR (proposer) / DJ, DJA (poser, retirer) | `POST /dossiers/{id}/sensibilite/proposition`, `PUT /dossiers/{id}/sensibilite` | N4 | ✅ |
+| 46 | **Mon compte — ma signature** | `/mon-compte` | tous profils internes | `GET`/`PUT`/`DELETE /utilisateurs/moi/signature`, `GET .../image` | N8 | ✅ |
+| 47 | **Demandes d'explication** | `/demandes-explication` | DJ, DJA (écrivent) / AVOCAT (répond) | `POST`/`GET /demandes-explication`, `PUT /demandes-explication/{id}/reponse` | N7 | ✅ |
 
 **Référentiels du formulaire 06** : `GET /referentiels/natures-dossier?categorie=`,
 `GET /referentiels/types-client-sensible`, `GET /utilisateurs?profil=JURISTE`,
@@ -148,7 +156,7 @@ ses propres demandes pour un avocat · les deux accords sont requis, un seul ref
 | 32 | Détail, commentaire, correspondance | `/publications/[id]` | CONS / JUR / DJ, DJA | `GET /publications/{id}`, `PUT /publications/{id}/validation` (AST), `POST /publications/{id}/commentaires` (JUR), `POST /publications/{id}/correspondance` (DJ, DJA) | F12 | ✅ (fichier consultable, accès restreint en écran dédié, correspondance unique — Q-86) |
 | 33 | Dépôt d'une publication (compte rendu ou document) | `/publications/nouvelle` | AVO | `POST /publications/cr-audience` (multipart, pièce facultative — Q-98), `POST /publications/autres` (fichier), `GET /avocat/mes-dossiers{/id/audiences}` — formulaire continu à deux choix décrits, QF-20 rouverte puis tranchée | **F16**, revu Q-98 | ✅ |
 | 34 | Répertoire des avocats | `/repertoire/avocats` | JUR, AST | `GET /repertoire/avocats?nom=` | F12 | ✅ (trié par charge croissante, recherche par nom) |
-| 35 | Constitutions à signer | `/constitutions` | SH, JUR | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR, modale de la fiche 07), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ✅ (lettre consultable depuis la ligne, nommée — Q-86) |
+| 35 | Constitutions à signer | `/constitutions` | SH, JUR, **ASS** | `GET /constitutions/prestataires?statut=`, `POST /constitutions/prestataires` (JUR et ASS, modale de la fiche 07), `PUT /constitutions/prestataires/{id}/validation` (SH) | F12 | ✅ (lettre consultable depuis la ligne, nommée — Q-86 ; rédaction réservée à son demandeur et au SH — Q-126) |
 
 **Règles** : `statut=DEPOSE` alimente la file de l'assistante · `GET /publications/{id}` renvoie 403
 `ERR-009` si `restrictionAcces` désigne un autre utilisateur — traiter comme un écran « accès
@@ -200,14 +208,50 @@ transition reste manuelle via l'endpoint générique d'étape.
 |---|---|---|---|---|---|---|
 | 39 | Tableau de bord exécutif | `/tableau-de-bord` | **DJ et DJA** (Q-95) | `GET /tableau-de-bord` | F15 | ✅ |
 | 40 | Générer un rapport d'activité | `/rapports` | **JUR**, et la direction par son composite (Q-81) | `GET /rapports?type&dateDebut&dateFin&format` | F15 | ✅ |
+| 40 bis | Activité par personne *(second bloc de l'écran 40)* | `/rapports` | **DJ et DJA seuls** (Q-132) | `GET /rapports/nominatif?dateDebut&dateFin` | N6 | ✅ |
+| 40 ter | Fiche d'activité d'une personne *(ouverte depuis un nom du tableau 40 bis ou 40 quater)* | `/rapports` | **DJ et DJA** (Q-133) | `GET /rapports/activite`, `…/export`, `…/details` | Q-133 | ✅ |
+| 40 quater | Activité des avocats *(troisième bloc de l'écran 40)* | `/rapports` | **DJ et DJA** (Q-136) | `GET /rapports/nominatif/avocats?dateDebut&dateFin` | Q-136 | ✅ |
 
 > ⚠ **QF-04** — le parcours P9 du backend décrit « le DJ consulte le tableau de bord **puis génère
 > des rapports** », mais les rôles implémentés séparent les deux. À trancher avant F15.
+
+**39** — un **sélecteur de périmètre** en tête d'écran depuis Q-138 : *Toutes catégories* (défaut), *Recouvrement*, *Litiges d'exploitation*. Les **neuf** indicateurs le respectent, et leurs neuf détails aussi. Le périmètre vit dans l'URL (`?categorie=…`) : il se partage et survit au rechargement. L'invariant **Recouvrement + Litiges d'exploitation = Toutes** est tenu par un test d'intégration et vérifié à travers l'écran par un parcours. L'écran 40 porte le même sélecteur, et son export le nomme dans le fichier.
+
+**39** — **chaque bloc s'ouvre sur son détail** depuis Q-137 : un bouton nommé « Voir le détail » par bloc, dont le nom accessible porte l'indicateur, et une modale paginée dont chaque ligne mène à sa fiche - le dossier sur l'onglet qui correspond, ou la demande de frais sur son propre écran. Le **total affiché est celui du serveur**, jamais une somme des lignes montrées. Deux restrictions que les libellés ne disent pas sont dites par le détail : les trois indicateurs de litiges ne portent que sur le recouvrement, et les prorogations comptent une ligne par alerte.
 
 **39** — 6 indicateurs temps réel : `nbDossiersActifs`, `nbAudiencesPlanifiees`,
 `nbDemandesFraisEnAttente`, `nbProrogationsAlerte`, `tauxSuccesRecouvrement`, `provisionsReprises`.
 **40** — `type ∈ {JOURNALIER…ANNUEL}`, `format ∈ {JSON, PDF, EXCEL, CSV}`, **204 si aucune donnée**
 sur la période : traiter comme un état vide, pas comme une erreur.
+
+**40 quater** — l'**activité des avocats** (Q-136). Signalé en recette : le tableau 40 bis ne montrait que les profils internes. C'était exact - il compte six natures de production interne qu'un avocat n'accomplit jamais, puisqu'il **dépose** et que c'est le juriste qui enregistre - et l'y ajouter n'aurait affiché que des lignes de zéros. D'où un **troisième bloc**, avec quatre colonnes propres, et le nom de l'avocat cliquable vers sa fiche complète (40 ter). Les deux boutons « Afficher » de l'écran portent des **noms accessibles distincts** : un lecteur d'écran annonçait deux fois le même mot sans dire lequel.
+
+**40 ter / 44** — la **fiche d'activité** (Q-133) est le même composant à deux endroits :
+« Mon activité » sur **Mon compte** (écran 44), et « Activité de ‹ personne › » sous le tableau 40 bis
+quand le DJ ou la DJA clique un nom.
+
+**Comment on y arrive.** Entrée **Mon compte** du menu de gauche, ouverte à `consulterReferentiels` - donc aux cinq profils internes. L'avocat, lui, a **la sienne sur *Mon espace*** (écran 30, Q-135) : *Mon compte* porte aussi « Ma signature », qui n'a pas de sens pour qui ne signe aucune lettre de la banque, et ses lignes de détail ne portent **aucun lien** vers un dossier qu'il ne peut pas ouvrir (QF-01). La direction atteint la fiche d'un avocat **depuis le répertoire** (écran 34), là où elle le juge déjà. Cette entrée a manqué jusqu'au 2026-10-13 : la seule porte était le nom dans l'en-tête, souligné et sans étiquette, et ce nom est **masqué sous 640 px** (F17) - la page était donc inatteignable sur un écran étroit. S'en passer se défendait tant que l'écran ne portait qu'une signature déposée une fois pour toutes ; il porte désormais un rapport que chacun consulte sur la période qu'il choisit.
+
+**Pourquoi « Mon compte » et non l'écran 40.** « Chaque utilisateur doit être capable de télécharger
+ses propres rapports » (métier, 2026-10-13) - or `/rapports` exige `ROLE_JURISTE` : l'Assistante et le
+supérieur hiérarchique n'y entrent pas. Les y laisser entrer leur montrerait le rapport périodique du
+service, auquel ils n'ont pas droit et dont l'appel échouerait sous leurs yeux. « Mon compte » est le
+seul écran que les cinq profils internes partagent.
+
+**Ce que la fiche porte, et que le tableau 40 bis ne porte pas** : **toutes** les natures d'action
+accomplies, et non six indicateurs choisis. Le métier a demandé une image **fidèle** de ce que la
+personne a fait ; six colonnes montreraient l'Assistante et le SH presque vides. Chaque décompte
+s'ouvre sur ses actions, et chaque action mène à la fiche du dossier concerné, sur l'onglet qui
+correspond à sa nature. Téléchargeable en PDF, Excel et CSV - **documents en français**, comme tous
+les PDF du projet (QF-24).
+
+**40 bis** — le bloc *Activité par personne* (observation 14, Q-132) partage la route de l'écran 40,
+mais **pas ses droits** : `peut(roles, "consulterRapportNominatif")` le rend, et il n'est vrai que
+pour `ROLE_DJ` et `ROLE_DJA`. Le juriste atteint `/rapports` par son rôle, le DJ et la DJA par le
+même composite (Q-81) : rien dans l'URL ne distingue les trois, c'est la **section** qui manque au
+juriste. Période libre, deux bornes seulement — ni `type`, ni `format` : le rapport n'existe qu'à
+l'écran. **204 = état vide**, comme l'écran 40. Ni note, ni classement, ni total global ; les lignes
+suivent l'ordre des **noms**.
 
 ## 10. Administration (Épic 7)
 
@@ -216,6 +260,48 @@ sur la période : traiter comme un état vide, pas comme une erreur.
 | 41 | Configurations et seuils | `/admin/configurations` | lecture CONS / écriture DJ | `GET /configurations`, `PUT /configurations/{cle}` | F14 | ✅ |
 | 42 | Référentiel des intervenants | `/admin/intervenants` | DJ, DJA (écriture) / CONS (lecture) | `GET /intervenants?type=`, `POST /intervenants`, `PUT /intervenants/{id}` | F5 · Q-117 | ✅ |
 | 43 | **Audit** | `/admin/audit` | **DJ, DJA** | `GET /historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin` | F18 | ✅ |
+| 44 | **Référentiel des agences** | `/admin/agences` | DJ, DJA (écriture) / CONS (lecture) | `GET /referentiels/agences?recherche&actifSeulement`, `POST`, `PUT /{id}`, `DELETE /{id}`, `PATCH /{id}/reactivation` | N1 | ✅ |
+
+**45** — la diligence ne se posait qu'à la création : un dossier ouvert comme ordinaire le restait
+définitivement. Une seule modale sert **trois gestes**, parce que les champs sont les mêmes et que
+l'intention seule change ce qui est exigé : seuil et type pour proposer et pour poser, motif pour
+proposer et pour retirer, rien d'autre pour le retrait - il efface le seuil. Le juriste propose, le
+DJ et la DJA posent et retirent ; les trois boutons de la fiche sont exclusifs, un dossier en
+attente d'arbitrage n'offrant que l'arbitrage (écran 18). Le motif du retrait s'affiche sur la
+synthèse **après** le retrait, alors que le dossier n'est plus sensible - sans ce cas, il aurait été
+exigé du DJ pour n'être lu nulle part.
+
+**39 et 40** — **plus aucun pourcentage** (métier, 2026-10-03, observation 12, puis 2026-10-06 :
+« le métier veut les chiffres, le montant, pas les pourcentages »). Les litiges **gagnés**,
+**perdus** et **mixtes** ont remplacé le « taux de succès du recouvrement » sur les **deux** écrans,
+et dans les **trois exports** du rapport : un pourcentage ne dit pas sur combien d'affaires il
+porte. Les trois se lisent ensemble et **aucun n'est déduit** - un délibéré mixte n'est ni gagné ni
+perdu, et le ranger d'office aurait fait lire un chiffre faux. Sur l'écran 39, la phrase d'aide des
+« litiges perdus » le dit à l'utilisateur, pas seulement dans le code.
+
+L'écran 39 compte donc **neuf** indicateurs, et non six : les **affaires vidées** y suivent les
+dossiers actifs dont elles sont le complément exact (définition arrêtée le 2026-10-06 : plus aucune
+étape du dossier en cours). Le backend continue de renvoyer le taux dans les deux réponses : la même
+requête le produit en comptant les résultats, et le retirer du contrat serait une rupture sans gain.
+Le **seul pourcentage restant** de l'application est l'indicateur de performance du répertoire des
+avocats (écran 24), que le métier n'a pas nommé.
+
+**47** — le même écran, lu des deux bouts. La direction écrit et relit ; l'avocat répond. Le
+bouton d'écriture n'apparaît que pour celle qui écrit, mais **la liste est la même composante** :
+deux écrans auraient fini par compter différemment la même chose. Le **périmètre des lignes est
+décidé par le serveur**, sur l'identité de qui appelle - l'écran n'envoie aucun paramètre, qui
+suffirait à un avocat pour demander la liste entière. Deux choses s'y disent **avant** d'agir : que
+la relance automatique se suspendra, et qu'on ne répond qu'une fois.
+
+**46** — la signature enregistrée s'appose sur les lettres de constitution que l'on signe, à la
+place du nom à signer à la main. **Chacun dépose la sienne** : l'écran ne connaît aucun identifiant,
+il parle de « ma » signature et le serveur travaille sur la session - celle qu'un tiers détient ne
+vaut déjà plus rien. L'écran **dit sa portée** : elle n'ajoute aucune valeur juridique, la preuve
+restant la trace horodatée. Un utilisateur qui croirait tenir là une garantie s'appuierait sur du
+vide, et c'est à l'écran de le dire. On y accède par son nom, en haut à droite : c'est là qu'on
+cherche son compte, et non dans une entrée de menu que six profils sur sept n'ouvriraient jamais.
+La signature déposée se relit **en grand** par le bouton « Aperçu », comme toute pièce de
+l'application : la vignette dit qu'il y a quelque chose, elle ne permet pas de vérifier le trait.
 
 **41** — clés `CONF01` à `CONF07` : `SEUIL_MONTANT_DEFAUT`, `SEUIL_PROROGATIONS`,
 `CANAUX_NOTIFICATION_DEFAUT`, `DELAI_VALIDATION_CONJOINTE`, `TAILLE_MAX_GED`, `FORMATS_GED`.
@@ -227,6 +313,16 @@ refuse le champ `notification` ; un `AUTRE_PRESTATAIRE` refuse tout compte appli
 modification ni suppression** : non demandées par les user stories. Cet écran est indispensable en
 F5 — sans lui, aucun avocat n'existe, et `avocatsAffectes` est obligatoire à la création d'un
 dossier.
+
+**44** — le code d'agence était **deux champs de texte libre** : sur les 341 dossiers de recette,
+un seul en portait un, et il ne désignait aucune agence. L'écran tient les 82 agences chargées par
+la migration `V42`. Trois règles s'y voient : le **code ne se modifie pas** après création (champ
+inactif en correction, 400 par l'API), `DELETE` **désactive** sans supprimer - et la fermeture
+se **défait** (2026-10-06, bouton « Réactiver » sur les lignes fermées, sans confirmation : le
+geste est bénin et immédiatement défaisable) -, et la **ville est obligatoire** car deux agences
+peuvent porter le même nom. Le sélecteur de la création d'un dossier (écran 06) s'y alimente et
+affiche « code · Agence nom · ville » - le mot « Agence », « Branch » en anglais, demandé par le
+métier le 2026-10-06 - avec l'adresse en seconde ligne pour séparer les homonymes.
 
 **43** — trois blocs : la **consultation** filtrée (Q-112), l'**extraction scellée** avec la liste des
 archives produites (Q-113), et la **vérification d'un fichier reçu** (Q-114,
@@ -254,4 +350,8 @@ navigateur** : seule sa valeur part au serveur. Chaque archive porte une référ
 | F14 | 03, 41 | 2 |
 | F15 | 39, 40 | 2 |
 | F16 | 30, 33 | 2 |
-| | **Total** | **43 entrées / 42 écrans numérotés** — la 43e est `not-found` (F1), non numérotée |
+| N1 | 44 | 1 |
+| N4 | 45 | 1 |
+| N8 | 46 | 1 |
+| N7 | 47 | 1 |
+| | **Total** | **47 entrées / 46 écrans numérotés** — la 47e est `not-found` (F1), non numérotée |

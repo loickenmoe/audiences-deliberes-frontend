@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Pièces d'un dossier (création, onglet Documents) **contre le backend réel et MinIO**.
@@ -35,9 +36,6 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** Remplit un dossier de recouvrement, sans l'envoyer. */
 async function remplirDossier(page: Page) {
@@ -46,6 +44,11 @@ async function remplirDossier(page: Page) {
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
+  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
+  await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DOC");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DOC");
   await deposerPiecesDeCreation(page, { marque: "doc" });

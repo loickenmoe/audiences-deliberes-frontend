@@ -21,10 +21,18 @@ import { expect, type Locator, type Page } from "@playwright/test";
  * On ne règle **pas** ce genre de défaut en augmentant la taille de page : cinquante n'est qu'un
  * seuil plus lointain, et le test retomberait le jour où la file le franchirait à son tour.
  */
-export async function ligneDansLaFile(page: Page, motif: RegExp | string): Promise<Locator> {
-  const ligne = page.getByRole("row", { name: typeof motif === "string" ? new RegExp(motif) : motif });
-  const suivante = page.getByRole("button", { name: "Page suivante" });
-  const indicateur = page.getByText(/^Page \d+ sur \d+$/);
+export async function ligneDansLaFile(
+  portee: Page | Locator,
+  motif: RegExp | string,
+): Promise<Locator> {
+  /*
+   * `portee` est la page, ou une **région** qui porte sa propre pagination - le journal des
+   * audiences en compte deux sur le même écran. Chercher sur la page entière y trouverait les
+   * lignes de l'autre section, et cliquerait sa pagination à elle.
+   */
+  const ligne = portee.getByRole("row", { name: typeof motif === "string" ? new RegExp(motif) : motif });
+  const suivante = portee.getByRole("button", { name: "Page suivante" });
+  const indicateur = portee.getByText(/^Page \d+ sur \d+$/);
 
   // Borne haute : une file de plus de cinquante pages signale un autre problème, et un échec
   // explicite vaut mieux qu'une boucle qui expire en silence.
@@ -43,11 +51,20 @@ export async function ligneDansLaFile(page: Page, motif: RegExp | string): Promi
     }
     if ((await suivante.count()) === 0 || (await suivante.isDisabled())) break;
 
-    const position = await indicateur.textContent();
+    const position = await indicateur.textContent().catch(() => null);
     await suivante.click();
-    // On attend que l'indicateur ait réellement changé avant de relire : sans cela on relirait la
-    // page précédente, et le parcours n'avancerait pas.
-    await expect(indicateur).not.toHaveText(position ?? "", { timeout: 30_000 });
+    /*
+     * On attend que l'indicateur ait réellement changé avant de relire : sans cela on relirait la
+     * page précédente, et le parcours n'avancerait pas.
+     *
+     * L'indicateur peut aussi **disparaître** : une file qui se recharge pendant qu'on la parcourt
+     * peut retomber à une seule page, et la pagination n'est alors plus rendue. C'est un cas
+     * normal, mais `not.toHaveText` le compte comme un échec - « element(s) not found ». On lit
+     * donc le texte nous-mêmes, l'absence valant changement.
+     */
+    await expect
+      .poll(() => indicateur.textContent().catch(() => null), { timeout: 30_000 })
+      .not.toBe(position);
   }
 
   throw new Error(`Aucune ligne correspondant à ${motif} dans cette file, toutes pages parcourues`);

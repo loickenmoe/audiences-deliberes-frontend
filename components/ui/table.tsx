@@ -7,11 +7,19 @@ import { cn } from "@/lib/utils";
  *
  * Le conteneur porte `overflow-x-auto` : une table large défile **dans son propre cadre**, jamais en
  * poussant la page entière de côté. Les chiffres s'alignent (`tabular-nums` via `globals.css`).
+ *
+ * **`tabIndex={0}` n'est pas décoratif.** Une région qui défile doit être atteignable au clavier
+ * (WCAG 2.1.1, règle axe `scrollable-region-focusable`) : sans cela, un utilisateur sans souris ne
+ * peut pas faire défiler le tableau, et les colonnes de droite lui sont **inaccessibles**. Le
+ * conteneur reçoit donc le focus, et les flèches le font défiler. Rien d'autre n'est ajouté : c'est
+ * le `<table>` qu'il contient qui porte la sémantique, et un rôle de plus sur le cadre ne ferait
+ * qu'annoncer un groupe sans nom.
  */
 export function TableWrapper({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("overflow-x-auto rounded-lg border border-bordure bg-surface", className)}
+      tabIndex={0}
       {...props}
     />
   );

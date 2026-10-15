@@ -68,7 +68,15 @@ export function Dialog({
        * (ERR-003 de l'affectation, F7). Seule une fermeture décidée par l'utilisateur est relayée —
        * c'est-à-dire pendant que le parent la croit encore ouverte.
        */
-      onClose={() => {
+      onClose={(evenement) => {
+        /*
+         * **Et seulement la fermeture de CETTE boîte** (QF-63). React relaie à ce gestionnaire le
+         * `close` d'une boîte **imbriquée** - l'aperçu d'un fichier rendu dans le formulaire qui le
+         * charge. La croix de l'aperçu emportait donc le formulaire entier, et toute la saisie avec
+         * lui, là où son bouton « Fermer » - qui passe par l'état React - ne refermait que l'aperçu.
+         * Deux voies de sortie pour un même geste, et une seule était juste.
+         */
+        if (evenement.target !== reference.current) return;
         if (ouvert) onFermeture();
       }}
       className={cn(

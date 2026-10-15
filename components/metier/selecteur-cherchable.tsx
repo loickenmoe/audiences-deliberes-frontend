@@ -9,6 +9,14 @@ import { cn } from "@/lib/utils";
 export interface OptionCherchable {
   id: number;
   libelle: string;
+  /**
+   * Seconde ligne atténuée, facultative : ce qui distingue deux options de **même libellé**.
+   *
+   * Le référentiel des agences compte deux « MBALLA II » dans la même ville ; seule l'adresse les
+   * sépare. La mettre sur la ligne principale l'allongerait pour les 80 autres agences, où elle
+   * n'apporte rien. Elle n'apparaît que dans la liste, jamais dans le champ une fois le choix fait.
+   */
+  sousLibelle?: string;
 }
 
 /**
@@ -83,10 +91,18 @@ export function SelecteurCherchable({
    */
   const libellesConnus = useRef(new Map<number, string>());
   for (const option of options) libellesConnus.current.set(option.id, option.libelle);
-  const selection = useMemo(
-    () => (multiple ? null : (options.find((o) => o.id === valeur) ?? null)),
-    [multiple, options, valeur],
-  );
+  /*
+   * Le choix retenu doit rester affiché même si une recherche ultérieure a renouvelé les options.
+   * On se rabat sur les libellés **déjà vus** - et sur eux seuls : afficher « #12 » pour un
+   * identifiant jamais rencontré serait pire que le champ vide.
+   */
+  const selection = useMemo(() => {
+    if (multiple) return null;
+    const trouvee = options.find((o) => o.id === valeur) ?? null;
+    if (trouvee || typeof valeur !== "number") return trouvee;
+    const connu = libellesConnus.current.get(valeur);
+    return connu ? { id: valeur, libelle: connu } : null;
+  }, [multiple, options, valeur]);
 
   // Laisse la frappe se stabiliser avant d'interroger le serveur.
   useEffect(() => {
@@ -142,10 +158,24 @@ export function SelecteurCherchable({
 
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={conteneur}>
-      <label htmlFor={idChamp} className="text-[length:var(--taille-sm)] font-medium">
-        {label}
-        {obligatoire ? <span aria-hidden> *</span> : null}
-      </label>
+      {/*
+        L'astérisque est **hors du `<label>`**, et en rouge : c'est la règle que `Champ` applique
+        depuis toujours, et que ce composant avait manquée. À l'intérieur, elle entrait dans le
+        texte du libellé - le nom accessible valait « Agence d'origine * » au lieu de « Agence
+        d'origine », et un test qui interroge le libellé au mot près ne le trouvait pas. Noire,
+        elle ne se lisait pas non plus comme la marque d'obligation que portent les autres champs.
+        Elle reste décorative : l'obligation est annoncée par `aria-required` sur le contrôle.
+      */}
+      <div className="flex items-center gap-0.5">
+        <label htmlFor={idChamp} className="text-[length:var(--taille-sm)] font-medium">
+          {label}
+        </label>
+        {obligatoire ? (
+          <span aria-hidden className="text-danger">
+            *
+          </span>
+        ) : null}
+      </div>
 
       <div className="relative">
         <input
@@ -213,6 +243,11 @@ export function SelecteurCherchable({
                   )}
                 >
                   {option.libelle}
+                  {option.sousLibelle ? (
+                    <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
+                      {option.sousLibelle}
+                    </span>
+                  ) : null}
                 </li>
               ))
             )}
@@ -237,6 +272,7 @@ export function SelecteurCherchable({
           ))}
         </ul>
       ) : null}
+
     </div>
   );
 }

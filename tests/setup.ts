@@ -25,6 +25,22 @@ if (typeof HTMLDialogElement !== "undefined" && !HTMLDialogElement.prototype.sho
   };
 }
 
+/**
+ * jsdom n'implémente pas non plus `URL.createObjectURL`. Tout écran qui affiche un fichier déjà
+ * reçu - une pièce de la GED, l'aperçu d'une signature - passe par une adresse `blob:` locale,
+ * parce que l'appel porte le jeton et qu'une balise `<img src>` pointant sur l'API ne l'emporterait
+ * pas. Sans ce minimum, ces écrans lèvent au montage.
+ *
+ * L'adresse rendue est factice et ne retient rien : les tests unitaires ne lisent pas le contenu,
+ * ils vérifient que l'écran le demande et le relâche. Le contenu lui-même relève des parcours
+ * Playwright, dans un vrai navigateur.
+ */
+if (typeof URL.createObjectURL !== "function") {
+  let rang = 0;
+  URL.createObjectURL = () => `blob:test/${(rang += 1)}`;
+  URL.revokeObjectURL = () => undefined;
+}
+
 afterEach(() => {
   cleanup();
 });

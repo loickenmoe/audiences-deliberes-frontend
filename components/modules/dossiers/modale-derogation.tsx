@@ -101,6 +101,7 @@ export function ModaleDerogation({
         <Champ id="nouveauSeuil" label={t("champNouveauSeuil")} obligatoire erreur={errors.nouveauSeuil?.message}>
           <Input
             id="nouveauSeuil"
+            placeholder={t("phNouveauSeuil")}
             type="number"
             min={0}
             step="1000"
@@ -110,7 +111,8 @@ export function ModaleDerogation({
         </Champ>
 
         <Champ id="motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="motif" rows={3} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea id="motif"
+  placeholder={t("phMotifDerogation")} rows={3} enErreur={!!errors.motif} {...register("motif")} />
         </Champ>
       </form>
     </Dialog>

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { EtatChargement, EtatErreur, EtatVide } from "@/components/global/etats";
 import { StatutChip } from "@/components/global/statut-chip";
 import { Button } from "@/components/ui/button";
+import { Champ, Input } from "@/components/ui/champ";
 import { rendre as render } from "../utils/rendu";
 
 describe("Button", () => {
@@ -107,5 +108,67 @@ describe("StatutChip", () => {
 
     expect(danger).not.toBe(neutre);
     expect(danger).toContain("text-danger");
+  });
+});
+
+/**
+ * `Champ` rattache au contrôle les paragraphes qui le décrivent (défaut corrigé le 2026-10-07).
+ *
+ * Les deux portaient déjà leur identifiant - `{id}-aide`, `{id}-erreur` - mais rien ne les reliait :
+ * ils existaient pour qui voit l'écran et disparaissaient pour qui l'écoute, sur les 128 champs de
+ * l'application. Le commentaire du composant affirmait pourtant le contraire.
+ */
+describe("Champ, rattachement de l'aide et de l'erreur", () => {
+  it("relie l'aide au contrôle", () => {
+    render(
+      <Champ id="juridiction" label="Juridiction saisie" aide="Le tribunal saisi.">
+        <Input id="juridiction" />
+      </Champ>,
+    );
+
+    const controle = screen.getByLabelText("Juridiction saisie");
+    const aide = screen.getByText("Le tribunal saisi.");
+    expect(controle).toHaveAttribute("aria-describedby", aide.id);
+  });
+
+  /** L'erreur remplace l'aide : deux messages concurrents sous un champ en erreur se gênent. */
+  it("relie l'erreur au contrôle, et l'aide s'efface", () => {
+    render(
+      <Champ id="juridiction" label="Juridiction saisie" aide="Le tribunal saisi." erreur="Champ requis">
+        <Input id="juridiction" />
+      </Champ>,
+    );
+
+    const controle = screen.getByLabelText("Juridiction saisie");
+    const erreur = screen.getByText("Champ requis");
+    expect(controle).toHaveAttribute("aria-describedby", erreur.id);
+    expect(screen.queryByText("Le tribunal saisi.")).not.toBeInTheDocument();
+  });
+
+  /** Ce que l'appelant a posé lui-même est conservé : le nôtre s'y ajoute, il ne l'écrase pas. */
+  it("conserve un aria-describedby déjà posé par l'appelant", () => {
+    render(
+      <>
+        <p id="consigne-externe">Consigne posée ailleurs.</p>
+        <Champ id="juridiction" label="Juridiction saisie" aide="Le tribunal saisi.">
+          <Input id="juridiction" aria-describedby="consigne-externe" />
+        </Champ>
+      </>,
+    );
+
+    expect(screen.getByLabelText("Juridiction saisie")).toHaveAttribute(
+      "aria-describedby",
+      "consigne-externe juridiction-aide",
+    );
+  });
+
+  it("n'ajoute rien quand il n'y a ni aide ni erreur", () => {
+    render(
+      <Champ id="juridiction" label="Juridiction saisie">
+        <Input id="juridiction" />
+      </Champ>,
+    );
+
+    expect(screen.getByLabelText("Juridiction saisie")).not.toHaveAttribute("aria-describedby");
   });
 });

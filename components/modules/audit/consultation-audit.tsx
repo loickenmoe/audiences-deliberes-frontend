@@ -179,6 +179,7 @@ export function ConsultationAudit() {
           <Champ id="audit-dossier" label={t("filtreDossier")}>
             <Input
               id="audit-dossier"
+              placeholder={t("phDossier")}
               type="number"
               min={1}
               value={dossier}

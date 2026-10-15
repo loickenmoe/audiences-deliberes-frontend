@@ -13,25 +13,26 @@ import { messageErreur } from "@/lib/api/errors";
 import type { LettreConstitution } from "@/types/domaine";
 
 /**
- * Rédaction et relecture de la lettre de constitution (backend Q-115 B2).
+ * Rédaction de la lettre de constitution (backend Q-124, amendant Q-115 B2).
  *
- * **Deux lecteurs, deux droits.** Le juriste rédige ; le supérieur hiérarchique consulte avant de
- * signer, sans pouvoir récrire. C'est ce qui préserve le sens de la seconde signature : celui qui
- * signe n'est pas celui qui a écrit, et son refus renvoie la lettre à son auteur avec un motif.
- * `modifiable` vient du serveur — l'écran ne le déduit pas d'un statut qu'il aurait pu mal lire.
+ * **Deux plumes, et c'est voulu.** Le juriste rédige ; le supérieur hiérarchique corrige avant de
+ * signer. Jusqu'au 2026-10-06 il ne pouvait que lire, pour que la seconde signature garde son sens
+ * - le métier a tranché l'inverse : il corrige plutôt que de renvoyer. Ce que la séparation des
+ * plumes garantissait, la **traçabilité** le garantit : la lettre porte qui l'a écrite en dernier,
+ * et une reprise par le SH est nommée comme telle, en haut de cette modale.
  *
- * **Une lettre signée ne se réécrit pas.** Elle est partie chez un huissier et figure dans la GED :
- * la retoucher ferait mentir la pièce. Le formulaire passe alors en lecture seule, et le dit.
+ * `modifiable` vient du serveur - l'écran ne le déduit pas d'un statut qu'il aurait pu mal lire.
+ *
+ * **Une lettre signée ne se réécrit pas**, ni par le juriste ni par le SH. Elle est partie chez un
+ * huissier et figure dans la GED : la retoucher ferait mentir la pièce. Le formulaire passe alors
+ * en lecture seule, et le dit.
  */
 export function ModaleLettre({
   demandeId,
-  redactionPossible,
   ouvert,
   onFermeture,
 }: {
   demandeId: number | null;
-  /** Vrai pour le juriste ; le SH ouvre la même modale en lecture. */
-  redactionPossible: boolean;
   ouvert: boolean;
   onFermeture: () => void;
 }) {
@@ -48,7 +49,13 @@ export function ModaleLettre({
     if (requete.data) setSaisie(requete.data);
   }, [requete.data]);
 
-  const modifiable = redactionPossible && (saisie?.modifiable ?? false);
+  /*
+   * `modifiable` dit « par moi », et vient du serveur (Q-126) : la lettre appartient à celui qui a
+   * sollicité la constitution, le SH la corrige avant de signer, et une lettre signée ne se
+   * retouche plus - pour personne. L'écran ne redouble pas la condition : une règle tenue à deux
+   * endroits finit par diverger, et c'est le serveur qui a le dernier mot de toute façon.
+   */
+  const modifiable = saisie?.modifiable ?? false;
 
   function changer<C extends keyof LettreConstitution>(champ: C, valeur: LettreConstitution[C]) {
     setSaisie((precedente) => (precedente ? { ...precedente, [champ]: valeur } : precedente));
@@ -116,6 +123,20 @@ export function ModaleLettre({
         <EtatChargement lignes={6} />
       ) : (
         <div className="flex flex-col gap-4">
+          {/*
+            Qui a écrit la dernière version (N8). Depuis que le SH peut corriger avant de signer,
+            le juriste doit le voir en ouvrant sa lettre - sans aller fouiller l'historique. La
+            correction du SH est nommée comme telle : c'est le seul cas où la séparation des plumes
+            a été franchie, et c'est ce que la traçabilité doit rendre visible.
+          */}
+          {saisie.redigeParNom ? (
+            <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+              {saisie.redigeParProfil === "SH"
+                ? t("redigeeParSh", { nom: saisie.redigeParNom })
+                : t("redigeePar", { nom: saisie.redigeParNom })}
+            </p>
+          ) : null}
+
           {/* ── La ligne du numéro ─────────────────────────────────────────── */}
           <fieldset className="flex flex-col gap-2">
             <legend className="text-[length:var(--taille-sm)] font-medium">{t("lettreNumeroTitre")}</legend>
@@ -126,6 +147,7 @@ export function ModaleLettre({
               <span aria-hidden className="text-[length:var(--taille-sm)]">N°</span>
               <Input
                 id="lettre-numero"
+                placeholder={t("phLettreNumero")}
                 aria-label={t("lettreNumero")}
                 className="w-20"
                 inputMode="numeric"
@@ -155,6 +177,7 @@ export function ModaleLettre({
           <Champ id="lettre-lieu" label={t("lettreLieu")}>
             <Input
               id="lettre-lieu"
+              placeholder={t("phLettreLieu")}
               value={saisie.lieu}
               disabled={!modifiable}
               onChange={(evenement) => changer("lieu", evenement.target.value)}
@@ -165,6 +188,7 @@ export function ModaleLettre({
           <Champ id="lettre-destinataire" label={t("lettreDestinataire")}>
             <Input
               id="lettre-destinataire"
+              placeholder={t("phLettreDestinataire")}
               value={saisie.destinataireNom ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("destinataireNom", evenement.target.value)}
@@ -173,6 +197,7 @@ export function ModaleLettre({
           <Champ id="lettre-qualite" label={t("lettreQualite")}>
             <Input
               id="lettre-qualite"
+              placeholder={t("phLettreQualite")}
               value={saisie.destinataireQualite ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("destinataireQualite", evenement.target.value)}
@@ -181,6 +206,7 @@ export function ModaleLettre({
           <Champ id="lettre-ville" label={t("lettreVille")}>
             <Input
               id="lettre-ville"
+              placeholder={t("phLettreVille")}
               value={saisie.destinataireVille ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("destinataireVille", evenement.target.value)}
@@ -190,6 +216,7 @@ export function ModaleLettre({
           <Champ id="lettre-concerne" label={t("lettreConcerne")}>
             <Input
               id="lettre-concerne"
+              placeholder={t("phLettreConcerne")}
               value={saisie.concerne ?? ""}
               disabled={!modifiable}
               onChange={(evenement) => changer("concerne", evenement.target.value)}
@@ -198,6 +225,7 @@ export function ModaleLettre({
           <Champ id="lettre-objet" label={t("lettreObjet")} obligatoire>
             <Input
               id="lettre-objet"
+              placeholder={t("phLettreObjet")}
               value={saisie.objet}
               disabled={!modifiable}
               onChange={(evenement) => changer("objet", evenement.target.value)}
@@ -207,6 +235,7 @@ export function ModaleLettre({
           <Champ id="lettre-corps" label={t("lettreCorps")} obligatoire aide={t("lettreCorpsAide")}>
             <Textarea
               id="lettre-corps"
+              placeholder={t("phLettreCorps")}
               rows={10}
               value={saisie.corps}
               disabled={!modifiable}
@@ -217,6 +246,7 @@ export function ModaleLettre({
           <Champ id="lettre-signataire" label={t("lettreSignataire")} obligatoire>
             <Input
               id="lettre-signataire"
+              placeholder={t("phLettreSignataire")}
               value={saisie.signataire}
               disabled={!modifiable}
               onChange={(evenement) => changer("signataire", evenement.target.value)}

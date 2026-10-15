@@ -63,9 +63,18 @@ export default async function preparation() {
   const juriste = await jeton("juriste.test");
   const dj = await jeton("dj.test");
 
-  // Premier appel authentifié : provisionne le juriste dans l'annuaire, sans quoi il n'apparaîtrait
-  // pas dans la liste des juristes affectables (QF-16).
-  await appel("/utilisateurs?profil=JURISTE", juriste);
+  /*
+   * Provisionne le juriste dans l'annuaire, sans quoi il n'apparaîtrait pas dans la liste des
+   * juristes affectables (QF-16).
+   *
+   * **L'endpoint compte.** Le provisionnement a lieu quand le serveur **résout l'utilisateur
+   * courant** ; `GET /utilisateurs` se contente de lire l'annuaire et ne provisionne personne. Cet
+   * appel-ci est celui que fait la cloche des notifications à l'ouverture de l'application. Avec le
+   * précédent, les parcours qui lisent l'annuaire par l'API trouvaient une liste vide sur une base
+   * neuve, et ne passaient que parce qu'une connexion par l'écran avait eu lieu avant eux.
+   */
+  await appel("/alertes/mes-notifications?size=1", juriste);
+  await appel("/alertes/mes-notifications?size=1", dj);
 
   const clients = await appel<{ totalElements: number }>("/clients?size=1", juriste);
   if (clients && clients.totalElements === 0) {

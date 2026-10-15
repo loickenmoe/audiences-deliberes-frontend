@@ -1,12 +1,23 @@
 import type { TonStatut } from "@/components/global/statut-chip";
 import { peut, profilPrincipal } from "@/lib/rbac";
-import type { StatutConstitution, StatutPublication } from "@/types/enums";
+import type { StatutConstitution, StatutPublication, TypePublication } from "@/types/enums";
 
 export const TON_STATUT_PUBLICATION: Record<StatutPublication, TonStatut> = {
   DEPOSE: "attention",
   VALIDE: "succes",
   REJETE: "danger",
 };
+
+/**
+ * La clé de libellé d'un statut, selon la nature du dépôt.
+ *
+ * Sur un compte rendu, « Validée » décrirait une autorisation qui n'existe plus : depuis
+ * RG-INT-06 amendée (2026-10-05), la pièce est lue de tous dès son dépôt et l'Assistante n'en
+ * accuse que réception. Les autres publications gardent leur vocabulaire, et leur contrôle.
+ */
+export function cleStatutPublication(type: TypePublication, statut: StatutPublication): string {
+  return `${type === "CR_AUDIENCE" ? "StatutCompteRendu" : "StatutPublication"}.${statut}`;
+}
 
 export const TON_STATUT_CONSTITUTION: Record<StatutConstitution, TonStatut> = {
   EN_ATTENTE: "attention",
@@ -22,9 +33,13 @@ export interface VuePublications {
 }
 
 /**
- * L'Assistante instruit les publications : sa file s'ouvre sur celles à valider, et elle voit aussi
- * les rejetées. Les juristes, le DJ et la DJA ne lisent que les publications validées — une
- * publication déposée ou rejetée leur répond 404 (US 5.4).
+ * L'Assistante instruit les publications : sa file s'ouvre sur celles à traiter, et elle voit aussi
+ * les rejetées.
+ *
+ * Les autres profils n'ont plus de filtre à proposer : depuis RG-INT-06 amendée (2026-10-05), ce
+ * qu'ils voient ne dépend plus d'un statut mais de la nature du dépôt — tous les comptes rendus,
+ * et les autres publications une fois validées. C'est le serveur qui le décide ; offrir ici un
+ * filtre « Validées » laisserait croire qu'il manque les autres.
  */
 export function vuesPublications(roles: readonly string[] | undefined): [VuePublications, ...VuePublications[]] {
   if (profilPrincipal(roles) === "ROLE_ASSISTANTE") {
@@ -35,7 +50,7 @@ export function vuesPublications(roles: readonly string[] | undefined): [VuePubl
       { cle: "toutes", statut: null },
     ];
   }
-  return [{ cle: "validees", statut: "VALIDE" }];
+  return [{ cle: "toutes", statut: null }];
 }
 
 /** Le DJ et la DJA centralisent les échanges avec l'avocat (RG-INT-07). */

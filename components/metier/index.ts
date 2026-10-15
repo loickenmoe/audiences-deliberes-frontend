@@ -1,10 +1,12 @@
 export { BarreFiltres } from "./barre-filtres";
 export { CasesACocher, type OptionCase } from "./cases-a-cocher";
+export { ChampRecherche, DELAI_RECHERCHE } from "./champ-recherche";
 export { CycleEtape } from "./cycle-etape";
 export { DialogueConfirmation } from "./dialogue-confirmation";
 export { GardeSaisie } from "./garde-saisie";
 export { MenuExport } from "./menu-export";
 export { Pagination } from "./pagination";
+export { SelecteurAgence } from "./selecteur-agence";
 export { SelecteurCherchable, type OptionCherchable } from "./selecteur-cherchable";
 export { TableDonnees } from "./table-donnees";
 export { Televersement } from "./televersement";

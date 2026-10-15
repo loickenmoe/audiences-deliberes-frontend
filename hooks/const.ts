@@ -12,6 +12,9 @@ export const CLES = {
   dossier: "dossier",
   documentsDossier: "documents-dossier",
   demandesSuppression: "demandes-suppression",
+  partagesAvocat: "partages-avocat",
+  etatPartageDossier: "etat-partage-dossier",
+  piecesDossierAvocat: "pieces-dossier-avocat",
   rapportJournalier: "rapport-journalier",
   derogations: "derogations",
   audiencesDossier: "audiences-dossier",
@@ -39,6 +42,9 @@ export const CLES = {
   configurations: "configurations",
   audit: "audit",
   intervenants: "intervenants",
+  agences: "agences",
+  maSignature: "ma-signature",
+  demandesExplication: "demandes-explication",
   naturesDossier: "natures-dossier",
   typesClientSensible: "types-client-sensible",
   utilisateurs: "utilisateurs",
@@ -83,3 +89,13 @@ export const TAILLE_ANNUAIRE = 500;
  * gaspillage — et ces listes ne sont pas paginées côté backend (RF-05).
  */
 export const FRAICHEUR_REFERENTIEL = 30 * 60 * 1000;
+
+/**
+ * Taille d'une page de **sélecteur** à recherche serveur.
+ *
+ * Vingt, et non dix : le référentiel des agences en compte 82, et « bona » en ramène quatre
+ * (Bonanjo, Bonabéri, Bonamoussadi, Bonapriso). Dix suffirait là, mais une recherche courte comme
+ * « ba » en ramène davantage - et une liste tronquée en silence est exactement ce que la recherche
+ * serveur devait supprimer (Q-105).
+ */
+export const TAILLE_SELECTEUR = 20;

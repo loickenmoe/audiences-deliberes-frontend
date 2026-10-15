@@ -109,6 +109,70 @@ const serveur = setupServer(
     });
   }),
 
+  http.get(`${BASE}/referentiels/agences`, ({ request }) => {
+    derniereUrl = new URL(request.url);
+    return HttpResponse.json({
+      content: [
+        {
+          id: 3,
+          code: "00002",
+          nom: "BONANJO",
+          ville: "Douala",
+          adresse: "Quartier administratif Bonanjo",
+          telephone: "233 42 68 00",
+          actif: true,
+        },
+      ],
+      totalPages: 1,
+      totalElements: 1,
+    });
+  }),
+
+  http.post(`${BASE}/referentiels/agences`, async ({ request }) => {
+    derniereUrl = new URL(request.url);
+    derniereEcriture = { methode: request.method, corps: await request.json() };
+    return HttpResponse.json(
+      {
+        id: 83,
+        code: "00117",
+        nom: "NOUVELLE",
+        ville: "Douala",
+        adresse: null,
+        telephone: null,
+        actif: true,
+      },
+      { status: 201 },
+    );
+  }),
+
+  http.patch(`${BASE}/referentiels/agences/:id/reactivation`, ({ request, params }) => {
+    derniereUrl = new URL(request.url);
+    derniereEcriture = { methode: request.method, corps: null };
+    return HttpResponse.json({
+      id: Number(params.id),
+      code: "00002",
+      nom: "BONANJO",
+      ville: "Douala",
+      adresse: null,
+      telephone: null,
+      actif: true,
+    });
+  }),
+
+  http.delete(`${BASE}/referentiels/agences/:id`, ({ request, params }) => {
+    derniereUrl = new URL(request.url);
+    derniereEcriture = { methode: request.method, corps: null };
+    return HttpResponse.json({
+      id: Number(params.id),
+      code: "00002",
+      nom: "BONANJO",
+      ville: "Douala",
+      adresse: null,
+      telephone: null,
+      actif: false,
+    });
+  }),
+
   http.get(`${BASE}/referentiels/natures-dossier`, ({ request }) => {
     derniereUrl = new URL(request.url);
     return HttpResponse.json([
@@ -253,6 +317,74 @@ describe("intervenantService", () => {
 
     await intervenantService.lister({ size: 50 });
     expect(derniereUrl?.searchParams.get("size")).toBe("50");
+  });
+});
+
+describe("referentielService.agences", () => {
+  /**
+   * La recherche au fil de la frappe (Q-105, observation 2). Ce qui compte est qu'une taille de
+   * page **parte toujours** : sans elle le backend impose la sienne, et la liste déroulante
+   * tronquerait le référentiel en silence - précisément ce que la recherche serveur supprimait.
+   */
+  it("transmet la recherche et une taille de page", async () => {
+    const page = await referentielService.agences({ recherche: "bona" });
+
+    expect(derniereUrl?.pathname).toBe("/api/v1/referentiels/agences");
+    expect(derniereUrl?.searchParams.get("recherche")).toBe("bona");
+    expect(derniereUrl?.searchParams.get("size")).toBe("20");
+    expect(page.content[0]?.code).toBe("00002");
+    expect(page.content[0]?.ville).toBe("Douala");
+  });
+
+  /** La saisie ne doit proposer que les agences ouvertes : le drapeau part explicitement. */
+  it("demande les agences ouvertes seules quand on le lui dit", async () => {
+    await referentielService.agences({ actifSeulement: true });
+    expect(derniereUrl?.searchParams.get("actifSeulement")).toBe("true");
+
+    await referentielService.agences({ actifSeulement: false });
+    expect(derniereUrl?.searchParams.get("actifSeulement")).toBe("false");
+  });
+
+  it("crée une agence avec sa ville", async () => {
+    const agence = await referentielService.creerAgence({
+      code: "00117",
+      nom: "NOUVELLE",
+      ville: "Douala",
+      adresse: null,
+      telephone: null,
+    });
+
+    expect(derniereEcriture?.methode).toBe("POST");
+    expect(derniereEcriture?.corps).toMatchObject({ code: "00117", ville: "Douala" });
+    expect(agence.actif).toBe(true);
+  });
+
+  /**
+   * La fermeture est réversible (métier, 2026-10-06). `PATCH` et non `PUT` : on ne remplace pas
+   * l'agence, on change son seul état d'ouverture - et surtout **le code est conservé**, sans quoi
+   * il faudrait en inventer un autre pour rouvrir.
+   */
+  it("rouvre une agence fermée sans toucher à son code", async () => {
+    const agence = await referentielService.reactiverAgence(3);
+
+    expect(derniereEcriture?.methode).toBe("PATCH");
+    expect(derniereUrl?.pathname).toBe("/api/v1/referentiels/agences/3/reactivation");
+    expect(agence.actif).toBe(true);
+    expect(agence.code).toBe("00002");
+  });
+
+  /**
+   * `DELETE` **désactive**, malgré le verbe : un dossier ouvert sous une agence fermée reste un
+   * dossier valide, et son code doit continuer de désigner quelque chose. Le service doit donc
+   * rendre l'agence, non `void` - l'écran affiche son nouvel état.
+   */
+  it("rend l'agence désactivée plutôt que rien", async () => {
+    const agence = await referentielService.desactiverAgence(3);
+
+    expect(derniereEcriture?.methode).toBe("DELETE");
+    expect(derniereUrl?.pathname).toBe("/api/v1/referentiels/agences/3");
+    expect(agence.actif).toBe(false);
+    expect(agence.code).toBe("00002");
   });
 });
 

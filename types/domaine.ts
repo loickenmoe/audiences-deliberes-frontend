@@ -49,6 +49,36 @@ export interface NatureDossier {
   categorie: CategorieDossier;
 }
 
+/**
+ * Une agence de la banque (métier, 2026-10-03, observation 2).
+ *
+ * Le code d'agence d'un dossier était du texte libre : sur les 341 dossiers de recette, un seul
+ * était renseigné, et il ne désignait aucune agence. Le référentiel ferme la saisie.
+ *
+ * `id` est l'identifiant technique, `code` celui que la banque emploie - c'est `code` que le
+ * dossier porte. Deux agences peuvent partager un nom (deux « MBALLA II ») : la **ville** les
+ * oriente, l'**adresse** les tranche.
+ */
+export interface Agence {
+  id: number;
+  code: string;
+  nom: string;
+  ville: string;
+  adresse: string | null;
+  telephone: string | null;
+  actif: boolean;
+}
+
+/** Création et modification d'une agence (DJ/DJA). Le code ne se modifie pas après création. */
+export interface AgenceEcriture {
+  code: string;
+  nom: string;
+  ville: string;
+  adresse?: string | null;
+  telephone?: string | null;
+  actif?: boolean | null;
+}
+
 export interface TypeClientSensible {
   id: number;
   code: string;
@@ -126,7 +156,8 @@ export interface Dossier {
   juridictionSaisie: string;
   clientId: number;
   clientNom: string | null;
-  parties: { demandeur: string | null; defendeur: string | null } | null;
+  /** Plusieurs de chaque depuis le 2026-10-05 (observations 1 et 3). Jamais nul à la lecture. */
+  parties: { demandeurs: string[]; defendeurs: string[] } | null;
   risqueEncouru: number;
   recoursExerces: string | null;
   motifRenvoi: string | null;
@@ -143,6 +174,8 @@ export interface Dossier {
   seuilOrigine: SeuilOrigine | null;
   sensibiliteStatut: StatutValidation | null;
   sensibiliteMotifRejet: string | null;
+  /** Motif du retrait de la diligence particulière. Distinct du motif de rejet d'une proposition. */
+  sensibiliteMotifRetrait: string | null;
   etapes: EtapeProcedure[];
   juristesAffectes: number[];
   avocatsAffectes: number[];
@@ -289,6 +322,34 @@ export interface ValiderSensibilite {
   typeClientSensibleAjuste?: string;
 }
 
+/**
+ * Proposition de diligence particulière sur un dossier **déjà ouvert** (métier, 2026-10-03,
+ * observation 5).
+ *
+ * Le seuil et le type sont exigés comme à la création : c'est la proposition que le DJ arbitrera.
+ * Le `motif`, lui, n'existe pas à la création - là, la diligence est annoncée dès l'ouverture. Ici,
+ * le dossier vivait sans elle, et ce qui a changé doit être dit.
+ */
+export interface ProposerDiligence {
+  seuilMontant: number;
+  typeClientSensible: string;
+  motif: string;
+}
+
+/**
+ * Pose ou retrait **direct** par le DJ ou la DJA, sans proposition (métier, 2026-10-06).
+ *
+ * `estSensible` à vrai exige seuil et type ; à faux, c'est un retrait et le `motif` devient
+ * obligatoire - le dossier sort du circuit de double validation des frais, l'audit demandera
+ * pourquoi.
+ */
+export interface ModifierDiligence {
+  estSensible: boolean;
+  seuilMontant?: number;
+  typeClientSensible?: string;
+  motif?: string;
+}
+
 /** Demande de suppression créée quand un juriste auteur supprime une pièce (#40, réponse 202). */
 export type StatutSuppression = "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
 
@@ -328,6 +389,24 @@ export type ResultatSuppression =
   | { immediate: true; document: DocumentDossier }
   | { immediate: false; demande: DemandeSuppression };
 
+/**
+ * L'état du partage d'une pièce avec l'avocat du dossier (QF-64, backend Q-139). `PROPOSE` : un
+ * juriste l'a proposé sur un dossier sensible, et rien n'est visible avant le DJ ou la DJA.
+ */
+export type StatutPartageAvocat = "NON" | "PROPOSE" | "PARTAGE";
+
+/** Une pièce dans la file des partages à valider du DJ et de la DJA (QF-64). */
+export interface PartageAvocat {
+  documentId: number;
+  dossierId: number;
+  referenceDossier: string;
+  nomFichier: string;
+  typeDocument: string | null;
+  partageAvocat: StatutPartageAvocat;
+  partageParNom: string | null;
+  partageLe: string | null;
+}
+
 /** Document rattaché à un dossier (#43). */
 export interface DocumentDossier {
   id: number;
@@ -340,6 +419,8 @@ export interface DocumentDossier {
   dateChargement: string;
   estSupprime: boolean;
   urlTelechargement: string | null;
+  /** Partagé avec l'avocat du dossier, proposé, ou réservé aux profils internes (QF-64). */
+  partageAvocat: StatutPartageAvocat;
 }
 
 /**
@@ -358,7 +439,8 @@ export interface CreerDossier {
   nature: string;
   juridictionSaisie: string;
   clientId: number;
-  parties?: { demandeur?: string; defendeur?: string };
+  /** Obligatoires à la création : au moins un demandeur et un défendeur. */
+  parties: { demandeurs: string[]; defendeurs: string[] };
   risqueEncouru: number;
   recoursExerces?: string;
   motifRenvoi?: string;
@@ -425,6 +507,11 @@ export interface Audience {
   /** Posés à l'annulation (QF-30, Q-76 backend) : motif obligatoire, horodatage sans fuseau. */
   motifAnnulation: string | null;
   dateAnnulation: string | null;
+  /**
+   * Ce que le juriste veut dire à l'avocat constitué (QF-64). **Distincte du compte rendu**, qui
+   * reste interne : il peut juger la stratégie, voire le travail de l'avocat lui-même (RG-INT-07).
+   */
+  noteAvocat: string | null;
 }
 
 /**
@@ -675,7 +762,12 @@ export interface CorrespondanceAvocat {
 /**
  * Publication d'un avocat (#32, #59) : compte rendu d'audience (`contenu`, `audienceDate`) ou autre
  * publication (`typeDocument`, `nomFichier`). Depuis Q-86 backend, elle est nommée ;
- * `urlTelechargement` (10 minutes), `commentaires` et `correspondance` n'existent que sur le détail.
+ * `urlTelechargement` (10 minutes) et `commentaires` n'existent que sur le détail.
+ *
+ * `correspondance` fait exception depuis QF-58 : la liste `GET /portail/mes-publications` la porte,
+ * parce que c'est le seul écran où l'avocat peut lire ce que le DJ/DJA lui a transmis. `commentaires`,
+ * lui, reste nul pour l'avocat en toute circonstance : la délibération entre le juriste et le DJ/DJA
+ * ne lui est jamais adressée (US 5.5, RG-INT-07).
  */
 export interface Publication {
   id: number;
@@ -731,6 +823,29 @@ export interface LettreConstitution {
   modifiable: boolean;
   dateGeneration: string | null;
   dateModification: string | null;
+  /**
+   * Qui a écrit la dernière version (N8, métier du 2026-10-06).
+   *
+   * Q-115 B2 réservait la plume au juriste ; le SH peut désormais corriger avant de signer. La
+   * séparation des plumes cède, et c'est la traçabilité qui la remplace : le juriste doit voir que
+   * sa lettre a bougé, et par qui. Nul tant que personne n'a rédigé - le brouillon naît avec la
+   * demande.
+   */
+  redigeParNom: string | null;
+  /** Le code du profil du rédacteur - `JURISTE`, `SH` - pour que l'écran le nomme lui-même. */
+  redigeParProfil: string | null;
+}
+
+/**
+ * L'état de ma signature enregistrée (N8).
+ *
+ * Ne porte **pas l'image** : l'écran a besoin de savoir s'il propose un dépôt ou un remplacement.
+ * L'image a son propre appel, pour qu'elle ne voyage pas à chaque chargement.
+ */
+export interface Signature {
+  deposee: boolean;
+  type: string | null;
+  deposeeLe: string | null;
 }
 
 export interface DemandeConstitution {
@@ -751,11 +866,206 @@ export interface DemandeConstitution {
   prestataireType: TypeIntervenant;
   demandeurNom: string | null;
   valideParNom: string | null;
+  /**
+   * Vrai si **celui qui lit** peut écrire sur la lettre : son demandeur, ou le SH (Q-126).
+   *
+   * Calculé par le serveur, jamais déduit ici. L'écran connaît les rôles de qui regarde, pas
+   * l'identifiant interne du demandeur - et `ROLE_JURISTE` étant composite (Q-81), un droit lu
+   * sur le rôle vaudrait aussi pour le DJ et la DJA, ce qui est exactement ce que la règle ferme.
+   */
+  redactionPossible: boolean;
 }
 
 /**
- * Avocat du répertoire (#37), trié par charge croissante. `indicateurCharge` : dossiers actifs ;
- * `indicateurPerformance` : part des délibérés favorables, entre 0 et 1 (0 sans délibéré).
+ * Demande d'explication adressée par la direction à un avocat, et sa réponse (N7 temps 2).
+ *
+ * `enAttente` est **calculé par le serveur** à partir de la date de réponse, jamais stocké : une
+ * troisième donnée pourrait dire le contraire des deux autres, et c'est toujours elle qu'on
+ * croirait.
+ *
+ * `dossierId` est facultatif : la demande porte sur une **conduite** - des audiences manquées à
+ * travers plusieurs dossiers - et non sur une affaire. Renseigné, il situe l'échange.
+ */
+export interface DemandeExplication {
+  id: number;
+  avocatId: number;
+  avocatNom: string;
+  dossierId: number | null;
+  referenceDossier: string | null;
+  auteurNom: string | null;
+  contenu: string;
+  dateDemande: string;
+  reponse: string | null;
+  dateReponse: string | null;
+  enAttente: boolean;
+}
+
+/**
+ * L'activité d'une personne sur une période (observation 14, N6).
+ *
+ * `delaiMoyenSaisieCompteRendu` est **nul** quand elle n'a saisi aucun compte rendu : zéro se
+ * lirait comme une saisie le jour même, c'est-à-dire comme la meilleure performance possible, et
+ * l'absence de mesure n'est pas une mesure excellente.
+ *
+ * `fraisTraites` additionne les deux contrôles - conformité et opportunité - parce qu'ils sont deux
+ * gestes distincts sur la même demande, et n'en montrer qu'un rendrait invisible la moitié du
+ * travail.
+ */
+export interface ActiviteNominative {
+  utilisateurId: number;
+  nom: string | null;
+  profil: string | null;
+  dossiersOuverts: number;
+  audiencesPlanifiees: number;
+  comptesRendusSaisis: number;
+  deliberesEnregistres: number;
+  lettresRedigees: number;
+  fraisTraites: number;
+  delaiMoyenSaisieCompteRendu: number | null;
+}
+
+/**
+ * Une nature d'action et son décompte, dans la fiche d'activité d'une personne (Q-133).
+ *
+ * `code` est une valeur de `TypeActionHistorique` ; son libellé se lit dans `historique.actions`,
+ * parce que l'application est bilingue et que le serveur n'a qu'un libellé français (QF-24).
+ */
+export interface LigneActivite {
+  code: string;
+  total: number;
+}
+
+/**
+ * La fiche d'activité d'une personne sur une période (Q-133).
+ *
+ * **Pourquoi elle existe à côté de [[RapportNominatif]].** Le tableau de la direction compare des
+ * personnes sur six colonnes choisies ; cette fiche doit refléter **fidèlement** ce qu'une personne
+ * a fait - décision du métier du 2026-10-09, qui a renversé l'arbitrage précédent. Une Assistante
+ * ou un supérieur hiérarchique n'ouvre pas de dossiers : six colonnes les montreraient vides.
+ *
+ * Seules les natures **réellement accomplies** figurent dans `lignes` : une fiche n'est pas
+ * l'inventaire de ce qu'on n'a pas fait.
+ */
+export interface RapportActivite {
+  utilisateurId: number;
+  nom: string | null;
+  profil: string | null;
+  dateDebut: string;
+  dateFin: string;
+  lignes: LigneActivite[];
+  delaiMoyenSaisieCompteRendu: number | null;
+}
+
+/**
+ * Une action derrière un décompte de la fiche (Q-133) : ce qui rend le décompte cliquable.
+ *
+ * `dossierId` est nul pour une action hors dossier - une modification de configuration, une
+ * correction du référentiel. La ligne s'affiche quand même, sans lien : la masquer ferait
+ * disparaître de l'activité réelle, et le décompte ne tomberait plus sur le nombre de lignes.
+ */
+export interface ActionDetaillee {
+  id: number;
+  code: string;
+  action: string;
+  dateAction: string;
+  dossierId: number | null;
+  referenceDossier: string | null;
+}
+
+/**
+ * Les blocs du tableau de bord que l'on peut ouvrir (Q-137).
+ *
+ * Un par bloc affiché, et aucun de plus : le taux de succès du recouvrement a quitté l'écran le
+ * 2026-10-06 au profit des trois décomptes qu'il résumait, et un indicateur qui ne s'affiche plus
+ * ne se détaille pas.
+ */
+export type IndicateurTableauDeBord =
+  | "DOSSIERS_ACTIFS"
+  | "AFFAIRES_VIDEES"
+  | "AUDIENCES_PLANIFIEES"
+  | "FRAIS_EN_ATTENTE"
+  | "PROROGATIONS_ALERTE"
+  | "LITIGES_GAGNES"
+  | "LITIGES_PERDUS"
+  | "DECISIONS_MIXTES"
+  | "PROVISIONS_REPRISES";
+
+/**
+ * Une ligne derrière un bloc du tableau de bord (Q-137).
+ *
+ * **Une seule forme pour les neuf indicateurs**, bien que les objets comptés soient de natures
+ * différentes - des dossiers, des audiences, des demandes de frais, des délibérés, des alertes, des
+ * adjudications. Neuf formes auraient donné neuf tableaux, chacun avec ses colonnes et ses défauts ;
+ * le bloc d'où l'on vient dit déjà ce qu'on regarde.
+ *
+ * `dossierId` est nul pour un objet qui n'en dépend pas - une alerte hors dossier. La ligne reste
+ * affichée sans lien, sans quoi le nombre de lignes ne tomberait plus sur le nombre affiché.
+ */
+export interface DetailIndicateur {
+  id: number;
+  dossierId: number | null;
+  referenceDossier: string | null;
+  intitule: string | null;
+  precision: string | null;
+  date: string | null;
+  montant: number | null;
+}
+
+/**
+ * Un avocat et ses dépôts sur la période (Q-136).
+ *
+ * `avocatId` est nul si son inscription au répertoire a été retirée depuis : ses dépôts restent
+ * comptés - les masquer ferait disparaître de l'activité réelle - et l'écran ouvre alors sa fiche par
+ * son compte, faute d'inscription à désigner.
+ */
+export interface ActiviteAvocat {
+  utilisateurId: number;
+  avocatId: number | null;
+  nom: string | null;
+  comptesRendusDeposes: number;
+  demandesFraisDeposees: number;
+  autresPublicationsDeposees: number;
+  explicationsFournies: number;
+}
+
+/**
+ * L'activité des avocats sur une période (Q-136), pendant de [[RapportNominatif]].
+ *
+ * **Pourquoi un rapport à part.** Le tableau nominatif compte six natures de production interne -
+ * ouvrir un dossier, enregistrer un compte rendu, contrôler des frais - dont un avocat n'accomplit
+ * aucune : il **dépose**, c'est le juriste qui enregistre. L'y faire figurer n'aurait affiché qu'une
+ * ligne de zéros. Deux populations, deux jeux d'indicateurs, une même règle : ni note, ni classement
+ * par volume, les lignes suivant l'ordre des noms.
+ */
+export interface RapportAvocats {
+  dateDebut: string;
+  dateFin: string;
+  lignes: ActiviteAvocat[];
+}
+
+/**
+ * Le rapport d'activité par personne (observation 14, N6).
+ *
+ * **Des indicateurs, pas une note.** L'application compte ; le responsable apprécie. Ni note, ni
+ * classement, ni total global : les lignes suivent l'ordre des **noms**, parce qu'un tri par volume
+ * ferait du rapport un palmarès où le premier passerait pour le meilleur.
+ */
+export interface RapportNominatif {
+  dateDebut: string;
+  dateFin: string;
+  lignes: ActiviteNominative[];
+}
+
+/**
+ * Avocat du répertoire (#37), trié par charge croissante.
+ *
+ * `indicateurCharge` : dossiers actifs. `deliberesFavorables` / `deliberesTotal` : ce que l'écran
+ * montre depuis le 2026-10-07 - « 3 sur 4 » dit ce que « 75 % » résumait, **et sur combien
+ * d'affaires**. Un taux de 100 % sur un délibéré unique ne vaut pas le même jugement qu'un taux de
+ * 70 % sur trente, et c'est pourtant le premier qui paraissait le meilleur.
+ *
+ * `indicateurPerformance` reste dans le contrat - la même requête le produit - mais n'est plus
+ * affiché : « le métier veut les chiffres, pas les pourcentages » (2026-10-06).
  */
 export interface AvocatRepertoire {
   id: number;
@@ -763,6 +1073,8 @@ export interface AvocatRepertoire {
   email: string | null;
   telephone: string | null;
   indicateurCharge: number;
+  deliberesFavorables: number;
+  deliberesTotal: number;
   indicateurPerformance: number;
 }
 
@@ -1017,11 +1329,18 @@ export interface StatistiquesDiffusion {
 // ─────────────────────────────── Reporting ───────────────────────────────
 
 /**
- * Tableau de bord exécutif (#50, écran 39). Six indicateurs **temps réel, tous dossiers
+ * Tableau de bord exécutif (#50, écran 39). Neuf indicateurs **temps réel, tous dossiers
  * confondus** : le backend ne les restreint ni à une période ni au portefeuille de l'appelant.
  *
- * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage — `Pourcentage` le met en
- * forme.
+ * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage. Le tableau de bord ne
+ * l'affiche **plus** depuis le 2026-10-06 - la Direction veut des nombres - mais l'API le renvoie
+ * toujours : la même requête sert à compter les trois résultats, et le rapport périodique s'en sert.
+ *
+ * **Gagnés, perdus et mixtes sont trois nombres distincts** (métier, 2026-10-03, observation 12).
+ * Le backend les possédait et n'exposait que le taux : la Direction lisait un pourcentage sans
+ * savoir sur combien d'affaires il portait. « Perdus » n'est pas « total moins gagnés » - un
+ * délibéré mixte n'est ni l'un ni l'autre, et le déduire aurait compté les affaires partiellement
+ * gagnées comme des pertes.
  */
 export interface TableauDeBord {
   nbDossiersActifs: number;
@@ -1029,6 +1348,15 @@ export interface TableauDeBord {
   nbDemandesFraisEnAttente: number;
   nbProrogationsAlerte: number;
   tauxSuccesRecouvrement: number;
+  nbLitigesGagnes: number;
+  nbLitigesPerdus: number;
+  nbLitigesMixtes: number;
+  /**
+   * Les **affaires vidées** : les dossiers dont plus aucune étape n'est en cours (métier,
+   * 2026-10-06). Complément exact de `nbDossiersActifs` - les deux s'additionnent pour faire les
+   * dossiers qui portent au moins une étape.
+   */
+  nbAffairesVidees: number;
   provisionsReprises: number;
 }
 
@@ -1047,7 +1375,15 @@ export interface Rapport {
   nbAudiencesTenues: number;
   nbDemandesFraisDeposees: number;
   nbDeliberesEnregistres: number;
+  /**
+   * Toujours renvoyé par l'API, **plus affiché ni exporté** depuis le 2026-10-06 : « le métier veut
+   * les chiffres, le montant, pas les pourcentages ». Les trois décomptes ci-dessous disent ce qu'il
+   * résumait, et le disent sans calcul.
+   */
   tauxSuccesRecouvrement: number;
+  nbLitigesGagnes: number;
+  nbLitigesPerdus: number;
+  nbLitigesMixtes: number;
   provisionsReprises: number;
 }
 

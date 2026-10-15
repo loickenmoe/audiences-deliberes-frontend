@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
@@ -39,6 +40,11 @@ async function remplirTroncCommun(page: Page, nature: string) {
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
+  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
+  await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await affecterParDefaut(page);
 }
 
@@ -83,7 +89,7 @@ test("la sensibilité n'exige seuil et type qu'une fois cochée", async ({ page 
 
   await expect(page.getByLabel("Seuil proposé (FCFA)", { exact: true })).toHaveCount(0);
 
-  await page.getByLabel("Dossier sensible", { exact: true }).check();
+  await page.getByLabel("Dossier à diligence particulière", { exact: true }).check();
   await expect(page.getByLabel("Seuil proposé (FCFA)", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Type de client", { exact: true })).toBeVisible();
 });
@@ -168,16 +174,83 @@ test("deux dossiers créés à la suite reçoivent deux références distinctes"
   expect(numero(references[1])).toEqual(numero(references[0]) + 1);
 });
 
-test("la recherche par référence passe par l'URL et reste partageable", async ({ page }) => {
+/**
+ * La recherche par référence, **au fil de la frappe** (QF-57).
+ *
+ * **Ce parcours encodait le défaut.** Il remplissait le champ puis **cliquait sur le champ voisin**
+ * pour provoquer le `blur` - et passait grâce à ce contournement, qui était exactement le geste
+ * reproché en recette. L'assertion décisive est désormais que le champ **garde le focus** : le
+ * filtre s'applique sans qu'on en sorte.
+ */
+test("la recherche par référence s'applique sans quitter le champ, et reste partageable", async ({
+  page,
+}) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers");
 
   // Ce filtre n'existait pas côté backend avant M16 (QF-07) : la liste n'était filtrable que par
   // nature, catégorie et juridiction.
-  await page.getByLabel("Référence", { exact: true }).fill("DOS-E2E");
-  await page.getByLabel("Juridiction", { exact: true }).click();
+  const champ = page.getByLabel("Référence", { exact: true });
+  await champ.fill("DOS-E2E");
 
+  // Rien d'autre n'est touché : pas de clic ailleurs, pas de touche Entrée.
   await expect(page).toHaveURL(/reference=DOS-E2E/, { timeout: 30_000 });
+  await expect(champ, "le filtre a exigé de quitter le champ").toBeFocused();
+  await expect(champ).toHaveValue("DOS-E2E");
+});
+
+test("la recherche par juridiction s'applique aussi au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const champ = page.getByLabel("Juridiction", { exact: true });
+  await champ.fill("TPI");
+
+  await expect(page).toHaveURL(/juridiction=TPI/, { timeout: 30_000 });
+  await expect(champ, "le filtre a exigé de quitter le champ").toBeFocused();
+});
+
+/**
+ * Le filtrage au fil de la frappe change la liste **sans action explicite**. Le nombre de résultats
+ * est visible - la pagination le porte - mais dans un simple `<span>` : il changeait donc en silence
+ * pour qui écoute. Une région vocale discrète l'annonce.
+ */
+test("le nombre de résultats est annoncé quand le filtre agit tout seul", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const annonce = page.getByRole("status").filter({ hasText: /élément/ });
+  await expect(annonce).toBeAttached({ timeout: 30_000 });
+
+  await page.getByLabel("Référence", { exact: true }).fill("ZZZ-INEXISTANT");
+  await expect(page).toHaveURL(/reference=ZZZ-INEXISTANT/, { timeout: 30_000 });
+  // Aucun résultat se dit, au lieu de laisser deviner un tableau vide.
+  await expect(annonce).toHaveText(/Aucun élément/, { timeout: 30_000 });
+});
+
+/**
+ * La contrepartie du fil de la frappe, et la seule objection valable à `onChange` : **une requête
+ * par pause, pas par caractère**. Le délai est éprouvé en test unitaire ; ce parcours vérifie qu'un
+ * mot tapé d'un trait ne laisse qu'une seule écriture dans l'URL - sinon l'historique et le réseau
+ * en porteraient une par lettre.
+ */
+test("un mot tapé d'un trait ne produit qu'une écriture d'URL", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers");
+
+  const champ = page.getByLabel("Référence", { exact: true });
+  await champ.click();
+  // `pressSequentially` frappe lettre par lettre, contrairement à `fill`.
+  await champ.pressSequentially("DOS-2026", { delay: 30 });
+
+  await expect(page).toHaveURL(/reference=DOS-2026/, { timeout: 30_000 });
+  /*
+   * Les filtres s'écrivent avec `router.replace`, qui n'empile rien : un retour arrière doit donc
+   * quitter la liste, et non remonter les huit états intermédiaires. C'était la moitié de la
+   * justification d'origine du `onBlur`, et elle était déjà caduque.
+   */
+  await page.goBack();
+  await expect(page).not.toHaveURL(/reference=DOS-202/, { timeout: 30_000 });
 });
 
 test("le filtre « mes dossiers » ne montre que le portefeuille de l'utilisateur", async ({
@@ -378,4 +451,50 @@ test("le sélecteur de taille change le nombre de lignes et vit dans l'URL", asy
   // Un lien partagé doit rouvrir la liste telle que son auteur la voyait.
   await page.reload();
   await expect(page.getByLabel("Lignes par page")).toHaveValue("50");
+});
+
+/**
+ * Les placeholders explicatifs du formulaire de création (N5, observation 4).
+ *
+ * **Ce que l'observation demandait, et que j'avais mal lu.** « Placeholders explicatifs » : le texte
+ * va **dans** le champ, pas dessous. Les deux sélecteurs d'agence en portaient un depuis l'origine
+ * - « Code, nom ou ville de l'agence… » - et c'était le modèle à suivre ; les dix champs libres le
+ * portent désormais aussi.
+ *
+ * **Et la marque d'obligation.** L'astérisque du sélecteur cherchable vivait dans le `<label>` :
+ * le nom accessible valait « Agence d'origine * », si bien qu'une recherche au mot près ne trouvait
+ * pas le champ. C'est corrigé, et c'est ce que la première assertion tient.
+ */
+test("les champs du formulaire de création portent leurs placeholders explicatifs", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/dossiers/nouveau");
+
+  // Le sélecteur cherchable : son nom accessible est le libellé **seul**, sans l'astérisque.
+  const agence = page.getByRole("combobox", { name: "Agence d’origine" });
+  await expect(agence).toBeVisible({ timeout: 30_000 });
+  await expect(agence).toHaveAttribute("aria-required", "true");
+  await expect(agence).toHaveAttribute("placeholder", "Code, nom ou ville de l’agence…");
+
+  // Les champs libres : le texte est dans le champ, et disparaît dès qu'on écrit.
+  await expect(page.getByLabel("Juridiction saisie", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "Le tribunal devant lequel l’affaire est portée",
+  );
+  await expect(page.getByLabel("Risque encouru (FCFA)", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "Ce que la banque peut perdre",
+  );
+
+  // Une partie au procès : chaque ligne de la liste porte le même.
+  await expect(page.getByPlaceholder("Qui engage l’action")).toBeVisible();
+  await expect(page.getByPlaceholder("Contre qui l’action est engagée")).toBeVisible();
+
+  /*
+   * Les références de pièces redisent la règle que les utilisateurs inversent le plus souvent :
+   * c'est le fichier qui est exigé, pas la référence.
+   */
+  await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LONGUE);
+  await expect(
+    page.getByLabel("Dossier de crédit d’origine", { exact: true }),
+  ).toHaveAttribute("placeholder", "Référence facultative : c’est le fichier qui est exigé");
 });

@@ -6,10 +6,9 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { BarreFiltres, DateValeur, TableDonnees } from "@/components/metier";
+import { BarreFiltres, ChampRecherche, DateValeur, TableDonnees } from "@/components/metier";
 import { FormulaireClient } from "@/components/modules/clients/formulaire-client";
 import { Button } from "@/components/ui/button";
-import { Champ, Input } from "@/components/ui/champ";
 import { useClients } from "@/hooks/useClients";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { peut } from "@/lib/rbac";
@@ -86,23 +85,29 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
       </header>
 
       <BarreFiltres nbFiltresActifs={nbFiltresActifs} onEffacer={effacer}>
-        <Champ id="filtre-nom" label={t("rechercheNom")} className="w-56">
-          <Input
-            id="filtre-nom"
-            defaultValue={filtres.nom}
-            // `onBlur` plutôt qu'`onChange` : écrire dans l'URL à chaque frappe produirait une
-            // requête et une entrée d'historique par caractère.
-            onBlur={(evenement) => definirFiltre("nom", evenement.target.value || undefined)}
-          />
-        </Champ>
+        {/*
+          **Au fil de la frappe** (QF-57). Les deux champs se validaient sur `onBlur`, et le
+          commentaire qui s'y trouvait disait « une requête **et une entrée d'historique** par
+          caractère » : la seconde moitié était fausse - `useFiltresUrl` écrit avec `router.replace`,
+          qui n'empile rien -, et la première est réglée par la pause de 300 ms de `ChampRecherche`.
+        */}
+        <ChampRecherche
+          id="filtre-nom"
+          label={t("rechercheNom")}
+          placeholder={t("phFiltreNom")}
+          valeur={filtres.nom}
+          onChangement={(valeur) => definirFiltre("nom", valeur || undefined)}
+          className="w-56"
+        />
 
-        <Champ id="filtre-reference" label={t("rechercheReference")} className="w-48">
-          <Input
-            id="filtre-reference"
-            defaultValue={filtres.reference}
-            onBlur={(evenement) => definirFiltre("reference", evenement.target.value || undefined)}
-          />
-        </Champ>
+        <ChampRecherche
+          id="filtre-reference"
+          label={t("rechercheReference")}
+          placeholder={t("phFiltreReference")}
+          valeur={filtres.reference}
+          onChangement={(valeur) => definirFiltre("reference", valeur || undefined)}
+          className="w-48"
+        />
       </BarreFiltres>
 
       <TableDonnees

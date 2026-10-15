@@ -133,11 +133,15 @@ describe("messageErreur", () => {
 describe("appliquerErreurApi", () => {
   function espion() {
     const appels: { champ: string; message?: string }[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const setError = ((champ: string, options: { message?: string }) => {
+    /*
+     * `appliquerErreurApi` attend le `setError` de react-hook-form, dont le type complet est
+     * paramétré par la forme du formulaire. Seule sa signature à deux arguments nous sert : on la
+     * déclare, plutôt que de museler le linter avec un `any`.
+     */
+    const setError = (champ: string, options: { message?: string }) => {
       appels.push({ champ, message: options.message });
-    }) as any;
-    return { appels, setError };
+    };
+    return { appels, setError: setError as unknown as Parameters<typeof appliquerErreurApi>[1] };
   }
 
   it("résout les codes numérotés du contrat sans aide de l'appelant", () => {

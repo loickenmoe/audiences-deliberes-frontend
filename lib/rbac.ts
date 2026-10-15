@@ -62,6 +62,13 @@ export const CAPACITES = {
   gererEtapes: ["ROLE_JURISTE"],
   /** `POST /dossiers/{id}/seuil-derogation` — ROLE_SAISIE */
   demanderDerogationSeuil: ["ROLE_SAISIE"],
+  /**
+   * `POST /dossiers/{id}/sensibilite/proposition` - SAISIE (N4, observation 5).
+   *
+   * Même rôle que la demande de dérogation, et pour la même raison : le juriste **propose**,
+   * il ne décide pas. La pose et le retrait directs relèvent d'`arbitrerDossier`.
+   */
+  proposerDiligence: ["ROLE_SAISIE"],
   /** `PUT .../seuil-derogation/{auditId}`, `POST .../sensibilite/validation` — DJ, DJA */
   arbitrerDossier: ["ROLE_DJ", "ROLE_DJA"],
 
@@ -129,12 +136,91 @@ export const CAPACITES = {
    * DJA » ; seuls le SH et l'avocat en sont écartés.
    */
   consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
-  /** `GET /constitutions/prestataires` — SH, JURISTE */
-  consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE"],
-  /** `POST /constitutions/prestataires` — JURISTE */
-  solliciterConstitution: ["ROLE_JURISTE"],
+  /** `GET /constitutions/prestataires` — SH, JURISTE, **ASSISTANTE** (2026-10-07) */
+  consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE", "ROLE_ASSISTANTE"],
+  /** `POST /constitutions/prestataires` — JURISTE, **ASSISTANTE** (métier, 2026-10-07) */
+  solliciterConstitution: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
   /** `PUT /constitutions/prestataires/{id}/validation` — SH */
   signerConstitution: ["ROLE_SH"],
+  /**
+   * `PUT /constitutions/prestataires/{id}/lettre` — JURISTE, SH, ASSISTANTE.
+   *
+   * **Ce rôle ne suffit pas, et c'est voulu.** Depuis Q-126 (2026-10-07) la lettre appartient au
+   * demandeur de la constitution : lui seul y écrit, et le SH la corrige avant de la signer. Un
+   * rôle ne peut pas dire cela - il ne connaît pas qui a demandé quoi, et `ROLE_JURISTE` étant
+   * composite (Q-81), il vaudrait aussi pour le DJ et la DJA. C'est le **serveur** qui tranche,
+   * ligne par ligne, par `redactionPossible`. Cette capacité ne sert donc qu'à ouvrir l'écran.
+   */
+  redigerLettre: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
+
+  /**
+   * `GET /demandes-explication` — DJ, DJA et AVOCAT (N7 temps 2).
+   *
+   * Le même écran sert deux publics, et c'est le **serveur** qui décide lesquelles chacun voit :
+   * la direction les siennes toutes, l'avocat celles qui lui sont adressées. L'écran n'envoie
+   * aucun paramètre de périmètre - il suffirait à un avocat pour demander la liste entière.
+   */
+  consulterExplications: ["ROLE_DJ", "ROLE_DJA", "ROLE_AVOCAT"],
+  /** `POST /demandes-explication` — DJ et DJA seuls : c'est la direction qui écrit. */
+  demanderExplication: ["ROLE_DJ", "ROLE_DJA"],
+  /** `PUT /demandes-explication/{id}/reponse` — l'avocat, et seulement pour la sienne (403). */
+  repondreExplication: ["ROLE_AVOCAT"],
+
+  /**
+   * `GET /rapports/nominatif` — DJ et DJA seuls (observation 14, N6).
+   *
+   * Ce rapport **nomme des personnes**. Il est lu sur leurs rôles propres, jamais par
+   * `ROLE_JURISTE` qui est composite (Q-81) : chaque juriste y lirait l'activité de ses collègues.
+   */
+  consulterRapportNominatif: ["ROLE_DJ", "ROLE_DJA"],
+
+  /**
+   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133).
+   *
+   * **L'avocat y est, et j'avais écrit l'inverse.** J'ai soutenu qu'« aucune des natures comptées
+   * n'est celle d'un avocat - sa fiche serait vide par construction ». C'était **faux** : il dépose
+   * ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond aux
+   * demandes d'explication. Les quatre sont tracées sous son propre compte. Corrigé le 2026-10-13
+   * (backend Q-135), sur demande du métier.
+   *
+   * `ROLE_CONSULTATION` couvre les cinq profils internes, `ROLE_AVOCAT` l'avocat qui ne le porte
+   * pas (QF-01). Deux rôles plutôt que sept profils : ce qui est énuméré ici doit rester court.
+   *
+   * C'est le **serveur** qui décide de quelle personne il s'agit : lire l'activité d'un collègue ou
+   * d'un avocat demande d'être DJ ou DJA, et se tient sur [[consulterRapportNominatif]].
+   */
+  consulterMonActivite: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
+
+  // ── Écrans ouverts à tout compte ──────────────────────────────────────────
+  /**
+   * L'**accueil**, `/` — ouvert à tout compte authentifié, avocat compris.
+   *
+   * Aucun endpoint ne la gouverne : c'est un écran, et depuis QF-19 une **racine unique pour tous
+   * les profils**, dont le contenu s'adapte plutôt que de rediriger. La capacité existe donc pour
+   * que l'entrée de navigation en ait une, et non pour refléter un `@PreAuthorize`.
+   *
+   * **Elle était adossée à [[consulterReferentiels]], et c'était un défaut** (QF-59) : l'avocat ne
+   * porte pas `ROLE_CONSULTATION`, si bien que l'entrée disparaissait de son menu alors que la page
+   * s'ouvrait parfaitement pour lui. Sa seule porte était le logo de la banque - une porte sans
+   * étiquette, qui ne dit pas où elle mène et ne marque pas l'onglet de la page où l'on est.
+   *
+   * `ROLE_CONSULTATION` couvre les cinq profils internes, `ROLE_AVOCAT` l'avocat qui ne le porte
+   * pas (QF-01) : les deux réunis sont la population entière, et deux rôles valent mieux que sept
+   * profils énumérés.
+   */
+  consulterAccueil: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
+  /**
+   * Ses **notifications**, `GET /alertes/mes-notifications` — `@PreAuthorize("isAuthenticated()")`.
+   *
+   * <b>Distincte de [[consulterAccueil]]</b>, bien qu'elle porte aujourd'hui les mêmes rôles :
+   * celle-ci reflète un endpoint, l'autre un écran sans endpoint. Les confondre ferait suivre à
+   * l'une tout resserrement futur de l'autre.
+   *
+   * C'est le **serveur** qui décide desquelles il s'agit : le destinataire est résolu sur le jeton,
+   * il n'est pas un paramètre. Chacun n'y voit donc que les alertes qui lui sont adressées, et
+   * l'écran n'a aucun périmètre à demander.
+   */
+  consulterSesNotifications: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
 
   // ── Gestion documentaire ──────────────────────────────────────────────────
   /** `POST /ged/documents` — ROLE_SAISIE */
@@ -145,6 +231,27 @@ export const CAPACITES = {
   supprimerDocument: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
   /** `GET /ged/demandes-suppression`, `PUT .../approbation-suppression` — DJ, DJA */
   arbitrerSuppressions: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `PUT`, `DELETE /ged/documents/{id}/partage-avocat` — JURISTE (QF-64, backend Q-139). Le DJ et la
+   * DJA l'atteignent par leur `ROLE_JURISTE` composite (Q-81). « Tout juriste partage, sans
+   * validation du DJ » : arbitré par le porteur du projet le 2026-10-15. Sur un dossier sensible,
+   * c'est le **serveur** qui fait du geste une proposition.
+   *
+   * **Le SH et l'Assistante partagent aussi depuis QF-65** - « ils sont à la base des juristes ».
+   * Ils ne portent pas `ROLE_JURISTE` : ils sont donc nommés. Sur un dossier sensible, leur geste
+   * propose, comme celui du juriste ; seuls le DJ et la DJA partagent directement.
+   */
+  partagerDocument: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
+  /**
+   * `PUT .../partage-avocat/arbitrage`, `GET /ged/partages-avocat` — DJ, DJA (QF-64).
+   *
+   * **Distincte d'`arbitrerSuppressions`**, bien qu'elle porte aujourd'hui les mêmes rôles : l'une
+   * décide qu'une pièce disparaît, l'autre qu'elle sort de la banque. Les confondre ferait suivre à
+   * l'une tout assouplissement futur de l'autre.
+   */
+  arbitrerPartages: ["ROLE_DJ", "ROLE_DJA"],
+  /** `PUT /audiences/{id}/note-avocat` — JURISTE (QF-64) : la note destinée à l'avocat constitué. */
+  ecrireNoteAvocat: ["ROLE_JURISTE"],
   /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE (Q-80 backend) */
   consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE"],
 
@@ -170,6 +277,17 @@ export const CAPACITES = {
    * deux étapes.
    */
   administrerConfigurations: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `POST`, `PUT`, `DELETE /referentiels/agences` - DJ, DJA (backend, observation 2).
+   *
+   * **Distincte d'`administrerConfigurations`**, bien qu'elle porte aujourd'hui les mêmes
+   * rôles : un seuil se règle, une agence engage les dossiers qui portent son code. Les
+   * confondre ferait suivre à l'une tout assouplissement futur de l'autre.
+   *
+   * La **lecture** du référentiel relève de `consulterReferentiels` : elle explique ce que
+   * propose le formulaire de création, la cacher n'aiderait personne.
+   */
+  administrerAgences: ["ROLE_DJ", "ROLE_DJA"],
   /**
    * `GET /alertes/statistiques-diffusion` — DJ, DJA (backend Q-109).
    *
