@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { NAVIGATION } from "@/lib/navigation";
 import { CAPACITES, type Capacite, aRole, peut, profilPrincipal } from "@/lib/rbac";
 
 /**
@@ -95,6 +96,74 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     expect(peut(SH, "consulterRepertoire")).toBe(false);
   });
 
+  /**
+   * `GET /rapports/nominatif` est `hasAnyRole('DJ','DJA')` (N6, observation 14). Le rapport **nomme
+   * des collègues** : il se tient sur les rôles propres de la direction, jamais sur `ROLE_JURISTE`,
+   * composite depuis Q-81 - l'y adosser le donnerait à chaque juriste, donc à tous les nommés.
+   */
+  it("le rapport nominatif est réservé au DJ et à la DJA, sans fuite par le composite", () => {
+    expect(peut(DJ, "consulterRapportNominatif")).toBe(true);
+    expect(peut(DJA, "consulterRapportNominatif")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterRapportNominatif")).toBe(false);
+    }
+  });
+
+  /**
+   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133), **avocat compris depuis
+   * Q-135**.
+   *
+   * C'est le pendant du test précédent, et la différence compte : lire l'activité **d'un collègue ou
+   * d'un avocat** reste à la direction, lire **la sienne** est à tout le monde.
+   *
+   * **Ce test affirmait l'inverse, et il avait tort.** J'avais exclu l'avocat en soutenant qu'il
+   * n'aurait rien à y lire : « aucune des natures comptées n'est la sienne ». C'était faux - il
+   * dépose ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond
+   * aux demandes d'explication. Corrigé le 2026-10-13 sur demande du métier.
+   */
+  it("chacun lit sa propre activité, avocat compris", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterMonActivite")).toBe(true);
+    }
+  });
+
+  /**
+   * Et la frontière, qui est tout l'enjeu : **sa** fiche, pas celle d'un autre. Le serveur l'arbitre
+   * (il refuse une cible qui n'est pas soi sans être DJ ni DJA) ; cette table dit seulement ce que
+   * l'écran propose, et elle ne doit pas proposer plus.
+   */
+  it("l'activité d'autrui reste à la direction, pour les collègues comme pour les avocats", () => {
+    expect(peut(DJ, "consulterRapportNominatif")).toBe(true);
+    expect(peut(DJA, "consulterRapportNominatif")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterRapportNominatif")).toBe(false);
+    }
+  });
+
+  /**
+   * **Accueil et Notifications sont ouverts à tout compte, avocat compris** (QF-59).
+   *
+   * Le défaut signalé le 2026-10-14 : les deux entrées de navigation étaient adossées à
+   * `consulterReferentiels`, que l'avocat ne porte pas. Elles disparaissaient de son menu alors que
+   * les deux pages s'ouvraient parfaitement pour lui - il les atteignait par le logo de la banque et
+   * par la cloche, deux portes sans étiquette.
+   *
+   * La référence côté backend : `GET /alertes/mes-notifications` porte
+   * `@PreAuthorize("isAuthenticated()")`, et l'accueil est une racine unique pour tous les profils
+   * depuis QF-19.
+   */
+  it("l'accueil et les notifications sont ouverts à tout compte, avocat compris", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "consulterAccueil")).toBe(true);
+      expect(peut(profil, "consulterSesNotifications")).toBe(true);
+    }
+  });
+
+  /** Et sans la correction, l'avocat en était écarté : c'est ce que ce rappel fixe. */
+  it("l'avocat n'a toujours pas la lecture des référentiels, qui n'était pas la bonne capacité", () => {
+    expect(peut(AVOCAT, "consulterReferentiels")).toBe(false);
+  });
+
   it("la signature des constitutions est réservée au supérieur hiérarchique", () => {
     expect(peut(SH, "signerConstitution")).toBe(true);
     expect(peut(JURISTE, "signerConstitution")).toBe(false);
@@ -162,9 +231,135 @@ describe("périmètre du profil avocat (QF-01)", () => {
     expect(peut(AVOCAT, "consulterFrais")).toBe(true);
   });
 
+  /**
+   * Le périmètre de l'avocat s'énumère, et ne s'élargit pas en silence.
+   *
+   * Deux sont arrivées avec N7 temps 2 (2026-10-07) : la direction lui demande de s'expliquer sur
+   * des comptes rendus manquants, il répond. Elles ne lui ouvrent rien du dossier - il lit les
+   * demandes **qui lui sont adressées**, le serveur décidant lesquelles, et ne répond qu'aux
+   * siennes.
+   *
+   * Une autre est arrivée le 2026-10-13 (Q-135) : il lit et télécharge **sa propre** activité. Elle
+   * ne lui ouvre rien de plus non plus - le serveur refuse toute autre personne, et son détail ne
+   * porte même pas de lien vers les dossiers, puisqu'il n'a pas d'écran de fiche dossier.
+   *
+   * Les **deux dernières** sont arrivées le 2026-10-14 (QF-59) : l'accueil et ses notifications.
+   * Elles n'élargissent rien - les deux pages lui étaient **déjà ouvertes**, et c'est tout le
+   * défaut : seules les entrées de navigation manquaient, adossées à `consulterReferentiels` qu'il
+   * ne porte pas. Il y arrivait par le logo de la banque et par la cloche, sans onglet pour le dire.
+   */
   it("l'avocat n'accède qu'à une poignée de capacités", () => {
     const accordees = (Object.keys(CAPACITES) as Capacite[]).filter((c) => peut(AVOCAT, c));
-    expect(accordees).toEqual(["consulterFrais", "deposerFrais", "deposerPublication"]);
+    // L'ordre est celui de la déclaration dans la table : « mon activité » a été ajoutée en
+    // dernier, à côté des autres capacités de reporting.
+    expect(accordees).toEqual([
+      "consulterFrais",
+      "deposerFrais",
+      "deposerPublication",
+      "consulterExplications",
+      "repondreExplication",
+      "consulterMonActivite",
+      "consulterAccueil",
+      "consulterSesNotifications",
+    ]);
+  });
+});
+
+/**
+ * Ce que chaque profil **voit dans son menu** (QF-59).
+ *
+ * Ce bloc ne vérifie pas des capacités mais la **navigation**, et c'est lui qui aurait attrapé le
+ * défaut signalé le 2026-10-14 : les capacités étaient justes, l'avocat pouvait bel et bien ouvrir
+ * l'accueil et ses notifications ; c'étaient les **entrées de menu** qui citaient la mauvaise
+ * capacité. Un test sur `CAPACITES` seul serait resté vert.
+ */
+/**
+ * Le partage des pièces avec l'avocat (QF-64, backend Q-139), tel qu'arbitré le 2026-10-15 : tout
+ * juriste partage - le DJ et la DJA par leur rôle composite -, la validation d'un dossier sensible
+ * reste au DJ et à la DJA, et ni l'Assistante, ni le SH, ni l'avocat n'y touchent.
+ */
+describe("partage des pièces avec l'avocat (QF-64)", () => {
+  it("tout juriste partage et écrit la note à l'avocat, DJ et DJA compris", () => {
+    for (const profil of [JURISTE, DJ, DJA]) {
+      expect(peut(profil, "partagerDocument")).toBe(true);
+      expect(peut(profil, "ecrireNoteAvocat")).toBe(true);
+    }
+  });
+
+  it("seuls le DJ et la DJA valident un partage", () => {
+    expect(peut(DJ, "arbitrerPartages")).toBe(true);
+    expect(peut(DJA, "arbitrerPartages")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "arbitrerPartages")).toBe(false);
+    }
+  });
+
+  /**
+   * QF-65 : le SH et l'Assistante partagent, « ils sont à la base des juristes ». La note à
+   * l'avocat, elle, reste au juriste : elle n'a pas été ouverte, et rien ne l'ouvre en silence.
+   */
+  it("le SH et l'Assistante partagent aussi, sans écrire la note à l'avocat", () => {
+    for (const profil of [SH, ASSISTANTE]) {
+      expect(peut(profil, "partagerDocument")).toBe(true);
+      expect(peut(profil, "ecrireNoteAvocat")).toBe(false);
+    }
+  });
+
+  it("l'avocat ne partage ni n'écrit de note", () => {
+    expect(peut(AVOCAT, "partagerDocument")).toBe(false);
+    expect(peut(AVOCAT, "ecrireNoteAvocat")).toBe(false);
+  });
+
+  it("la file des partages n'est au menu que du DJ et de la DJA", () => {
+    const menu = (roles: readonly string[]) =>
+      NAVIGATION.filter((e) => e.livre && peut(roles, e.capacite)).map((e) => e.cle);
+    expect(menu(DJ)).toContain("partagesAvocat");
+    expect(menu(DJA)).toContain("partagesAvocat");
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(menu(profil)).not.toContain("partagesAvocat");
+    }
+  });
+});
+
+describe("navigation visible par profil (QF-59)", () => {
+  const menu = (roles: readonly string[]) =>
+    NAVIGATION.filter((e) => e.livre && peut(roles, e.capacite)).map((e) => e.cle);
+
+  it("l'avocat trouve l'accueil et ses notifications dans son menu", () => {
+    expect(menu(AVOCAT)).toContain("accueil");
+    expect(menu(AVOCAT)).toContain("notifications");
+  });
+
+  /**
+   * Le menu de l'avocat s'énumère en entier : une entrée qui s'y ajouterait en silence pourrait lui
+   * proposer un écran qu'il n'a pas le droit d'ouvrir - l'erreur contre laquelle met en garde le
+   * commentaire de « Mon compte » dans `lib/navigation.ts`.
+   */
+  it("et rien d'autre ne s'est glissé dans le menu de l'avocat", () => {
+    expect(menu(AVOCAT)).toEqual([
+      "accueil",
+      "monEspace",
+      "deposerFrais",
+      "deposerPublication",
+      "notifications",
+      "frais",
+      "explications",
+    ]);
+  });
+
+  it("les profils internes gardent l'accueil et les notifications", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(menu(profil)).toContain("accueil");
+      expect(menu(profil)).toContain("notifications");
+    }
+  });
+
+  /** Et « Mon compte » reste hors de son menu : il ne signe aucune lettre de la banque (Q-135). */
+  it("« Mon compte » reste réservé aux profils internes", () => {
+    expect(menu(AVOCAT)).not.toContain("monCompte");
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(menu(profil)).toContain("monCompte");
+    }
   });
 });
 

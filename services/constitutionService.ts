@@ -8,11 +8,22 @@ export type DecisionConstitution = { decision: "VALIDEE" } | { decision: "REJETE
 
 /**
  * Ce qu'un rédacteur enregistre : la lettre, moins ce que le serveur décide seul — son identifiant,
- * son numéro proposé, son gel.
+ * son numéro proposé, son gel, et **l'auteur de la rédaction**.
+ *
+ * L'auteur se déduit de la session, jamais de ce qu'on envoie : le laisser dans la charge utile
+ * permettrait de signer la rédaction d'un autre, ce qui viderait la traçabilité de son sens - et
+ * c'est elle qui remplace désormais la séparation des plumes (N8).
  */
 export type RedactionLettre = Omit<
   LettreConstitution,
-  "id" | "demandeId" | "numeroPropose" | "modifiable" | "dateGeneration" | "dateModification"
+  | "id"
+  | "demandeId"
+  | "numeroPropose"
+  | "modifiable"
+  | "dateGeneration"
+  | "dateModification"
+  | "redigeParNom"
+  | "redigeParProfil"
 >;
 
 /** Constitutions de prestataires (#35, #36, #60) et répertoire des avocats (#37). */

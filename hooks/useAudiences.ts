@@ -80,6 +80,16 @@ export function usePlanifierAudience(dossierId: number) {
   });
 }
 
+/** QF-64 — la note destinée à l'avocat constitué. */
+export function useModifierNoteAvocat(dossierId: number) {
+  const invalider = useInvalidation(dossierId, CLES.audiencesDossier);
+  return useMutation({
+    mutationFn: ({ audienceId, note }: { audienceId: number; note: string }) =>
+      audienceService.modifierNoteAvocat(audienceId, note),
+    onSuccess: invalider,
+  });
+}
+
 export function useEnregistrerCompteRendu(dossierId: number) {
   const invalider = useInvalidation(dossierId, CLES.audiencesDossier);
   return useMutation({

@@ -1611,6 +1611,502 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-66 - Pas de condamnation ni de jurisprudence sur un dossier ouvert (2026-10-15)
+
+**Demandé par le porteur du projet** : sur un dossier tout juste créé, à l'étape Ouverture, l'onglet
+Décisions permettait de **suivre une condamnation** et d'**archiver à la jurisprudence**. Les deux
+ne doivent l'être qu'une fois le dossier à l'étape **Clôturée**.
+
+**Les deux boutons n'étaient pas dans la même situation.**
+
+| Action | Avant | Après |
+|---|---|---|
+| Suivre une condamnation | **Aucune règle**, ni à l'écran ni au serveur - c'était voulu (Q-59 : aucun texte ne la fixait) | Une **étape clôturée**, obligatoire - la règle de l'adjudication (RG-DEF-01) |
+| Archiver à la jurisprudence | Le serveur refusait déjà un dossier à étape ouverte, **mais l'écran laissait remplir tout le formulaire** avant le refus | L'écran applique la même garde : bouton désactivé, et la raison dite |
+
+**Deux règles, et non une, pour une raison de fond.** La condamnation reprend celle de sa voisine
+l'adjudication : elle se rattache à **l'étape clôturée qui l'a prononcée**. La jurisprudence garde la
+sienne, plus stricte et déjà tranchée (2026-09-29) : **toutes** les étapes fermées, parce qu'une
+décision n'entre dans la base qu'une fois définitive. Le cas qui les distingue : une instance
+clôturée et un appel en cours. La condamnation de première instance se suit ; elle n'est pas encore
+un précédent.
+
+**Chaque bouton désactivé dit pourquoi**, comme le faisait déjà celui de l'adjudication. Un bouton
+grisé sans explication laisse chercher ce qui manque.
+
+**La modale de condamnation** ne propose plus que les étapes clôturées, et l'étape y devient
+obligatoire - « Étape clôturée », comme pour l'adjudication.
+
+**Deux tests encodaient l'ancienne règle** - « aucune précondition d'étape » côté serveur, et un
+parcours e2e qui suivait une condamnation sur un dossier neuf. Ils ont été réalignés, pas supprimés.
+
+### ✅ QF-65 - L'absence de constitution se dit ; le SH et l'Assistante partagent (2026-10-15)
+
+**Signalé en recette sur DOS-2026-1303.** Le juriste a partagé le dossier de crédit, puis le DJ le
+PV de transfert. L'avocat ne voyait ni l'un ni l'autre. Le diagnostic sur les données réelles :
+les deux pièces étaient bien **Partagé**, l'avocat bien affecté - mais **aucune constitution**
+n'avait été demandée. La règle de QF-64 jouait exactement comme arbitrée : l'affectation ne fait
+pas le mandat.
+
+**Le défaut n'était pas dans la règle mais dans ce qu'on en disait.** Celui qui partageait lisait
+« Pièce partagée avec l'avocat. » et voyait la colonne passer à **Partagé** : rien ne lui disait que
+l'avocat ne verrait rien avant une signature. Deux endroits le disent désormais :
+- un **bandeau** au-dessus du tableau de l'onglet Documents, tant qu'aucun avocat affecté n'est
+  constitué ;
+- la **confirmation** du partage, qui répète l'avertissement là où la décision se prend.
+
+Le partage reste permis sans constitution, et c'est voulu : il prend effet à la signature, sans
+avoir à repartager. L'écran l'annonce au lieu de le cacher.
+
+**D'où vient l'information.** Une lecture dédiée, `GET /dossiers/{id}/partage-avocat`, plutôt qu'un
+champ de plus dans la réponse du dossier : celle-ci compte déjà trente-sept champs et plusieurs
+constructeurs, et un champ calculé y aurait touché tous les écrans du dossier. La lecture applique
+**la règle même** qui ouvre les pièces à l'avocat - un avocat affecté et constitué -, si bien que le
+bandeau ne peut pas dire autre chose que ce que l'avocat vivra. Tant que la réponse n'est pas
+arrivée, l'écran n'affirme rien.
+
+**Le SH et l'Assistante partagent**, à la demande du porteur du projet : « ils sont à la base des
+juristes ». Même principe que le juriste : sur un dossier sensible, leur geste devient une
+proposition que le DJ ou la DJA valide. La règle du serveur se lisait déjà sur le profil - seuls le
+DJ et la DJA partagent directement -, si bien que l'ouverture n'a demandé que le droit d'accès.
+**La note à l'avocat, elle, reste au juriste** : elle n'a pas été demandée, et rien ne l'ouvre en
+silence.
+
+**Les tests qui encodaient l'ancienne règle** - « ni l'Assistante ni le SH ne partagent » - ont été
+réalignés, et non supprimés : ils affirment désormais le contraire, avec la règle du dossier
+sensible pour ces deux profils.
+
+### ✅ QF-64 - L'avocat accède aux pièces partagées et à une note par audience (2026-10-15)
+
+**La demande** : donner à l'avocat externe l'accès à certains documents du dossier et aux audiences
+tenues, pour mieux assurer la défense. Arbitrée en quatre points le 2026-10-15 - le détail du
+backend est en **Q-139** :
+
+| Question | Arbitrage |
+|---|---|
+| Déclencheur | Affecté **et constitué** - c'est la lettre signée qui fait le mandat |
+| Qui partage | Tout juriste, sans validation du DJ |
+| Dossier sensible | Le juriste **propose**, le DJ ou la DJA **valide** |
+| Audiences | Une **note à l'avocat**, distincte du compte rendu interne |
+
+**Les écrans.**
+- **Onglet Documents** : une colonne *Avocat* dit l'état de chaque pièce, et les gestes suivent le
+  rôle - partager ou proposer, retirer ou annuler, valider ou rejeter.
+- **Partages à valider** : une file pour le DJ et la DJA, sur le modèle des demandes de suppression.
+  La pièce s'y lit avant de décider.
+- **Onglet Audiences** : une note par audience, affichée **à part** du compte rendu.
+- **Mon espace** de l'avocat : une section *Mes dossiers* - audiences avec leur note, et pièces
+  partagées.
+
+**L'écran annonce le bon geste, le serveur le décide.** Sur un dossier sensible, le bouton d'un
+juriste s'appelle « Proposer le partage », et non « Partager » : le nommer autrement lui ferait croire
+la pièce partie. Mais c'est la **réponse du serveur** qui dit lequel des deux a eu lieu, et c'est
+elle que le message de confirmation reprend - le serveur connaît la sensibilité à jour, l'écran peut
+avoir une fiche ancienne.
+
+**« Pas encore constitué » se dit.** Affecté sans être constitué, l'avocat lit « Les pièces et les
+notes de ce dossier vous seront accessibles une fois votre lettre de constitution signée », plutôt
+qu'« aucune pièce » : la première situation se règle par une signature, la seconde par une demande
+au juriste.
+
+**Deux corrections au passage.**
+- Le sélecteur de dossier du portail portait un astérisque « obligatoire » : vrai dans un formulaire
+  de dépôt, faux dans *Mes dossiers*, où le choix ne sert qu'à lire. Il devient facultatif là.
+- Le type `AudienceAvocat` du front ignorait `juridiction`, que le serveur renvoyait déjà. Il la
+  porte désormais, et l'avocat voit où se tient son audience.
+
+**Deux simulations de tests unitaires sont devenues incomplètes**, sans défaut derrière : l'espace
+de l'avocat monte maintenant *Mes dossiers*, et l'onglet Audiences la note. Elles ont été
+complétées - la première en neutralisant la section, que ses propres tests couvrent.
+
+**Hors périmètre.** Aucune notification : le DJ trouve les propositions dans sa file, l'avocat les
+pièces dans son espace.
+
+### ✅ QF-61 - Cliquer un résultat juste après l'avoir cherché renvoyait à la liste - corrigé (2026-10-14)
+
+**Trouvé par la suite e2e**, pas signalé en recette - et c'est un défaut sérieux, pas une finesse.
+
+**Le geste qui échouait est le plus naturel qui soit** : on tape une référence dans le filtre, le
+résultat apparaît, **on le clique**. Une fois sur deux, on revenait à la liste.
+
+**La cause.** La minuterie de 300 ms de [[QF-57]] se déclenchait **après** le clic, et son
+`router.replace` écrasait la navigation déjà engagée vers la fiche. Le journal Playwright le dit
+mot pour mot : « waiting for navigation until load / navigated to
+`/dossiers?reference=DOS-2026-1126` ». La navigation vers la fiche avait bien commencé ; la
+réécriture du filtre l'a remplacée.
+
+**C'est donc un défaut de QF-57**, apparu avec le filtrage au fil de la frappe et resté invisible
+trois passes de suite : il ne se manifeste que si le clic tombe dans la fenêtre de 300 ms, ce qui
+dépend de la vitesse de la machine. Le parcours « le compte rendu validé de l'avocat se retrouve
+depuis son audience » l'a attrapé en devenant **reproductible** sur cette machine.
+
+**La correction : quitter le champ cherche aussitôt.** Cliquer un lien **retire d'abord le focus**.
+La recherche part donc pendant le `blur`, **avant** que la navigation ne commence - et c'est alors la
+navigation qui a le dernier mot.
+
+**Ce n'est pas un retour à `onBlur`**, et la distinction est tout l'enjeu. Le fil de la frappe reste
+entier : le délai subsiste, et le `blur` ne fait que le **vider** quand il n'a plus lieu d'attendre.
+Les deux comportements que QF-57 avait apportés tiennent toujours - une requête par pause, et le
+curseur qui ne quitte pas le champ.
+
+**Un champ quitté sans avoir été modifié ne relance rien** : la condition porte sur la présence d'une
+minuterie en cours, pas sur le seul fait de sortir du champ. Sans cela, chaque passage de focus
+aurait produit une requête.
+
+### ✅ QF-60 - La constitution n'enchaînait ni sur sa rédaction ni sur sa pièce - corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : « Une fois qu'on a cliqué sur solliciter un prestataire,
+choisi le prestataire et renseigné le motif : une fois cliqué sur enregistrer, cela devrait
+directement enregistrer et nous renvoyer sur la page de rédaction de la constitution […]. Aussi une
+fois la constitution signée par le SH, ça devrait également nous renvoyer au niveau de l'onglet
+document du dit dossier afin qu'on puisse voir cette lettre de constitution. »
+
+**Deux ruptures dans une même chaîne**, et la première était déjà prévue par le backend.
+
+| Moment | Ce qui se passait | Ce qui se passe |
+|---|---|---|
+| Sollicitation enregistrée | La modale se fermait, un toast, et l'on restait sur la fiche | La **rédaction de la lettre s'ouvre aussitôt**, sur la demande qui vient d'être créée |
+| Lettre signée par le SH | Un toast « la lettre est dans la GED du dossier », et le SH restait devant sa file | On arrive sur **l'onglet Documents du dossier**, où la lettre est rangée |
+
+**Le backend était fait pour le premier enchaînement depuis le début.** `ConstitutionService` crée la
+lettre **avec la demande**, et le commentaire dit pourquoi : « La lettre naît avec la demande (B2),
+**sans numéro** : le juriste doit pouvoir la rédiger aussitôt, et réserver un numéro dès maintenant
+en brûlerait un à chaque demande sans suite ». Tout était prêt côté serveur ; seul l'écran ne
+l'offrait pas. Il fallait quitter le dossier, trouver la file des constitutions, et y retrouver sa
+demande parmi les autres - alors que la file « à signer » est la plus ancienne d'abord, ce qui
+repousse une demande fraîche derrière les dix premières.
+
+**La rédaction s'ouvre sans quitter le dossier.** Elle n'est pas une page mais une modale, montable
+partout : la fiche la porte désormais, et l'on reste donc là où l'on travaillait. L'écran des
+constitutions reste le chemin normal pour reprendre une lettre plus tard - ceci est un raccourci,
+pas le seul passage.
+
+**L'enchaînement vient après la fermeture, et hors du `try`.** L'enregistrement est acquis dès que le
+serveur a répondu ; si l'ouverture de la rédaction échouait, cela ne doit pas se présenter comme un
+échec de l'enregistrement. Et la sollicitation se ferme **avant** que la rédaction s'ouvre : deux
+boîtes de dialogue empilées cacheraient la seconde. Un test fixe cet ordre.
+
+**Pour la signature, l'URL existait déjà.** `/dossiers/{id}?onglet=documents` avait été posé pour
+qu'une pièce manquante à la création puisse être redéposée ; il suffisait de s'en servir. Le
+`dossierId` est lu **avant** la navigation, `setSignature(null)` vidant l'état juste avant.
+
+**Le parcours e2e existant encodait l'ancien comportement**, et c'est lui qui a confirmé la
+correction : après la signature il cliquait « Toutes » sur l'écran des constitutions, où le SH ne se
+trouve plus. Il affirme désormais la redirection, vérifie que la lettre est visible, puis revient à
+la file - la redirection est un enchaînement, pas une porte qui se ferme.
+
+**Trois autres parcours ont signalé le changement, et c'est ainsi qu'il faut le lire.** Ils cliquaient
+« Constitutions » dans le menu juste après la sollicitation ; la boîte de rédaction, qui s'ouvre
+désormais, interceptait le clic. Trois échecs produits par la correction, et non par un hasard - le
+genre de régression qu'une passe complète existe pour attraper. Ils ferment désormais la boîte avant
+de poursuivre, **ce que fait aussi l'utilisateur qui ne veut pas rédiger tout de suite**. C'est la
+contrepartie assumée d'un enchaînement automatique : il impose un geste à qui ne le voulait pas, et
+ce geste est un seul clic sur « Annuler ».
+
+**Une conséquence à connaître.** Le SH qui a plusieurs constitutions à signer quitte sa file à chaque
+signature. C'est ce qui a été demandé, et la file reste à une entrée de menu ; si cela gêne à
+l'usage, le remède serait de ne rediriger que sur la dernière - ce qu'aucune règle ne permet
+aujourd'hui de deviner.
+
+**Un écart de vocabulaire, relevé sans être corrigé.** La demande parle du bouton « enregistrer » ;
+il porte « **Soumettre** ». Le libellé n'a pas été changé : il dit ce que le geste fait - la demande
+part au supérieur hiérarchique pour signature -, là où « Enregistrer » laisserait croire à un
+brouillon qu'on garde pour soi.
+
+### ✅ QF-59 - L'avocat n'avait d'onglet ni pour l'accueil ni pour ses notifications - corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : « Sur la page de l'avocat, je ne vois pas dans la liste des
+onglets, les onglets "Accueil" et "Notifications". Mais lorsque je clique sur la cloche de
+notification, la page de notification s'affiche mais je ne vois pas son onglet. De même, lorsque je
+clique sur le logo de la banque, la page d'accueil s'affiche mais je ne vois pas non plus son
+onglet. »
+
+**La cause, en un mot : les deux entrées citaient la capacité d'un écran voisin.** Elles étaient
+adossées à `consulterReferentiels` - la lecture des clients, des intervenants, des agences -, que
+l'avocat ne porte pas, n'ayant pas `ROLE_CONSULTATION` (QF-01). Elles disparaissaient donc de son
+menu, alors que les deux pages lui sont **parfaitement ouvertes** :
+
+| Page | Ce qui la garde réellement |
+|---|---|
+| Accueil, `/` | `exigerSession()` seule. Depuis QF-19, **une racine unique pour tous les profils**, dont le contenu s'adapte |
+| Notifications, `/notifications` | `GET /alertes/mes-notifications` porte `@PreAuthorize("isAuthenticated()")` - et le destinataire est résolu **sur le jeton**, jamais en paramètre |
+
+**Ce n'est donc pas un élargissement de périmètre, et c'est important.** Rien ne s'ouvre à l'avocat
+qui lui était fermé : seules les **étiquettes** manquaient. Il arrivait sur ces pages par le logo de
+la banque et par la cloche - deux portes qui ne disent pas où elles mènent.
+
+**La seconde moitié du défaut, et la plus discrète.** Arrivé sur la page, **aucun onglet ne la
+signalait**. Le commentaire du logo dans `app-sidebar.tsx` affirmait : « Pas d'`aria-current` en
+revanche - l'entrée "Accueil" ci-dessous le porte déjà ». C'était vrai des cinq profils internes, et
+**faux de l'avocat**, dont le menu n'avait pas cette entrée. Sur son accueil, rien ne revendiquait la
+page courante, ni visuellement ni pour un lecteur d'écran. La correction rend cette phrase vraie.
+
+**Deux capacités, pas une.** `consulterAccueil` et `consulterSesNotifications` portent aujourd'hui
+les mêmes rôles - `["ROLE_CONSULTATION", "ROLE_AVOCAT"]`, soit la population entière. Elles restent
+distinctes selon la doctrine déjà appliquée dans `lib/rbac.ts` à `administrerAgences`,
+`superviserAlertes` et `consulterAudit` : l'une reflète un `@PreAuthorize`, l'autre un écran qui n'a
+pas d'endpoint, et les confondre ferait suivre à l'une tout resserrement futur de l'autre.
+
+**Le test qui aurait attrapé le défaut n'existait pas.** `tests/unit/rbac.test.ts` énumérait les
+**capacités** de l'avocat - elles étaient justes. Ce qui manquait, c'était un test de la
+**navigation** : les entrées de menu citaient la mauvaise capacité, et aucune assertion ne portait
+sur ce que chaque profil voit dans son menu. Ce bloc existe désormais, et énumère le menu de l'avocat
+en entier pour qu'aucune entrée ne s'y glisse en silence vers un écran qu'il n'a pas le droit
+d'ouvrir.
+
+**Une affirmation corrigée au passage.** Le commentaire du portail dans `lib/navigation.ts` disait
+« ces trois entrées sont les seules que voit un prestataire externe ». C'était **déjà faux avant
+QF-59** : « Frais d'avocats » et « Explications » le nomment aussi dans leurs capacités. Son menu
+compte désormais sept entrées, énumérées par un test.
+
+### ✅ QF-58 - L'avocat ne voyait pas la correspondance qui lui était transmise - corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : « Lorsqu'un avocat fait une publication (Compte rendu ou
+document du dossier), le DJ/DJA fait un commentaire. L'avocat doit être capable de voir ses
+commentaires sur sa page (ce qui est actuellement manquant). Il reçoit la notification mais aucune
+page actuellement ne l'affiche. »
+
+**Le modèle distingue deux choses, et c'est une règle, pas un détail de vocabulaire.**
+
+| Objet | Qui écrit | Pour qui | L'avocat le voit |
+|---|---|---|---|
+| **Commentaire** (`CommentairePublication`) | Un juriste | Le DJ / la DJA | **Non, jamais** - US 5.5, RG-INT-07, Q-20 |
+| **Correspondance** (`CorrespondanceAvocat`) | Le DJ ou la DJA, **une seule par publication** | L'avocat | **Oui** - c'est la voie officielle |
+
+C'est la correspondance qui déclenche la notification de l'avocat : `transmettreCorrespondance`
+appelle `alerteService.declencher(NOUVELLE_PUBLICATION, …)` **et**
+`notificationPrestataireService.notifier(CORRESPONDANCE_TRANSMISE, …)`. `commenter`, lui, ne notifie
+que les profils `DJ` et `DJA`. La notification que recevait l'avocat était donc bien celle de la
+**correspondance** - et c'est elle qu'aucun écran ne montrait.
+
+**Le défaut était localisé en un point précis.** `PortailAvocatService.mesPublications` cartographiait
+sa page avec `publicationMapper::toResponse`, la forme à **un seul argument**, qui délègue à
+`toResponse(publication, null, null, null)`. La correspondance était écartée de la charge utile du
+portail. Elle existait en base, l'avocat en était notifié, et elle n'arrivait jamais à son écran.
+
+**La correction, côté backend.** Le portail lit les correspondances de sa page **en une seule
+requête** (`findByPublicationIdIn`) et les joint publication par publication. Dix publications par
+page, une lecture - pas dix.
+
+**Ce qui n'a pas été fait, et c'est délibéré.** Les commentaires internes restent `null` pour
+l'avocat. Les lui ouvrir contredirait US 5.5 / RG-INT-07 / Q-20 : le juriste ne s'adresse jamais
+directement à l'avocat, il écrit pour le DJ/DJA, qui tranche et transmet **une** correspondance. Un
+test unitaire backend et un parcours e2e gardent cette frontière - la correction passait à un
+argument près de la franchir.
+
+**La correction, côté écran.** Une colonne **« Correspondance de la Direction Juridique »** dans
+*Mes dépôts*, à côté du motif de rejet : ce sont les deux seules choses que la Direction Juridique
+adresse à l'avocat, et les deux seules sur lesquelles il peut agir. Elle porte le nom de qui a
+transmis et la date - une lettre sans signature n'en est pas une -, conserve les retours à la ligne
+du message, et **dit l'absence** (« Aucune ») plutôt que de laisser une case vide qui ferait croire
+à un affichage incomplet.
+
+**Une duplication évitée au passage.** La conversion `CorrespondanceAvocat → CorrespondanceResponse`
+existait déjà dans `PublicationService`. En la réécrivant dans le portail, j'aurais créé deux
+écritures d'une même règle, qui divergent toujours : au premier champ ajouté, la signature de
+l'auteur aurait manqué d'un côté. Elle est remontée dans `PublicationMapper`, qui hébergeait déjà
+`nomComplet` pour exactement cette raison, et les deux appelants s'y adressent.
+
+**Question posée, et tranchée le 2026-10-14.** La demande disait « voir ses commentaires », alors que
+ce qui est livré, ce sont les **correspondances**. La question a été posée au porteur du projet :
+fallait-il ouvrir à l'avocat les commentaires internes des juristes ? C'eût été une **modification de
+RG-INT-07** et non un correctif - exposer à un prestataire externe la délibération qui le concerne.
+
+Réponse du porteur du projet : « laisse les commentaires internes et arrête-toi uniquement aux
+correspondances. Je voulais dire correspondance. » **Le périmètre livré est donc le périmètre voulu**,
+et RG-INT-07 reste intacte. Le vocabulaire valait d'être vérifié : le mot employé dans la demande
+désignait l'autre objet du modèle, et le livrer tel quel aurait ouvert une brèche que personne
+n'avait demandée.
+
+### ✅ QF-57 — Les filtres texte n'agissaient qu'en quittant le champ — corrigé (2026-10-14)
+
+**Signalé par le porteur du projet** : sur la liste des **Dossiers**, les champs « Référence » et
+« Juridiction » ne proposaient rien pendant la frappe. Il fallait **sortir du champ** pour voir la
+liste se filtrer - on tape, rien ne se passe, et on ne sait ni si l'application a compris, ni s'il
+faut valider.
+
+**La cause était assumée, et sa justification à moitié caduque.** Les deux champs se validaient sur
+`onBlur`, avec ce commentaire : « écrire dans l'URL à chaque frappe produirait une requête **et une
+entrée d'historique** par caractère ».
+
+| Moitié de la justification | Vérification |
+|---|---|
+| Une entrée d'historique par caractère | **Fausse** : `useFiltresUrl` écrit avec `router.replace`, qui n'empile rien |
+| Une requête par caractère | **Juste** - et c'est précisément ce qu'un délai de frappe règle |
+
+**Le remède était déjà dans le projet, et n'avait pas été appliqué ici.** `SelecteurCherchable`
+laisse la frappe se stabiliser 300 ms avant d'interroger le serveur, avec ce commentaire exact :
+« Laisse la frappe se stabiliser avant d'interroger le serveur ». La même valeur est reprise -
+`ChampRecherche`, dans `components/metier`, avec `DELAI_RECHERCHE = 300`.
+
+**La saisie est locale, le filtre est dans l'URL.** Lier le champ directement à l'URL la réécrirait à
+chaque lettre. L'état local absorbe la frappe et ne propage qu'à la pause - une requête par pause,
+pas par caractère. Et le champ **suit une remise à zéro venue d'ailleurs** : bouton « Effacer les
+filtres », lien partagé, retour arrière. Sans cela il garderait à l'écran un mot qui ne filtre plus
+rien.
+
+**Un piège évité, et il aurait bouclé.** `onChangement` est recréée à chaque rendu par l'appelant -
+une fonction fléchée dans le JSX. Dans les dépendances de l'effet, elle relancerait le minuteur sans
+fin. Elle est gardée dans une référence, comme le fait déjà `SelecteurCherchable`. Un test l'affirme
+en recréant la fonction cinq fois de suite.
+
+**Le nombre de résultats est désormais annoncé.** Filtrer au fil de la frappe change la liste **sans
+action explicite** : le total est bien visible - la pagination le porte - mais dans un simple
+`<span>`, donc il changeait en silence pour qui écoute. Une région `role="status"` discrète, en
+`sr-only` puisque le chiffre est déjà à l'écran, et seulement une fois la requête terminée - pendant
+le chargement, l'état de la table porte son propre `role="status"`.
+
+**Le parcours e2e existant encodait le défaut.** « La recherche par référence passe par l'URL »
+remplissait le champ puis **cliquait sur le champ voisin** pour provoquer le `blur` : il passait grâce
+au geste même qui était reproché. Il affirme maintenant le contraire, et l'assertion décisive est que
+le champ **garde le focus** - le filtre s'applique sans qu'on en sorte.
+
+**~~Le même `onBlur` subsiste à trois autres endroits~~ — alignés le jour même**, sur demande du
+porteur du projet : le filtre **Nom** et **Référence** des *Clients*, les trois filtres de la *Base
+jurisprudentielle*, et le filtre **Nom** du *Répertoire des avocats*. Les quatre écrans passent
+désormais par `ChampRecherche`, et les imports de `Champ`/`Input` devenus inutiles ont été retirés.
+
+**Deux capacités préservées au passage.** Les filtres de la base jurisprudentielle et du répertoire
+offraient la touche **Entrée** pour chercher sans attendre ; `ChampRecherche` la porte désormais pour
+tout le monde. Le fil de la frappe la rend inutile, mais la retirer aurait enlevé une habitude à qui
+l'avait prise. Et le `trim` reste **chez l'appelant** : c'est lui qui décide de ce qu'il écrit dans
+l'URL, et un filtre fait d'espaces ne filtre rien.
+
+**Le test de la touche Entrée a trouvé un défaut de mon implémentation**, et c'est le seul vrai
+enseignement de ce second passage. Entrée propageait aussitôt, **puis le minuteur en attente
+propageait une seconde fois la même saisie** : deux requêtes et deux écritures d'URL pour une seule
+recherche, soit exactement ce que ce délai existe pour éviter. Le minuteur est désormais gardé dans
+une référence et **annulé** par Entrée.
+
+**Un piège de sélecteur, déjà rencontré.** Sur la base jurisprudentielle, deux éléments répondent au
+libellé « Juridiction » - le filtre et le champ de la modale d'archivage, un `<dialog>` fermé restant
+dans le DOM. Le parcours cible le filtre par son identifiant. Même cause et même remède qu'en
+QF-52.
+
+### ✅ QF-56 — Quatre défauts du formulaire de dépôt de frais — corrigés (2026-10-13)
+
+**Signalés par le porteur du projet** en recette, sur l'écran 30 (dépôt d'une demande de frais par
+l'avocat). Quatre défauts, dont trois partagent une cause.
+
+**1. « 12 000 » dans le Montant était refusé sans un mot.** La validation exigeait des chiffres
+collés (`/^\d+(\.\d+)?$/`) ; le bouton « Déposer » restait éteint, et rien ne disait pourquoi. Or on
+écrit un montant avec des espaces - c'est même ainsi que l'application l'affiche. La saisie est
+désormais **normalisée** : les espaces sont retirés, y compris l'**insécable** (U+00A0) et
+l'**insécable étroite** (U+202F) qui arrivent par copier-coller depuis un tableur et sont invisibles
+à l'œil ; la **virgule décimale** est traduite en point, `Number("12,5")` valant `NaN`.
+
+**2 et 3. Le bouton éteint, sans explication, était la cause commune.** Sans pièce justificative, même
+symptôme : bouton grisé, aucun message. **Le bouton n'est plus désactivé par l'incomplétude** - il ne
+l'est que pendant un envoi. La tentative est acceptée et **ce qui manque est nommé champ par champ**,
+comme le fait déjà le formulaire de création de dossier avec ses pièces attendues. Un bouton mort
+laisse chercher lequel des quatre champs est en cause ; un message le dit.
+
+Un montant *saisi mais illisible* reçoit un autre message qu'un montant *absent*, et ce message nomme
+ce qui est accepté plutôt que de refuser sans expliquer. Corriger un champ en efface le reproche :
+le laisser serait accuser après coup.
+
+**4. L'astérisque d'obligation manquait sur les pièces.** Le bloc est un `<fieldset>`, pas un `Champ`
+- il n'héritait donc pas de l'astérisque. Même patron : elle est **hors du texte** de la légende,
+décorative et `aria-hidden`, pour ne pas devenir « Pièces justificatives* » dans le nom accessible.
+L'information est portée pour qui écoute par le **nom du champ de fichier**, qu'un
+`<input type="file">` masqué ne peut pas assortir d'un `required` sans déclencher la validation du
+navigateur. C'est le parti déjà retenu à la création d'un dossier.
+
+**5. L'œil d'aperçu s'affichait sur une ligne distincte**, au-dessus du téléversement, et le lien
+entre le fichier choisi et le bouton qui le relit se perdait. Le porteur du projet a demandé la
+disposition du formulaire de création de dossier.
+
+**La première tentative a échoué, et la mesure a dit pourquoi.** J'avais mis le téléversement et une
+puce portant le nom du fichier sur une même rangée `flex-wrap` : elle passait à la ligne dès qu'un
+nom réaliste s'y trouvait. Mesuré sur l'écran : la rangée fait **638 points**, le bloc de
+téléversement en prend **436** - sa ligne de contraintes (« Formats acceptés… · Taille maximale… »)
+le rend large -, il reste **190**. Une puce de 280 points n'y tenait pas. Le formulaire de création
+de dossier, lui, ne met qu'un **bouton d'aperçu** à côté, le nom du fichier étant affiché par le
+téléversement lui-même : 90 points, et cela tient. C'est cette disposition qui est reprise.
+
+**Mon premier test passait pourtant.** Il téléversait `m.pdf` - cinq caractères -, et la puce tenait.
+Avec `facture-ligne.pdf`, elle passait à la ligne. Un test qui choisit ses données pour qu'elles
+tiennent ne mesure rien ; l'assertion compare désormais les **boîtes englobantes**, qui doivent se
+chevaucher verticalement, et le nom de fichier du parcours est réaliste.
+
+**Second passage, le même jour : le nom long poussait encore l'œil à la ligne.** La disposition
+tenait pour un nom court et cédait pour un nom réaliste. Deux causes, trouvées par la mesure et non
+par le raisonnement :
+
+1. La rangée gardait `flex-wrap` : il suffisait que le bloc de téléversement s'élargisse - jusqu'à
+   570 des 638 points avec un nom long - pour que les 90 points du bouton passent à la ligne. Elle ne
+   passe plus à la ligne du tout ; c'est le bloc qui se **comprime** (`min-w-0 flex-1`) et son nom de
+   fichier qui se **tronque**, le nom entier restant lisible au survol (`title`) et dans le nom
+   accessible de l'aperçu.
+2. **Le `<fieldset>` refusait de se rétrécir**, et c'est le piège qui m'a coûté le plus de temps : la
+   feuille de style des navigateurs lui impose `min-inline-size: min-content`. Avec une rangée qui ne
+   passe plus à la ligne, il restait à **643 points dans un écran de 375** et faisait défiler toute la
+   page horizontalement. `min-w-0` le corrige.
+
+**Le second défaut a été trouvé par un garde-fou que je venais d'écrire pour ça.** Le test de
+débordement horizontal ne couvre pas cet écran : il se connecte en DJ, qui ne dépose pas de frais.
+J'ai comblé ce trou avant de mesurer, et il a échoué au premier essai - 308 points de débordement.
+Sans lui, la correction partait avec une régression mobile à la place du défaut.
+
+**Troisième passage : la même disposition au dépôt de publication**, sur demande du porteur du
+projet. Le défaut y était identique, et dans les **deux natures** - compte rendu d'audience et
+document du dossier : le bouton de relecture était enveloppé dans un `<div>`, qui en faisait un bloc
+occupant toute la largeur et s'affichait donc sous le téléversement.
+
+La correction est la même, et la précaution apprise au second passage avec elle : `min-w-0` sur
+**chaque** conteneur de la chaîne, un élément de flex ayant `min-width: auto` et refusant donc d'être
+plus étroit que son contenu. Trois parcours de plus, dont celui du **débordement mobile** - le dépôt
+de publication n'est pas davantage couvert par le test général, qui se connecte en DJ.
+
+**Ce que ce troisième passage dit du premier.** Le défaut existait aux deux endroits ; seul l'un m'a
+été signalé. J'ai corrigé celui-là sans regarder si le patron se répétait ailleurs - et il se
+répétait, à deux reprises, dans le fichier voisin. La question « où ai-je écrit la même chose ? »
+aurait fait gagner un aller-retour.
+
+**Et `Televersement` n'a reçu qu'une option.** Le comportement « sur une seule ligne, nom tronqué »
+est opt-in (`surUneLigne`) : ce composant sert aussi à la création d'un dossier, à l'onglet Documents
+et au dépôt d'une publication, où le passage à la ligne ne gêne personne. Leur mise en page n'avait
+pas à changer pour corriger celle-ci.
+
+**6. Un défaut latent trouvé en chemin, et qui était le plus grave des cinq.** La croix du
+téléversement appelait `onChangement(null)`, que le formulaire **ignorait** : le fichier disparaissait
+de l'écran et **partait quand même avec la demande**. L'avocat pouvait croire avoir retiré une pièce
+qu'il envoyait. Elle retire désormais la pièce pour de bon - celle-ci étant déjà en GED dès qu'elle
+est choisie, c'est bien là qu'il faut la retirer.
+
+**Pourquoi aucun test ne les avait vus.** Les parcours existants remplissent le formulaire
+**correctement** : ils écrivent « 450000 », joignent une pièce, et vérifient que le dépôt passe.
+Aucun n'avait essayé d'écrire un montant comme on l'écrit, ni de cliquer « Déposer » les mains vides.
+Un formulaire ne se juge pas seulement sur le chemin où tout va bien - c'est l'autre que
+l'utilisateur emprunte.
+
+### ✅ QF-55 — « Mon compte » était introuvable, et inatteignable sur un écran étroit — corrigé
+
+**Signalé par le porteur du projet le 2026-10-13**, le lendemain de la livraison de la fiche
+d'activité (backend Q-133) : il demandait que chaque utilisateur puisse voir et télécharger son
+propre rapport. C'était livré, poussé, et testé vert. Il ne l'avait pas trouvé.
+
+**La cause.** La seule porte vers *Mon compte* était **le nom dans l'en-tête** : souligné, sans
+étiquette, sans icône, et sans entrée dans la navigation. Et ce nom est **masqué en dessous de
+640 px** (F17, pour que l'en-tête ne déborde pas sur un mobile de 375 px) : sur un écran étroit, la
+page n'était atteignable que par son URL.
+
+**Pourquoi l'entrée manquait, et pourquoi l'argument ne tient plus.** Le code le disait noir sur
+blanc : « l'identité mène au compte : c'est là qu'on cherche "ma signature" (N8), et non dans une
+entrée de menu que six profils sur sept n'ouvriraient jamais. » C'était juste quand la page ne
+portait qu'une signature, déposée une fois pour toutes. Elle porte désormais un **rapport que chacun
+consulte sur la période qu'il choisit**, et la fréquence d'usage a changé de nature.
+
+**Le correctif.** Une entrée **Mon compte** dans la navigation, adossée à `consulterMonActivite` -
+les cinq profils internes, pas l'avocat. Le lien de l'en-tête reste : deux portes vers le même
+endroit ne gênent personne, et l'une des deux fonctionne sur mobile.
+
+**La leçon, et elle n'est pas nouvelle.** Trois suites vertes et une recette détaillée n'ont rien vu,
+parce qu'aucune ne posait la question « **comment l'utilisateur arrive-t-il ici ?** ». Les parcours
+e2e atteignaient la page par `page.goto("/mon-compte")`, ce que personne ne fait. Un parcours vérifie
+désormais que chaque profil interne **trouve l'entrée, clique, et arrive** - et que l'avocat ne la
+voit pas. Livrer une fonction qu'on ne peut pas atteindre, c'est ne pas l'avoir livrée.
+
 ### ✅ QF-47 — L'en-tête défilait avec le contenu, emportant la cloche et la déconnexion — corrigé
 
 **Signalé par le porteur du projet le 2026-09-16** : « je pense que le header doit être fixe donc ne

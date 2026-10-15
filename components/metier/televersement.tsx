@@ -25,6 +25,7 @@ export function Televersement({
   label,
   formatsAcceptes,
   tailleMax,
+  surUneLigne = false,
   onChangement,
   className,
 }: {
@@ -40,6 +41,20 @@ export function Televersement({
   formatsAcceptes?: readonly string[];
   /** Plafond en octets. Défaut : 10 Mo, valeur de `TAILLE_MAX_GED`. */
   tailleMax?: number;
+  /**
+   * Garder le bouton, le nom du fichier et son poids **sur une seule ligne**, en tronquant le nom
+   * plutôt qu'en passant à la ligne (QF-56).
+   *
+   * <p>Le défaut qui l'a rendue nécessaire : sur le dépôt de frais, un bouton d'aperçu est posé à
+   * côté de ce composant, et un nom de fichier long élargissait le bloc jusqu'à repousser ce bouton
+   * à la ligne suivante. C'est le nom qui doit céder, pas la disposition - on le lit en entier dans
+   * l'infobulle et dans le nom accessible de l'aperçu.
+   *
+   * <p><b>Optionnelle, et c'est voulu.</b> Ce composant sert aussi à la création d'un dossier, à
+   * l'onglet Documents et au dépôt d'une publication, où le passage à la ligne ne gêne personne :
+   * leur mise en page n'a pas à changer pour corriger celle-ci.
+   */
+  surUneLigne?: boolean;
   onChangement?: (fichier: File | null) => void;
   className?: string;
 }) {
@@ -111,23 +126,37 @@ export function Televersement({
         className="sr-only"
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variante="secondaire" onClick={() => champ.current?.click()}>
+      <div className={cn("flex items-center gap-3", surUneLigne ? "flex-nowrap" : "flex-wrap")}>
+        <Button variante="secondaire" className="shrink-0" onClick={() => champ.current?.click()}>
           <Paperclip size={14} aria-hidden />
           {t("choisirFichier")}
         </Button>
 
         {fichier ? (
-          <span className="flex items-center gap-2 text-[length:var(--taille-sm)]">
-            <span className="max-w-[18rem] truncate">{fichier.name}</span>
-            <span className="text-texte-tertiaire">
+          <span
+            className={cn(
+              "flex items-center gap-2 text-[length:var(--taille-sm)]",
+              surUneLigne && "min-w-0",
+            )}
+          >
+            {/*
+              `title` porte le nom entier : tronqué, il reste lisible au survol. Le nom accessible
+              des actions voisines le porte aussi, pour qui n'a pas de souris.
+            */}
+            <span
+              className={cn("truncate", surUneLigne ? "min-w-0" : "max-w-[18rem]")}
+              title={fichier.name}
+            >
+              {fichier.name}
+            </span>
+            <span className="shrink-0 text-texte-tertiaire">
               <PoidsFichier valeur={fichier.size} />
             </span>
             <button
               type="button"
               onClick={retirer}
               aria-label={t("retirerFichier")}
-              className="rounded p-0.5 text-texte-tertiaire transition-colors hover:bg-surface-attenuee hover:text-texte"
+              className="shrink-0 rounded p-0.5 text-texte-tertiaire transition-colors hover:bg-surface-attenuee hover:text-texte"
             >
               <X size={14} aria-hidden />
             </button>

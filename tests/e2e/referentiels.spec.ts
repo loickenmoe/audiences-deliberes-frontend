@@ -86,9 +86,17 @@ test("deux clients créés à la suite reçoivent deux références distinctes",
 
   expect(references[0]).not.toEqual(references[1]);
 
-  // Et elles se suivent : le compteur avance d'un, il ne saute pas et ne recule pas.
+  /*
+   * Et le compteur **avance** : la seconde référence est strictement supérieure à la première.
+   *
+   * Pas « la première plus un » : ce n'est pas ce que le système promet. Deux personnes qui créent
+   * un client au même moment en obtiennent deux numéros distincts, pas forcément consécutifs - et
+   * la suite elle-même le prouve, ses parcours tournant en parallèle. Ce qui doit tenir, et qui
+   * tient, c'est qu'un numéro n'est jamais servi deux fois et que le compteur ne revient pas en
+   * arrière.
+   */
   const numero = (reference: string) => Number(reference.split("-")[2]);
-  expect(numero(references[1])).toEqual(numero(references[0]) + 1);
+  expect(numero(references[1])).toBeGreaterThan(numero(references[0]));
 });
 
 /**
@@ -129,8 +137,10 @@ test("un juriste corrige un client depuis sa fiche, sans pouvoir toucher à sa r
 
   // La fiche se rafraîchit d'elle-même : son cache est invalidé après la modification.
   await expect(page.getByRole("heading", { name: nomCorrige, level: 1 })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("contact@client-e2e.cm")).toBeVisible();
-  await expect(page.getByText(reference, { exact: true })).toBeVisible();
+  await expect(page.getByText("contact@client-e2e.cm").first()).toBeVisible();
+  // `first()` : le dialogue qu'on vient de fermer reste dans le DOM avec sa propre copie de la
+  // reference et du courriel. Ce qui compte est que la fiche les porte, non qu'ils soient uniques.
+  await expect(page.getByText(reference, { exact: true }).first()).toBeVisible();
 });
 
 test("la vue consolidée regroupe les dossiers par catégorie", async ({ page }) => {
@@ -318,4 +328,28 @@ test("les écrans clients et intervenants sont traduits", async ({ page }) => {
   await page.goto("/admin/intervenants");
   await expect(page.getByRole("heading", { name: "Service providers", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "New provider" })).toBeVisible();
+});
+
+/**
+ * Le fil de la frappe sur les filtres des **Clients** (QF-57).
+ *
+ * Même correction que sur la liste des dossiers, et même assertion décisive : le champ **garde le
+ * focus**. Le commentaire d'origine de cet écran invoquait « une requête et une entrée d'historique
+ * par caractère » - la seconde moitié était fausse, les filtres s'écrivant avec `router.replace`.
+ */
+test("les filtres des clients cherchent au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/clients");
+
+  const nom = page.getByLabel("Nom du client", { exact: true });
+  await nom.fill("SARL");
+  await expect(page).toHaveURL(/nom=SARL/, { timeout: 30_000 });
+  await expect(nom, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  const reference = page.getByLabel("Référence client", { exact: true });
+  await reference.fill("CLI");
+  await expect(page).toHaveURL(/reference=CLI/, { timeout: 30_000 });
+  await expect(reference, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  await page.context().close();
 });

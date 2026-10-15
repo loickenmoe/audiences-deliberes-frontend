@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Délibérés (écrans 10, 26, 27) **contre le backend réel**, cycle Q-78 : mise en délibéré →
@@ -17,9 +18,6 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** `YYYY-MM-DD` local, dans `jours` jours. */
 function dansJours(jours: number) {
@@ -35,6 +33,11 @@ async function dossierEnDelibere(page: Page) {
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
+  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
+  await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DEL");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DEL");
   await deposerPiecesDeCreation(page, { marque: "del" });
@@ -43,11 +46,35 @@ async function dossierEnDelibere(page: Page) {
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
   await page.getByRole("tab", { name: "Étapes" }).click();
-  for (const statut of ["EN_COURS", "EN_DELIBERE"]) {
-    await page.getByLabel("Faire passer à", { exact: true }).selectOption(statut);
-    await page.getByRole("button", { name: "Appliquer" }).click();
-    await expect(page.getByText("Statut de l’étape mis à jour.").first()).toBeVisible();
-  }
+  await page.getByLabel("Faire passer à", { exact: true }).selectOption("EN_COURS");
+  await page.getByRole("button", { name: "Appliquer" }).click();
+  await expect(page.getByText("Statut de l’étape mis à jour.").first()).toBeVisible();
+
+  /*
+   * Une audience tenue est **exigée** avant la mise en délibéré (règle du 2026-09-29,
+   * REC-NEG-028) : un délibéré sans audience n'a pas de sens, et le backend refuse la
+   * transition en 400. On en planifie donc une pour le jour même, et on saisit son compte
+   * rendu - c'est le compte rendu qui la rend « tenue ».
+   */
+  await page.getByRole("tab", { name: "Audiences" }).click();
+  await page.getByRole("button", { name: "Planifier une audience" }).click();
+  await page.getByLabel("Date de l’audience", { exact: true }).fill(dansJours(0));
+  await page
+    .getByRole("dialog", { name: "Planifier une audience" })
+    .getByRole("button", { name: "Enregistrer" })
+    .click();
+  await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Saisir le compte rendu" }).click();
+  const compteRendu = page.getByRole("dialog", { name: "Compte rendu d’audience" });
+  await compteRendu.getByLabel("Compte rendu", { exact: true }).fill("Affaire appelée, mise en délibéré.");
+  await compteRendu.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByText("Compte rendu enregistré.")).toBeVisible();
+
+  await page.getByRole("tab", { name: "Étapes" }).click();
+  await page.getByLabel("Faire passer à", { exact: true }).selectOption("EN_DELIBERE");
+  await page.getByRole("button", { name: "Appliquer" }).click();
+  await expect(page.getByText("Statut de l’étape mis à jour.").first()).toBeVisible();
   // En délibéré, l'onglet Étapes renvoie vers l'onglet Délibérés.
   await expect(page.getByText(/se gèrent dans l’onglet Délibérés/)).toBeVisible();
   await page.getByRole("tab", { name: "Délibérés" }).click();

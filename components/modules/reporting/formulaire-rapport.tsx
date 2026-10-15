@@ -5,13 +5,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { EtatErreur, EtatVide } from "@/components/global";
-import { MenuExport, MontantFcfa, Pourcentage } from "@/components/metier";
+import { MenuExport, MontantFcfa } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { useGenererRapport } from "@/hooks/useReporting";
 import { messageErreur } from "@/lib/api/errors";
 import { telechargerBlob } from "@/lib/documents";
 import { nomFichierRapport, periodeParDefaut, periodeValide } from "@/lib/rapports";
+import { CategorieDossier } from "@/types/enums";
 import { reportingService, type PeriodeRapport } from "@/services/reportingService";
 import { FormatRapport, TypeRapport } from "@/types/enums";
 import type { Rapport } from "@/types/domaine";
@@ -31,6 +32,7 @@ const FORMATS_BINAIRES = FormatRapport.filter((format) => format !== "JSON") as 
 export function FormulaireRapport() {
   const t = useTranslations("rapports");
   const td = useTranslations("domaine");
+  const tCategorie = useTranslations("domaine.CategorieDossier");
   const [periode, setPeriode] = useState<PeriodeRapport>(() => periodeParDefaut("MENSUEL"));
   const [rapport, setRapport] = useState<Rapport | null>(null);
   const [affiche, setAffiche] = useState(false);
@@ -43,7 +45,9 @@ export function FormulaireRapport() {
   function changerType(type: (typeof TypeRapport)[number]) {
     // Le type gouverne les bornes proposées : les laisser inchangées afficherait une étiquette
     // « annuel » sur trois jours de données.
-    setPeriode(periodeParDefaut(type));
+    // Le périmètre survit au changement d'étiquette de période : il répond à une autre
+    // question, et le réinitialiser obligerait à le reposer à chaque essai de période.
+    setPeriode((courante) => ({ ...periodeParDefaut(type), categorie: courante.categorie }));
     setAffiche(false);
   }
 
@@ -99,6 +103,36 @@ export function FormulaireRapport() {
             {TypeRapport.map((valeur) => (
               <option key={valeur} value={valeur}>
                 {td(`TypeRapport.${valeur}` as never)}
+              </option>
+            ))}
+          </Select>
+        </Champ>
+
+        {/*
+          Le périmètre de catégories (Q-138). Il est posé **avant les bornes** et non après, parce
+          qu'il commande ce que les sept indicateurs comptent - le lire après les dates laisserait
+          croire qu'il ne concerne que l'export.
+        */}
+        <Champ
+          id="rapport-perimetre"
+          label={t("perimetre")}
+          aide={t("perimetreAide")}
+          className="w-56"
+        >
+          <Select
+            id="rapport-perimetre"
+            value={periode.categorie ?? ""}
+            onChange={(evenement) =>
+              setPeriode((courante) => ({
+                ...courante,
+                categorie: (evenement.target.value || undefined) as CategorieDossier | undefined,
+              }))
+            }
+          >
+            <option value="">{t("perimetreToutes")}</option>
+            {CategorieDossier.map((categorie) => (
+              <option key={categorie} value={categorie}>
+                {tCategorie(categorie)}
               </option>
             ))}
           </Select>
@@ -166,10 +200,14 @@ export function FormulaireRapport() {
               libelle={t("nbDeliberesEnregistres")}
               valeur={<span data-nombres>{rapport.nbDeliberesEnregistres}</span>}
             />
-            <Ligne
-              libelle={t("tauxSuccesRecouvrement")}
-              valeur={<Pourcentage valeur={rapport.tauxSuccesRecouvrement} />}
-            />
+            {/*
+              Des nombres, pas un pourcentage (métier, 2026-10-06). La ligne portait un taux ;
+              elle porte désormais ce que ce taux résumait. « Perdus » n'est pas le complément des
+              gagnés : un délibéré mixte n'est ni l'un ni l'autre, et il a sa propre ligne.
+            */}
+            <Ligne libelle={t("nbLitigesGagnes")} valeur={<span data-nombres>{rapport.nbLitigesGagnes}</span>} />
+            <Ligne libelle={t("nbLitigesPerdus")} valeur={<span data-nombres>{rapport.nbLitigesPerdus}</span>} />
+            <Ligne libelle={t("nbLitigesMixtes")} valeur={<span data-nombres>{rapport.nbLitigesMixtes}</span>} />
             <Ligne libelle={t("provisionsReprises")} valeur={<MontantFcfa valeur={rapport.provisionsReprises} />} />
           </dl>
         </section>

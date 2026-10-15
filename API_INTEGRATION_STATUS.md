@@ -1,10 +1,15 @@
 # API_INTEGRATION_STATUS
 
-> Les **74 endpoints HTTP** exposés par le backend (67 d'origine, plus sept ajouts de M16 : Q-74,
+> Les **88 endpoints HTTP** exposés par le backend (67 d'origine, sept ajouts de M16 : Q-74,
 > Q-76, Q-77, les deux de Q-78, le détail d'une demande de frais, Q-82, et les décisions d'un
-> dossier, Q-88) et leur état de consommation par le frontend.
+> dossier, Q-88, puis les cinq du référentiel des agences en N1) et leur état de consommation par
+> le frontend.
 > Numérotation reprise de `../audiences-deliberes-backend/API_IMPLEMENTATION_STATUS.md`.
-> Dernière mise à jour : 2026-09-29 (**contrat régénéré depuis le backend** : `contracts/openapi.json`
+> Dernière mise à jour : 2026-10-05 (jalon N1 — **référentiel des agences** : #67 à #70 consommés,
+> écran 44 livré, contrat régénéré, 91 chemins avec N4. Le code d'agence n'est plus un champ de
+> texte ;
+> la fermeture d'une agence se défait, #71, demande du 2026-10-06).
+> Précédente : 2026-09-29 (**contrat régénéré depuis le backend** : `contracts/openapi.json`
 > passe de 62 à 86 chemins, aucun retiré. Il datait d’avant le Notification Engine, le portail
 > Avocat, l’audit et le journal des audiences — et ne portait donc ni la référence attribuée par le
 > système, ni la juridiction d’audience, ni les filtres d’étape. Il ne sert qu’à la vérification :
@@ -65,6 +70,12 @@
 | 7 | PUT | `/dossiers/{id}/seuil-derogation/{auditId}` | DJ, DJA | 17 | F7 | ✅ |
 | — | GET | `/dossiers/{id}/seuil-derogation[?statut=]` 🆕 Q-74 | CONS | 17 | F7 | ✅ |
 | 8 | POST | `/dossiers/{id}/sensibilite/validation` | DJ, DJA | 18 | F7 | ✅ |
+| 72 | POST | `/dossiers/{id}/sensibilite/proposition` | JUR (SAISIE) | 07, 45 | N4 | ✅ |
+| 73 | PUT | `/dossiers/{id}/sensibilite` | DJ, DJA | 07, 45 | N4 | ✅ |
+| 74 | GET | `/utilisateurs/moi/signature` | authentifié | 46 | N8 | ✅ |
+| 75 | GET | `/utilisateurs/moi/signature/image` | authentifié | 46 | N8 | ✅ |
+| 76 | PUT | `/utilisateurs/moi/signature` | authentifié | 46 | N8 | ✅ |
+| 77 | DELETE | `/utilisateurs/moi/signature` | authentifié | 46 | N8 | ✅ |
 
 **Notes d'intégration**
 - **#1** — corps `CreerDossierRequest` : `reference`, `nature`, `categorie`, `juridictionSaisie`,
@@ -251,10 +262,13 @@ nuls tant que la décision n'est pas rendue.
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
-| 35 | POST | `/constitutions/prestataires` | JURISTE | 07 (modale) | F12 | ✅ |
+| 35 | POST | `/constitutions/prestataires` | JURISTE, **ASSISTANTE** | 07 (modale) | F12 | ✅ |
 | 36 | PUT | `/constitutions/prestataires/{id}/validation` | SH | 35 | F12 | ✅ |
 | 37 | GET | `/repertoire/avocats?nom=` | JUR, AST | 34 | F12 | ✅ |
-| 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE | 35 | F12 | ✅ (nommée — Q-86) |
+| 60 | GET | `/constitutions/prestataires?statut=` | SH, JURISTE, **ASSISTANTE** | 35 | F12 | ✅ (nommée — Q-86 ; porte `redactionPossible` — Q-126) |
+| — | POST | `/demandes-explication` 🆕 N7 | **DJ, DJA** | 47 | N7 | ✅ |
+| — | GET | `/demandes-explication?enAttente=` 🆕 N7 | DJ, DJA, **AVOCAT** (périmètre décidé par le serveur) | 47 | N7 | ✅ |
+| — | PUT | `/demandes-explication/{id}/reponse` 🆕 N7 | **AVOCAT**, la sienne seule | 47 | N7 | ✅ |
 | 61 | POST | `/intervenants` | DJ, DJA | 42 | F5 | ✅ |
 | 61 bis | PUT | `/intervenants/{id}` | DJ, DJA | 42 | Q-117 | ✅ |
 | 62 | GET | `/intervenants?type=` | CONS | 06, 42 | F5 | ✅ |
@@ -303,16 +317,22 @@ nuls tant que la décision n'est pas rendue.
 | 46 | PATCH | `/alertes/{id}/traiter` | destinataire | 03 | F14 | ✅ |
 | 47 | GET | `/configurations` | CONS | 41 | F14 | ✅ |
 | 48 | PUT | `/configurations/{cle}` | **DJ + DJA** (Q-108) | 41 | F14 | ✅ |
-| 49 | GET | `/rapports?type&dateDebut&dateFin&format` | **JURISTE** | 40 | F15 | ✅ |
-| 50 | GET | `/tableau-de-bord` | **DJ + DJA** (Q-95) | 39 | F15 | ✅ |
+| 49 | GET | `/rapports?type&dateDebut&dateFin&format&categorie` | **JURISTE** | 40 | F15 · Q-138 | ✅ |
+| 50 | GET | `/tableau-de-bord?categorie` | **DJ + DJA** (Q-95) | 39 | F15 · Q-138 | ✅ |
+| — | GET | `/tableau-de-bord/details?indicateur&page&size` 🆕 Q-137 | **DJ + DJA** | 39 (modale de détail) | Q-137 | ✅ |
+| — | GET | `/rapports/activite?dateDebut&dateFin&utilisateurId&avocatId` 🆕 Q-133, élargi Q-135 | **CONS + AVOCAT** — chacun sur lui-même ; DJ et DJA sur quiconque, avocats compris | 44 (Mon compte), 40, 30 (Mon espace), 34 (répertoire) | Q-135 | ✅ |
+| — | GET | `/rapports/activite/export?…&format` 🆕 Q-133, élargi Q-135 | **CONS + AVOCAT** | 44, 40, 30, 34 | Q-135 | ✅ |
+| — | GET | `/rapports/activite/details?…&code&page&size` 🆕 Q-133, élargi Q-135 | **CONS + AVOCAT** | 44, 40, 30, 34 (modale) | Q-135 | ✅ |
+| — | GET | `/rapports/nominatif/avocats?dateDebut&dateFin` 🆕 Q-136 | **DJ + DJA** | 40 (bloc « Activité des avocats ») | Q-136 | ✅ |
+| — | GET | `/rapports/nominatif?dateDebut&dateFin` 🆕 Q-132 | **DJ + DJA** — plus étroit que `#49` à dessein | 40 (bloc « Activité par personne ») | N6 | ✅ |
 | — | GET | `/alertes/statistiques-diffusion?dateDebut&dateFin` 🆕 Q-109 | **DJ + DJA** | 41 (supervision) | F18 | ✅ |
 | — | GET | `/historique?perimetre&dossierId&utilisateurId&code&dateDebut&dateFin&page&size` 🆕 Q-112 | **DJ + DJA** | 43 (audit) | F18 | ✅ |
 | — | GET | `/historique/export?…&format=PDF|EXCEL` 🆕 Q-113 | **DJ + DJA** | 43 (audit) | F18 | ✅ |
 | — | GET | `/historique/exports?page&size` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | GET | `/historique/exports/{id}/telechargement` 🆕 Q-113 | **DJ + DJA** | 43 (archives) | F18 | ✅ |
 | — | GET | `/historique/exports/verification?empreinte` 🆕 Q-114 | **DJ + DJA** | 43 (vérification) | F18 | ✅ |
-| — | GET | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **SH + JURISTE** | file des constitutions | F18 | ✅ |
-| — | PUT | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **JURISTE** | file des constitutions | F18 | ✅ |
+| — | GET | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **SH + JURISTE + ASSISTANTE** | file des constitutions | F18 | ✅ |
+| — | PUT | `/constitutions/prestataires/{id}/lettre` 🆕 Q-115 B2 | **son demandeur, ou le SH** (Q-126) | file des constitutions | F18 | ✅ |
 | — | WS | `/ws` (STOMP/SockJS) → `/user/queue/alertes` | authentifié | 03, badge | F14 | ✅ |
 
 - **#44** — `type` doit valoir `CHARGE_MAX_AVOCAT` (400 sinon), `seuil` entier positif. C'est la
@@ -360,14 +380,27 @@ nuls tant que la décision n'est pas rendue.
 - ⚠ **QF-03 — aucun `GET` sur #51/#52.** Une décision créée n'est jamais relisible, et #53 exige un
   identifiant inatteignable après rechargement de page. **Bloque l'écran 14 en lecture.**
 
-## 11. Référentiels et utilisateurs
+## 11. Référentiels, agences et utilisateurs
 
 | # | Méthode | Endpoint | Rôle | Écran | Jalon | Statut |
 |---|---|---|---|---|---|---|
 | 64 | GET | `/referentiels/natures-dossier?categorie=` | CONS | 05 (filtre), 06 | F5 · F6 | ✅ consommé à l'écran en F6 *(statut corrigé en F8 : resté à 🟡 par oubli)* |
 | 65 | GET | `/referentiels/types-client-sensible` | CONS | 06, 18 | F5 · F6 | ✅ consommé à l'écran en F6 et F7 *(statut corrigé en F8 : resté à 🟡 par oubli)* |
 | 66 | GET | `/utilisateurs?profil=&inclureInactifs=` | CONS | 06, 16 | F5 | ✅ consommé par `useLibelles` |
+| 67 | GET | `/referentiels/agences?recherche=&actifSeulement=` | CONS | 06, 44 | N1 | ✅ |
+| 68 | POST | `/referentiels/agences` | DJ, DJA | 44 | N1 | ✅ |
+| 69 | PUT | `/referentiels/agences/{id}` | DJ, DJA | 44 | N1 | ✅ |
+| 70 | DELETE | `/referentiels/agences/{id}` | DJ, DJA | 44 | N1 | ✅ |
+| 71 | PATCH | `/referentiels/agences/{id}/reactivation` | DJ, DJA | 44 | N1 | ✅ |
 
+- **#67 à #70** — le seul référentiel **écrit depuis l'application**. Il est aussi le seul
+  **paginé et cherché côté serveur** : 82 agences ne tiennent pas dans une liste déroulante
+  lisible. Le sélecteur de l'écran 06 affiche « code · nom · ville », l'adresse en seconde ligne
+  pour séparer les agences homonymes. `actifSeulement` vaut vrai partout sauf sur l'écran 44 : la
+  saisie ne doit pas proposer une agence que le backend refusera. **`DELETE` désactive** - le
+  service rend l'agence modifiée, non `void`, et l'écran affiche son nouvel état. **#71 rouvre**
+  (2026-10-06) : la fermeture est réversible, code inchangé. Les deux mutations sont distinctes et
+  non un bascule, pour que l'écran puisse nommer celle qui a échoué.
 - **#64** — filtrable par catégorie, entrées actives seulement. Lecture seule (administré en base
   par le DJ, CONF02).
 - **#66** — `keycloakId` **n'est pas exposé**. Comptes actifs seuls par défaut. `ROLE_CONSULTATION`

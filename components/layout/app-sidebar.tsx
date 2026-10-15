@@ -47,6 +47,11 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
         destination, pas le propriétaire de l'image qu'il contient. Pas d'`aria-current` en
         revanche — l'entrée « Accueil » ci-dessous le porte déjà, et deux éléments revendiquant la
         page courante ne feraient que du bruit.
+
+        **Cette dernière phrase était fausse pour l'avocat jusqu'à QF-59**, et c'est ce qui a été
+        signalé : son menu n'avait pas d'entrée « Accueil » - elle était adossée à une capacité
+        qu'il ne porte pas -, si bien que sur l'accueil **rien** ne revendiquait la page courante.
+        Le logo l'y menait sans jamais dire où il était arrivé.
       */}
       <div className="hidden h-16 items-center border-b border-bordure px-5 lg:flex">
         <Link

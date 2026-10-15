@@ -267,7 +267,8 @@ function ModaleCreation({
           </Select>
         </Champ>
         <Champ id="alarme-objet" label={t("champObjet")} obligatoire erreur={errors.objet?.message}>
-          <Input id="alarme-objet" enErreur={!!errors.objet} {...register("objet")} />
+          <Input id="alarme-objet"
+  placeholder={t("phAlarmeObjet")} enErreur={!!errors.objet} {...register("objet")} />
         </Champ>
         <Champ id="alarme-echeance" label={t("champEcheance")} obligatoire erreur={errors.dateEcheance?.message}>
           <Input

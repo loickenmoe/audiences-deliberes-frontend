@@ -3,6 +3,7 @@
 import { Check, FileText, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -38,6 +39,7 @@ async function contenuLettre(documentId: number): Promise<Blob> {
  * constitution et la dépose dans la GED du dossier ; un rejet revient au juriste avec son motif.
  */
 export function FileConstitutions({ roles }: { roles: readonly string[] }) {
+  const router = useRouter();
   const t = useTranslations("constitutions");
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesConstitutions(roles), [roles]);
@@ -56,21 +58,35 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const requete = useConstitutions(vue === "aSigner" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderConstitution();
   const peutSigner = peut(roles, "signerConstitution");
-  const peutRediger = peut(roles, "solliciterConstitution");
+  // N8 : le SH corrige la lettre avant de la signer, le juriste la rédige. Deux rôles, une
+  // seule capacité - distincte de celle qui ouvre la sollicitation.
   const [signature, setSignature] = useState<DemandeConstitution | null>(null);
   const [rejet, setRejet] = useState<DemandeConstitution | null>(null);
   const [lettre, setLettre] = useState<DemandeConstitution | null>(null);
   /** La lettre ouverte dans la modale (Q-115 B2) : rédigeable par le juriste, lue par le SH. */
   const [lettreOuverte, setLettreOuverte] = useState<number | null>(null);
 
+  /**
+   * La signature, puis **l'onglet Documents du dossier** (QF-60).
+   *
+   * La signature dépose la lettre dans la GED du dossier, et rien n'y menait : le SH signait, lisait
+   * « Constitution signée », et restait devant sa file sans voir la pièce qu'il venait de produire.
+   * L'onglet est déjà atteignable par l'URL - `?onglet=documents`, posé pour qu'une pièce manquante
+   * à la création puisse être redéposée.
+   *
+   * `dossierId` est lu **avant** la navigation : `setSignature(null)` vide l'état, et le lire après
+   * donnerait `undefined`.
+   */
   async function signer() {
     if (!signature) return;
+    const dossierId = signature.dossierId;
     try {
       await decider.mutateAsync({ id: signature.id, decision: { decision: "VALIDEE" } });
       toast.success(t("signee"));
+      setSignature(null);
+      router.push(`/dossiers/${dossierId}?onglet=documents`);
     } catch (e) {
       toast.error(messageErreur(e));
-    } finally {
       setSignature(null);
     }
   }
@@ -171,19 +187,20 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
                       <div className="flex justify-end gap-1">
                         {enAttente ? (
                           /*
-                            Le même bouton pour deux rôles, et deux droits (Q-115 B2). Le juriste
-                            rédige ; le SH consulte avant de signer — lui refuser cette lecture
-                            reviendrait à lui demander de signer sans voir, et lui donner la plume
-                            viderait la seconde signature de son sens.
+                            Le même bouton, deux droits - et c'est le **serveur** qui dit lequel
+                            (Q-126). La lettre appartient à celui qui a sollicité la constitution :
+                            lui l'écrit, le SH la corrige avant de signer, et tout autre la lit sans
+                            y toucher. L'écran ne saurait pas le calculer, et le déduire d'un rôle
+                            proposerait « Rédiger » à qui recevrait ensuite un 403.
                           */
                           <Button
                             variante="secondaire"
                             taille="sm"
                             onClick={() => setLettreOuverte(demande.id)}
-                            aria-label={peutRediger ? t("redigerLettre") : t("consulterLettre")}
+                            aria-label={demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
                           >
                             <FileText size={14} aria-hidden />
-                            {peutRediger ? t("redigerLettre") : t("consulterLettre")}
+                            {demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
                           </Button>
                         ) : null}
                         {enAttente && peutSigner ? (
@@ -239,7 +256,6 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
 
       <ModaleLettre
         demandeId={lettreOuverte}
-        redactionPossible={peutRediger}
         ouvert={lettreOuverte !== null}
         onFermeture={() => setLettreOuverte(null)}
       />
@@ -331,6 +347,7 @@ function ModaleRejet({ demande, onFermeture }: { demande: DemandeConstitution | 
       <Champ id="motif-rejet-constitution" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
         <Textarea
           id="motif-rejet-constitution"
+          placeholder={t("phMotifRejet")}
           rows={4}
           maxLength={MOTIF_MAX}
           enErreur={!!erreur}

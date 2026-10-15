@@ -1,9 +1,11 @@
 "use client";
 
+import { Eye } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Televersement } from "@/components/metier/televersement";
 import { Button } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
@@ -33,8 +35,13 @@ export function ModaleArchivage({
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
+  // « Consulter » et « Aperçu » vivent dans l espace documents : les deux boutons d’œil du
+  // projet y puisent, et un troisième libellé pour le même geste serait un libellé de trop.
+  const tdoc = useTranslations("documents");
   const archiver = useArchiverJurisprudence();
   const [fichier, setFichier] = useState<File | null>(null);
+  /** L'aperçu de la décision chargée, avant de l'archiver (QF-62). */
+  const [apercu, setApercu] = useState(false);
   const [typeArchive, setTypeArchive] = useState("");
   const [motsCles, setMotsCles] = useState("");
   const [natureDecision, setNatureDecision] = useState("");
@@ -106,9 +113,57 @@ export function ModaleArchivage({
         </>
       }
     >
+      {/* Le fichier n'est pas encore parti : il se relit depuis la mémoire, sans aller-retour. */}
+      {apercu && fichier ? (
+        <ApercuFichier
+          ouvert
+          onFermeture={() => setApercu(false)}
+          nomFichier={fichier.name}
+          obtenir={() => Promise.resolve(fichier)}
+        />
+      ) : null}
+
       <div className="flex flex-col gap-4">
+        {/*
+          **La décision se relit avant d'être archivée** (QF-62). `surUneLigne` place l'œil d'aperçu
+          à côté du nom du fichier plutôt qu'en dessous, et tronque un nom long : même disposition
+          qu'au dépôt de frais et de publication (QF-56). Une décision archivée fait jurisprudence -
+          la relire avant de valider évite d'archiver la mauvaise pièce.
+        */}
         <Champ id="fichier-jurisprudence" label={t("champFichier")} obligatoire erreur={erreurs.fichier}>
-          <Televersement key={cleFormulaire} nom="fichier-jurisprudence" formatsAcceptes={["pdf"]} onChangement={setFichier} />
+          <div className="flex min-w-0 items-center gap-3">
+            <Televersement
+              key={cleFormulaire}
+              className="min-w-0 flex-1"
+              nom="fichier-jurisprudence"
+              formatsAcceptes={["pdf"]}
+              surUneLigne
+              onChangement={setFichier}
+            />
+            {/*
+              **La décision se relit avant d'être archivée** (QF-62).
+
+              `surUneLigne` ne suffisait pas : il ne règle que la mise en page du téléversement, qui
+              ne rend **aucun** bouton d'aperçu - ce sont ses appelants qui le placent à côté, comme
+              le font les formulaires de frais et de publication depuis QF-56.
+
+              Une décision archivée fait jurisprudence et ne se corrige pas : la relire avant de
+              valider évite d'archiver la mauvaise pièce. `min-w-0` sur les deux éléments et
+              `shrink-0` sur le bouton gardent l'œil sur la ligne, un nom long étant tronqué.
+            */}
+            {fichier ? (
+              <Button
+                variante="secondaire"
+                taille="sm"
+                className="shrink-0"
+                aria-label={`${tdoc("consulter")} - ${fichier.name}`}
+                onClick={() => setApercu(true)}
+              >
+                <Eye size={14} aria-hidden />
+                {tdoc("apercu")}
+              </Button>
+            ) : null}
+          </div>
         </Champ>
         <Champ id="type-archive" label={t("champTypeArchive")} obligatoire erreur={erreurs.typeArchive}>
           <Select id="type-archive" value={typeArchive} onChange={(e) => setTypeArchive(e.target.value)}>
@@ -127,7 +182,8 @@ export function ModaleArchivage({
           <Input id="nature-decision" maxLength={50} value={natureDecision} onChange={(e) => setNatureDecision(e.target.value)} />
         </Champ>
         <Champ id="juridiction-decision" label={t("champJuridiction")} obligatoire erreur={erreurs.juridiction}>
-          <Input id="juridiction-decision" maxLength={100} value={juridiction} onChange={(e) => setJuridiction(e.target.value)} />
+          <Input id="juridiction-decision"
+  placeholder={t("phJuridictionDecision")} maxLength={100} value={juridiction} onChange={(e) => setJuridiction(e.target.value)} />
         </Champ>
         <Champ id="date-decision-jurisprudence" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
           <Input id="date-decision-jurisprudence" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />

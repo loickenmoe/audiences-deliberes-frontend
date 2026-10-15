@@ -646,7 +646,8 @@ function ModaleProroger({
           <Input id="prorogation-date" type="date" min={demain()} enErreur={!!errors.date} {...register("date")} />
         </Champ>
         <Champ id="prorogation-motif" label={t("champMotifFacultatif")}>
-          <Input id="prorogation-motif" maxLength={255} {...register("motif")} />
+          <Input id="prorogation-motif"
+  placeholder={t("phProrogationMotif")} maxLength={255} {...register("motif")} />
         </Champ>
       </form>
     </Dialog>
@@ -722,7 +723,8 @@ function ModaleRabattre({
           <Input id="rabattement-date" type="date" enErreur={!!errors.date} {...register("date")} />
         </Champ>
         <Champ id="rabattement-motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="rabattement-motif" rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea id="rabattement-motif"
+  placeholder={t("phRabattementMotif")} rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
         </Champ>
       </form>
     </Dialog>

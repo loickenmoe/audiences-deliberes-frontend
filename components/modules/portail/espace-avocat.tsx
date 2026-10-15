@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { useMesConstitutions, useMesPublications } from "@/hooks/usePortailAvocat";
 import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
+import { MesDossiers } from "@/components/modules/portail/mes-dossiers";
 import { estCompteAvocatNonRattache, messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION } from "@/lib/publications";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
+import { cleStatutPublication } from "@/lib/publications";
 
 /**
  * Espace de l'avocat — ses dépôts et ses lettres de constitution (backend Q-96).
@@ -22,6 +24,16 @@ import type { DemandeConstitution, Publication } from "@/types/domaine";
  * publications : US 5.4 vise le juriste. L'écran existe sur arbitrage du porteur du projet, au motif
  * qu'un avocat notifié d'un rejet ne pouvait pas relire ce qui avait été rejeté — ni en lire le
  * motif, qui est précisément ce qu'il doit corriger.
+ *
+ * **Et la correspondance, depuis QF-58**, pour la même raison, à un objet près. Le DJ ou la DJA
+ * transmet une correspondance unique sur la publication (RG-INT-07) ; l'avocat en était notifié,
+ * sans qu'aucun écran ne la lui montre. Une notification qui renvoie vers une page muette vaut moins
+ * que pas de notification du tout : elle dit qu'il y a quelque chose à lire, et ne le donne pas.
+ *
+ * **Ce que cet écran ne montre pas, et ne doit pas montrer.** Les commentaires des juristes. Le
+ * juriste ne s'adresse jamais directement à l'avocat (Q-20, US 5.5, RG-INT-07) : il écrit pour le
+ * DJ/DJA, qui tranche et transmet. Le backend les tient d'ailleurs hors de la charge utile du
+ * portail - ce n'est pas à l'affichage de garder cette règle, mais il la respecte.
  */
 export function EspaceAvocat() {
   const t = useTranslations("portail");
@@ -45,12 +57,17 @@ export function EspaceAvocat() {
         cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDepot} />,
       },
       {
+        id: "correspondance",
+        header: t("colonneCorrespondance"),
+        cell: ({ row }) => <Correspondance publication={row.original} />,
+      },
+      {
         id: "statut",
         header: t("colonneStatut"),
         cell: ({ row }) => (
           <span className="flex flex-col items-start gap-1">
             <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
-              {td(`StatutPublication.${row.original.statutValidation}` as never)}
+              {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
             </StatutChip>
             {/* Le motif est la seule chose actionnable d'un rejet : il s'affiche, il ne se cache pas. */}
             {row.original.motifRejet ? (
@@ -110,6 +127,9 @@ export function EspaceAvocat() {
         />
       </section>
 
+      {/* QF-64 : ses dossiers, leurs audiences avec la note de la Direction Juridique, et les pièces partagées. */}
+      <MesDossiers />
+
       <section className="flex flex-col gap-3">
         <h2 className="text-[length:var(--taille-lg)] font-semibold">{t("mesConstitutions")}</h2>
         <Constitutions
@@ -119,6 +139,40 @@ export function EspaceAvocat() {
         />
       </section>
     </div>
+  );
+}
+
+/**
+ * La correspondance transmise sur une publication (QF-58).
+ *
+ * **L'absence se dit.** Une cellule vide laisserait croire à un affichage incomplet là où il n'y a
+ * simplement rien à lire : la plupart des publications n'appellent aucune correspondance.
+ *
+ * **Le nom de qui a transmis, et la date.** Une lettre sans signature n'en est pas une, et l'avocat
+ * doit savoir à qui il répond. `whitespace-pre-wrap` conserve les retours à la ligne du message :
+ * il est saisi dans une zone de texte, et le découper en un seul paragraphe changerait ce que la
+ * Direction Juridique a écrit.
+ */
+function Correspondance({ publication }: { publication: Publication }) {
+  const t = useTranslations("portail");
+
+  if (!publication.correspondance) {
+    return <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("sansCorrespondance")}</span>;
+  }
+
+  return (
+    <span className="flex max-w-prose flex-col gap-1">
+      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+        {/* Sans nom d'auteur, on ne signe pas d'un blanc : la date seule vaut mieux qu'un « par  ». */}
+        {publication.correspondance.auteurNom
+          ? `${t("correspondancePar", { nom: publication.correspondance.auteurNom })} · `
+          : null}
+        <DateHeureValeur valeur={publication.correspondance.createdAt} />
+      </span>
+      <span className="whitespace-pre-wrap text-[length:var(--taille-sm)]">
+        {publication.correspondance.contenu}
+      </span>
+    </span>
   );
 }
 

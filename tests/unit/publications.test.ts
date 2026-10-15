@@ -120,9 +120,16 @@ describe("ce que chaque profil se voit proposer", () => {
     ]);
   });
 
-  it("les juristes, le DJ et la DJA ne voient que les publications validées", () => {
-    expect(vuesPublications(["ROLE_JURISTE"]).map((v) => v.statut)).toEqual(["VALIDE"]);
-    expect(vuesPublications(["ROLE_DJ", "ROLE_JURISTE"]).map((v) => v.statut)).toEqual(["VALIDE"]);
+  /**
+   * Depuis RG-INT-06 amendée (2026-10-05), ce qu'un juriste voit ne dépend plus d'un statut mais
+   * de la nature du dépôt : tous les comptes rendus, et les autres publications une fois validées.
+   * Le serveur le décide ; l'écran n'a plus de filtre à proposer, et en offrir un laisserait
+   * croire qu'il manque le reste.
+   */
+  it("les juristes, le DJ et la DJA n'ont plus de filtre de statut à choisir", () => {
+    expect(vuesPublications(["ROLE_JURISTE"]).map((v) => v.statut)).toEqual([null]);
+    expect(vuesPublications(["ROLE_DJ", "ROLE_JURISTE"]).map((v) => v.statut)).toEqual([null]);
+    expect(vuesPublications(["ROLE_JURISTE"]).map((v) => v.cle)).toEqual(["toutes"]);
   });
 
   it("le juriste commente ; le DJ et la DJA, qui portent aussi ROLE_JURISTE (Q-81), écrivent la correspondance", () => {

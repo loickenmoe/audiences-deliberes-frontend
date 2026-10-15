@@ -3,6 +3,11 @@
 > Les 18 jalons du frontend : périmètre, dépendances, critères de sortie, avancement.
 > Dernière mise à jour : 2026-09-11 (**F0 à F9 validés**, **F10 livré** en attente de validation).
 
+> **Lot en cours — observations de la Direction Juridique du 03/10/2026.** Les quinze
+> observations issues de la première présentation sont analysées et séquencées dans
+> `after_presentation/PLAN_OBSERVATIONS_03_OCT.md` (jalons N1 à N11). Cette feuille de route
+> reste close à M22 ; le plan N la prolonge pour les deux dépôts à la fois.
+
 **Statut** : `✅` validé manuellement · `🔵` livré, en attente de validation · `⏳` à faire ·
 `🔧` à faire, **comprend une évolution du dépôt backend** à décider au début du jalon
 

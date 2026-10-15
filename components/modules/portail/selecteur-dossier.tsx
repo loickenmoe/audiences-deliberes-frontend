@@ -29,10 +29,13 @@ export function SelecteurDossier({
   valeur,
   onChangement,
   id = "dossier",
+  obligatoire = true,
 }: {
   valeur: number | null;
   onChangement: (dossierId: number | null) => void;
   id?: string;
+  /** Faux là où le choix ne sert qu'à lire, comme dans « Mes dossiers » (QF-64) : un astérisque y mentirait. */
+  obligatoire?: boolean;
 }) {
   const t = useTranslations("portail");
   const [recherche, setRecherche] = useState("");
@@ -60,7 +63,7 @@ export function SelecteurDossier({
     <SelecteurCherchable
       id={id}
       label={t("dossier")}
-      obligatoire
+      obligatoire={obligatoire}
       placeholder={t("choisirDossier")}
       valeur={valeur}
       onChangement={(choisi) => onChangement(choisi as number | null)}

@@ -64,11 +64,9 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
     await json<{ content: { id: number }[] }>("/intervenants?type=AVOCAT&size=200", juriste)
   ).content;
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
-  const reference = `DOS-DEF-${suffixe()}`;
-  const { id } = await json<{ id: number }>("/dossiers", juriste, {
+  const { id, reference } = await json<{ id: number; reference: string }>("/dossiers", juriste, {
     method: "POST",
     body: JSON.stringify({
-      reference,
       nature: "Assignation en paiement",
       juridictionSaisie: "TGI Douala",
       clientId: clients.content[0]!.id,
@@ -77,6 +75,10 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
       pvTransfert: "PV-DEF",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocats[0]!.id],
+      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur"] },
+      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      codeAgenceOrigine: "00002",
     }),
   });
   const dossier = await json<{ etapes: { id: number }[] }>(`/dossiers/${id}`, juriste);
@@ -95,6 +97,21 @@ async function etapeCloturee(dossierId: number, etapeId: number) {
       body: JSON.stringify({ nouveauStatut }),
     });
   await statut("EN_COURS");
+
+  /*
+   * Une audience **tenue** est exigee avant la mise en delibere (regle du 2026-09-29,
+   * REC-NEG-028) : un delibere sans audience n'a pas de sens, et le backend refuse la
+   * transition en 400. C'est le compte rendu du juriste qui rend l'audience tenue.
+   */
+  const audience = await json<{ id: number }>(`/dossiers/${dossierId}/audiences`, juriste, {
+    method: "POST",
+    body: JSON.stringify({ datePlanifiee: aujourdhui(), etapeId, juridiction: "TGI Douala" }),
+  });
+  await json(`/audiences/${audience.id}/compte-rendu`, juriste, {
+    method: "PUT",
+    body: JSON.stringify({ compteRendu: "Affaire appelee, mise en delibere." }),
+  });
+
   await statut("EN_DELIBERE");
   await json(`/dossiers/${dossierId}/deliberes`, juriste, {
     method: "POST",
@@ -170,7 +187,9 @@ test("adjudication : refusée hors étape clôturée, reliquat négatif refusé,
 });
 
 test("condamnation : suivie, son statut mis à jour puis relu après rechargement ; lecture seule pour l'Assistante", async ({ browser }) => {
-  const { id } = await dossierCree();
+  const { id, etapeId } = await dossierCree();
+  // QF-66 : une condamnation se suit sur une étape clôturée, comme l'adjudication.
+  await etapeCloturee(id, etapeId);
 
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`/dossiers/${id}?onglet=decisions`);
@@ -178,6 +197,7 @@ test("condamnation : suivie, son statut mis à jour puis relu après rechargemen
   const modale = juriste.getByRole("dialog", { name: "Suivre une condamnation" });
   await modale.getByLabel("Sens de la condamnation", { exact: true }).selectOption({ label: "Le tiers est redevable" });
   await modale.getByLabel("Nature du paiement", { exact: true }).fill("Frais de procédure");
+  await modale.getByLabel("Étape clôturée", { exact: true }).selectOption({ index: 1 });
   await modale.getByRole("button", { name: "Enregistrer" }).click();
   await expect(juriste.getByText("Condamnation enregistrée.")).toBeVisible();
 
@@ -246,12 +266,20 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
 });
 
 test("une décision archivée depuis la fiche y reste listée", async ({ page }) => {
-  const { id } = await dossierCree();
+  const { id, etapeId } = await dossierCree();
+  /*
+   * L'étape doit être **clôturée** avant l'archivage : depuis la fiche, une décision ne rejoint la
+   * base jurisprudentielle qu'une fois définitive, tous recours épuisés (REC-NEG-034). Un dossier
+   * tout juste créé porte une étape ouverte, et le refus était donc fondé.
+   */
+  await etapeCloturee(id, etapeId);
   await seConnecter(page, "juriste.test");
   await page.goto(`/dossiers/${id}?onglet=decisions`);
   await expect(page.getByText("Aucune décision archivée sur ce dossier.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Archiver la décision" }).click();
+  // Le bouton dit « Archiver à la jurisprudence » : c'est la base jurisprudentielle qu'on
+  // alimente, pas un classement interne au dossier.
+  await page.getByRole("button", { name: "Archiver à la jurisprudence" }).click();
   const modale = page.getByRole("dialog", { name: "Archiver une décision" });
   await modale.locator('input[name="fichier-jurisprudence"]').setInputFiles({ name: "jugement.pdf", mimeType: "application/pdf", buffer: PDF });
   await modale.getByLabel("Type d’archive", { exact: true }).selectOption({ label: "Expédition" });
@@ -264,4 +292,146 @@ test("une décision archivée depuis la fiche y reste listée", async ({ page })
 
   const archivees = page.getByRole("region", { name: "Décisions archivées" });
   await expect(archivees.getByRole("row", { name: /TGI Douala/ })).toContainText("Jugement");
+});
+
+/**
+ * Le fil de la frappe sur la **base jurisprudentielle** (QF-57).
+ *
+ * Ses trois filtres se validaient au `blur` **ou sur Entrée**. Le raccourci est conservé - il
+ * existait, et le retirer aurait enlevé une habitude à qui l'avait prise -, mais il n'est plus
+ * nécessaire : la recherche part d'elle-même après une pause.
+ */
+test("les filtres de la base jurisprudentielle cherchent au fil de la frappe", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/jurisprudences");
+
+  const motCle = page.getByLabel("Mot-clé", { exact: true });
+  await motCle.fill("bail");
+  await expect(page).toHaveURL(/motCle=bail/, { timeout: 30_000 });
+  await expect(motCle, "le filtre a exigé de quitter le champ").toBeFocused();
+
+  /*
+   * Par son identifiant, et non par son libellé : la modale d'archivage porte elle aussi un champ
+   * « Juridiction », et un `<dialog>` fermé reste dans le DOM - deux éléments répondent donc au même
+   * libellé. C'est le même piège qu'en QF-52, sur les deux modales de l'écran 42.
+   */
+  // Et la touche Entrée cherche sans attendre la pause, comme avant QF-57.
+  const juridiction = page.locator("#filtre-juridiction");
+  await juridiction.fill("TPI");
+  await juridiction.press("Enter");
+  await expect(page).toHaveURL(/juridiction=TPI/, { timeout: 30_000 });
+
+  await page.context().close();
+});
+
+/**
+ * **La décision se relit avant d'être archivée** (QF-62, signalé le 2026-10-14).
+ *
+ * L'œil d'aperçu manquait sur le formulaire d'archivage. Une première correction a posé la seule
+ * propriété `surUneLigne` du téléversement : elle ne règle que la **mise en page**, ce composant ne
+ * rendant aucun bouton d'aperçu - ce sont ses appelants qui le placent à côté. L'œil manquait donc
+ * toujours, et c'est le porteur du projet qui l'a constaté à l'écran.
+ *
+ * Une décision archivée fait jurisprudence et ne se corrige pas : relire avant de valider évite
+ * d'archiver la mauvaise pièce.
+ */
+test("la décision chargée se relit avant d'être archivée", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/jurisprudences");
+  await page.getByRole("button", { name: "Archiver une décision" }).click();
+
+  const modale = page.getByRole("dialog", { name: "Archiver une décision" });
+  // Tant qu'aucun fichier n'est chargé, il n'y a rien à relire : pas de bouton mort.
+  await expect(modale.getByRole("button", { name: /^Consulter - / })).toHaveCount(0);
+
+  const nom = "arret-cour-appel-douala-chambre-civile-septembre-2026.pdf";
+  await modale
+    .locator('input[name="fichier-jurisprudence"]')
+    .setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
+
+  const oeil = modale.getByRole("button", { name: `Consulter - ${nom}` });
+  await expect(oeil, "l'œil d'aperçu est absent du formulaire d'archivage").toBeVisible({
+    timeout: 30_000,
+  });
+
+  // Il est **sur la même ligne** que le téléversement, nom long compris (QF-56).
+  const hauteurTeleversement = await modale.locator('input[name="fichier-jurisprudence"]')
+    .evaluate((entree) => entree.closest("div")?.getBoundingClientRect().height ?? 0);
+  const boiteOeil = await oeil.boundingBox();
+  const boiteNom = await modale.getByText(nom).first().boundingBox();
+  expect(boiteOeil, "l'œil n'est pas rendu").not.toBeNull();
+  expect(boiteNom, "le nom du fichier n'est pas rendu").not.toBeNull();
+  // Deux éléments sur la même ligne se recouvrent verticalement.
+  const memeLigne =
+    boiteOeil!.y < boiteNom!.y + boiteNom!.height && boiteNom!.y < boiteOeil!.y + boiteOeil!.height;
+  expect(memeLigne, `l'œil est passé à la ligne (hauteur ${hauteurTeleversement} px)`).toBe(true);
+
+  // Et il ouvre bien la décision, sans quitter le formulaire ni l'avoir envoyée.
+  await oeil.click();
+  await expect(page.getByRole("dialog", { name: `Aperçu - ${nom}` })).toBeVisible({ timeout: 30_000 });
+
+  await page.context().close();
+});
+
+/**
+ * **La croix de l'aperçu ne ferme que l'aperçu** (QF-63, signalé le 2026-10-14).
+ *
+ * Le bouton « Fermer » passait par l'état React et ne refermait que l'aperçu ; la croix appelait
+ * `dialog.close()` et emportait **aussi** le formulaire d'archivage, perdant toute l'indexation
+ * déjà saisie. Deux voies de sortie pour un même geste, et une seule était juste.
+ */
+test("la croix de l'aperçu laisse le formulaire d'archivage ouvert", async ({ page }) => {
+  await seConnecter(page, "juriste.test");
+  await page.goto("/jurisprudences");
+  await page.getByRole("button", { name: "Archiver une décision" }).click();
+
+  const archivage = page.getByRole("dialog", { name: "Archiver une décision" });
+  const nom = "arret-a-relire.pdf";
+  await archivage
+    .locator('input[name="fichier-jurisprudence"]')
+    .setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
+
+  // Une indexation en cours : c'est elle que la croix faisait perdre.
+  await archivage.getByLabel("Juridiction", { exact: true }).fill("Cour d’appel de Douala");
+
+  await archivage.getByRole("button", { name: `Consulter - ${nom}` }).click();
+  const apercu = page.getByRole("dialog", { name: `Aperçu - ${nom}` });
+  await expect(apercu).toBeVisible({ timeout: 30_000 });
+
+  // **La croix**, qui est la première dans la boîte - le bouton « Fermer » du pied est la seconde,
+  // et c'est lui qui fonctionnait déjà.
+  await apercu.getByRole("button", { name: "Fermer" }).first().click();
+
+  await expect(apercu).toBeHidden({ timeout: 30_000 });
+  await expect(archivage, "la croix a emporté le formulaire d'archivage").toBeVisible();
+  await expect(archivage.getByLabel("Juridiction", { exact: true })).toHaveValue("Cour d’appel de Douala");
+
+  await page.context().close();
+});
+
+/**
+ * **Un dossier tout juste ouvert ne porte aucune décision** (QF-66, demandé le 2026-10-15).
+ *
+ * Signalé : à l'étape Ouverture, l'onglet Décisions proposait de suivre une condamnation et
+ * d'archiver à la jurisprudence. La condamnation suit désormais la règle de l'adjudication (une
+ * étape clôturée) ; la jurisprudence, la garde que le serveur appliquait déjà (le dossier clos).
+ * L'écran le dit, et le serveur le refuse.
+ */
+test("à l'étape Ouverture, ni condamnation à suivre ni décision à archiver", async ({ browser }) => {
+  const { id } = await dossierCree();
+
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto(`/dossiers/${id}?onglet=decisions`);
+  await expect(juriste.getByRole("button", { name: "Suivre une condamnation" })).toBeDisabled({ timeout: 30_000 });
+  await expect(juriste.getByRole("button", { name: "Archiver à la jurisprudence" })).toBeDisabled();
+  await expect(juriste.getByText(/Une condamnation se suit une fois l’étape clôturée/)).toBeVisible();
+  await expect(juriste.getByText(/toutes les étapes de ce dossier doivent être clôturées/)).toBeVisible();
+  await juriste.context().close();
+
+  // Et le serveur refuse, même si l'écran était contourné.
+  const refus = await appel(`/dossiers/${id}/condamnations`, await jeton("juriste.test"), {
+    method: "POST",
+    body: JSON.stringify({ sens: "TIERS_REDEVABLE", naturePaiement: "Frais", dateDecision: "2026-10-15" }),
+  });
+  expect(refus.status, "une condamnation sans étape clôturée doit être refusée").toBe(400);
 });

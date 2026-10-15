@@ -43,5 +43,42 @@ export const EXTENSION_RAPPORT = { PDF: "pdf", EXCEL: "xlsx", CSV: "csv" } as co
 
 /** Nom daté : « rapport.pdf » ne dit rien quand on en archive plusieurs. */
 export function nomFichierRapport(periode: PeriodeRapport, format: keyof typeof EXTENSION_RAPPORT): string {
-  return `rapport-${periode.type.toLowerCase()}-${periode.dateDebut}_${periode.dateFin}.${EXTENSION_RAPPORT[format]}`;
+  /*
+   * Le périmètre figure dans le nom depuis Q-138, et seulement quand il en est un : un rapport de
+   * recouvrement et un rapport toutes catégories portent des chiffres différents sur la même
+   * période. Deux fichiers nommés pareil se confondraient dans un dossier, et c'est celui qu'on
+   * garde qui déciderait de ce qu'on croit.
+   */
+  const perimetre = periode.categorie === undefined ? "" : `-${periode.categorie.toLowerCase()}`;
+  return `rapport-${periode.type.toLowerCase()}${perimetre}-${periode.dateDebut}_${periode.dateFin}.${EXTENSION_RAPPORT[format]}`;
+}
+
+/**
+ * Nom de la fiche d'activité téléchargée (Q-133).
+ *
+ * **Il reproduit volontairement la règle du serveur** (`RapportActiviteExportService.nomFichier`) :
+ * c'est le serveur qui nomme le fichier dans `Content-Disposition`, mais CORS n'expose pas cet
+ * en-tête en lecture, et le navigateur ne peut donc pas s'en servir. Les deux règles doivent rester
+ * d'accord, sans quoi le fichier reçu ne porterait pas le nom annoncé ; un test unitaire les
+ * confronte.
+ *
+ * Les **accents sont retirés avant la mise en minuscules** : sans cette passe, « Hervé » donnait
+ * « herv- », le caractère accentué ne tombant pas dans `[a-z0-9]`.
+ */
+export function nomFichierActivite(
+  personne: { nom: string | null; utilisateurId: number },
+  dateDebut: string,
+  dateFin: string,
+  format: keyof typeof EXTENSION_RAPPORT,
+): string {
+  const qui =
+    personne.nom === null
+      ? String(personne.utilisateurId)
+      : personne.nom
+          .normalize("NFD")
+          .replace(/\p{M}+/gu, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+  return `activite-${qui}-${dateDebut}_${dateFin}.${EXTENSION_RAPPORT[format]}`;
 }

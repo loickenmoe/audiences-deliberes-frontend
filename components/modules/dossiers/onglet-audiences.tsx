@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarPlus, FileText } from "lucide-react";
+import { CalendarPlus, FileText, MessageSquareText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +21,7 @@ import {
   useAnnulerAudience,
   useAudiencesDossier,
   useEnregistrerCompteRendu,
+  useModifierNoteAvocat,
   usePlanifierAudience,
 } from "@/hooks/useAudiences";
 import type { Langue } from "@/i18n/config";
@@ -74,6 +75,9 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
   const [planification, setPlanification] = useState(false);
   const [compteRendu, setCompteRendu] = useState<Audience | null>(null);
   const [annulation, setAnnulation] = useState<Audience | null>(null);
+  /** QF-64 : la note destinée à l'avocat constitué, distincte du compte rendu interne. */
+  const [note, setNote] = useState<Audience | null>(null);
+  const peutEcrireNote = peut(roles, "ecrireNoteAvocat");
   const langue = useLocale() as Langue;
 
   const etapesEnCours = dossier.etapes.filter((etape) => etape.statutCycleVie === "EN_COURS");
@@ -163,6 +167,21 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                           "—"
                         ) : null}
 
+                        {/*
+                          La note à l'avocat, **à part** du compte rendu (QF-64) : celui-ci reste
+                          interne, celle-là lui est écrite. Les confondre à l'écran ferait croire que
+                          l'avocat lit le compte rendu.
+                        */}
+                        {audience.noteAvocat ? (
+                          <p
+                            className="line-clamp-2 whitespace-pre-line border-l-2 border-info/50 pl-2 text-[length:var(--taille-xs)] text-texte-secondaire"
+                            title={audience.noteAvocat}
+                          >
+                            <span className="font-medium">{t("noteAvocat")} : </span>
+                            {audience.noteAvocat}
+                          </p>
+                        ) : null}
+
                         {compteRenduAvocatParAudience.has(audience.id) ? (
                           <Link
                             href={`/publications/${compteRenduAvocatParAudience.get(audience.id)!.id}`}
@@ -174,6 +193,18 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                       </div>
                     </td>
                     <td className="px-4 py-2 text-right">
+                      <div className="flex justify-end gap-1">
+                      {peutEcrireNote && audience.statut !== "ANNULEE" ? (
+                        <Button
+                          variante="secondaire"
+                          taille="sm"
+                          onClick={() => setNote(audience)}
+                          aria-label={t("ecrireNoteAria", { date: formaterDate(audience.datePlanifiee, langue) })}
+                          title={t("ecrireNote")}
+                        >
+                          <MessageSquareText size={14} aria-hidden />
+                        </Button>
+                      ) : null}
                       {peutGerer && audience.statut === "PLANIFIEE" ? (
                         <Button
                           variante="secondaire"
@@ -184,6 +215,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                           {t("annulerAudience")}
                         </Button>
                       ) : null}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -206,6 +238,9 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
           <ModaleCompteRendu dossierId={dossier.id} audience={compteRendu} onFermeture={() => setCompteRendu(null)} />
           <ModaleAnnulation dossierId={dossier.id} audience={annulation} onFermeture={() => setAnnulation(null)} />
         </>
+      ) : null}
+      {peutEcrireNote ? (
+        <ModaleNoteAvocat dossierId={dossier.id} audience={note} onFermeture={() => setNote(null)} />
       ) : null}
     </div>
   );
@@ -333,6 +368,7 @@ function ModalePlanification({
           >
             <Input
               id="audience-juridiction"
+              placeholder={t("phAudienceJuridiction")}
               maxLength={100}
               enErreur={!!errors.juridiction}
               {...register("juridiction")}
@@ -431,7 +467,8 @@ function ModaleCompteRendu({
           </p>
         ) : null}
         <Champ id="compte-rendu" label={t("champCompteRendu")} obligatoire erreur={errors.compteRendu?.message}>
-          <Textarea id="compte-rendu" rows={6} enErreur={!!errors.compteRendu} {...register("compteRendu")} />
+          <Textarea id="compte-rendu"
+  placeholder={t("phCompteRendu")} rows={6} enErreur={!!errors.compteRendu} {...register("compteRendu")} />
         </Champ>
       </form>
     </Dialog>
@@ -509,9 +546,99 @@ function ModaleAnnulation({
           </p>
         ) : null}
         <Champ id="annulation-motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="annulation-motif" rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea id="annulation-motif"
+  placeholder={t("phAnnulationMotif")} rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
         </Champ>
       </form>
+    </Dialog>
+  );
+}
+
+/**
+ * La note destinée à l'avocat constitué (QF-64, backend Q-139).
+ *
+ * **Distincte du compte rendu**, qui reste interne : il peut juger la stratégie, voire le travail de
+ * l'avocat lui-même (RG-INT-07). La note, elle, lui est écrite - « apportez l'original de l'acte » se
+ * dit avant l'audience, d'où un champ ouvert dès la planification.
+ *
+ * Elle se reprend telle qu'elle a été écrite, et **vide, elle s'efface** : c'est ainsi qu'on retire
+ * une note devenue sans objet, sans second bouton pour le même geste.
+ */
+function ModaleNoteAvocat({
+  dossierId,
+  audience,
+  onFermeture,
+}: {
+  dossierId: number;
+  audience: Audience | null;
+  onFermeture: () => void;
+}) {
+  const t = useTranslations("audiences");
+  const tc = useTranslations("commun");
+  const modifier = useModifierNoteAvocat(dossierId);
+  const [texte, setTexte] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  // La note en vigueur, reprise à l'ouverture : on la corrige, on ne la réécrit pas de mémoire.
+  const audienceId = audience?.id;
+  const noteEnVigueur = audience?.noteAvocat ?? "";
+  useEffect(() => {
+    if (audienceId !== undefined) {
+      setTexte(noteEnVigueur);
+      setErreur(null);
+    }
+  }, [audienceId, noteEnVigueur]);
+
+  async function enregistrer() {
+    if (!audience) return;
+    try {
+      await modifier.mutateAsync({ audienceId: audience.id, note: texte.trim() });
+      toast.success(texte.trim() ? t("noteEnregistree") : t("noteEffacee"));
+      onFermeture();
+    } catch (e) {
+      setErreur(messageErreur(e));
+    }
+  }
+
+  return (
+    <Dialog
+      ouvert={audience !== null}
+      onFermeture={onFermeture}
+      titre={t("noteTitre")}
+      description={t("noteDescription")}
+      pied={
+        <>
+          <Button variante="secondaire" onClick={onFermeture} disabled={modifier.isPending}>
+            {tc("annuler")}
+          </Button>
+          <Button onClick={() => void enregistrer()} disabled={modifier.isPending}>
+            {tc("enregistrer")}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {erreur ? (
+          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+            {erreur}
+          </p>
+        ) : null}
+        {audience ? (
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            <DateValeur valeur={audience.datePlanifiee} />
+          </p>
+        ) : null}
+        <Champ id="note-avocat" label={t("noteAvocat")} aide={t("noteAide")}>
+          <Textarea
+            id="note-avocat"
+            placeholder={t("phNote")}
+            rows={5}
+            maxLength={4000}
+            value={texte}
+            onChange={(evenement) => setTexte(evenement.target.value)}
+          />
+        </Champ>
+      </div>
     </Dialog>
   );
 }

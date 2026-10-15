@@ -37,6 +37,15 @@ export function useAudiencesDeMonDossier(dossierId: number | null) {
   });
 }
 
+/** QF-64 — les pièces partagées d'un de ses dossiers ; rien n'est demandé tant qu'aucun n'est choisi. */
+export function usePiecesDeMonDossier(dossierId: number | null) {
+  return useQuery({
+    queryKey: [CLES.piecesDossierAvocat, dossierId],
+    queryFn: () => portailAvocatService.piecesDeMonDossier(dossierId!),
+    enabled: dossierId !== null,
+  });
+}
+
 export function useMesPublications(page = 0) {
   return useQuery({
     queryKey: [CLES.mesPublications, page],

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { affecterParDefaut } from "./affectation";
 import { deposerPiecesDeCreation } from "./pieces-de-creation";
+import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
  * Q-81 / QF-36 — le DJ et la DJA ont « tous les droits d'un juriste, plus les leurs » : le realm leur
@@ -19,9 +20,6 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
 }
 
-function suffixe() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 /** `YYYY-MM-DD` local, dans `jours` jours. */
 function dansJours(jours: number) {
@@ -40,6 +38,11 @@ test("le DJ agit en juriste — étape et audience — sans cesser d'être DJ", 
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
+  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
+  await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
+  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DJ");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DJ");
   await deposerPiecesDeCreation(page, { marque: "dj" });

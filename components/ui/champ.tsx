@@ -1,4 +1,11 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { cloneElement, isValidElement } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactElement,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -8,9 +15,15 @@ const BASE =
 /**
  * Enveloppe d'un champ : étiquette, contrôle, message d'erreur.
  *
- * L'erreur est reliée au contrôle par `aria-describedby` et signalée par `aria-invalid` — la
- * bordure rouge seule ne suffirait pas. L'astérisque des champs obligatoires est doublée d'un
- * `required` sur le contrôle, seul porteur d'information pour un lecteur d'écran.
+ * L'aide et l'erreur sont reliées au contrôle par `aria-describedby`, et l'erreur signalée par
+ * `aria-invalid` — la bordure rouge seule ne suffirait pas. L'astérisque des champs obligatoires est
+ * doublée d'un `required` sur le contrôle, seul porteur d'information pour un lecteur d'écran.
+ *
+ * **Le rattachement se fait ici, et non chez l'appelant.** Les deux paragraphes portaient déjà leur
+ * identifiant, mais rien ne les reliait : ils existaient pour qui voit l'écran et disparaissaient
+ * pour qui l'écoute, sur les 128 champs de l'application. Le défaut a été découvert en posant les
+ * textes d'aide de N5 ; le laisser à la charge de chaque formulaire l'aurait reproduit ailleurs.
+ * Un `aria-describedby` déjà posé par l'appelant est **conservé**, le nôtre s'y ajoutant.
  */
 export function Champ({
   id,
@@ -48,7 +61,7 @@ export function Champ({
         ) : null}
       </div>
 
-      {children}
+      {relier(children, [aide && !erreur ? `${id}-aide` : null, erreur ? `${id}-erreur` : null])}
 
       {aide && !erreur ? (
         <p id={`${id}-aide`} className="text-[length:var(--taille-xs)] text-texte-tertiaire">
@@ -63,6 +76,26 @@ export function Champ({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Rattache au contrôle les paragraphes qui le décrivent.
+ *
+ * <p>`cloneElement` plutôt qu'une propriété à passer : l'appelant écrit `<Champ><Input …/></Champ>`
+ * et n'a pas à connaître les identifiants que `Champ` fabrique. Un enfant qui n'est pas un élément
+ * - une chaîne, un fragment - est rendu tel quel : il n'y a alors rien à décrire.
+ */
+function relier(enfant: ReactNode, identifiants: (string | null)[]): ReactNode {
+  const liste = identifiants.filter((valeur): valeur is string => valeur !== null);
+  if (liste.length === 0 || !isValidElement(enfant)) {
+    return enfant;
+  }
+  const element = enfant as ReactElement<{ "aria-describedby"?: string }>;
+  // Celui que l'appelant a posé lui-même est conservé : le nôtre s'y ajoute.
+  const existant = element.props["aria-describedby"];
+  return cloneElement(element, {
+    "aria-describedby": [existant, ...liste].filter(Boolean).join(" "),
+  });
 }
 
 export function Input({

@@ -137,7 +137,13 @@ export type CanalAlerte = (typeof CanalAlerte)[number];
 export const CanalPrestataire = ["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"] as const;
 export type CanalPrestataire = (typeof CanalPrestataire)[number];
 
-/** Les 9 événements notifiés aux prestataires par un canal externe (backend Q-118). */
+/**
+ * Les 12 événements notifiés aux prestataires par un canal externe (backend Q-118).
+ *
+ * **Cette liste est ce qui rend le garde-fou possible.** Le test « chaque valeur d'énumération a un
+ * libellé » la parcourt : une valeur ajoutée au backend sans être ajoutée ici n'est vérifiée par
+ * personne, et le code brut apparaît à l'écran. C'est arrivé avec `DEMANDE_EXPLICATION` (N7).
+ */
 export const EvenementPrestataire = [
   "CONSTITUTION_VALIDEE",
   "FRAIS_REJETES",
@@ -148,10 +154,19 @@ export const EvenementPrestataire = [
   "AFFECTATION_DOSSIER",
   "DELAI_RECOURS",
   "SUPPRESSION_DOCUMENT_ARBITREE",
+  "COMPTE_RENDU_ATTENDU",
+  "COMPTE_RENDU_RECU",
+  "DEMANDE_EXPLICATION",
 ] as const;
 export type EvenementPrestataire = (typeof EvenementPrestataire)[number];
 
-/** Les 17 types d'alerte (arbitrage backend Q-22). */
+/**
+ * Les 19 types d'alerte (arbitrage backend Q-22).
+ *
+ * `MANQUEMENT_COMPTE_RENDU` est arrive avec N7 (2026-10-07) : deux audiences consecutives sans
+ * compte rendu remontent au Directeur Juridique. Cote backend, toute valeur ajoutee ici exige une
+ * migration de `chk_alerte_type` - une contrainte fermee, qui ne se plaint qu'en production.
+ */
 export const TypeAlerte = [
   "RAPPEL_AUDIENCE",
   "DELAI_RECOURS",
@@ -170,6 +185,8 @@ export const TypeAlerte = [
   "CHARGE_MAX_AVOCAT",
   "DELIBERE_ATTENDU",
   "DOSSIER_INCOMPLET",
+  "MANQUEMENT_COMPTE_RENDU",
+  "DEMANDE_EXPLICATION",
 ] as const;
 export type TypeAlerte = (typeof TypeAlerte)[number];
 

@@ -76,6 +76,18 @@ tard dans la minute : **aucune notification n'est perdue**, seul l'affichage imm
 système** : vous ne la saisissez pas. À l'enregistrement, un message la nomme - « Dossier
 DOS-2026-0001 créé. » - et la fiche s'ouvre sur ce dossier. Le numéro repart à 1 chaque 1er janvier.
 
+**Chercher un dossier.** Les champs *Référence* et *Juridiction* filtrent la liste **au fur et à
+mesure que vous tapez** : vous n'avez plus à sortir du champ ni à valider. L'application attend
+une fraction de seconde que vous ayez fini de taper, puis cherche - une recherche par pause, et
+non une par lettre.
+
+Le nombre de résultats s'affiche sous la liste et se met à jour avec elle. Le lien de votre
+recherche reste partageable : l'adresse porte vos filtres.
+
+**Les listes de l'application se cherchent toutes de la même façon** : les dossiers, les clients,
+la jurisprudence et le répertoire des avocats. Dans tous les cas, tapez et la liste suit ; la
+touche **Entrée** cherche sans attendre si vous êtes pressé.
+
 **Les pièces se joignent à la création, et elles sont obligatoires** (depuis le 2026-09-29) : le
 dossier de crédit d'origine et le PV de transfert pour un recouvrement, l'incident de compte et les
 éléments justificatifs pour un litige d'exploitation. Tant qu'un fichier manque, l'enregistrement
@@ -85,16 +97,59 @@ l'envoi.
 
 ![Le formulaire de création. Les pièces portent un astérisque : sans fichier, rien n'est créé.](images/guide/05-creation-dossier.png)
 
-**Un dossier sensible** exige un seuil de montant et un type de client. Une dérogation au seuil
+**Les parties au procès sont obligatoires** (depuis le 2026-10-05) : au moins un demandeur et un
+défendeur. *Ajouter un demandeur* et *Ajouter un défendeur* en déclarent autant que l'affaire en
+compte - une banque assigne souvent un débiteur **et** sa caution. La première ligne de chaque côté
+ne se retire pas, puisqu'il en faut au moins une. Le client du dossier, lui, se choisit à part : il
+est identifié au référentiel, pas ressaisi ici.
+
+**L'agence d'origine est obligatoire, et elle se choisit** (depuis le 2026-10-05). Le champ
+*Agence d'origine* n'est plus une zone de saisie : tapez les premières lettres du code ou du nom, et
+la liste se réduite à mesure. Chaque ligne porte **le code, le mot « Agence », le nom et la
+ville** - « 00002 · Agence BONANJO · Douala » - et, quand deux agences portent le même nom,
+l'adresse apparaît en seconde ligne pour les séparer. *Agence du contentieux* reste facultative : renseignez-la quand le dossier est suivi
+ailleurs qu'à l'agence où il est né. Seules les agences **ouvertes** sont proposées.
+
+**Le référentiel des agences** se consulte depuis *Agences*, dans le menu. Tous les profils internes
+le lisent ; **le DJ et la DJA seuls** y créent, corrigent et ferment une agence. Trois points à
+connaître :
+
+- **Le code ne se modifie pas** après création. Les dossiers le portent en clair : le changer les
+  détacherait de leur agence sans que rien ne le signale. Une agence qui change de code est une
+  autre agence - créez-la, puis désactivez l'ancienne.
+- **On désactive, on ne supprime pas - et on peut rouvrir.** Une agence fermée quitte les listes de
+  choix ; les dossiers ouverts sous elle restent intacts et lisibles. Sa ligne porte un bouton
+  *Réactiver* : une fermeture faite par erreur se défait, et une agence qui réouvre reprend sa
+  place avec **le même code**. Sans cela, il aurait fallu la recréer sous un code inventé.
+- **La ville est obligatoire.** Deux agences peuvent porter le même nom, et c'est elle qui les
+  distingue au moment de la saisie.
+
+**Un dossier à diligence particulière** exige un seuil de montant et un type de client. Une dérogation au seuil
 global se demande depuis la fiche et doit être validée par le DJ.
 
-**La fiche** rassemble tout : identification, parties, pièces, affectations, sensibilité, étapes,
+**La diligence particulière se révise en cours de route** (depuis le 2026-10-06). Une affaire se
+révèle sensible après l'ouverture - une contrepartie change de nature, un montant se découvre - et
+l'inverse arrive aussi. Depuis la fiche du dossier :
+
+- **le juriste propose** *Proposer la diligence particulière* : seuil, type de client, et ce qui a
+  changé depuis l'ouverture. Le dossier passe en attente, et **rien ne change pour les demandes de
+  frais** tant que le DJ ou la DJA n'a pas tranché ;
+- **le DJ et la DJA posent directement** *Mettre en diligence particulière*, sans proposition : ils
+  sont la décision. Une proposition en attente est alors tranchée au seuil qu'ils indiquent ;
+- **le DJ et la DJA retirent** *Retirer la diligence particulière*, avec un motif obligatoire. Le
+  dossier redevient ordinaire et son seuil repasse au seuil global. Le motif reste affiché sur la
+  synthèse : six mois plus tard, on saura pourquoi.
+
+Les boutons proposés dépendent de l'état du dossier et de votre rôle. Un dossier dont la diligence
+attend un arbitrage n'offre que l'arbitrage.
+
+**La fiche** rassemble tout : identification, parties, pièces, affectations, diligence particulière, étapes,
 audiences, délibérés, décisions et publications. Les onglets se partagent par lien : l'adresse porte
 l'onglet ouvert, un collègue retrouvera exactement la même vue.
 
 ![La fiche d'un dossier, onglet *Synthèse*.](images/guide/06-fiche-synthese.png)
 
-**Étapes.** Un dossier suit un cycle de degrés de juridiction - Première instance, Appel, Pourvoi en cassation, Pourvoi CCJA. Les deux pourvois sont concurrents : un même dossier peut aller devant la Cour Suprême et devant la CCJA. Une audience ne se planifie que
+**Étapes.** Un dossier suit un cycle de degrés de juridiction - Instance, Appel, Pourvoi en cassation, Pourvoi CCJA. Les deux pourvois sont concurrents : un même dossier peut aller devant la Cour Suprême et devant la CCJA. Une audience ne se planifie que
 sur une étape **en cours** : si le bouton n'apparaît pas, commencez par ouvrir l'étape.
 
 **Chaque changement d'étape suppose que les faits aient eu lieu** (depuis le 2026-09-29). Si le
@@ -118,7 +173,7 @@ le dossier n'a plus aucune étape en cours - une décision encore susceptible de
 mauvais précédent.
 
 **Retrouver des dossiers.** La barre de filtres croise la référence, le client, la juridiction, la
-nature, la sensibilité, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
+nature, la diligence particulière, l'**étape** et une **période d'audience**. *Étape* et *Statut de l'étape* se
 lisent ensemble : « Appel » + « En cours » donne les appels en cours, et non les dossiers dont
 l'appel est clôturé mais qui ont autre chose en cours. La période porte sur les **audiences** - les
 dossiers passés devant un juge entre ces deux dates, les audiences annulées exclues - et non sur la
@@ -165,6 +220,12 @@ planifier de nouvelles audiences. Le résultat rendu clôt le délibéré.
 **Voie de recours.** Un délibéré défavorable ou mixte ouvre un délai de recours, suivi par une
 alarme. Passé le délai sans recours, l'étape est close.
 
+**Le compte rendu de l'avocat est réclamé tout seul.** Quand une audience est passée et qu'aucun
+compte rendu d'avocat n'est arrivé, l'application relance l'avocat affecté par ses canaux
+externes, puis le relance encore à la même cadence jusqu'au dépôt - cinq fois au plus. Le délai
+se règle dans les paramètres système. Rien n'est envoyé si l'audience a été annulée, ni si
+l'étape est close ou archivée.
+
 ---
 
 ## 6. Frais d'avocats
@@ -174,7 +235,7 @@ Chaque pièce part dès qu'elle est choisie ; son nom s'affiche, et vous pouvez 
 d'envoyer la demande.
 
 **Le circuit**, dans l'ordre : dépôt par l'avocat → contrôle de **conformité** par l'Assistante →
-contrôle d'**opportunité** par la DJA → **validation conjointe** DJ + DJA si le dossier est sensible
+contrôle d'**opportunité** par la DJA → **validation conjointe** DJ + DJA si le dossier est à diligence particulière
 ou si le montant dépasse le seuil → enregistrement du **paiement** par l'Assistante.
 
 Chaque profil ouvre l'application sur la file dont il a la charge. Un rejet exige toujours un motif,
@@ -204,8 +265,17 @@ porte sur les documents, pas sur leurs noms.
 Les deux choix sont sur la même page, décrits l'un sous l'autre : le bouton d'envoi dit à chaque
 fois ce qu'il fait. Les formats admis et le poids maximal sont les mêmes que pour la GED (§8).
 
-Toute publication passe par la validation de l'Assistante avant d'être visible des juristes. En cas
-de rejet, le motif s'affiche dans *Mon espace*, avec le dépôt concerné.
+**Le compte rendu d'audience n'attend pas.** Dès son dépôt, il est consultable par **toute la
+Direction Juridique** : plus personne n'attend un contrôle pour savoir ce qui s'est dit à l'audience.
+Les juristes affectés au dossier en sont alertés ; les autres le trouvent sur la fiche. L'Assistante
+en **accuse réception** - elle ne l'autorise pas, et ne peut pas le rejeter : un récit d'audience se
+conteste par une correspondance, pas en l'écartant. Un compte rendu ne se réserve pas non plus à un
+destinataire : il appartient au dossier.
+
+**Les documents du dossier, eux, attendent la validation.** Une pièce, une décision ou des conclusions
+transmises par l'avocat ne sont visibles qu'une fois validées : leur conformité n'a pas encore été
+contrôlée. En cas de rejet, le motif s'affiche dans *Mon espace* de l'avocat, avec le dépôt
+concerné.
 
 ![Les publications déposées par les avocats, en attente de validation.](images/guide/15-publications.png)
 
@@ -225,10 +295,143 @@ rendu sans pièce n'affiche simplement pas ce bloc.
 **Correspondance.** Un juriste commente une publication ; le DJ ou la DJA consolide ces commentaires
 en une correspondance unique adressée à l'avocat. C'est la seule voie officielle d'échange.
 
+**La lit-il ? Oui, depuis le 2026-10-14.** Elle apparaît dans *Mon espace* de l'avocat, colonne
+**Correspondance de la Direction Juridique** du tableau *Mes dépôts*, avec le nom de qui l'a
+transmise et la date. L'avocat en était notifié depuis toujours, mais aucune page ne la lui montrait.
+Les **commentaires des juristes** n'y figurent pas, et c'est voulu : ils s'adressent au DJ et à la
+DJA, pas au prestataire dont ils discutent.
+
+**Partager une pièce avec l'avocat** (depuis le 2026-10-15). Dans l'onglet *Documents* du
+dossier, l'icône **Partager avec l'avocat** rend la pièce visible de l'avocat affecté **et constitué**
+- c'est la lettre signée qui fait le mandat. La colonne *Avocat* dit l'état de chaque pièce, et la
+flèche de retour retire un partage à tout moment.
+
+Sur un **dossier sensible**, le geste s'appelle **Proposer le partage** : la pièce attend la
+validation du DJ ou de la DJA, qui la trouvent dans **Partages à valider**. Un rejet exige un motif.
+
+**La note à l'avocat.** Dans l'onglet *Audiences*, la bulle de texte d'une audience écrit ce que
+l'avocat doit en savoir - « apportez l'original de l'acte ». Elle est **distincte du compte rendu**,
+qui reste interne, et l'avocat constitué la lit dans *Mon espace*, section *Mes dossiers*, avec les
+pièces partagées.
+
 **Constitutions.** Un juriste sollicite la constitution d'un prestataire ; le SH signe ; la lettre
 est générée et rangée dans la GED du dossier. L'avocat constitué en est notifié.
 
 ![Les demandes de constitution d'un prestataire.](images/guide/16-constitutions.png)
+
+---
+
+## 7 bis. Ma signature
+
+**Votre signature s'appose sur les lettres de constitution que vous faites** (depuis le
+2026-10-06). Cliquez votre nom, en haut à droite, pour ouvrir *Mon compte*. Déposez une image de
+votre signature - PNG ou JPEG, 200 Ko au plus - et elle paraîtra sur les lettres, à la place du nom
+à signer à la main.
+
+**Une lettre porte deux signatures** (depuis le 2026-10-07). La ligne « La Direction Juridique »
+reste seule : elle nomme un service, pas quelqu'un, et rien ne s'y signe. En dessous viennent les
+deux personnes qui engagent la banque - **à gauche celui qui a rédigé**, **à droite celui qui a
+validé** - chacune sous son trait et avec son nom. Vous déposez votre signature une seule fois, à
+votre compte ; elle sert ensuite pour toutes les lettres où votre nom paraît.
+
+Une fois déposée, elle s'affiche en vignette. Cliquez **Aperçu** pour la relire en grand, comme
+n'importe quelle pièce de l'application : la vignette dit qu'il y a quelque chose, elle ne permet
+pas de vérifier le trait.
+
+**Trois points à connaître.**
+
+- **Vous seul déposez la vôtre.** Personne ne peut la poser pour vous, ni la récupérer : aucun
+  écran, aucun appel ne rend la signature d'un autre.
+- **Elle n'ajoute aucune valeur juridique.** Ce qui fait preuve de votre signature, c'est la trace
+  horodatée que l'application enregistre - qui a signé, quand - et non cette image. La retirer ne
+  retire rien à cette preuve.
+- **La retirer ne change pas les lettres déjà signées** : elles sont produites et versées au
+  dossier. Les suivantes repartiront avec votre nom, à signer à la main.
+
+**Votre lettre est à vous** (depuis le 2026-10-07). Celui qui sollicite une constitution est celui
+qui rédige sa lettre : personne d'autre ne peut y écrire, pas même un collègue juriste, le Directeur
+Juridique ou son adjointe. Ils la lisent, les champs restent fermés. **L'Assistante** sollicite et
+rédige comme un juriste, depuis la même date ; elle ne signe pas.
+
+**Le supérieur hiérarchique peut corriger la lettre avant de la signer** (depuis le 2026-10-06).
+Jusque-là il la consultait sans pouvoir y toucher. La correction n'est pas silencieuse : la lettre
+indique qui l'a écrite en dernier, et le juriste qui la rouvre voit qu'elle a été reprise, et par
+qui. **Une fois signée, elle ne se modifie plus** - pour personne : une correction passe par une
+nouvelle demande.
+
+## 7 ter. Demandes d'explication
+
+**Quand un avocat ne rend plus compte** (depuis le 2026-10-07). Si deux audiences consécutives
+passent sans que son compte rendu arrive, le **Directeur Juridique et son adjointe** reçoivent une
+alerte nommant l'avocat. L'application s'arrête là : elle constate, elle ne sanctionne pas. C'est la
+direction qui décide d'écrire.
+
+**Écrire, depuis *Explications*.** Cherchez l'avocat par son nom, dites ce que vous attendez, et
+envoyez. Il la lira dans son espace et la recevra aussi par ses canaux habituels - c'est précisément
+parce qu'il ne se connecte plus qu'on lui écrit.
+
+**Deux choses à savoir avant d'envoyer.**
+
+- **Les rappels automatiques se taisent** pour cet avocat tant qu'il n'a pas répondu. Un responsable
+  qui écrit en personne couvre la machine, il ne rivalise pas avec elle. Ils reprennent dès sa
+  réponse : le compte rendu manque toujours.
+- **Une demande à la fois.** Tant que la première attend, une seconde est refusée - sinon on ne
+  saurait plus laquelle suspend les rappels, ni à laquelle il doit répondre.
+
+**Répondre, pour l'avocat.** La demande apparaît dans *Explications*, avec ce qu'on vous reproche
+sous les yeux. **On ne répond qu'une fois** : votre réponse est datée et conservée avec la demande,
+et la direction la relira peut-être des mois plus tard. Elle ne se modifie pas ; une correction passe
+par une nouvelle demande.
+
+**Ce que l'application ne fait pas** : elle ne relance pas une demande restée sans réponse. Elle
+reste visible dans votre file, que vous pouvez filtrer sur « en attente » - c'est à vous de décider
+d'insister.
+
+## 7 quater. Mon activité
+
+**Où cela se trouve.** Entrée **Mon compte** dans le menu de gauche - ou votre nom, en haut à droite de l'écran. Le bloc « Mon activité » est sous « Ma signature ».
+
+**Ce que vous avez fait, sur la période que vous choisissez.** Dans *Mon compte*, sous votre
+signature : choisissez deux dates, affichez, et chaque nature d'action que vous avez accomplie
+s'affiche avec son nombre. Rien ne part avant que vous l'ayez demandé.
+
+**Télécharger.** Une fois la fiche affichée, choisissez PDF, Excel ou CSV. Le fichier porte votre
+nom et la période, pour que plusieurs téléchargements se distinguent sans être ouverts. Les
+documents sont en français, comme tous les PDF de l'application.
+
+**Cliquer pour voir le détail.** En face de chaque nombre, *Voir les N actions* ouvre la liste de
+ces actions : leur date, ce qui a été fait, et le dossier concerné. **Cliquez la référence du
+dossier et vous arrivez sur sa fiche**, sur l'onglet correspondant - une audience sur l'onglet
+Audiences, un contrôle de frais sur l'onglet Frais.
+
+Deux lectures à connaître :
+
+- **« Hors dossier »** : certaines actions n'en touchent aucun - un réglage des paramètres, une
+  correction du référentiel des clients. Elles sont comptées, sans lien à suivre ;
+- le **délai moyen de saisie d'un compte rendu** est donné sous le tableau, séparément : ce n'est
+  pas un décompte d'actions, et il ne s'additionne pas avec eux. Il est **absent** - et non à zéro -
+  si vous n'avez saisi aucun compte rendu sur la période.
+
+**Ce tableau compte ; il ne juge pas.** Il n'y a ni note, ni classement, ni total. Il porte **toutes**
+les natures d'action que vous avez accomplies, et non une liste choisie : votre fiche doit refléter
+votre travail, qui n'est pas celui de votre voisin.
+
+**Pour le DJ et la DJA.** Dans *Activité par personne* (écran des rapports), **cliquez un nom** : la
+fiche complète de cette personne s'ouvre sous le tableau, avec sa période, son téléchargement et ses
+détails. Le tableau compare six indicateurs de production ; la fiche montre tout le reste.
+
+**Les avocats ont leur propre tableau**, sous *Activité par personne* : « **Activité des avocats** ». Il fallait le séparer - le premier compte ce qu'on **enregistre** en interne, et un avocat **dépose** : l'y mêler n'aurait affiché que des zéros. Ses quatre colonnes sont les siennes : comptes rendus déposés, demandes de frais déposées, autres publications, explications fournies. Cliquez un nom pour ouvrir sa fiche complète. Un avocat **retiré du répertoire** garde ses dépôts, et l'écran le signale.
+
+**Et depuis le répertoire** : dans *Répertoire des avocats*, colonne **Activité**,
+*Voir son activité*. C'est là que vous le jugez déjà, à côté de sa charge et de ses délibérés gagnés,
+au moment où vous lui confiez un dossier. Un avocat inscrit mais **jamais connecté** vous le dit
+franchement : il n'a pas de compte, donc aucune action tracée - ce qui n'est pas la même chose que
+n'avoir rien fait.
+
+**Pour l'avocat.** Sa propre activité est dans *Mon espace*, sous ses dépôts : ses demandes de frais,
+ses comptes rendus d'audience, ses autres publications, ses réponses aux demandes d'explication. Il la
+télécharge comme vous la vôtre. Ses lignes de détail portent la **référence du dossier sans lien** : il
+n'a pas accès aux fiches de dossier, et un lien ne l'aurait mené qu'à un refus.
 
 ---
 
@@ -273,16 +476,77 @@ ignore la casse - « saisie » retrouve « Saisie immobilière ». Les accents, 
 
 ## 10. Pilotage (DJ et DJA)
 
-**Tableau de bord** : six indicateurs en temps réel - dossiers actifs, audiences planifiées, frais en
-attente, alertes de prorogation, taux de succès du recouvrement, provisions reprises. Chacun porte
-une phrase disant ce qu'il compte.
+**Tableau de bord** : neuf indicateurs en temps réel - dossiers actifs, affaires vidées, audiences
+planifiées, frais en attente, alertes de prorogation, litiges gagnés, litiges perdus, décisions
+mixtes, provisions reprises. Chacun porte une phrase disant ce qu'il compte.
+
+**Des nombres, pas des pourcentages** (depuis le 2026-10-06). L'écran portait un « taux de succès
+du recouvrement » ; il porte désormais ce que ce taux résumait. Trois précisions utiles :
+
+- **« Litiges perdus » n'est pas le complément des gagnés.** Un délibéré peut être **mixte** -
+  ni gagné ni perdu - et ces décisions ont leur propre compteur. Les trois s'additionnent pour
+  faire les délibérés rendus ;
+- **« Affaires vidées »** compte les dossiers dont **plus aucune étape n'est en cours**. Un dossier
+  dont l'Instance est jugée mais dont l'Appel est ouvert reste donc **actif** : il continue. Avec
+  les dossiers actifs, les affaires vidées font le total des dossiers ouverts ;
+- le rapport d'activité suit la même règle, à l'écran comme dans ses exports.
 
 ![Le tableau de bord du Directeur Juridique.](images/guide/19-tableau-de-bord.png)
+
+**Deux catégories, un sélecteur** (depuis le 2026-10-13). En tête d'écran, *Périmètre* propose **Toutes catégories**, **Recouvrement** et **Litiges d'exploitation**. Les neuf indicateurs suivent votre choix, et leur détail aussi : c'est deux tableaux de bord complets, pas une ventilation.
+
+Trois choses à savoir :
+
+- **Les sous-totaux s'additionnent.** Recouvrement + Litiges d'exploitation = Toutes catégories, pour chacun des neuf blocs. Si cela ne tombait pas juste, ce serait un défaut - et deux tests le vérifient à chaque livraison ;
+- **vos chiffres d'avant n'ont pas disparu.** « Litiges gagnés » ne comptait que le recouvrement ; choisissez le périmètre **Recouvrement** et vous retrouvez exactement le même nombre. En **Toutes catégories**, il compte désormais tout votre contentieux - ce qu'il promettait sans le faire ;
+- **le périmètre est dans l'adresse** : vous pouvez envoyer à quelqu'un le lien du tableau de bord du recouvrement, et un rechargement ne vous ramène pas sur « toutes catégories ».
+
+**Le rapport d'activité porte le même sélecteur**, et le fichier exporté nomme son périmètre : `rapport-mensuel-recouvrement-….xlsx`. Un document qui circule doit dire ce qu'il couvre.
+
+**Chaque bloc s'ouvre** (depuis le 2026-10-13). Sous le chiffre, *Voir le détail* affiche la liste de ce qu'il compte, et **chaque ligne mène à sa fiche** : le dossier sur l'onglet qui correspond - Audiences pour une audience, Délibérés pour un délibéré, Décisions pour une provision -, ou directement la demande de frais pour le bloc des frais en attente.
+
+Deux précisions que le détail affiche, et qu'il vaut la peine de lire :
+
+- **« Litiges gagnés », « perdus » et « Décisions mixtes » ne comptent que les dossiers de
+  recouvrement.** C'est ainsi depuis l'origine - l'indicateur descend du taux de succès du
+  recouvrement -, mais les libellés ne le disaient pas. Dites-moi si vous voulez qu'ils portent
+  sur tous les dossiers : c'est votre arbitrage, et je n'ai pas changé vos chiffres sans lui ;
+- **« Alertes de prorogation » compte une ligne par alerte envoyée**, non par dossier : une même
+  prorogation peut prévenir plusieurs personnes, et le même dossier paraître deux fois.
+
+Le nombre annoncé en haut de la liste est celui du bloc. La liste, elle, se parcourt page par
+page : additionner ce qu'une page montre donnerait un chiffre plus petit.
 
 **Rapports** : choisissez une période, affichez, puis exportez en PDF, Excel ou CSV. Une période sans
 activité affiche un état vide - ce n'est pas une erreur, il n'y a rien à rapporter.
 
 ![Les rapports d'activité, sur une période choisie.](images/guide/20-rapports.png)
+
+**Activité par personne** (sous le rapport, réservé au DJ et à la DJA). Choisissez une période, puis
+affichez : pour chacun, les dossiers ouverts, les audiences planifiées, les comptes rendus saisis,
+les délibérés enregistrés, les lettres rédigées, les frais contrôlés, et le **délai moyen** entre
+une audience et la saisie de son compte rendu. Rien ne s'affiche avant que vous l'ayez demandé.
+
+**Ce tableau compte ; il ne juge pas.** Il n'y a ni note, ni classement, ni total : trente dossiers
+simples ne valent pas deux affaires difficiles, et l'application n'a aucun moyen de le savoir. C'est
+pourquoi les lignes suivent l'ordre des **noms** et non celui des volumes - un tri par activité
+ferait du tableau un palmarès.
+
+Trois lectures à connaître :
+
+- **« Sans objet » dans la colonne du délai** signifie qu'aucun compte rendu n'a été saisi sur la
+  période. Un 0 se lirait comme une saisie le jour même, soit l'inverse de ce que l'absence dit ;
+- **« Compte retiré »** désigne un utilisateur qui n'est plus au référentiel. Ses actions restent
+  comptées : les masquer ferait disparaître de l'activité réelle ;
+- une période **sans activité** affiche un état vide, comme pour le rapport.
+
+Deux chiffres que vous pourriez chercher n'y sont pas, et c'est voulu : les **dossiers gagnés par
+personne** - l'issue d'un délibéré appartient au dossier, pas à celui qui l'a saisi - et le **temps
+passé** : l'application enregistre des actions datées, jamais des durées de travail.
+
+**Répertoire des avocats.** La colonne de performance affiche désormais « **3 gagnés sur
+4 délibérés** » au lieu d'un pourcentage, et « Aucun délibéré » quand il n'y a rien à compter - un
+0 % se lisait comme un échec là où rien n'avait encore été jugé.
 
 **Vue consolidée d'un client** : toutes ses procédures, groupées par catégorie, depuis la fiche du
 client.
@@ -317,7 +581,7 @@ détient à la fois le fichier et sa trace, elle est juge et partie. Et le calcu
 `http://` depuis l'adresse IP d'un autre poste. En recette depuis plusieurs machines, la vérification
 est donc indisponible ; l'extraction et le scellement, eux, fonctionnent normalement.
 
-**Paramètres système** (DJ) : huit réglages pilotent les seuils, les délais, le poids et les formats
+**Paramètres système** (DJ) : neuf réglages pilotent les seuils, les délais, le poids et les formats
 admis en GED, et les canaux de notification. Une valeur incohérente est refusée à la saisie, avec
 la raison. Un changement prend effet immédiatement, pour tout le monde. La **grille des
 notifications** - quel événement part sur quel canal - se règle à part, dans son propre tableau.
@@ -334,12 +598,30 @@ L'avocat est un utilisateur **externe** : il ne voit que ce qui le concerne. Tro
 - **Déposer une publication** - un compte rendu d'audience (avec sa pièce, si besoin) ou un
   document du dossier.
 
+**Vous serez relancé si un compte rendu manque.** Passé le délai fixé par la Direction Juridique,
+une audience tenue dont vous n'avez pas déposé le compte rendu déclenche un rappel, répété
+jusqu'à votre dépôt. Déposer le compte rendu suffit à arrêter les rappels - ils ne guettent que
+le dépôt. Votre compte rendu suit ensuite son cours habituel : l'Assistante le valide, et c'est
+cette validation qui le diffuse.
+
 Il ne voit que les dossiers auxquels il est affecté, et seulement leur référence, leur nature et leur
-juridiction. Ni client, ni montant en jeu, ni sensibilité.
+juridiction. Ni client, ni montant en jeu, ni diligence particulière.
 
 ![Le portail de l'avocat : son périmètre, et rien d'autre.](images/guide/22-portail-avocat.png)
 
 ---
+
+**Déposer une demande de frais.** Quatre renseignements, tous obligatoires - l'astérisque rouge les signale : le dossier, la référence de la facture, le montant et au moins une pièce justificative.
+
+- **Le montant s'écrit comme on l'écrit** : « 1 500 000 » convient, avec ou sans espaces, et la virgule décimale est acceptée ;
+- **si quelque chose manque, cliquez quand même sur « Déposer »** : l'application vous dira lequel des quatre, sous le champ concerné. Le bouton ne reste plus éteint sans explication ;
+- **chaque pièce part dès que vous la choisissez.** L'œil à côté du fichier vous permet de la **relire avant d'envoyer** - une fois la demande déposée, la remplacer suppose d'en refaire une. La croix la retire pour de bon ;
+- pour joindre **plusieurs pièces**, choisissez-les l'une après l'autre : les précédentes s'affichent en dessous, chacune avec son œil et sa croix.
+
+**Déposer une publication.** Même principe pour la pièce : l'œil de relecture est **à côté** du
+fichier choisi, sur la même ligne, que vous déposiez un **compte rendu d'audience** ou un
+**document du dossier**. Un nom de fichier long est coupé à l'écran et s'affiche en entier au
+survol.
 
 ## 12. Questions fréquentes
 

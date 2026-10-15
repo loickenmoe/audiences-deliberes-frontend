@@ -13,6 +13,7 @@ import { usePublications } from "@/hooks/usePublications";
 import { TON_STATUT_PUBLICATION, vuesPublications, type CleVuePublications } from "@/lib/publications";
 import { cn } from "@/lib/utils";
 import type { Publication } from "@/types/domaine";
+import { cleStatutPublication } from "@/lib/publications";
 
 /** Message d'une vue vide — celui d'UC-INT-10 (alt. 1-a) pour la file à valider. */
 const VIDE: Record<CleVuePublications, string> = {
@@ -70,7 +71,7 @@ export function FilePublications({ roles }: { roles: readonly string[] }) {
         cell: ({ row }) => (
           <span className="flex flex-col items-start gap-1">
             <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
-              {td(`StatutPublication.${row.original.statutValidation}` as never)}
+              {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
             </StatutChip>
             {row.original.restrictionAccesNom ? (
               <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">

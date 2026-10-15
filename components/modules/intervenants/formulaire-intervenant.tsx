@@ -183,11 +183,13 @@ export function FormulaireIntervenant({
         </Champ>
 
         <Champ id={`${p}nom`} label={t("colonneNom")} obligatoire erreur={errors.nom?.message}>
-          <Input id={`${p}nom`} enErreur={!!errors.nom} {...register("nom")} />
+          <Input id={`${p}nom`}
+  placeholder={t("phNom")} enErreur={!!errors.nom} {...register("nom")} />
         </Champ>
 
         <Champ id={`${p}email`} label={t("colonneEmail")} erreur={errors.email?.message}>
-          <Input id={`${p}email`} type="email" enErreur={!!errors.email} {...register("email")} />
+          <Input id={`${p}email`}
+  placeholder={t("phEmail")} type="email" enErreur={!!errors.email} {...register("email")} />
         </Champ>
 
         <Champ

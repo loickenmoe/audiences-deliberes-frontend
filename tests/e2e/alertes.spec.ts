@@ -108,11 +108,9 @@ async function deposerDemandeDeFrais(): Promise<string> {
   const avocatId = await avocatDuCompteTest();
   const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
   const clients = await json<{ content: { id: number }[] }>("/clients?size=1", juriste);
-  const reference = `DOS-ALR-${suffixe()}`;
-  const dossier = await json<{ id: number }>("/dossiers", juriste, {
+  const dossier = await json<{ id: number; reference: string }>("/dossiers", juriste, {
     method: "POST",
     body: JSON.stringify({
-      reference,
       nature: "Assignation en paiement",
       juridictionSaisie: "TGI Douala",
       clientId: clients.content[0]!.id,
@@ -121,6 +119,10 @@ async function deposerDemandeDeFrais(): Promise<string> {
       pvTransfert: "PV-ALR",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocatId],
+      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
+      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      codeAgenceOrigine: "00002",
     }),
   });
   await json<{ id: number }>("/frais/demandes", await jeton("avocat.test"), {
@@ -132,7 +134,9 @@ async function deposerDemandeDeFrais(): Promise<string> {
       referenceFacture: `FAC-${suffixe()}`,
     }),
   });
-  return reference;
+  // La référence est ATTRIBUÉE par le système (2026-09-29) : celle qu'on aurait
+  // envoyée n'existe nulle part. On lit celle que le serveur a donnée.
+  return dossier.reference;
 }
 
 test("une alerte déclenchée sur le backend apparaît sans rechargement, et se marque traitée", async ({
@@ -326,11 +330,18 @@ test("le backend refuse une valeur qui casserait un autre module (Q-91)", async 
   });
   expect(horsBornes.status).toBe(400);
 
+  // `ODT` n'est pas un FormatDocument, et n'a aucune raison de le devenir : le refus est sûr, et
+  // la configuration reste intacte. `DOCX`, employé ici jusqu'au 2026-10-02, est devenu valide -
+  // l'appel passait alors, et ce test RÉÉCRIVAIT FORMATS_GED sur l'environnement.
   const formatInconnu = await appel("/configurations/FORMATS_GED", dj, {
     method: "PUT",
-    body: JSON.stringify({ valeur: "PDF,DOCX" }),
+    body: JSON.stringify({ valeur: "PDF,ODT" }),
   });
   expect(formatInconnu.status).toBe(400);
+
+  // Et la liste des formats n'a pas bougé : un test ne laisse pas l'application déréglée.
+  const formats = await json<{ cle: string; valeur: string }[]>("/configurations", dj);
+  expect(formats.find((c) => c.cle === "FORMATS_GED")?.valeur).toContain("PNG");
 
   // Et la valeur en base n'a pas bougé.
   const configurations = await json<{ cle: string; valeur: string }[]>("/configurations", dj);
@@ -354,7 +365,16 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
   await expect(dj.locator("article", { hasText: "GRILLE_NOTIFICATION_SMS" })).toHaveCount(0);
 
   const casesSms = dj.getByRole("checkbox", { name: / par SMS$/ });
-  await expect(casesSms).toHaveCount(9);
+  /*
+   * Douze événements prestataires : compte rendu attendu (RG-INT-11) et compte rendu reçu
+   * (RG-INT-06 amendée), tous deux du 2026-10-05, puis **demande d'explication** (N7 temps 2,
+   * 2026-10-07).
+   *
+   * Ce compte est un garde-fou, pas une formalité : un événement ajouté sans entrer dans la grille
+   * partirait dans l'application et **sur aucun canal**. C'est le défaut qu'a révélé V45 ; V46 le
+   * ferme à son tour, et cette ligne le vérifie à l'écran.
+   */
+  await expect(casesSms).toHaveCount(12);
   for (const caseSms of await casesSms.all()) {
     if (await caseSms.isChecked()) await caseSms.uncheck();
   }

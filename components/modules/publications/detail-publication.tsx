@@ -26,6 +26,7 @@ import { TON_STATUT_PUBLICATION, estCentralisateur, peutCommenter } from "@/lib/
 import { peut } from "@/lib/rbac";
 import { publicationService } from "@/services/publicationService";
 import type { Publication } from "@/types/domaine";
+import { cleStatutPublication } from "@/lib/publications";
 
 /** Longueur de `publication.motif_rejet` en base. */
 const MOTIF_MAX = 255;
@@ -77,7 +78,7 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{libelle(publication)}</h1>
         <StatutChip ton={TON_STATUT_PUBLICATION[publication.statutValidation]}>
-          {td(`StatutPublication.${publication.statutValidation}` as never)}
+          {td(cleStatutPublication(publication.type, publication.statutValidation) as never)}
         </StatutChip>
       </header>
 
@@ -178,12 +179,24 @@ function Retour() {
   );
 }
 
-/** UC-INT-10 : valider rend la publication consultable ; rejeter exige un motif, transmis à l'avocat. */
+/**
+ * UC-INT-10 — ce que l'Assistante fait d'un dépôt, et qui dépend de sa nature.
+ *
+ * Sur une **autre publication**, elle valide ou rejette : sa décision commande la lecture, et un
+ * rejet exige son motif, transmis à l'avocat.
+ *
+ * Sur un **compte rendu d'audience**, elle n'accuse que réception (RG-INT-06 amendée, 2026-10-05).
+ * La pièce est lue de toute la Direction Juridique depuis son dépôt ; il n'y a plus rien à
+ * autoriser, et rien à rejeter — le récit d'un avocat ne s'écarte pas, il se conteste par une
+ * correspondance. Le serveur refuse d'ailleurs le rejet : garder le bouton n'offrirait qu'une
+ * erreur à qui le presse.
+ */
 function PanneauValidation({ publication }: { publication: Publication }) {
   const t = useTranslations("publications");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const valider = useValiderPublication();
+  const compteRendu = publication.type === "CR_AUDIENCE";
   const [confirmation, setConfirmation] = useState(false);
   const [rejet, setRejet] = useState(false);
   const [motif, setMotif] = useState("");
@@ -192,7 +205,7 @@ function PanneauValidation({ publication }: { publication: Publication }) {
   async function accepter() {
     try {
       await valider.mutateAsync({ id: publication.id, decision: { statut: "VALIDE" } });
-      toast.success(t("validee"));
+      toast.success(t(compteRendu ? "receptionAccusee" : "validee"));
     } catch (e) {
       toast.error(messageErreur(e));
     } finally {
@@ -220,32 +233,36 @@ function PanneauValidation({ publication }: { publication: Publication }) {
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => setConfirmation(true)}>
           <Check size={15} aria-hidden />
-          {t("valider")}
+          {t(compteRendu ? "accuserReception" : "valider")}
         </Button>
-        <Button
-          variante="secondaire"
-          onClick={() => {
-            setMotif("");
-            setErreur(null);
-            setRejet(true);
-          }}
-        >
-          <X size={15} aria-hidden />
-          {t("rejeter")}
-        </Button>
+        {compteRendu ? null : (
+          <Button
+            variante="secondaire"
+            onClick={() => {
+              setMotif("");
+              setErreur(null);
+              setRejet(true);
+            }}
+          >
+            <X size={15} aria-hidden />
+            {t("rejeter")}
+          </Button>
+        )}
       </div>
 
       <DialogueConfirmation
         ouvert={confirmation}
         onFermeture={() => setConfirmation(false)}
         onConfirmation={() => void accepter()}
-        titre={t("validerTitre")}
+        titre={t(compteRendu ? "accuserReceptionTitre" : "validerTitre")}
         message={
-          publication.restrictionAccesNom
-            ? t("validerMessageRestreinte", { nom: publication.restrictionAccesNom })
-            : t("validerMessage")
+          compteRendu
+            ? t("accuserReceptionMessage")
+            : publication.restrictionAccesNom
+              ? t("validerMessageRestreinte", { nom: publication.restrictionAccesNom })
+              : t("validerMessage")
         }
-        libelleConfirmation={t("valider")}
+        libelleConfirmation={t(compteRendu ? "accuserReception" : "valider")}
         enCours={valider.isPending}
       />
 
@@ -268,6 +285,7 @@ function PanneauValidation({ publication }: { publication: Publication }) {
         <Champ id="motif-rejet-publication" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
           <Textarea
             id="motif-rejet-publication"
+            placeholder={t("phMotifRejetPublication")}
             rows={4}
             maxLength={MOTIF_MAX}
             enErreur={!!erreur}
@@ -359,6 +377,7 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
           <Champ id="commentaire-publication" label={t("commenter")} aide={t("commenterAide")} erreur={erreurCommentaire ?? undefined}>
             <Textarea
               id="commentaire-publication"
+              placeholder={t("phCommentaire")}
               rows={3}
               enErreur={!!erreurCommentaire}
               value={commentaire}
@@ -392,6 +411,7 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
             >
               <Textarea
                 id="correspondance-publication"
+                placeholder={t("phCorrespondance")}
                 rows={4}
                 enErreur={!!erreurCorrespondance}
                 value={correspondance}

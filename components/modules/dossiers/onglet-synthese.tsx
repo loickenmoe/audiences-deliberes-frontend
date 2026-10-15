@@ -59,8 +59,14 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2">
-            <Donnee libelle={t("champDemandeur")}>{dossier.parties?.demandeur}</Donnee>
-            <Donnee libelle={t("champDefendeur")}>{dossier.parties?.defendeur}</Donnee>
+            {/* Plusieurs parties de chaque côté depuis le 2026-10-05 : on les sépare par un
+                point-virgule plutôt qu'une virgule, les raisons sociales en contenant souvent. */}
+            <Donnee libelle={t("champDemandeurs")}>
+              {dossier.parties?.demandeurs?.join(" ; ")}
+            </Donnee>
+            <Donnee libelle={t("champDefendeurs")}>
+              {dossier.parties?.defendeurs?.join(" ; ")}
+            </Donnee>
             <Donnee libelle={t("champRecours")}>{dossier.recoursExerces}</Donnee>
             <Donnee libelle={t("champMotifRenvoi")}>{dossier.motifRenvoi}</Donnee>
           </dl>
@@ -154,6 +160,19 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
               {dossier.sensibiliteStatut === "REJETEE" ? (
                 <Donnee libelle={tf("motifRejet")}>{dossier.sensibiliteMotifRejet}</Donnee>
               ) : null}
+            </dl>
+          ) : dossier.sensibiliteMotifRetrait ? (
+            /*
+             * Un dossier dont la diligence a été **retirée** (N4) n'est plus sensible : sans ce cas,
+             * le bloc se réduisait à « dossier ordinaire » et le motif du retrait, pourtant exigé du
+             * DJ, n'aurait été lisible nulle part.
+             */
+            <dl className="grid gap-4 sm:grid-cols-3">
+              <Donnee libelle={tf("statutSensibilite")}>{tf("sensibiliteMotifRetrait")}</Donnee>
+              <Donnee libelle={tf("diligenceMotifRetrait")}>{dossier.sensibiliteMotifRetrait}</Donnee>
+              <Donnee libelle={tf("origineSeuil")}>
+                {dossier.seuilOrigine ? tdom(`SeuilOrigine.${dossier.seuilOrigine}` as never) : null}
+              </Donnee>
             </dl>
           ) : (
             <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{tf("nonSensible")}</p>

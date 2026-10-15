@@ -297,6 +297,7 @@ function ModaleRejet({ demande, onFermeture }: { demande: DemandeSuppression | n
       <Champ id="motif-rejet" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
         <Textarea
           id="motif-rejet"
+          placeholder={t("phMotifRejetSuppression")}
           rows={4}
           maxLength={MOTIF_MAX}
           enErreur={!!erreur}

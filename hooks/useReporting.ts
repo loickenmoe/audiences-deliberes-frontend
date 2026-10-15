@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { CLES } from "@/hooks/const";
 import { reportingService, type PeriodeRapport } from "@/services/reportingService";
+import type { CategorieDossier } from "@/types/enums";
 
 /**
  * Le tableau de bord annonce des indicateurs « temps réel » (RG-REP-03). Les recalculer à chaque
@@ -12,10 +13,12 @@ import { reportingService, type PeriodeRapport } from "@/services/reportingServi
  */
 export const CADENCE_TABLEAU_DE_BORD = 60 * 1000;
 
-export function useTableauDeBord() {
+export function useTableauDeBord(categorie?: CategorieDossier) {
   return useQuery({
-    queryKey: [CLES.tableauDeBord],
-    queryFn: () => reportingService.tableauDeBord(),
+    // Le périmètre fait partie de la clé : sans lui, changer de catégorie afficherait les chiffres
+    // de la précédente jusqu'au prochain rafraîchissement.
+    queryKey: [CLES.tableauDeBord, categorie ?? "TOUTES"],
+    queryFn: () => reportingService.tableauDeBord(categorie),
     refetchInterval: CADENCE_TABLEAU_DE_BORD,
     refetchOnWindowFocus: true,
   });

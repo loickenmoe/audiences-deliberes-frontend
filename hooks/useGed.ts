@@ -33,6 +33,59 @@ export function useDeciderSuppression() {
   });
 }
 
+/** QF-64 — la file des partages proposés, que le DJ et la DJA valident. */
+export function usePartagesAvocat(page = 0, size = TAILLE_PAGE) {
+  return useQuery({
+    queryKey: [CLES.partagesAvocat, page, size],
+    queryFn: () => gedService.partagesAvocat(page, size),
+  });
+}
+
+/**
+ * Un geste de partage change l'onglet Documents du dossier **et** la file du DJ : une proposition y
+ * entre, une validation ou un retrait l'en fait sortir. Les deux sont rechargés ensemble.
+ */
+function useInvalidationPartage() {
+  const client = useQueryClient();
+  return () => {
+    void client.invalidateQueries({ queryKey: [CLES.documentsDossier] });
+    void client.invalidateQueries({ queryKey: [CLES.partagesAvocat] });
+  };
+}
+
+/**
+ * QF-65 — un avocat affecté y est-il constitué ? Relu à chaque montage de l'onglet : une
+ * constitution signée ailleurs doit y faire disparaître l'avertissement.
+ */
+export function useEtatPartageDossier(dossierId: number) {
+  return useQuery({
+    queryKey: [CLES.etatPartageDossier, dossierId],
+    queryFn: () => gedService.etatPartageDossier(dossierId),
+  });
+}
+
+export function usePartagerDocument() {
+  const invalider = useInvalidationPartage();
+  return useMutation({ mutationFn: gedService.partagerAvecAvocat, onSuccess: invalider });
+}
+
+export function useRetirerPartage() {
+  const invalider = useInvalidationPartage();
+  return useMutation({ mutationFn: gedService.retirerPartageAvocat, onSuccess: invalider });
+}
+
+export function useArbitrerPartage() {
+  const invalider = useInvalidationPartage();
+  return useMutation({
+    mutationFn: ({ documentId, motif }: { documentId: number; motif?: string }) =>
+      gedService.arbitrerPartageAvocat(
+        documentId,
+        motif === undefined ? { decision: "VALIDE" } : { decision: "REJETE", motif },
+      ),
+    onSuccess: invalider,
+  });
+}
+
 export function useRapportJournalier(date: string) {
   return useQuery({
     queryKey: [CLES.rapportJournalier, date],

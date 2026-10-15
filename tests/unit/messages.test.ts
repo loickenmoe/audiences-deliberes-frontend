@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -14,6 +14,16 @@ import { ENUMERATIONS_TRADUITES, Role } from "@/types/enums";
  */
 
 type Langue = (typeof LANGUES)[number];
+
+/** Tous les `.tsx` sous une racine : de quoi chercher une clé dans les écrans, pas dans un index. */
+function fichiersTsx(racine: string): string[] {
+  return readdirSync(racine, { withFileTypes: true }).flatMap((entree) => {
+    const chemin = join(racine, entree.name);
+    if (entree.isDirectory()) return fichiersTsx(chemin);
+    return entree.name.endsWith(".tsx") ? [chemin] : [];
+  });
+}
+
 
 const messages = Object.fromEntries(
   LANGUES.map((langue) => [
@@ -78,6 +88,65 @@ describe("couverture du domaine", () => {
     expect(absents).toEqual([]);
   });
 
+  /**
+   * La supervision des notifications nomme les mêmes événements, **ailleurs**.
+   *
+   * **Le trou que ce test ferme.** L'écran 41 ne lit pas `domaine.*` mais son propre bloc,
+   * `supervisionNotifications.evenements` : un événement traduit dans le premier et oublié dans le
+   * second affiche son code brut au Directeur Juridique. C'est arrivé deux fois sans que rien ne le
+   * dise - `COMPTE_RENDU_ATTENDU` et `COMPTE_RENDU_RECU` y manquaient depuis le 2026-10-05, et
+   * `DEMANDE_EXPLICATION` les a rejoints - parce qu'aucun test ne regardait ce bloc-là.
+   *
+   * Il porte les deux familles : les alertes internes **et** les événements prestataires, puisque
+   * la supervision montre les envois de tous les canaux.
+   */
+  it.each(LANGUES)("chaque événement supervisé a un libellé en %s", (langue) => {
+    const supervises = [...ENUMERATIONS_TRADUITES.TypeAlerte, ...ENUMERATIONS_TRADUITES.EvenementPrestataire];
+    const absents = supervises.filter(
+      (evenement) => typeof lire(langue, `supervisionNotifications.evenements.${evenement}`) !== "string",
+    );
+
+    expect(absents, "événements que la supervision afficherait en code brut").toEqual([]);
+  });
+
+  /**
+   * **Le troisième bloc qui nomme des codes, et le troisième trou de la même famille.**
+   *
+   * `historique.actions` traduit les natures d'action de l'audit et de la fiche d'activité. Il
+   * portait **51 libellés pour 53 codes** : `EXPLICATION_DEMANDEE` et `EXPLICATION_REPONDUE`, livrés
+   * avec N7 temps 2 le 2026-10-07, y manquaient - l'écran d'audit les affichait donc en code brut au
+   * Directeur Juridique pendant six jours.
+   *
+   * **Pourquoi les deux gardes existantes ne pouvaient pas le voir.** Celle du domaine tire sa liste
+   * de `types/enums.ts`, où les 53 natures d'action ne figurent pas - elles sont trop nombreuses et
+   * ne servent qu'à l'affichage. Celle de la supervision ne regarde qu'un autre bloc.
+   *
+   * **La liste vient donc du contrat**, `contracts/openapi.json`, qui porte l'énumération telle que
+   * le backend l'expose et qui est régénérée à chaque jalon. Pas de dépendance au dépôt backend : la
+   * source est dans ce dépôt, et elle ne peut pas vieillir sans que le contrat vieillisse aussi.
+   */
+  it.each(LANGUES)("chaque nature d'action du contrat a un libellé en %s", (langue) => {
+    const contrat = JSON.parse(
+      readFileSync(join(process.cwd(), "contracts/openapi.json"), "utf8"),
+    ) as {
+      components: {
+        schemas: {
+          HistoriqueActionResponse: { properties: { code: { enum: string[] } } };
+        };
+      };
+    };
+    const natures = contrat.components.schemas.HistoriqueActionResponse.properties.code.enum;
+
+    // Si le contrat cessait un jour de porter l'énumération, ce test passerait sur un tableau vide
+    // sans rien garder. La borne basse le dit tout haut.
+    expect(natures.length, "le contrat ne porte plus l'énumération des natures d'action").toBeGreaterThan(50);
+
+    const absents = natures.filter(
+      (nature) => typeof lire(langue, `historique.actions.${nature}`) !== "string",
+    );
+    expect(absents, "natures que l'audit et la fiche d'activité afficheraient en code brut").toEqual([]);
+  });
+
   it.each(LANGUES)("chaque rôle Keycloak a un libellé en %s", (langue) => {
     const absents = Role.filter((role) => typeof lire(langue, `roles.${role}`) !== "string");
     expect(absents).toEqual([]);
@@ -122,10 +191,10 @@ describe("couverture du domaine", () => {
   });
 
   /**
-   * Les 8 clés affichées une à une sur l'écran 41. Les six colonnes de la grille des notifications
+   * Les 9 clés affichées une à une sur l'écran 41. Les six colonnes de la grille des notifications
    * (Q-118) n'en font pas partie : elles se lisent dans leur tableau, par canal et par événement.
    */
-  it.each(LANGUES)("les 8 clés de configuration de la liste sont décrites en %s", (langue) => {
+  it.each(LANGUES)("les 9 clés de configuration de la liste sont décrites en %s", (langue) => {
     const config = lire(langue, "referentiels.configurations") as Record<string, string>;
     expect(Object.keys(config)).toEqual([
       "SEUIL_MONTANT_DEFAUT",
@@ -133,6 +202,7 @@ describe("couverture du domaine", () => {
       "CANAUX_NOTIFICATION_DEFAUT",
       "CANAUX_NOTIFICATION_PRESTATAIRES",
       "DELAI_VALIDATION_CONJOINTE",
+      "DELAI_RAPPEL_CR_AVOCAT",
       "TAILLE_MAX_GED",
       "FORMATS_GED",
       "CHARGE_MAX_AVOCAT",
@@ -159,5 +229,38 @@ describe("traductions distinctes", () => {
     for (const chemin of aVerifier) {
       expect(lire("fr", chemin), chemin).not.toBe(lire("en", chemin));
     }
+  });
+});
+
+/**
+ * Les placeholders explicatifs (N5, observation 4).
+ *
+ * **Le risque propre à ces clés-ci.** Un placeholder vit dans un attribut, pas dans le texte de
+ * l'écran : si quelqu'un le retire d'un champ, rien ne manque visiblement, aucun test ne tombe, et
+ * la clé reste dans les deux fichiers de langue en faisant croire que le texte est toujours là.
+ * Ce garde-fou lie les deux : une clé `ph…` déclarée doit être posée sur un champ.
+ */
+describe("placeholders explicatifs", () => {
+  const source = ["components", "app"]
+    .flatMap((racine) => fichiersTsx(join(process.cwd(), racine)))
+    .map((chemin) => readFileSync(chemin, "utf8"))
+    .join("\n");
+
+  const declarees = Object.entries(messages.fr as Record<string, Record<string, string>>)
+    .flatMap(([espace, cles]) =>
+      Object.keys(cles)
+        .filter((cle) => /^(ph|placeholder)[A-Z]/.test(cle))
+        .map((cle) => `${espace}.${cle}`),
+    );
+
+  it("il y en a, et les deux langues les portent toutes les deux", () => {
+    expect(declarees.length).toBeGreaterThanOrEqual(48);
+  });
+
+  it("chaque placeholder déclaré est posé sur un champ", () => {
+    const orphelines = declarees.filter(
+      (chemin) => !source.includes(`"${chemin.split(".")[1]}"`),
+    );
+    expect(orphelines, "clés de placeholder que plus aucun champ n'emploie").toEqual([]);
   });
 });
