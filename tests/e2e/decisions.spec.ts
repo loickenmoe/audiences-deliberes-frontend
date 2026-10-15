@@ -187,7 +187,9 @@ test("adjudication : refusée hors étape clôturée, reliquat négatif refusé,
 });
 
 test("condamnation : suivie, son statut mis à jour puis relu après rechargement ; lecture seule pour l'Assistante", async ({ browser }) => {
-  const { id } = await dossierCree();
+  const { id, etapeId } = await dossierCree();
+  // QF-66 : une condamnation se suit sur une étape clôturée, comme l'adjudication.
+  await etapeCloturee(id, etapeId);
 
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`/dossiers/${id}?onglet=decisions`);
@@ -195,6 +197,7 @@ test("condamnation : suivie, son statut mis à jour puis relu après rechargemen
   const modale = juriste.getByRole("dialog", { name: "Suivre une condamnation" });
   await modale.getByLabel("Sens de la condamnation", { exact: true }).selectOption({ label: "Le tiers est redevable" });
   await modale.getByLabel("Nature du paiement", { exact: true }).fill("Frais de procédure");
+  await modale.getByLabel("Étape clôturée", { exact: true }).selectOption({ index: 1 });
   await modale.getByRole("button", { name: "Enregistrer" }).click();
   await expect(juriste.getByText("Condamnation enregistrée.")).toBeVisible();
 
@@ -404,4 +407,31 @@ test("la croix de l'aperçu laisse le formulaire d'archivage ouvert", async ({ p
   await expect(archivage.getByLabel("Juridiction", { exact: true })).toHaveValue("Cour d’appel de Douala");
 
   await page.context().close();
+});
+
+/**
+ * **Un dossier tout juste ouvert ne porte aucune décision** (QF-66, demandé le 2026-10-15).
+ *
+ * Signalé : à l'étape Ouverture, l'onglet Décisions proposait de suivre une condamnation et
+ * d'archiver à la jurisprudence. La condamnation suit désormais la règle de l'adjudication (une
+ * étape clôturée) ; la jurisprudence, la garde que le serveur appliquait déjà (le dossier clos).
+ * L'écran le dit, et le serveur le refuse.
+ */
+test("à l'étape Ouverture, ni condamnation à suivre ni décision à archiver", async ({ browser }) => {
+  const { id } = await dossierCree();
+
+  const juriste = await pageConnectee(browser, "juriste.test");
+  await juriste.goto(`/dossiers/${id}?onglet=decisions`);
+  await expect(juriste.getByRole("button", { name: "Suivre une condamnation" })).toBeDisabled({ timeout: 30_000 });
+  await expect(juriste.getByRole("button", { name: "Archiver à la jurisprudence" })).toBeDisabled();
+  await expect(juriste.getByText(/Une condamnation se suit une fois l’étape clôturée/)).toBeVisible();
+  await expect(juriste.getByText(/toutes les étapes de ce dossier doivent être clôturées/)).toBeVisible();
+  await juriste.context().close();
+
+  // Et le serveur refuse, même si l'écran était contourné.
+  const refus = await appel(`/dossiers/${id}/condamnations`, await jeton("juriste.test"), {
+    method: "POST",
+    body: JSON.stringify({ sens: "TIERS_REDEVABLE", naturePaiement: "Frais", dateDecision: "2026-10-15" }),
+  });
+  expect(refus.status, "une condamnation sans étape clôturée doit être refusée").toBe(400);
 });

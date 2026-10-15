@@ -896,7 +896,9 @@
     "phBeneficiaire": "Qui emporte l’adjudication",
     "phComptabilisation": "La référence de l’écriture comptable",
     "phReliquat": "Ce qui reste dû après l’adjudication",
-    "phNatureCondamnation": "Ce à quoi la partie est condamnée"
+    "phNatureCondamnation": "Ce à quoi la partie est condamnée",
+    "sansEtapeClotureeCondamnation": "Une condamnation se suit une fois l’étape clôturée : aucune étape de ce dossier ne l’est encore.",
+    "dossierNonClos": "Une décision ne rejoint la base jurisprudentielle qu’une fois définitive : toutes les étapes de ce dossier doivent être clôturées."
   },
   "jurisprudence": {
     "titre": "Base jurisprudentielle",

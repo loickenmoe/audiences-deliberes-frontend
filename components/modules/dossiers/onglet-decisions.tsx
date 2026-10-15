@@ -45,6 +45,15 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
   const [modale, setModale] = useState<"adjudication" | "condamnation" | "archivage" | null>(null);
   const etapes = dossier.etapes ?? [];
   const etapesCloturees = etapes.filter((e) => e.statutCycleVie === "CLOTURE");
+  /*
+   * **Le dossier est clos** quand plus aucune étape n'est ouverte - clôturée ou archivée (QF-66).
+   * C'est la garde que le serveur applique déjà au versement en jurisprudence (`FERMES`) : une
+   * décision n'y entre qu'une fois définitive, tous recours épuisés. L'écran la reflète désormais ;
+   * il proposait le bouton sur un dossier tout juste ouvert, et ne refusait qu'à l'envoi, une fois
+   * le formulaire rempli.
+   */
+  const dossierClos =
+    etapes.length > 0 && etapes.every((e) => e.statutCycleVie === "CLOTURE" || e.statutCycleVie === "ARCHIVE");
 
   const libelleEtape = (etapeId: number | null) => {
     const etape = etapes.find((e) => e.id === etapeId);
@@ -112,12 +121,16 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="decisions-condamnations" className="font-semibold">{t("condamnations")}</h2>
           {peutGerer ? (
-            <Button variante="secondaire" onClick={() => setModale("condamnation")}>
+            <Button variante="secondaire" onClick={() => setModale("condamnation")} disabled={etapesCloturees.length === 0}>
               <Scale size={15} aria-hidden />
               {t("suivreCondamnation")}
             </Button>
           ) : null}
         </div>
+        {/* QF-66 : la règle de l'adjudication, et la même explication quand elle bloque. */}
+        {peutGerer && etapesCloturees.length === 0 ? (
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("sansEtapeClotureeCondamnation")}</p>
+        ) : null}
         {condamnations.length === 0 ? (
           <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneCondamnation")}</p>
         ) : (
@@ -152,12 +165,15 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="decisions-archivees" className="font-semibold">{t("archivees")}</h2>
           {peutGerer ? (
-            <Button variante="secondaire" onClick={() => setModale("archivage")}>
+            <Button variante="secondaire" onClick={() => setModale("archivage")} disabled={!dossierClos}>
               <Archive size={15} aria-hidden />
               {t("archiver")}
             </Button>
           ) : null}
         </div>
+        {peutGerer && !dossierClos ? (
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("dossierNonClos")}</p>
+        ) : null}
         {archives.isLoading ? (
           <EtatChargement lignes={2} />
         ) : archives.error ? (
@@ -183,7 +199,7 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
           />
           <ModaleCondamnation
             dossierId={dossier.id}
-            etapes={etapes}
+            etapes={etapesCloturees}
             ouvert={modale === "condamnation"}
             onFermeture={() => setModale(null)}
           />
@@ -435,6 +451,8 @@ function ModaleCondamnation({
       sens: sens ? undefined : obligatoire,
       nature: nature.trim() ? undefined : obligatoire,
       dateDecision: dateDecision ? undefined : obligatoire,
+      // QF-66 : obligatoire, comme pour l'adjudication - le serveur refuse une condamnation sans elle.
+      etapeId: etapeId ? undefined : obligatoire,
     };
     setErreurs(suivantes);
     if (Object.values(suivantes).some(Boolean)) return;
@@ -443,7 +461,7 @@ function ModaleCondamnation({
         sens: sens as SensCondamnation,
         naturePaiement: nature.trim(),
         dateDecision,
-        etapeId: etapeId ? Number(etapeId) : undefined,
+        etapeId: Number(etapeId),
       });
       toast.success(t("condamnationEnregistree"));
       onFermeture();
@@ -481,9 +499,9 @@ function ModaleCondamnation({
         <Champ id="condamnation-date" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
           <Input id="condamnation-date" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />
         </Champ>
-        <Champ id="condamnation-etape" label={t("champEtapeFacultative")}>
-          <Select id="condamnation-etape" value={etapeId} onChange={(e) => setEtapeId(e.target.value)}>
-            <option value="">{t("aucuneEtape")}</option>
+        <Champ id="condamnation-etape" label={t("champEtape")} obligatoire erreur={erreurs.etapeId}>
+          <Select id="condamnation-etape" value={etapeId} enErreur={!!erreurs.etapeId} onChange={(e) => setEtapeId(e.target.value)}>
+            <option value="">{t("choisirEtape")}</option>
             {etapes.map((e) => (
               <option key={e.id} value={e.id}>{td(`TypeEtape.${e.type}` as never)}</option>
             ))}

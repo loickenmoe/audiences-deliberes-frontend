@@ -1611,6 +1611,35 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-66 - Pas de condamnation ni de jurisprudence sur un dossier ouvert (2026-10-15)
+
+**Demandé par le porteur du projet** : sur un dossier tout juste créé, à l'étape Ouverture, l'onglet
+Décisions permettait de **suivre une condamnation** et d'**archiver à la jurisprudence**. Les deux
+ne doivent l'être qu'une fois le dossier à l'étape **Clôturée**.
+
+**Les deux boutons n'étaient pas dans la même situation.**
+
+| Action | Avant | Après |
+|---|---|---|
+| Suivre une condamnation | **Aucune règle**, ni à l'écran ni au serveur - c'était voulu (Q-59 : aucun texte ne la fixait) | Une **étape clôturée**, obligatoire - la règle de l'adjudication (RG-DEF-01) |
+| Archiver à la jurisprudence | Le serveur refusait déjà un dossier à étape ouverte, **mais l'écran laissait remplir tout le formulaire** avant le refus | L'écran applique la même garde : bouton désactivé, et la raison dite |
+
+**Deux règles, et non une, pour une raison de fond.** La condamnation reprend celle de sa voisine
+l'adjudication : elle se rattache à **l'étape clôturée qui l'a prononcée**. La jurisprudence garde la
+sienne, plus stricte et déjà tranchée (2026-09-29) : **toutes** les étapes fermées, parce qu'une
+décision n'entre dans la base qu'une fois définitive. Le cas qui les distingue : une instance
+clôturée et un appel en cours. La condamnation de première instance se suit ; elle n'est pas encore
+un précédent.
+
+**Chaque bouton désactivé dit pourquoi**, comme le faisait déjà celui de l'adjudication. Un bouton
+grisé sans explication laisse chercher ce qui manque.
+
+**La modale de condamnation** ne propose plus que les étapes clôturées, et l'étape y devient
+obligatoire - « Étape clôturée », comme pour l'adjudication.
+
+**Deux tests encodaient l'ancienne règle** - « aucune précondition d'étape » côté serveur, et un
+parcours e2e qui suivait une condamnation sur un dossier neuf. Ils ont été réalignés, pas supprimés.
+
 ### ✅ QF-65 - L'absence de constitution se dit ; le SH et l'Assistante partagent (2026-10-15)
 
 **Signalé en recette sur DOS-2026-1303.** Le juriste a partagé le dossier de crédit, puis le DJ le

@@ -896,7 +896,9 @@
     "phBeneficiaire": "Who wins the award",
     "phComptabilisation": "The accounting entry reference",
     "phReliquat": "What remains owed after the award",
-    "phNatureCondamnation": "What the party is ordered to do"
+    "phNatureCondamnation": "What the party is ordered to do",
+    "sansEtapeClotureeCondamnation": "A monetary award is tracked once the stage is closed: no stage of this case is closed yet.",
+    "dossierNonClos": "A decision only joins the case-law base once final: every stage of this case must be closed."
   },
   "jurisprudence": {
     "titre": "Case-law database",

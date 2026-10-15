@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-048 | Pas de condamnation ni de jurisprudence sur un dossier ouvert | JUR | Haute | — | ☐ |
 | REC-E2E-047 | Le partage dit l'absence de constitution ; le SH et l'Assistante partagent | JUR, SH, AST, AVO | Haute | REC-E2E-046 | ☐ |
 | REC-E2E-046 | L'avocat accède aux pièces partagées et à la note de ses audiences | JUR, DJ, SH, AVO | Haute | REC-E2E-045 | ☐ |
 | REC-E2E-045 | La constitution, d'un bout à l'autre sans chercher | JUR, SH | Haute | REC-E2E-029 | ☐ |
@@ -1040,6 +1041,53 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-048 - Pas de condamnation ni de jurisprudence sur un dossier ouvert
+
+### Objectif
+Valider QF-66 (backend Q-141) : on ne suit une condamnation et on n'archive à la jurisprudence que
+sur un dossier à l'étape **Clôturée**.
+
+### Acteurs
+Juriste (`juriste.test`).
+
+### Préconditions
+Aucune : chaque dossier est créé pendant le parcours.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Onglet Décisions** | Menu **Dossiers**, cliquer la ligne du dossier, puis l'onglet **Décisions** |
+| **Onglet Étapes** | Même fiche, onglet **Étapes** : le champ **Faire passer à** et le bouton **Appliquer** changent le statut d'une étape |
+| **Onglets Audiences, Délibérés** | Même fiche, onglets du même nom |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | JUR | Menu **Dossiers** | Créer un dossier | Il s'ouvre à l'étape **Ouverture** | | ☐ |
+| 2 | JUR | **Onglet Décisions** | Regarder **Suivre une condamnation** | Le bouton est **grisé**, et dessous : « Une condamnation se suit une fois l'étape clôturée : aucune étape de ce dossier ne l'est encore. » **C'est la règle demandée** | | ☐ |
+| 3 | JUR | Même onglet | Regarder **Archiver à la jurisprudence** | **Grisé**, et dessous : « Une décision ne rejoint la base jurisprudentielle qu'une fois définitive : toutes les étapes de ce dossier doivent être clôturées. » | | ☐ |
+| 4 | JUR | **Onglet Étapes** | Faire passer l'étape d'instance à **En cours**, **Appliquer** | L'étape est **En cours** | | ☐ |
+| 4 bis | JUR | **Onglet Audiences** | **Planifier une audience** à la date du jour, puis **Saisir le compte rendu** | L'audience est **Tenue** - c'est la condition de la mise en délibéré | | ☐ |
+| 4 ter | JUR | **Onglet Étapes**, puis **Onglet Délibérés** | Faire passer l'étape à **En délibéré** ; dans l'onglet Délibérés, enregistrer le délibéré, résultat **Favorable** | Le délibéré est enregistré | | ☐ |
+| 4 quater | JUR | **Onglet Étapes** | Faire passer l'étape à **Clôturée**, **Appliquer** | L'étape est **Clôturée** | | ☐ |
+| 5 | JUR | **Onglet Décisions** | Cliquer **Suivre une condamnation** | La boîte s'ouvre. Le champ **Étape clôturée** est **obligatoire** et ne propose que l'étape clôturée | | ☐ |
+| 6 | JUR | Même boîte | Remplir sens et nature, laisser l'étape vide, **Enregistrer** | L'étape est signalée **obligatoire** : rien ne part | | ☐ |
+| 7 | JUR | Même boîte | Choisir l'étape, **Enregistrer** | « Condamnation enregistrée. » | | ☐ |
+| 8 | JUR | **Onglet Décisions** | Cliquer **Archiver à la jurisprudence** | Le bouton est actif : la boîte d'archivage s'ouvre | | ☐ |
+
+### Points de contrôle
+- **Les étapes 2 et 3 sont la règle demandée.** Si l'un des deux boutons est actif sur un dossier
+  ouvert, la correction est à refuser.
+- **Les deux règles diffèrent, et c'est voulu.** La condamnation se rattache à l'étape clôturée qui
+  l'a prononcée ; la jurisprudence exige une décision définitive, toutes étapes fermées. Le cas qui
+  les sépare - instance clôturée, appel en cours : condamnation oui, jurisprudence non - est couvert
+  par un test automatique ; l'éprouver à la main demanderait d'ouvrir un appel.
+- **Le serveur refuse aussi** : la règle ne tient pas qu'au bouton grisé.
 
 ---
 
