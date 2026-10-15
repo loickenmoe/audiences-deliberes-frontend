@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { useMesConstitutions, useMesPublications } from "@/hooks/usePortailAvocat";
 import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
+import { MesDossiers } from "@/components/modules/portail/mes-dossiers";
 import { estCompteAvocatNonRattache, messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION } from "@/lib/publications";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
@@ -125,6 +126,9 @@ export function EspaceAvocat() {
           cleLigne={(publication) => String(publication.id)}
         />
       </section>
+
+      {/* QF-64 : ses dossiers, leurs audiences avec la note de la Direction Juridique, et les pièces partagées. */}
+      <MesDossiers />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-[length:var(--taille-lg)] font-semibold">{t("mesConstitutions")}</h2>

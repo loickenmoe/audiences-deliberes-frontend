@@ -1,6 +1,7 @@
 import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type {
+  PartageAvocat,
   DemandeSuppression,
   DocumentDossier,
   RapportJournalier,
@@ -96,6 +97,40 @@ export const gedService = {
       `/ged/documents/${documentId}/approbation-suppression`,
       decision,
     );
+    return data;
+  },
+
+  /**
+   * QF-64 — partage une pièce avec l'avocat du dossier. Sur un dossier sensible, le geste d'un
+   * juriste devient une **proposition** que le DJ ou la DJA valide : c'est le serveur qui le
+   * décide, et la réponse dit lequel des deux a eu lieu. 409 si c'est déjà fait.
+   */
+  partagerAvecAvocat: async (documentId: number): Promise<PartageAvocat> => {
+    const { data } = await apiClient.put<PartageAvocat>(`/ged/documents/${documentId}/partage-avocat`);
+    return data;
+  },
+
+  /** QF-64 — retire le partage, ou annule une proposition. */
+  retirerPartageAvocat: async (documentId: number): Promise<PartageAvocat> => {
+    const { data } = await apiClient.delete<PartageAvocat>(`/ged/documents/${documentId}/partage-avocat`);
+    return data;
+  },
+
+  /** QF-64 — DJ, DJA : valide ou rejette une proposition. Un rejet exige son motif (400 sinon). */
+  arbitrerPartageAvocat: async (
+    documentId: number,
+    decision: { decision: "VALIDE" } | { decision: "REJETE"; motif: string },
+  ): Promise<PartageAvocat> => {
+    const { data } = await apiClient.put<PartageAvocat>(
+      `/ged/documents/${documentId}/partage-avocat/arbitrage`,
+      decision,
+    );
+    return data;
+  },
+
+  /** QF-64 — DJ, DJA : la file des partages proposés, le plus ancien d'abord. */
+  partagesAvocat: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<PartageAvocat>> => {
+    const { data } = await apiClient.get<PageReponse<PartageAvocat>>("/ged/partages-avocat", { params: { page, size } });
     return data;
   },
 

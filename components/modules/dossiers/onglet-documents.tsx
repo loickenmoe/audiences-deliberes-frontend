@@ -1,17 +1,20 @@
 "use client";
 
-import { Download, Eye, FileText, Trash2 } from "lucide-react";
+import { Check, Download, Eye, FileText, Share2, Trash2, Undo2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { EtatChargement, EtatErreur } from "@/components/global";
+import { EtatChargement, EtatErreur, StatutChip } from "@/components/global";
+import type { TonStatut } from "@/components/global/statut-chip";
+import { ModaleRejetPartage } from "@/components/modules/ged/modale-rejet-partage";
 import { DateHeureValeur, DialogueConfirmation, PoidsFichier } from "@/components/metier";
 import { ApercuFichier } from "@/components/metier/apercu-fichier";
 import { Televersement } from "@/components/metier/televersement";
 import { Button } from "@/components/ui/button";
 import { Champ, Select } from "@/components/ui/champ";
 import { useDeposerDocument, useDocumentsDossier, useSupprimerDocument } from "@/hooks/useDossiers";
+import { useArbitrerPartage, usePartagerDocument, useRetirerPartage } from "@/hooks/useGed";
 import { useLibelles } from "@/hooks/useLibelles";
 import { messageErreur } from "@/lib/api/errors";
 import {
@@ -24,7 +27,17 @@ import {
 import { constitutionService } from "@/services/constitutionService";
 import { peut } from "@/lib/rbac";
 import { gedService } from "@/services/gedService";
-import type { DocumentDossier } from "@/types/domaine";
+import type { DocumentDossier, StatutPartageAvocat } from "@/types/domaine";
+
+/** Le ton de l'état de partage : une pièce partagée est sortie de la banque, et cela doit se voir. */
+const TON_PARTAGE: Record<StatutPartageAvocat, TonStatut> = {
+  NON: "neutre",
+  PROPOSE: "attention",
+  PARTAGE: "info",
+};
+
+/** Un geste de partage en attente de confirmation : partager, retirer, ou valider. */
+type GestePartage = { nature: "partager" | "retirer" | "valider"; document: DocumentDossier };
 
 /** Récupère le contenu d'un document : URL pré-signée fraîche (#39), puis le fichier lui-même. */
 async function contenuDocument(id: number): Promise<Blob> {
@@ -45,7 +58,19 @@ async function contenuDocument(id: number): Promise<Blob> {
  * l'interface ne sait pas qui est l'auteur : un juriste voit l'action sur chaque pièce, et le
  * backend refuse celles qu'il n'a pas déposées, avec son propre message.
  */
-export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles: readonly string[] }) {
+export function OngletDocuments({
+  dossierId,
+  roles,
+  sensible = false,
+}: {
+  dossierId: number;
+  roles: readonly string[];
+  /**
+   * Dossier sensible (QF-64) : le partage d'un juriste y devient une **proposition** que le DJ ou la
+   * DJA valide. C'est le serveur qui en décide ; l'écran ne fait qu'annoncer le bon geste.
+   */
+  sensible?: boolean;
+}) {
   const t = useTranslations("fiche");
   const tdoc = useTranslations("documents");
   const requete = useDocumentsDossier(dossierId);
@@ -55,8 +80,18 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
   const [apercu, setApercu] = useState<DocumentDossier | null>(null);
   const [aSupprimer, setASupprimer] = useState<DocumentDossier | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [geste, setGeste] = useState<GestePartage | null>(null);
+  const [aRejeter, setARejeter] = useState<DocumentDossier | null>(null);
+  const partager = usePartagerDocument();
+  const retirer = useRetirerPartage();
+  const arbitrer = useArbitrerPartage();
 
   const peutDeposer = peut(roles, "deposerDocument");
+  // QF-64 : tout juriste partage ; le DJ et la DJA valident sur un dossier sensible.
+  const peutPartager = peut(roles, "partagerDocument");
+  const peutArbitrerPartage = peut(roles, "arbitrerPartages");
+  // Sur un dossier sensible, le geste d'un juriste est une proposition ; celui du DJ, un partage.
+  const proposition = sensible && !peutArbitrerPartage;
   const peutSupprimer = peut(roles, "supprimerDocument");
   // Le DJ/DJA supprime directement ; les autres profils ne font qu'une demande.
   const suppressionDirecte = peut(roles, "arbitrerSuppressions");
@@ -90,6 +125,32 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
       telechargerBlob(pdf, document.nomFichier.replace(/.pdf$/i, "") + "-sans-entete.pdf");
     } catch (e) {
       setErreur(messageErreur(e));
+    }
+  }
+
+  /**
+   * Un geste de partage, une fois confirmé (QF-64). Chacun est confirmé : une pièce qui sort de la
+   * banque, ou qui cesse d'être lisible de l'avocat, ne se décide pas d'un clic égaré.
+   */
+  async function confirmerGeste() {
+    if (!geste) return;
+    setErreur(null);
+    try {
+      if (geste.nature === "partager") {
+        const resultat = await partager.mutateAsync(geste.document.id);
+        // Le serveur dit lequel des deux a eu lieu : c'est lui qui connaît la sensibilité à jour.
+        toast.success(resultat.partageAvocat === "PROPOSE" ? tdoc("proposee") : tdoc("partagee"));
+      } else if (geste.nature === "retirer") {
+        await retirer.mutateAsync(geste.document.id);
+        toast.success(tdoc("partageRetire"));
+      } else {
+        await arbitrer.mutateAsync({ documentId: geste.document.id });
+        toast.success(tdoc("partageValide"));
+      }
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setGeste(null);
     }
   }
 
@@ -143,6 +204,7 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonnePoids")}</th>
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonneDepot")}</th>
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonneAuteur")}</th>
+                <th scope="col" className="px-4 py-2 font-medium">{tdoc("colonnePartage")}</th>
                 <th scope="col" className="px-4 py-2 font-medium">
                   <span className="sr-only">{tdoc("colonneActions")}</span>
                 </th>
@@ -162,6 +224,11 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                   </td>
                   <td className="px-4 py-2">
                     {document.auteurChargementId !== null ? nomUtilisateur(document.auteurChargementId) : "—"}
+                  </td>
+                  <td className="px-4 py-2">
+                    <StatutChip ton={TON_PARTAGE[document.partageAvocat ?? "NON"]}>
+                      {tdoc(`partage${document.partageAvocat ?? "NON"}` as never)}
+                    </StatutChip>
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex justify-end gap-1">
@@ -193,6 +260,50 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
                           <FileText size={14} aria-hidden />
                         </Button>
                       ) : null}
+                      {peutPartager && (document.partageAvocat ?? "NON") === "NON" ? (
+                        <Button
+                          variante="secondaire"
+                          taille="sm"
+                          onClick={() => setGeste({ nature: "partager", document })}
+                          aria-label={`${proposition ? tdoc("proposerPartage") : tdoc("partager")} - ${document.nomFichier}`}
+                          title={proposition ? tdoc("proposerPartage") : tdoc("partager")}
+                        >
+                          <Share2 size={14} aria-hidden />
+                        </Button>
+                      ) : null}
+                      {peutArbitrerPartage && document.partageAvocat === "PROPOSE" ? (
+                        <>
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setGeste({ nature: "valider", document })}
+                            aria-label={`${tdoc("validerPartage")} - ${document.nomFichier}`}
+                            title={tdoc("validerPartage")}
+                          >
+                            <Check size={14} aria-hidden />
+                          </Button>
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setARejeter(document)}
+                            aria-label={`${tdoc("rejeterPartage")} - ${document.nomFichier}`}
+                            title={tdoc("rejeterPartage")}
+                          >
+                            <X size={14} aria-hidden />
+                          </Button>
+                        </>
+                      ) : null}
+                      {peutPartager && (document.partageAvocat === "PARTAGE" || document.partageAvocat === "PROPOSE") ? (
+                        <Button
+                          variante="secondaire"
+                          taille="sm"
+                          onClick={() => setGeste({ nature: "retirer", document })}
+                          aria-label={`${document.partageAvocat === "PROPOSE" ? tdoc("annulerProposition") : tdoc("retirerPartage")} - ${document.nomFichier}`}
+                          title={document.partageAvocat === "PROPOSE" ? tdoc("annulerProposition") : tdoc("retirerPartage")}
+                        >
+                          <Undo2 size={14} aria-hidden />
+                        </Button>
+                      ) : null}
                       {peutSupprimer ? (
                         <Button
                           variante="secondaire"
@@ -217,6 +328,45 @@ export function OngletDocuments({ dossierId, roles }: { dossierId: number; roles
         onFermeture={() => setApercu(null)}
         nomFichier={apercu?.nomFichier ?? ""}
         obtenir={() => (apercu ? contenuDocument(apercu.id) : Promise.reject(new Error("aucun document")))}
+      />
+
+      <DialogueConfirmation
+        ouvert={geste !== null}
+        onFermeture={() => setGeste(null)}
+        onConfirmation={() => void confirmerGeste()}
+        titre={
+          geste?.nature === "retirer"
+            ? tdoc("retraitTitre")
+            : geste?.nature === "valider"
+              ? tdoc("validerPartage")
+              : proposition
+                ? tdoc("propositionTitre")
+                : tdoc("partageTitre")
+        }
+        message={
+          geste?.nature === "retirer"
+            ? tdoc("retraitMessage", { nom: geste.document.nomFichier })
+            : proposition && geste?.nature === "partager"
+              ? tdoc("propositionMessage", { nom: geste.document.nomFichier })
+              : tdoc("partageMessage", { nom: geste?.document.nomFichier ?? "" })
+        }
+        libelleConfirmation={
+          geste?.nature === "retirer"
+            ? geste.document.partageAvocat === "PROPOSE"
+              ? tdoc("annulerProposition")
+              : tdoc("retirerPartage")
+            : geste?.nature === "valider"
+              ? tdoc("validerPartage")
+              : proposition
+                ? tdoc("proposerPartage")
+                : tdoc("partager")
+        }
+        enCours={partager.isPending || retirer.isPending || arbitrer.isPending}
+      />
+
+      <ModaleRejetPartage
+        piece={aRejeter ? { documentId: aRejeter.id, nomFichier: aRejeter.nomFichier } : null}
+        onFermeture={() => setARejeter(null)}
       />
 
       <DialogueConfirmation

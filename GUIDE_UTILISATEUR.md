@@ -301,6 +301,19 @@ transmise et la date. L'avocat en était notifié depuis toujours, mais aucune p
 Les **commentaires des juristes** n'y figurent pas, et c'est voulu : ils s'adressent au DJ et à la
 DJA, pas au prestataire dont ils discutent.
 
+**Partager une pièce avec l'avocat** (depuis le 2026-10-15). Dans l'onglet *Documents* du
+dossier, l'icône **Partager avec l'avocat** rend la pièce visible de l'avocat affecté **et constitué**
+- c'est la lettre signée qui fait le mandat. La colonne *Avocat* dit l'état de chaque pièce, et la
+flèche de retour retire un partage à tout moment.
+
+Sur un **dossier sensible**, le geste s'appelle **Proposer le partage** : la pièce attend la
+validation du DJ ou de la DJA, qui la trouvent dans **Partages à valider**. Un rejet exige un motif.
+
+**La note à l'avocat.** Dans l'onglet *Audiences*, la bulle de texte d'une audience écrit ce que
+l'avocat doit en savoir - « apportez l'original de l'acte ». Elle est **distincte du compte rendu**,
+qui reste interne, et l'avocat constitué la lit dans *Mon espace*, section *Mes dossiers*, avec les
+pièces partagées.
+
 **Constitutions.** Un juriste sollicite la constitution d'un prestataire ; le SH signe ; la lettre
 est générée et rangée dans la GED du dossier. L'avocat constitué en est notifié.
 

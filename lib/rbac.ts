@@ -231,6 +231,23 @@ export const CAPACITES = {
   supprimerDocument: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
   /** `GET /ged/demandes-suppression`, `PUT .../approbation-suppression` — DJ, DJA */
   arbitrerSuppressions: ["ROLE_DJ", "ROLE_DJA"],
+  /**
+   * `PUT`, `DELETE /ged/documents/{id}/partage-avocat` — JURISTE (QF-64, backend Q-139). Le DJ et la
+   * DJA l'atteignent par leur `ROLE_JURISTE` composite (Q-81). « Tout juriste partage, sans
+   * validation du DJ » : arbitré par le porteur du projet le 2026-10-15. Sur un dossier sensible,
+   * c'est le **serveur** qui fait du geste une proposition.
+   */
+  partagerDocument: ["ROLE_JURISTE"],
+  /**
+   * `PUT .../partage-avocat/arbitrage`, `GET /ged/partages-avocat` — DJ, DJA (QF-64).
+   *
+   * **Distincte d'`arbitrerSuppressions`**, bien qu'elle porte aujourd'hui les mêmes rôles : l'une
+   * décide qu'une pièce disparaît, l'autre qu'elle sort de la banque. Les confondre ferait suivre à
+   * l'une tout assouplissement futur de l'autre.
+   */
+  arbitrerPartages: ["ROLE_DJ", "ROLE_DJA"],
+  /** `PUT /audiences/{id}/note-avocat` — JURISTE (QF-64) : la note destinée à l'avocat constitué. */
+  ecrireNoteAvocat: ["ROLE_JURISTE"],
   /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE (Q-80 backend) */
   consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE"],
 

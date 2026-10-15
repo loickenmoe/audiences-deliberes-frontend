@@ -20,6 +20,8 @@ vi.mock("@/hooks/useAudiences", () => ({
   usePlanifierAudience: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useEnregistrerCompteRendu: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAnnulerAudience: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  // QF-64 : la note à l’avocat, montée pour qui peut l’écrire.
+  useModifierNoteAvocat: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/hooks/usePublications", () => ({

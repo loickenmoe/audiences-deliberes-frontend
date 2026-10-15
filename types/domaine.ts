@@ -389,6 +389,24 @@ export type ResultatSuppression =
   | { immediate: true; document: DocumentDossier }
   | { immediate: false; demande: DemandeSuppression };
 
+/**
+ * L'état du partage d'une pièce avec l'avocat du dossier (QF-64, backend Q-139). `PROPOSE` : un
+ * juriste l'a proposé sur un dossier sensible, et rien n'est visible avant le DJ ou la DJA.
+ */
+export type StatutPartageAvocat = "NON" | "PROPOSE" | "PARTAGE";
+
+/** Une pièce dans la file des partages à valider du DJ et de la DJA (QF-64). */
+export interface PartageAvocat {
+  documentId: number;
+  dossierId: number;
+  referenceDossier: string;
+  nomFichier: string;
+  typeDocument: string | null;
+  partageAvocat: StatutPartageAvocat;
+  partageParNom: string | null;
+  partageLe: string | null;
+}
+
 /** Document rattaché à un dossier (#43). */
 export interface DocumentDossier {
   id: number;
@@ -401,6 +419,8 @@ export interface DocumentDossier {
   dateChargement: string;
   estSupprime: boolean;
   urlTelechargement: string | null;
+  /** Partagé avec l'avocat du dossier, proposé, ou réservé aux profils internes (QF-64). */
+  partageAvocat: StatutPartageAvocat;
 }
 
 /**
@@ -487,6 +507,11 @@ export interface Audience {
   /** Posés à l'annulation (QF-30, Q-76 backend) : motif obligatoire, horodatage sans fuseau. */
   motifAnnulation: string | null;
   dateAnnulation: string | null;
+  /**
+   * Ce que le juriste veut dire à l'avocat constitué (QF-64). **Distincte du compte rendu**, qui
+   * reste interne : il peut juger la stratégie, voire le travail de l'avocat lui-même (RG-INT-07).
+   */
+  noteAvocat: string | null;
 }
 
 /**

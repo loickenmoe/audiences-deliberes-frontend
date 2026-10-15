@@ -61,7 +61,8 @@
     "audit": "Audit",
     "journalAudiences": "Hearing log",
     "explications": "Explanations",
-    "monCompte": "My account"
+    "monCompte": "My account",
+    "partagesAvocat": "Shares to approve"
   },
   "accueil": {
     "titre": "Home",
@@ -769,7 +770,33 @@
     "piecesManquantes": "Required items are missing: the case was not created.",
     "fichierLibelle": "File",
     "apercuWordAncien": "This file uses the legacy Word format (.doc), which the browser cannot display. Download it to open it, or save it as .docx from Word.",
-    "apercuWordErreur": "This Word document could not be displayed. Download it to open it."
+    "apercuWordErreur": "This Word document could not be displayed. Download it to open it.",
+    "colonnePartage": "Counsel",
+    "partageNON": "Not shared",
+    "partagePROPOSE": "Awaiting approval",
+    "partagePARTAGE": "Shared",
+    "partager": "Share with counsel",
+    "proposerPartage": "Propose sharing",
+    "retirerPartage": "Withdraw sharing",
+    "annulerProposition": "Cancel the proposal",
+    "validerPartage": "Approve sharing",
+    "rejeterPartage": "Reject",
+    "partageTitre": "Share this document with counsel?",
+    "partageMessage": "“{nom}” will be visible to the counsel assigned and appointed on this case. You can withdraw it at any time.",
+    "propositionTitre": "Propose sharing this document?",
+    "propositionMessage": "This case is sensitive: “{nom}” will only be visible to counsel once the Legal Director or Deputy approves.",
+    "retraitTitre": "Withdraw this sharing?",
+    "retraitMessage": "“{nom}” will no longer be visible to counsel.",
+    "partagee": "Document shared with counsel.",
+    "proposee": "Sharing proposed: it awaits approval by the Legal Director or Deputy.",
+    "partageRetire": "Sharing withdrawn.",
+    "partageValide": "Sharing approved: counsel can now see the document.",
+    "partageRejete": "Sharing rejected.",
+    "rejetPartageTitre": "Reject this sharing",
+    "rejetPartageDescription": "“{nom}” will stay within the Bank. The lawyer who proposed it will receive your reason.",
+    "champMotifRejetPartage": "Reason for rejection",
+    "phMotifRejetPartage": "E.g. document covered by banking secrecy",
+    "partageAide": "A shared document is only visible to the counsel assigned and appointed on the case."
   },
   "suppressions": {
     "titre": "Deletion requests",
@@ -1216,7 +1243,16 @@
     "phAlarmeObjet": "What must not be forgotten",
     "phAudienceJuridiction": "Where the hearing will be held",
     "phCompteRendu": "What was said and decided at the hearing",
-    "phAnnulationMotif": "Why the hearing is cancelled"
+    "phAnnulationMotif": "Why the hearing is cancelled",
+    "noteAvocat": "Note to counsel",
+    "ecrireNote": "Note to counsel",
+    "ecrireNoteAria": "Note to counsel - hearing of {date}",
+    "noteTitre": "Note to counsel",
+    "noteDescription": "What counsel needs to know about this hearing. Visible to the counsel appointed on the case, and to them only.",
+    "noteAide": "Separate from the hearing report, which stays internal. Leave empty to clear the note.",
+    "phNote": "E.g. bring the original loan agreement",
+    "noteEnregistree": "Note saved.",
+    "noteEffacee": "Note cleared."
   },
   "deliberes": {
     "aucun": "No deliberation.",
@@ -1586,7 +1622,21 @@
     "fraisPiecesManquantes": "Upload at least one supporting document.",
     "colonneCorrespondance": "Letter from the Legal Department",
     "correspondancePar": "Sent by {nom}",
-    "sansCorrespondance": "None"
+    "sansCorrespondance": "None",
+    "mesDossiers": "My cases",
+    "mesDossiersTexte": "Choose a case to read its hearings and the documents the Legal Department shares with you.",
+    "piecesTitre": "Case documents",
+    "piecesVide": "No shared document",
+    "piecesVideTexte": "The Legal Department has not shared any document of this case with you yet.",
+    "piecesNonConstitue": "Not appointed yet",
+    "piecesNonConstitueTexte": "This case's documents and notes will be available once your appointment letter is signed.",
+    "audiencesTitre": "Hearings",
+    "audiencesVide": "No hearing scheduled on this case.",
+    "colonneDateAudience": "Date",
+    "colonneJuridiction": "Court",
+    "colonneNote": "Note from the Legal Department",
+    "colonnePiece": "Document",
+    "colonnePartagee": "Shared on"
   },
   "audit": {
     "titre": "Audit",
@@ -1701,7 +1751,13 @@
       "AUDIT_EXPORTE": "Audit export",
       "ARCHIVE_TELECHARGEE": "Audit archive downloaded",
       "EXPLICATION_DEMANDEE": "Explanation requested from a lawyer",
-      "EXPLICATION_REPONDUE": "Reply to an explanation request"
+      "EXPLICATION_REPONDUE": "Reply to an explanation request",
+      "DOCUMENT_PARTAGE_AVOCAT": "Document shared with counsel",
+      "DOCUMENT_PARTAGE_PROPOSE": "Document sharing proposed",
+      "DOCUMENT_PARTAGE_ARBITRE": "Document sharing decided",
+      "DOCUMENT_PARTAGE_RETIRE": "Document sharing withdrawn",
+      "DOCUMENT_CONSULTE_PAR_AVOCAT": "Document viewed by counsel",
+      "AUDIENCE_NOTE_AVOCAT_MODIFIEE": "Note to counsel updated"
     },
     "details": {
       "accord": "Approval",
@@ -1768,7 +1824,8 @@
       "exportId": "Archive",
       "empreinte": "Fingerprint",
       "format": "Format",
-      "lignes": "Rows"
+      "lignes": "Rows",
+      "avocatId": "Counsel"
     }
   },
   "journalAudiences": {
@@ -1935,5 +1992,18 @@
     "positionPage": "Page {page} of {total}",
     "restrictionRecouvrement": "This count covers debt-recovery case files only.",
     "uneLigneParAlerte": "One row per alert sent: a single extension may produce several, and the same case file may appear twice."
+  },
+  "partages": {
+    "titre": "Shares to approve",
+    "description": "Documents that lawyers propose to share with counsel, on sensitive cases. Counsel sees nothing before your approval.",
+    "vide": "No pending sharing",
+    "videTexte": "Sharing proposals on sensitive cases will appear here.",
+    "colonnePiece": "Document",
+    "colonneDossier": "Case",
+    "colonnePropose": "Proposed by",
+    "colonneDate": "On",
+    "colonneActions": "Actions",
+    "validerAria": "Approve sharing - {nom}",
+    "rejeterAria": "Reject sharing - {nom}"
   }
 }

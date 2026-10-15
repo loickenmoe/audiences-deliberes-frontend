@@ -1,5 +1,6 @@
 import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
+import { gedService } from "@/services/gedService";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
 import type { StatutAudience } from "@/types/enums";
 
@@ -16,7 +17,30 @@ export interface AudienceAvocat {
   id: number;
   datePlanifiee: string;
   dateTenue: string | null;
+  /** Là où l'audience se tient : l'avocat s'y rend. */
+  juridiction: string | null;
   statut: StatutAudience;
+  /** La note que le juriste lui adresse (QF-64). Nulle tant qu'il n'est pas constitué. */
+  noteAvocat: string | null;
+}
+
+/** Une pièce du dossier que la banque lui partage (QF-64). */
+export interface PieceAvocat {
+  id: number;
+  nomFichier: string;
+  typeDocument: string | null;
+  format: string;
+  poids: number;
+  partageLe: string | null;
+}
+
+/**
+ * Les pièces partagées d'un dossier, et la raison de leur absence (QF-64). `constitue` est porté à
+ * part : « aucune pièce » et « pas encore constitué » ne se règlent pas de la même façon.
+ */
+export interface PiecesDossierAvocat {
+  constitue: boolean;
+  pieces: PieceAvocat[];
 }
 
 /**
@@ -64,6 +88,23 @@ export const portailAvocatService = {
   },
 
   /** Ses propres dépôts, quel qu'en soit le statut — c'est là qu'il lit le motif d'un rejet. */
+  /** QF-64 — les pièces partagées de son dossier, s'il y est affecté et constitué. */
+  piecesDeMonDossier: async (dossierId: number): Promise<PiecesDossierAvocat> => {
+    const { data } = await apiClient.get<PiecesDossierAvocat>(`/avocat/mes-dossiers/${dossierId}/pieces`);
+    return data;
+  },
+
+  /**
+   * QF-64 — le contenu d'une pièce partagée. L'URL pré-signée est redemandée à chaque ouverture :
+   * elle ne vit que dix minutes, et c'est cette demande que le serveur trace comme une lecture.
+   */
+  contenuPiece: async (dossierId: number, documentId: number): Promise<Blob> => {
+    const { data } = await apiClient.get<{ urlTelechargement: string }>(
+      `/avocat/mes-dossiers/${dossierId}/pieces/${documentId}`,
+    );
+    return gedService.recupererContenu(data.urlTelechargement);
+  },
+
   mesPublications: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<Publication>> => {
     const { data } = await apiClient.get<PageReponse<Publication>>("/avocat/mes-publications", {
       params: { page, size },

@@ -143,6 +143,7 @@ Statuts : ☐ À tester · ☑ Validé · ✗ Échec · ⚠ Bloqué
 | REC-E2E-039 | Tableau de bord : chaque bloc s'ouvre sur son detail | DJ → DJA → JUR | Haute | REC-E2E-021 | ☐ |
 | REC-E2E-040 | Perimetre de categories : recouvrement, exploitation, et leur somme | DJ → DJA | Haute | REC-E2E-039 | ☐ |
 | REC-E2E-041 | Depots de l'avocat : montant, champs manquants, apercu sur la ligne | AVO | Haute | REC-E2E-025 | ☐ |
+| REC-E2E-046 | L'avocat accède aux pièces partagées et à la note de ses audiences | JUR, DJ, SH, AVO | Haute | REC-E2E-045 | ☐ |
 | REC-E2E-045 | La constitution, d'un bout à l'autre sans chercher | JUR, SH | Haute | REC-E2E-029 | ☐ |
 | REC-E2E-044 | Le menu de l'avocat : accueil et notifications | AVO, JUR | Haute | — | ☐ |
 | REC-E2E-043 | La correspondance du DJ parvient à l'avocat | AVO, JUR, DJ | Haute | REC-E2E-029 | ☐ |
@@ -1038,6 +1039,94 @@ dépôt arrête la relance ; une audience annulée n'en produit aucune.
   autrement que par un message automatique.
 - Elle ne vise pas une étape **close ou archivée** : la procédure a tourné la page.
 - Un compte rendu **rejeté** par l'Assistante ne compte pas comme déposé : la relance reprend.
+
+---
+
+## REC-E2E-046 - L'avocat accède aux pièces partagées et à la note de ses audiences
+
+### Objectif
+Valider QF-64 (backend Q-139), arbitré par le porteur du projet le 2026-10-15 :
+1. l'avocat voit une pièce partagée s'il est affecté au dossier **et constitué** ;
+2. tout juriste partage une pièce, sans validation du DJ ;
+3. sur un **dossier sensible**, le juriste **propose** et le DJ ou la DJA **valide** avant que rien ne
+   soit visible de l'avocat ;
+4. une **note à l'avocat** par audience, distincte du compte rendu, qui reste interne.
+
+### Acteurs
+Juriste (`juriste.test`), Directeur Juridique (`dj.test`), Supérieur hiérarchique (`sh.test`),
+Avocat (`avocat.test`).
+
+### Préconditions
+Préparez **deux dossiers** sur lesquels `avocat.test` est affecté, chacun avec au moins une pièce dans
+l'onglet Documents :
+- **Dossier A, ordinaire** : constituez l'avocat (Solliciter un prestataire, puis signature du SH -
+  REC-E2E-045), et planifiez une audience à venir.
+- **Dossier B, sensible** : constituez l'avocat de même, puis, sur la fiche, cliquez **Proposer la
+  diligence particulière** (en-tête, à droite du titre) et validez le formulaire. Une proposition en attente suffit : le dossier compte comme
+  sensible dès qu'elle est faite.
+- Gardez aussi un **dossier C** où l'avocat est affecté **sans** constitution.
+
+### Où se trouve chaque chose
+
+| Nom employé ci-dessous | Comment y aller |
+|---|---|
+| **Onglet Documents** | Menu **Dossiers**, cliquer la ligne du dossier, puis l'onglet **Documents** (le huitième) |
+| **Colonne Avocat** | Dans le tableau de l'onglet Documents, l'avant-dernière colonne : *Non partagé*, *En attente de validation* ou *Partagé* |
+| **Boutons de partage** | Dans la dernière colonne de la ligne : icône de **partage** (trois points reliés), **coche** (valider), **croix** (rejeter), **flèche de retour** (retirer). Chacun porte son nom au survol |
+| **Onglet Audiences** | Même fiche, onglet **Audiences**. Le bouton **bulle de texte** de la ligne ouvre la note à l'avocat |
+| **Partages à valider** | Connecté en DJ ou DJA : entrée **Partages à valider** du menu de gauche |
+| **Mes dossiers** (avocat) | Connecté en avocat : **Mon espace**, section **Mes dossiers**, sous « Mes dépôts ». Choisir le dossier dans le champ **Dossier** |
+
+### Parcours
+
+| Étape | Rôle | Où | Action à effectuer | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|---|
+| 1 | JUR | **Onglet Documents** du dossier A | Lire la colonne **Avocat** | Chaque pièce est **Non partagé** : rien ne sort de la banque sans décision | | ☐ |
+| 2 | JUR | Même ligne | Cliquer l'icône de **partage**, lire la boîte, confirmer **Partager avec l'avocat** | La boîte rappelle que la pièce sera visible de l'avocat **affecté et constitué**. Après confirmation : « Pièce partagée avec l'avocat. » et la colonne passe à **Partagé** | | ☐ |
+| 3 | AVO | **Mes dossiers**, dossier A | Choisir le dossier | La section **Pièces du dossier** liste la pièce. **C'est la fonction demandée** | | ☐ |
+| 4 | AVO | Même ligne | Cliquer **Consulter**, puis l'icône de téléchargement | La pièce s'ouvre en aperçu, puis se télécharge | | ☐ |
+| 5 | JUR | **Onglet Documents** du dossier A | Cliquer la **flèche de retour**, confirmer **Retirer le partage** | « Partage retiré. » et la colonne revient à **Non partagé** | | ☐ |
+| 6 | AVO | **Mes dossiers**, dossier A | Recharger la page et rechoisir le dossier | La pièce a **disparu** : le retrait est immédiat | | ☐ |
+| 7 | JUR | **Onglet Documents** du dossier B (sensible) | Survoler l'icône de partage, puis cliquer | Elle s'appelle **Proposer le partage**, pas « Partager ». La boîte prévient que la pièce ne sera visible **qu'après validation du DJ ou de la DJA**. Confirmer : « Partage proposé… » et la colonne passe à **En attente de validation** | | ☐ |
+| 8 | JUR | Même ligne | Chercher la coche et la croix | **Absentes** : le juriste ne valide pas sa propre proposition | | ☐ |
+| 9 | AVO | **Mes dossiers**, dossier B | Choisir le dossier | **Aucune pièce partagée** : la proposition ne montre rien à l'avocat | | ☐ |
+| 10 | DJ | Menu **Partages à valider** | Lire la file | La pièce y figure, avec le dossier, le juriste qui l'a proposée et la date | | ☐ |
+| 11 | DJ | Même ligne | Cliquer **Consulter** | La pièce s'ouvre : on ne valide pas la sortie d'un document qu'on n'a pas lu | | ☐ |
+| 12 | DJ | Même ligne | Cliquer **Rejeter**, puis **Rejeter** sans motif | Le motif est **exigé** : la boîte ne se ferme pas | | ☐ |
+| 13 | DJ | Même boîte | Saisir un motif, puis **Rejeter** | « Partage rejeté. » La pièce quitte la file ; dans l'onglet Documents du dossier B, elle redevient **Non partagé** | | ☐ |
+| 14 | JUR | **Onglet Documents** du dossier B | Proposer de nouveau le partage | **En attente de validation** | | ☐ |
+| 15 | DJ | Menu **Partages à valider** | Cliquer **Valider le partage**, confirmer | « Partage validé : la pièce est visible de l'avocat. » La file se vide | | ☐ |
+| 16 | AVO | **Mes dossiers**, dossier B | Rechoisir le dossier | La pièce est maintenant listée | | ☐ |
+| 17 | JUR | **Onglet Documents** du dossier C (non constitué) | Partager une pièce | **Partagé** - le partage ne dépend pas de la constitution, l'accès si | | ☐ |
+| 18 | AVO | **Mes dossiers**, dossier C | Choisir le dossier | **Pas encore constitué** : « Les pièces et les notes de ce dossier vous seront accessibles une fois votre lettre de constitution signée. » La pièce partagée **n'apparaît pas** | | ☐ |
+| 19 | JUR | **Onglet Audiences** du dossier A | Cliquer la **bulle de texte** de l'audience à venir, écrire une note sur deux lignes, **Enregistrer** | « Note enregistrée. » La note s'affiche sous la colonne du compte rendu, **à part**, précédée de « Note à l'avocat : » | | ☐ |
+| 20 | AVO | **Mes dossiers**, dossier A | Lire le tableau **Audiences** | La colonne **Note de la Direction Juridique** porte la note, **retours à la ligne compris** | | ☐ |
+| 21 | JUR | **Onglet Audiences** du dossier A | Rouvrir la note, la vider, **Enregistrer** | « Note effacée. » | | ☐ |
+| 22 | JUR | **Onglet Audiences** du dossier C | Écrire une note sur une audience | Elle s'enregistre | | ☐ |
+| 23 | AVO | **Mes dossiers**, dossier C | Lire le tableau **Audiences** | La note **n'apparaît pas** : comme les pièces, elle attend la constitution | | ☐ |
+| 24 | JUR | Menu de gauche | Chercher **Partages à valider** | **Absente** : la validation reste au DJ et à la DJA | | ☐ |
+| 25 | DJ | Fiche du dossier A, onglet **Historique** | Lire l'historique | Partage, retrait, et chaque **consultation par l'avocat** y figurent, nommés | | ☐ |
+
+### Résultat final attendu
+Une pièce ne sort de la banque que si un juriste l'a décidé - ou, sur un dossier sensible, si le DJ
+ou la DJA l'a validé. L'avocat ne la lit qu'une fois constitué, et la perd dès qu'on la retire. La
+note lui parvient à part, sans que le compte rendu interne ne quitte jamais la banque.
+
+### Points de contrôle
+- **Les étapes 3 et 16 sont la fonction demandée** ; les étapes **9 et 18** sont ses deux barrières.
+  Si la pièce apparaît à l'étape 9 ou à l'étape 18, la correction est à refuser.
+- **L'étape 7 compte autant** : sur un dossier sensible, le bouton doit dire « Proposer », sans quoi
+  le juriste croirait la pièce partie.
+- **L'étape 12** : un rejet sans motif ne passe pas - le juriste doit savoir pourquoi la pièce ne
+  part pas.
+- **L'étape 25** : chaque ouverture par l'avocat est tracée. Le jour où la question se pose, il faut
+  pouvoir dire s'il avait vu la pièce avant l'audience.
+- **Le compte rendu du juriste n'apparaît nulle part chez l'avocat**, à aucune étape. S'il y apparaît,
+  la correction est à refuser (RG-INT-07).
+
+### Hors périmètre
+Aucune **notification** n'est envoyée : le DJ trouve les propositions dans sa file, l'avocat les
+pièces dans son espace. C'est une demande à part si elle est souhaitée.
 
 ---
 

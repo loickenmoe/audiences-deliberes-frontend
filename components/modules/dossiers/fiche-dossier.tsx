@@ -282,7 +282,9 @@ export function FicheDossier({
           {onglet === "alarmes" ? <OngletAlarmes dossier={dossier} roles={roles} /> : null}
           {onglet === "decisions" ? <OngletDecisions dossier={dossier} roles={roles} /> : null}
           {onglet === "historique" ? <OngletHistorique dossierId={dossier.id} /> : null}
-          {onglet === "documents" ? <OngletDocuments dossierId={dossier.id} roles={roles} /> : null}
+          {onglet === "documents" ? (
+            <OngletDocuments dossierId={dossier.id} roles={roles} sensible={!!dossier.estSensible} />
+          ) : null}
           {onglet === "publications" && peut(roles, "consulterPublications") ? (
             <OngletPublications dossierId={dossier.id} />
           ) : null}

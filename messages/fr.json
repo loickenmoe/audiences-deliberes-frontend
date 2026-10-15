@@ -61,7 +61,8 @@
     "audit": "Audit",
     "journalAudiences": "Journal des audiences",
     "explications": "Explications",
-    "monCompte": "Mon compte"
+    "monCompte": "Mon compte",
+    "partagesAvocat": "Partages à valider"
   },
   "accueil": {
     "titre": "Accueil",
@@ -769,7 +770,33 @@
     "piecesManquantes": "Il manque des pièces obligatoires : le dossier n’a pas été créé.",
     "fichierLibelle": "Fichier",
     "apercuWordAncien": "Ce fichier est à l’ancien format Word (.doc), que le navigateur ne sait pas afficher. Téléchargez-le pour l’ouvrir, ou réenregistrez-le au format .docx depuis Word.",
-    "apercuWordErreur": "Ce document Word n’a pas pu être affiché. Téléchargez-le pour l’ouvrir."
+    "apercuWordErreur": "Ce document Word n’a pas pu être affiché. Téléchargez-le pour l’ouvrir.",
+    "colonnePartage": "Avocat",
+    "partageNON": "Non partagé",
+    "partagePROPOSE": "En attente de validation",
+    "partagePARTAGE": "Partagé",
+    "partager": "Partager avec l'avocat",
+    "proposerPartage": "Proposer le partage",
+    "retirerPartage": "Retirer le partage",
+    "annulerProposition": "Annuler la proposition",
+    "validerPartage": "Valider le partage",
+    "rejeterPartage": "Rejeter",
+    "partageTitre": "Partager cette pièce avec l'avocat ?",
+    "partageMessage": "« {nom} » sera visible de l'avocat affecté et constitué sur ce dossier. Vous pourrez retirer ce partage à tout moment.",
+    "propositionTitre": "Proposer le partage de cette pièce ?",
+    "propositionMessage": "Le dossier est sensible : « {nom} » ne sera visible de l'avocat qu'après validation du DJ ou de la DJA.",
+    "retraitTitre": "Retirer ce partage ?",
+    "retraitMessage": "« {nom} » ne sera plus visible de l'avocat.",
+    "partagee": "Pièce partagée avec l'avocat.",
+    "proposee": "Partage proposé : il attend la validation du DJ ou de la DJA.",
+    "partageRetire": "Partage retiré.",
+    "partageValide": "Partage validé : la pièce est visible de l'avocat.",
+    "partageRejete": "Partage rejeté.",
+    "rejetPartageTitre": "Rejeter ce partage",
+    "rejetPartageDescription": "« {nom} » restera réservée à la banque. Le juriste qui l'a proposée recevra votre motif.",
+    "champMotifRejetPartage": "Motif du rejet",
+    "phMotifRejetPartage": "Ex. : pièce couverte par le secret bancaire",
+    "partageAide": "Une pièce partagée n'est visible que de l'avocat affecté et constitué sur le dossier."
   },
   "suppressions": {
     "titre": "Demandes de suppression",
@@ -1216,7 +1243,16 @@
     "phAlarmeObjet": "Ce qu’il ne faudra pas oublier",
     "phAudienceJuridiction": "Là où l’audience se tiendra",
     "phCompteRendu": "Ce qui s’est dit et décidé à l’audience",
-    "phAnnulationMotif": "Pourquoi l’audience est annulée"
+    "phAnnulationMotif": "Pourquoi l’audience est annulée",
+    "noteAvocat": "Note à l'avocat",
+    "ecrireNote": "Note à l'avocat",
+    "ecrireNoteAria": "Note à l'avocat - audience du {date}",
+    "noteTitre": "Note à l'avocat",
+    "noteDescription": "Ce que l'avocat doit savoir de cette audience. Visible de l'avocat constitué sur le dossier, et de lui seul.",
+    "noteAide": "Distincte du compte rendu, qui reste interne. Laissez vide pour effacer la note.",
+    "phNote": "Ex. : apportez l'original de l'acte de prêt",
+    "noteEnregistree": "Note enregistrée.",
+    "noteEffacee": "Note effacée."
   },
   "deliberes": {
     "aucun": "Aucun délibéré.",
@@ -1586,7 +1622,21 @@
     "fraisPiecesManquantes": "Chargez au moins une pièce justificative.",
     "colonneCorrespondance": "Correspondance de la Direction Juridique",
     "correspondancePar": "Transmise par {nom}",
-    "sansCorrespondance": "Aucune"
+    "sansCorrespondance": "Aucune",
+    "mesDossiers": "Mes dossiers",
+    "mesDossiersTexte": "Choisissez un dossier pour lire ses audiences et les pièces que la Direction Juridique vous partage.",
+    "piecesTitre": "Pièces du dossier",
+    "piecesVide": "Aucune pièce partagée",
+    "piecesVideTexte": "La Direction Juridique ne vous a encore partagé aucune pièce de ce dossier.",
+    "piecesNonConstitue": "Pas encore constitué",
+    "piecesNonConstitueTexte": "Les pièces et les notes de ce dossier vous seront accessibles une fois votre lettre de constitution signée.",
+    "audiencesTitre": "Audiences",
+    "audiencesVide": "Aucune audience planifiée sur ce dossier.",
+    "colonneDateAudience": "Date",
+    "colonneJuridiction": "Juridiction",
+    "colonneNote": "Note de la Direction Juridique",
+    "colonnePiece": "Pièce",
+    "colonnePartagee": "Partagée le"
   },
   "audit": {
     "titre": "Audit",
@@ -1701,7 +1751,13 @@
       "AUDIT_EXPORTE": "Export de l’audit",
       "ARCHIVE_TELECHARGEE": "Téléchargement d’une archive d’audit",
       "EXPLICATION_DEMANDEE": "Demande d'explication adressée à un avocat",
-      "EXPLICATION_REPONDUE": "Réponse à une demande d'explication"
+      "EXPLICATION_REPONDUE": "Réponse à une demande d'explication",
+      "DOCUMENT_PARTAGE_AVOCAT": "Document partagé avec l'avocat",
+      "DOCUMENT_PARTAGE_PROPOSE": "Partage d'un document proposé",
+      "DOCUMENT_PARTAGE_ARBITRE": "Partage d'un document arbitré",
+      "DOCUMENT_PARTAGE_RETIRE": "Partage d'un document retiré",
+      "DOCUMENT_CONSULTE_PAR_AVOCAT": "Document consulté par l'avocat",
+      "AUDIENCE_NOTE_AVOCAT_MODIFIEE": "Note à l'avocat modifiée"
     },
     "details": {
       "accord": "Accord",
@@ -1768,7 +1824,8 @@
       "exportId": "Archive",
       "empreinte": "Empreinte",
       "format": "Format",
-      "lignes": "Lignes"
+      "lignes": "Lignes",
+      "avocatId": "Avocat"
     }
   },
   "journalAudiences": {
@@ -1935,5 +1992,18 @@
     "positionPage": "Page {page} sur {total}",
     "restrictionRecouvrement": "Ce décompte ne porte que sur les dossiers de recouvrement.",
     "uneLigneParAlerte": "Une ligne par alerte envoyée : une même prorogation peut en produire plusieurs, et le même dossier paraître deux fois."
+  },
+  "partages": {
+    "titre": "Partages à valider",
+    "description": "Les pièces que des juristes proposent de partager avec l'avocat, sur des dossiers sensibles. Rien n'est visible de l'avocat avant votre validation.",
+    "vide": "Aucun partage en attente",
+    "videTexte": "Les propositions de partage sur des dossiers sensibles apparaîtront ici.",
+    "colonnePiece": "Pièce",
+    "colonneDossier": "Dossier",
+    "colonnePropose": "Proposé par",
+    "colonneDate": "Le",
+    "colonneActions": "Actions",
+    "validerAria": "Valider le partage - {nom}",
+    "rejeterAria": "Rejeter le partage - {nom}"
   }
 }

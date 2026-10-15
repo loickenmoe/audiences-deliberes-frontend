@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Receipt,
   ScrollText,
+  Share2,
   Settings,
   Trash2,
   Users,
@@ -93,6 +94,8 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "tableauDeBord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: true },
   { cle: "rapports", href: "/rapports", icone: FileBarChart, capacite: "genererRapport", livre: true },
   { cle: "demandesSuppression", href: "/ged/demandes-suppression", icone: Trash2, capacite: "arbitrerSuppressions", livre: true },
+  // QF-64 : les partages de pièces proposés sur des dossiers sensibles, que le DJ et la DJA valident.
+  { cle: "partagesAvocat", href: "/ged/partages-avocat", icone: Share2, capacite: "arbitrerPartages", livre: true },
   { cle: "rapportJournalier", href: "/ged/rapport-journalier", icone: ClipboardList, capacite: "consulterRapportJournalier", livre: true },
   { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "consulterReferentiels", livre: true },
   { cle: "agences", href: "/admin/agences", icone: Landmark, capacite: "consulterReferentiels", livre: true },

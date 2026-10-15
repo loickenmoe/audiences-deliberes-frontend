@@ -273,6 +273,45 @@ describe("périmètre du profil avocat (QF-01)", () => {
  * l'accueil et ses notifications ; c'étaient les **entrées de menu** qui citaient la mauvaise
  * capacité. Un test sur `CAPACITES` seul serait resté vert.
  */
+/**
+ * Le partage des pièces avec l'avocat (QF-64, backend Q-139), tel qu'arbitré le 2026-10-15 : tout
+ * juriste partage - le DJ et la DJA par leur rôle composite -, la validation d'un dossier sensible
+ * reste au DJ et à la DJA, et ni l'Assistante, ni le SH, ni l'avocat n'y touchent.
+ */
+describe("partage des pièces avec l'avocat (QF-64)", () => {
+  it("tout juriste partage et écrit la note à l'avocat, DJ et DJA compris", () => {
+    for (const profil of [JURISTE, DJ, DJA]) {
+      expect(peut(profil, "partagerDocument")).toBe(true);
+      expect(peut(profil, "ecrireNoteAvocat")).toBe(true);
+    }
+  });
+
+  it("seuls le DJ et la DJA valident un partage", () => {
+    expect(peut(DJ, "arbitrerPartages")).toBe(true);
+    expect(peut(DJA, "arbitrerPartages")).toBe(true);
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "arbitrerPartages")).toBe(false);
+    }
+  });
+
+  it("ni l'Assistante, ni le SH, ni l'avocat ne partagent", () => {
+    for (const profil of [ASSISTANTE, SH, AVOCAT]) {
+      expect(peut(profil, "partagerDocument")).toBe(false);
+      expect(peut(profil, "ecrireNoteAvocat")).toBe(false);
+    }
+  });
+
+  it("la file des partages n'est au menu que du DJ et de la DJA", () => {
+    const menu = (roles: readonly string[]) =>
+      NAVIGATION.filter((e) => e.livre && peut(roles, e.capacite)).map((e) => e.cle);
+    expect(menu(DJ)).toContain("partagesAvocat");
+    expect(menu(DJA)).toContain("partagesAvocat");
+    for (const profil of [JURISTE, ASSISTANTE, SH, AVOCAT]) {
+      expect(menu(profil)).not.toContain("partagesAvocat");
+    }
+  });
+});
+
 describe("navigation visible par profil (QF-59)", () => {
   const menu = (roles: readonly string[]) =>
     NAVIGATION.filter((e) => e.livre && peut(roles, e.capacite)).map((e) => e.cle);

@@ -28,6 +28,12 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+/*
+ * La section « Mes dossiers » (QF-64) a ses propres tests : elle est neutralisée ici, ce fichier ne
+ * portant que sur la correspondance.
+ */
+vi.mock("@/components/modules/portail/mes-dossiers", () => ({ MesDossiers: () => null }));
+
 const publications = vi.fn();
 const constitutions = vi.fn();
 

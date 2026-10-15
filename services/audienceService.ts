@@ -39,6 +39,15 @@ export const audienceService = {
   },
 
   /** #14 — compte rendu, recevable seulement le jour de l'audience ou après. */
+  /**
+   * QF-64 — la note destinée à l'avocat constitué, distincte du compte rendu interne. Vide, elle est
+   * effacée.
+   */
+  modifierNoteAvocat: async (audienceId: number, note: string): Promise<Audience> => {
+    const { data } = await apiClient.put<Audience>(`/audiences/${audienceId}/note-avocat`, { note });
+    return data;
+  },
+
   enregistrerCompteRendu: async (audienceId: number, compteRendu: string): Promise<Audience> => {
     const { data } = await apiClient.put<Audience>(`/audiences/${audienceId}/compte-rendu`, { compteRendu });
     return data;

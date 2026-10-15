@@ -1611,6 +1611,52 @@ fermé ne renvoie **rien** (indisponible). Et le scénario signalé est rejoué 
 fois, l'adresse est nettoyée, rouvrir l'onglet ne le rejoue plus. Trois parcours de bout en bout
 gardent les trois cas — motif consommé, cause distinguée, et aucune annonce sur une arrivée ordinaire.
 
+### ✅ QF-64 - L'avocat accède aux pièces partagées et à une note par audience (2026-10-15)
+
+**La demande** : donner à l'avocat externe l'accès à certains documents du dossier et aux audiences
+tenues, pour mieux assurer la défense. Arbitrée en quatre points le 2026-10-15 - le détail du
+backend est en **Q-139** :
+
+| Question | Arbitrage |
+|---|---|
+| Déclencheur | Affecté **et constitué** - c'est la lettre signée qui fait le mandat |
+| Qui partage | Tout juriste, sans validation du DJ |
+| Dossier sensible | Le juriste **propose**, le DJ ou la DJA **valide** |
+| Audiences | Une **note à l'avocat**, distincte du compte rendu interne |
+
+**Les écrans.**
+- **Onglet Documents** : une colonne *Avocat* dit l'état de chaque pièce, et les gestes suivent le
+  rôle - partager ou proposer, retirer ou annuler, valider ou rejeter.
+- **Partages à valider** : une file pour le DJ et la DJA, sur le modèle des demandes de suppression.
+  La pièce s'y lit avant de décider.
+- **Onglet Audiences** : une note par audience, affichée **à part** du compte rendu.
+- **Mon espace** de l'avocat : une section *Mes dossiers* - audiences avec leur note, et pièces
+  partagées.
+
+**L'écran annonce le bon geste, le serveur le décide.** Sur un dossier sensible, le bouton d'un
+juriste s'appelle « Proposer le partage », et non « Partager » : le nommer autrement lui ferait croire
+la pièce partie. Mais c'est la **réponse du serveur** qui dit lequel des deux a eu lieu, et c'est
+elle que le message de confirmation reprend - le serveur connaît la sensibilité à jour, l'écran peut
+avoir une fiche ancienne.
+
+**« Pas encore constitué » se dit.** Affecté sans être constitué, l'avocat lit « Les pièces et les
+notes de ce dossier vous seront accessibles une fois votre lettre de constitution signée », plutôt
+qu'« aucune pièce » : la première situation se règle par une signature, la seconde par une demande
+au juriste.
+
+**Deux corrections au passage.**
+- Le sélecteur de dossier du portail portait un astérisque « obligatoire » : vrai dans un formulaire
+  de dépôt, faux dans *Mes dossiers*, où le choix ne sert qu'à lire. Il devient facultatif là.
+- Le type `AudienceAvocat` du front ignorait `juridiction`, que le serveur renvoyait déjà. Il la
+  porte désormais, et l'avocat voit où se tient son audience.
+
+**Deux simulations de tests unitaires sont devenues incomplètes**, sans défaut derrière : l'espace
+de l'avocat monte maintenant *Mes dossiers*, et l'onglet Audiences la note. Elles ont été
+complétées - la première en neutralisant la section, que ses propres tests couvrent.
+
+**Hors périmètre.** Aucune notification : le DJ trouve les propositions dans sa file, l'avocat les
+pièces dans son espace.
+
 ### ✅ QF-61 - Cliquer un résultat juste après l'avoir cherché renvoyait à la liste - corrigé (2026-10-14)
 
 **Trouvé par la suite e2e**, pas signalé en recette - et c'est un défaut sérieux, pas une finesse.
