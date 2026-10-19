@@ -4,7 +4,7 @@ import { cn, formaterDate, formaterFcfa } from "@/lib/utils";
 
 describe("formaterFcfa", () => {
   it("formate sans décimale le seuil par défaut du domaine", () => {
-    // Espaces insécables selon la locale : on compare sur les chiffres et la devise.
+    // Non-breaking spaces depend on the locale: compare digits and currency only.
     const rendu = formaterFcfa(50_000_000).replace(/\s/g, " ");
     expect(rendu).toContain("50 000 000");
     expect(rendu).toMatch(/XAF|FCFA/);

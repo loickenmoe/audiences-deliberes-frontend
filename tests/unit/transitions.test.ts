@@ -8,10 +8,9 @@ import {
 } from "@/lib/transitions";
 
 /**
- * Le miroir de `EtapeTransitionValidator` doit rester **exactement** aligné sur le backend : s'il
- * proposait une transition que le backend refuse, l'utilisateur la choisirait pour recevoir un
- * `ERR-004` ; s'il en omettait une, un parcours métier deviendrait impossible depuis l'interface.
- * Ces attentes recopient la table du backend, transition par transition.
+ * The mirror of `EtapeTransitionValidator` must stay **exactly** aligned with the backend: an extra
+ * transition would lead to `ERR-004`, a missing one would make a business flow impossible from the UI.
+ * These expectations copy the backend table, transition by transition.
  */
 describe("transitionsPermises", () => {
   it.each([
@@ -25,7 +24,7 @@ describe("transitionsPermises", () => {
   });
 
   it("ne propose rien depuis EN_DELIBERE : le délibéré et le rabattement ont leurs endpoints", () => {
-    // Les proposer ici contournerait la saisie du résultat, du délai de recours ou du motif.
+    // Offering them here would bypass entering the outcome, appeal deadline or reason.
     expect(transitionsPermises("EN_DELIBERE")).toEqual([]);
   });
 });
@@ -57,9 +56,9 @@ describe("positionnement direct", () => {
   });
 
   /**
-   * Le pourvoi CCJA a les mêmes antécédents que le pourvoi national, et **non** la Cour Suprême :
-   * les deux cassations sont concurrentes. Annoncer la création d'une étape Cour Suprême aurait
-   * fait confirmer à l'utilisateur un effet de bord que le backend ne produit pas.
+   * A CCJA appeal has the same predecessors as the national appeal, and **not** the Supreme Court:
+   * both cassation routes are concurrent. Announcing a Supreme Court step would make the user
+   * confirm a side effect the backend does not produce.
    */
   it("n'annonce pas la Cour Suprême quand on positionne directement en CCJA", () => {
     expect(etapesIntermediairesCreees("RECOURS_2_CCJA", ["INSTANCE"])).toEqual(["RECOURS_1"]);

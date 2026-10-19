@@ -5,43 +5,23 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Une option, réduite à ce dont le composant a besoin. */
+/** An option, reduced to what the component needs. */
 export interface OptionCherchable {
   id: number;
   libelle: string;
   /**
-   * Seconde ligne atténuée, facultative : ce qui distingue deux options de **même libellé**.
-   *
-   * Le référentiel des agences compte deux « MBALLA II » dans la même ville ; seule l'adresse les
-   * sépare. La mettre sur la ligne principale l'allongerait pour les 80 autres agences, où elle
-   * n'apporte rien. Elle n'apparaît que dans la liste, jamais dans le champ une fois le choix fait.
+   * Optional dimmed second line, to distinguish options with the same label (e.g. branches with the
+   * same name in the same city). Shown only in the list, never in the field once selected.
    */
   sousLibelle?: string;
 }
 
 /**
- * Sélecteur à recherche au fil de la frappe (Q-105).
- *
- * **Le problème qu'il résout.** Une liste déroulante classique doit détenir toutes ses options. Tant
- * que l'annuaire tient dans une page, cela passe ; au-delà, elle se tronque **en silence** — le
- * collègue qu'on cherche n'apparaît pas, et rien à l'écran ne dit pourquoi. Élargir la page repousse
- * le problème sans le traiter : c'est le pis-aller que ce composant remplace.
- *
- * **Ce qu'il fait.** Il n'affiche que ce que le serveur lui renvoie pour la saisie en cours. La
- * recherche est donc exacte quel que soit le volume, et la quantité transférée ne dépend plus de la
- * taille du référentiel mais de ce que l'utilisateur tape.
- *
- * **Le délai de frappe n'est pas un détail.** Sans lui, chaque caractère déclencherait une requête :
- * « Fotso » en produirait cinq, dont quatre dont la réponse est jetée. La saisie est donc laissée au
- * repos 300 ms — assez pour ne pas inonder le serveur, assez peu pour que la liste suive la frappe.
- *
- * **Accessibilité.** Le motif `combobox` d'ARIA : le champ annonce la liste qu'il contrôle et
- * l'option active, de sorte qu'un lecteur d'écran suive les résultats sans les voir apparaître.
- *
- * **Choix multiple.** L'affectation d'un dossier retient plusieurs juristes et plusieurs avocats
- * (US 1.1 : au moins un de chaque). C'est justement là que le référentiel est le plus long, donc là
- * que la recherche sert le plus — laisser ces écrans en liste déroulante classique aurait vidé la
- * correction de sa substance. Les choix retenus s'affichent en jetons retirables sous le champ.
+ * Search-as-you-type picker (combobox): only shows what the server returns for the current input,
+ * so search is exact regardless of the dataset size, unlike a dropdown that silently truncates.
+ * Input is debounced for 300 ms to avoid one request per character.
+ * Follows the ARIA `combobox` pattern. In multiple mode (e.g. case assignment, US 1.1), selected
+ * choices are shown as removable chips under the field.
  */
 export function SelecteurCherchable({
   valeur,
@@ -56,12 +36,12 @@ export function SelecteurCherchable({
   obligatoire = false,
   className,
 }: {
-  /** Identifiant choisi, ou la liste des identifiants en mode `multiple`. */
+  /** Selected id, or the list of ids in `multiple` mode. */
   valeur: number | null | readonly number[];
   onChangement: (valeur: number | null | number[]) => void;
   multiple?: boolean;
   options: readonly OptionCherchable[];
-  /** Appelée quand la saisie s'est stabilisée : c'est elle qui interroge le serveur. */
+  /** Called once input has settled: this is what queries the server. */
   onRecherche: (recherche: string) => void;
   chargement?: boolean;
   label: string;
@@ -85,16 +65,15 @@ export function SelecteurCherchable({
     [valeur],
   );
   /**
-   * Les libellés des choix retenus viennent des options **connues**. En mode multiple, une
-   * recherche ultérieure renouvelle la liste : un choix fait avant peut ne plus s'y trouver. On
-   * mémorise donc les libellés déjà vus, sinon un jeton se viderait en cours de saisie.
+   * Labels of selected choices come from known options. In multiple mode a later search refreshes
+   * the list, so labels already seen are remembered; otherwise a chip would go blank while typing.
    */
   const libellesConnus = useRef(new Map<number, string>());
   for (const option of options) libellesConnus.current.set(option.id, option.libelle);
   /*
-   * Le choix retenu doit rester affiché même si une recherche ultérieure a renouvelé les options.
-   * On se rabat sur les libellés **déjà vus** - et sur eux seuls : afficher « #12 » pour un
-   * identifiant jamais rencontré serait pire que le champ vide.
+   * The selected choice must stay displayed even after a later search refreshed the options. Fall
+   * back on labels already seen, and only those: showing "#12" for an unknown id is worse than an
+   * empty field.
    */
   const selection = useMemo(() => {
     if (multiple) return null;
@@ -104,17 +83,17 @@ export function SelecteurCherchable({
     return connu ? { id: valeur, libelle: connu } : null;
   }, [multiple, options, valeur]);
 
-  // Laisse la frappe se stabiliser avant d'interroger le serveur.
+  // Let typing settle before querying the server.
   useEffect(() => {
     if (!ouvert) return;
     const minuteur = setTimeout(() => onRecherche(saisie), 300);
     return () => clearTimeout(minuteur);
-    // `onRecherche` est volontairement hors dépendances : une fonction recréée à chaque rendu
-    // relancerait la recherche en boucle.
+    // `onRecherche` is intentionally left out of the dependencies: a function recreated on each
+    // render would restart the search in a loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saisie, ouvert]);
 
-  // Un clic à l'extérieur referme la liste sans rien choisir.
+  // A click outside closes the list without selecting anything.
   useEffect(() => {
     if (!ouvert) return;
     const surClic = (evenement: MouseEvent) => {
@@ -131,7 +110,7 @@ export function SelecteurCherchable({
         ? choisis.filter((id) => id !== option.id)
         : [...choisis, option.id];
       onChangement([...suivants]);
-      // La liste reste ouverte : on affecte rarement une seule personne.
+      // The list stays open: a case is rarely assigned to a single person.
       setSaisie("");
       return;
     }
@@ -159,12 +138,9 @@ export function SelecteurCherchable({
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={conteneur}>
       {/*
-        L'astérisque est **hors du `<label>`**, et en rouge : c'est la règle que `Champ` applique
-        depuis toujours, et que ce composant avait manquée. À l'intérieur, elle entrait dans le
-        texte du libellé - le nom accessible valait « Agence d'origine * » au lieu de « Agence
-        d'origine », et un test qui interroge le libellé au mot près ne le trouvait pas. Noire,
-        elle ne se lisait pas non plus comme la marque d'obligation que portent les autres champs.
-        Elle reste décorative : l'obligation est annoncée par `aria-required` sur le contrôle.
+        The asterisk is outside the `<label>` (same rule as `Champ`) so it is not part of the
+        accessible name. It is decorative: the requirement is announced by `aria-required` on the
+        control.
       */}
       <div className="flex items-center gap-0.5">
         <label htmlFor={idChamp} className="text-[length:var(--taille-sm)] font-medium">
@@ -187,18 +163,16 @@ export function SelecteurCherchable({
           aria-autocomplete="list"
           aria-activedescendant={ouvert && options[indexActif] ? `${idListe}-${options[indexActif].id}` : undefined}
           /*
-           * `aria-required` et non `required` : en choix multiple, la valeur du champ est la saisie en
-           * cours, presque toujours vide. Dans un vrai `<form>` — celui de création d'un dossier —, le
-           * contrôle natif bloquait l'envoi même avec des choix retenus, et avant la validation de
-           * l'application. L'obligation reste annoncée aux lecteurs d'écran ; c'est le formulaire qui
-           * la vérifie et la signale.
+           * `aria-required` rather than `required`: in multiple mode the field value is the current
+           * input, usually empty, and native validation would block submission even with
+           * selections. The form performs and reports the check.
            */
           aria-required={obligatoire || undefined}
           value={ouvert || multiple ? saisie : (selection?.libelle ?? "")}
           placeholder={placeholder ?? t("rechercherPlaceholder")}
           onFocus={() => setOuvert(true)}
-          // Le focus seul ne suffit pas : fermée par Échap, la liste doit se rouvrir au clic suivant,
-          // alors que le champ a gardé le focus.
+          // Focus alone is not enough: after closing with Escape, the list must reopen on the next
+          // click while the field still has focus.
           onClick={() => setOuvert(true)}
           onChange={(evenement) => {
             setSaisie(evenement.target.value);
@@ -210,8 +184,8 @@ export function SelecteurCherchable({
         />
 
         {/*
-          `aria-multiselectable` porte sur la **liste**, pas sur le champ : c'est elle qui offre
-          plusieurs choix. Le linter d'accessibilité l'a signalé, et il avait raison.
+          `aria-multiselectable` belongs on the list, not on the field: the list offers multiple
+          choices.
         */}
         {ouvert ? (
           <ul

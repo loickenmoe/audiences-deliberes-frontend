@@ -10,15 +10,14 @@ import { Dialog } from "@/components/ui/dialog";
 import { useArbitrerPartage } from "@/hooks/useGed";
 import { messageErreur } from "@/lib/api/errors";
 
-/** Le motif d'un rejet tient dans le détail de l'historique : il reste lisible d'un coup d'œil. */
+/** The rejection reason fits in the history detail, so it stays readable at a glance. */
 const MOTIF_MAX = 1000;
 
 /**
- * Le rejet motivé d'un partage proposé (QF-64). Partagé par l'onglet Documents du dossier et par
- * la file des partages à valider : le même geste, au même endroit de la règle.
- *
- * Le motif est exigé - par l'écran **et** par le serveur, qui répond 400 sans lui : le juriste qui a
- * proposé doit savoir pourquoi la pièce ne part pas.
+ * Rejection of a proposed document share, used by the case file Documents tab and by the
+ * approval queue.
+ * The reason is required by the screen and by the server (400 without it): the legal officer who
+ * proposed the share must know why it was refused.
  */
 export function ModaleRejetPartage({
   piece,

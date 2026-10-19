@@ -17,7 +17,7 @@ import { messageErreur } from "@/lib/api/errors";
 import { aujourdhui } from "@/lib/calendrier";
 import { formaterDate } from "@/lib/utils";
 
-/** Fenêtre par défaut des comptes rendus attendus : un mois en arrière. */
+/** Default window for expected reports: one month back. */
 function ilYaUnMois(): string {
   const date = new Date();
   date.setMonth(date.getMonth() - 1);
@@ -25,21 +25,12 @@ function ilYaUnMois(): string {
 }
 
 /**
- * Écran 44 — journal des audiences et comptes rendus attendus (observation métier du 2026-09-25).
- *
- * **Deux questions, deux blocs.** Ce qui s'est passé tel jour, et ce qui n'a toujours pas été
- * rapporté. La première se regarde chaque matin, la seconde de loin en loin : les mêler dans un
- * seul tableau aurait obligé à choisir une date pour voir des retards qui n'en dépendent pas.
- *
- * **Les deux comptes rendus sont montrés côte à côte.** Celui du juriste, saisi sur l'audience, et
- * celui de l'avocat, déposé puis validé — avec la pièce qu'il y a jointe, s'il y en a une. Élire
- * l'un des deux aurait fait passer pour un manquement une audience dont l'autre partie a déjà
- * rendu compte.
- *
- * **Les deux tableaux sont paginés**, comme les autres listes du système : une juridiction chargée
- * aligne les audiences, et un mois de retards peut en compter beaucoup. La barre reste affichée même
- * sur une page unique, car c'est elle qui porte le nombre total et le choix du nombre de lignes —
- * savoir qu'on voit « 7 éléments » et non une liste tronquée fait partie de l'information.
+ * Screen 44 - hearing log and expected hearing reports.
+ * Two blocks for two questions: what happened on a given day, and what has still not been reported.
+ * The lawyer's report (entered on the hearing) and the counsel's report (submitted then validated,
+ * with its attachment if any) are shown side by side.
+ * Both tables are paginated; the bar stays visible even on a single page since it shows the total
+ * count and the page size selector.
  */
 export function JournalAudiences() {
   const t = useTranslations("journalAudiences");
@@ -59,7 +50,7 @@ export function JournalAudiences() {
   const attendus = useComptesRendusAttendus(debut, fin, pageAttendus, tailleAttendus);
   const fenetreInversee = debut > fin;
 
-  /** Changer de date ou de fenêtre ramène à la première page : sinon on reste sur une page vide. */
+  /** Changing the date or window returns to the first page, otherwise a page could stay empty. */
   function changerDate(valeur: string) {
     setDate(valeur);
     setPageJournal(0);

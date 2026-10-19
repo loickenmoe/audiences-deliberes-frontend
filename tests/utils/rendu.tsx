@@ -9,11 +9,8 @@ import type { Langue } from "@/i18n/config";
 const MESSAGES = { fr, en } as const;
 
 /**
- * Rendu d'un composant dans une langue donnée.
- *
- * Tout composant traduit exige le contexte de `next-intl` ; cet utilitaire évite de le rebrancher
- * dans chaque test, et permet surtout de **vérifier le même composant dans les deux langues** —
- * c'est la seule façon d'attraper un texte resté en dur.
+ * Renders a component in a given locale with the `next-intl` context. Rendering the same
+ * component in both languages is the only way to catch hard-coded text.
  */
 export function rendre(
   element: ReactElement,

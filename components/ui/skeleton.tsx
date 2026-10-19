@@ -3,10 +3,10 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Ossature de chargement. Préférée à un indicateur tournant : elle occupe la place de la donnée
- * attendue, ce qui évite le saut de mise en page à l'arrivée du contenu.
+ * Loading skeleton. Preferred to a spinner: it occupies the space of the expected data, avoiding
+ * layout shift when content arrives.
  *
- * L'animation est neutralisée par `prefers-reduced-motion` (cf. `globals.css`).
+ * The animation is disabled by `prefers-reduced-motion` (see `globals.css`).
  */
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (

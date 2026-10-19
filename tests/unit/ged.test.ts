@@ -1,10 +1,9 @@
 /**
  * @vitest-environment node
  *
- * Sous jsdom, un corps `FormData` envoyé par `XMLHttpRequest` et intercepté par MSW n'est jamais
- * relu : la requête reste suspendue et le test expire sans rien vérifier. Sous Node, axios passe par
- * son adaptateur HTTP, qui encode réellement le multipart — ce que ce fichier veut justement
- * vérifier. Aucun composant n'est rendu ici : l'environnement DOM est inutile.
+ * Under jsdom, a `FormData` body sent through `XMLHttpRequest` and intercepted by MSW is never read
+ * back and the test times out. Under Node, axios uses its HTTP adapter, which really encodes the
+ * multipart body that this file checks. No component is rendered, so no DOM is needed.
  */
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
@@ -14,13 +13,10 @@ import { estTypeConnu, natureApercu, piecesDeCategorie } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
 
 /**
- * GED côté frontend : dépôt, consultation, suppression.
- *
- * Deux pièges couverts ici, qu'aucun test d'affichage n'attraperait :
- * · avec `application/json` pour type par défaut, axios 1.x convertit un FormData en JSON — le
- *   fichier ne partirait jamais ;
- * · une URL pré-signée ne doit pas recevoir notre jeton, que MinIO vérifierait à la place de la
- *   signature.
+ * Document management (GED): upload, viewing, deletion. Two traps covered:
+ * · with `application/json` as default type, axios 1.x converts a FormData to JSON and the file
+ *   would never be sent;
+ * · a presigned URL must not receive our token, which MinIO would check instead of the signature.
  */
 const BASE = "http://localhost:8080/api/v1";
 const MINIO = "http://localhost:9000";
@@ -99,7 +95,7 @@ describe("contenu d'un document", () => {
     const contenu = await gedService.recupererContenu(`${MINIO}/audiences-app/dossiers/7/pv.pdf?X-Amz-Signature=abc`);
 
     expect(await contenu.text()).toBe("%PDF-1.4");
-    // Un en-tête Authorization ferait vérifier notre jeton à la place de la signature.
+    // An Authorization header would make MinIO check our token instead of the signature.
     expect(derniere?.autorisation).toBeNull();
   });
 });
@@ -114,27 +110,27 @@ describe("règles des pièces", () => {
     expect(natureApercu("pv.PDF")).toBe("pdf");
     expect(natureApercu("scan.jpg")).toBe("image");
     expect(natureApercu("note.txt")).toBe("texte");
-    // Un tableur ne s'affiche pas dans un navigateur : il se télécharge.
+    // A spreadsheet cannot be displayed in a browser: it is downloaded.
     expect(natureApercu("etat.xlsx")).toBeNull();
   });
 
   it("sépare les deux formats Word, que le navigateur ne traite pas de la même façon", () => {
-    // Un `.docx` est une archive XML : une bibliothèque sait le rendre dans la page.
+    // A `.docx` is an XML archive: a library can render it in the page.
     expect(natureApercu("conclusions.docx")).toBe("word");
     expect(natureApercu("CONCLUSIONS.DOCX")).toBe("word");
 
-    // Un `.doc` est le binaire de Word 97-2003 : aucune bibliothèque de navigateur ne le lit.
-    // Le distinguer permet d'expliquer pourquoi, plutôt que d'opposer un refus indifférencié.
+    // A `.doc` is the Word 97-2003 binary format: no browser library reads it. Telling it apart
+    // lets the screen explain why, instead of a generic refusal.
     expect(natureApercu("assignation.doc")).toBe("word-ancien");
     expect(natureApercu("Assignation.Doc")).toBe("word-ancien");
 
-    // Le piège de la recherche d'extension : « .doc » ne doit pas être vu dans « .docx ».
+    // Extension matching trap: ".doc" must not match ".docx".
     expect(natureApercu("note.docx.pdf")).toBe("pdf");
   });
 
   it("affiche tel quel un type déposé hors de l'interface", () => {
     expect(estTypeConnu("PV_TRANSFERT")).toBe(true);
-    // La lettre de constitution est déposée par le backend sous un libellé français.
+    // The backend stores the retainer letter under a French label.
     expect(estTypeConnu("Lettre de constitution")).toBe(false);
   });
 });

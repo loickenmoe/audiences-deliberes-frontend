@@ -15,9 +15,9 @@ import { peut } from "@/lib/rbac";
 const DEFAUTS = { nom: "" };
 
 /**
- * Écran 34 — répertoire des avocats (UC-INT-07), du moins chargé au plus chargé : c'est l'ordre
- * utile pour choisir à qui confier un dossier. La charge compte les dossiers actifs ; la performance,
- * la part des délibérés favorables sur ses dossiers (0 % tant qu'aucun n'est rendu).
+ * Screen 34 - lawyer directory (UC-INT-07), from least to most loaded: the useful order when choosing
+ * whom to entrust a case file to. Load counts active case files; performance is the share of
+ * favorable deliberations on their case files (0% until one is delivered).
  */
 export function RepertoireAvocats({ roles }: { roles: string[] }) {
   const t = useTranslations("repertoire");
@@ -25,9 +25,9 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
   const requete = useRepertoire(filtres.nom);
   const avocats = requete.data?.content ?? [];
   /*
-    L'activité d'un avocat **nomme une personne** : elle se tient sur les rôles propres du DJ et de
-    la DJA, jamais sur `ROLE_JURISTE`, composite depuis Q-81 - sans quoi chaque juriste, et
-    l'Assistante qui atteint aussi cet écran, liraient ce qu'elle protège.
+    A lawyer's activity names a person: it is restricted to the DJ and DJA's own roles, never to
+    `ROLE_JURISTE`, which is composite - otherwise every legal officer, and the Assistant who also
+    reaches this screen, could read it.
   */
   const peutLireLActivite = peut(roles, "consulterRapportNominatif");
   const [avocatOuvert, setAvocatOuvert] = useState<{ id: number; nom: string } | null>(null);
@@ -39,11 +39,7 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
-      {/*
-        **Au fil de la frappe** (QF-57), comme les filtres des dossiers et des clients. Le raccourci
-        Entrée est conservé par `ChampRecherche` : il existait ici avant, et le retirer aurait enlevé
-        une habitude à qui l'avait prise.
-      */}
+      {/* Filters as the user types, like the case file and client filters; `ChampRecherche` keeps the Enter shortcut. */}
       <ChampRecherche
         id="recherche-avocat"
         label={t("rechercheNom")}
@@ -71,11 +67,7 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonneTelephone")}</th>
                 <th scope="col" className="px-4 py-2 font-medium">{t("colonneCharge")}</th>
                 <th scope="col" className="px-4 py-2 font-medium" title={t("performanceAide")}>{t("colonnePerformance")}</th>
-                {/*
-                  Ajoutée **en dernier**, et c'est volontaire : deux parcours e2e visent la charge
-                  par son rang (4e colonne). Insérer au milieu les aurait fait échouer sans que le
-                  produit ait changé.
-                */}
+                {/* Added last on purpose: two e2e tests target the load column by its position (4th column). */}
                 {peutLireLActivite ? (
                   <th scope="col" className="px-4 py-2 font-medium">{t("colonneActivite")}</th>
                 ) : null}
@@ -93,13 +85,8 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
                   <td className="px-4 py-2">{avocat.telephone ?? "—"}</td>
                   <td className="px-4 py-2" data-nombres>{t("charge", { nombre: avocat.indicateurCharge })}</td>
                   {/*
-                    Les chiffres, non le taux (métier, 2026-10-06). « 3 sur 4 » dit ce que « 75 % »
-                    résumait, **et sur combien d'affaires** : un taux de 100 % sur un délibéré
-                    unique ne vaut pas le même jugement qu'un taux de 70 % sur trente, et c'est
-                    pourtant le premier qui paraissait le meilleur.
-
-                    Aucun délibéré n'est pas une contre-performance : c'est l'absence de mesure, et
-                    l'écran le dit plutôt que d'afficher un zéro qui se lirait comme un échec.
+                    Counts, not a rate: "3 of 4" also says how many cases the figure is based on. No deliberation
+                    means no measurement, not poor performance, so the screen says so instead of showing a zero.
                   */}
                   <td className="px-4 py-2" data-nombres>
                     {avocat.deliberesTotal === 0
@@ -128,9 +115,8 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
       <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("performanceAide")}</p>
 
       {/*
-        La fiche s'ouvre **sous** le tableau et non en modale : on y choisit une période, on y
-        télécharge, et une modale rendrait tout cela étroit. `key` force un remontage au changement
-        d'avocat, sans quoi la période et le rapport déjà affichés resteraient ceux du précédent.
+        The detail opens below the table rather than in a modal: it has a period picker and downloads.
+        `key` forces a remount when the lawyer changes, otherwise the previous period and report would remain.
       */}
       {avocatOuvert !== null ? (
         <div className="flex flex-col gap-2">

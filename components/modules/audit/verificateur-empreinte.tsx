@@ -10,20 +10,11 @@ import { auditService } from "@/services/auditService";
 import type { VerificationArchive } from "@/types/domaine";
 
 /**
- * Vérifie qu'un fichier détenu correspond à une archive produite ici (backend Q-114).
- *
- * **C'est ce qui rend l'empreinte utile.** Sans ce chemin, vérifier supposait d'ouvrir un terminal,
- * de taper `sha256sum` et de comparer soixante-quatre caractères à l'œil — autant dire que personne
- * ne le faisait. Une empreinte que nul ne vérifie n'est qu'une décoration.
- *
- * **Le fichier ne quitte jamais le poste.** L'empreinte est calculée par le navigateur ; seul son
- * résultat part au serveur. Un document d'audit n'a aucune raison de traverser le réseau pour être
- * comparé à lui-même — et transmettre une pièce pour la vérifier serait une singulière façon de la
- * protéger.
- *
- * **Ce que la réponse signifie, et ne signifie pas.** « Reconnue » prouve que le fichier n'a pas
- * changé depuis qu'on l'a scellé. Elle ne prouve pas l'antériorité face à un tiers : l'application
- * détient à la fois le fichier et la ligne qui l'atteste. L'écran le dit plutôt que de le taire.
+ * Checks that a held file matches an archive produced here.
+ * The file never leaves the workstation: the fingerprint is computed in the browser and only the
+ * result is sent to the server.
+ * "Recognized" proves the file has not changed since it was sealed; it does not prove precedence to
+ * a third party, since the application holds both the file and the record attesting it.
  */
 export function VerificateurEmpreinte() {
   const t = useTranslations("audit");
@@ -76,7 +67,7 @@ export function VerificateurEmpreinte() {
           onChange={(evenement) => {
             const fichier = evenement.target.files?.[0];
             if (fichier) void verifier(fichier);
-            // Réinitialisé pour que redéposer le même fichier relance bien une vérification.
+            // Reset so that dropping the same file again triggers a new check.
             evenement.target.value = "";
           }}
         />
@@ -112,9 +103,8 @@ export function VerificateurEmpreinte() {
               : t("verifierInconnue")}
           </p>
           {/*
-            L'empreinte calculée est montrée dans les deux cas. Reconnue, elle confirme ce qui a été
-            comparé ; inconnue, elle permet de la transmettre pour comprendre — c'est précisément le
-            moment où l'on en a besoin.
+            The computed fingerprint is shown in both cases: if recognized it confirms what was
+            compared, if unknown it can be passed on for investigation.
           */}
           {empreinte ? <EmpreinteAffichee empreinte={empreinte} /> : null}
           <p className="text-[length:var(--taille-xs)] text-texte-secondaire">

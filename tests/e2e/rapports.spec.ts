@@ -2,12 +2,9 @@ import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 /**
- * Reporting (écrans 39 et 40) **contre le backend réel**.
- *
- * Deux points méritent d'être tenus par un parcours : le **204 d'une période vide**, qui doit
- * s'afficher comme un état vide et non comme une erreur (RG-REP-02), et les habilitations — le
- * tableau de bord au DJ et à la DJA (Q-95), le rapport à tout porteur de `ROLE_JURISTE`, ce qui
- * inclut la direction depuis Q-81.
+ * Reporting (screens 39 and 40) against the real backend. Checks the 204 of an empty period, shown
+ * as an empty state rather than an error (RG-REP-02), and permissions: the dashboard for DJ and DJA,
+ * the report for any holder of `ROLE_JURISTE` (management included, through the composite role).
  */
 
 loadEnvConfig(process.cwd());
@@ -38,8 +35,8 @@ test("le DJ lit ses indicateurs et rejoint les rapports depuis le tableau de bor
   await dj.waitForURL(/\/tableau-de-bord/, { timeout: 60_000 });
 
   await expect(dj.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
-  // Les neuf indicateurs de l'écran, chacun avec sa valeur — la base de développement n'est pas
-  // vide. Le taux de succès n'y est plus : la Direction veut des nombres (2026-10-06).
+  // The nine indicators of the screen, each with its value (the development database is not
+  // empty). No success rate: management wants counts.
   await expect(dj.getByRole("term").filter({ hasText: "Succès du recouvrement" })).toHaveCount(0);
   for (const libelle of [
     "Dossiers actifs",
@@ -57,15 +54,14 @@ test("le DJ lit ses indicateurs et rejoint les rapports depuis le tableau de bor
   await expect(dj.getByText("Dossiers portant au moins une étape en cours.")).toBeVisible();
 
   /*
-   * N6 (observation 12) : la Direction lisait un taux sans savoir sur combien d'affaires il
-   * portait. Les trois décomptes **ne se déduisent pas l'un de l'autre** - une décision mixte
-   * n'est ni gagnée ni perdue - et l'écran doit le dire, pas seulement l'afficher.
+   * N6: the three counts do not derive from one another (a mixed decision is neither won nor lost),
+   * and the screen must say so.
    */
   await expect(
     dj.getByText("Ce n’est pas le complément des gagnés : les décisions mixtes sont comptées à part."),
   ).toBeVisible();
 
-  // Le parcours P9 s'enchaîne : le DJ passe au rapport par son composite ROLE_JURISTE (Q-81).
+  // Journey P9 continues: the DJ reaches the report through the composite ROLE_JURISTE.
   await dj.getByRole("link", { name: "Générer un rapport" }).click();
   await dj.waitForURL(/\/rapports/, { timeout: 60_000 });
   await expect(dj.getByRole("heading", { name: "Rapport d’activité", level: 1 })).toBeVisible();
@@ -84,7 +80,7 @@ test("la DJA accède au tableau de bord, l'Assistante non (Q-95)", async ({ brow
   await expect(
     assistante.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" }),
   ).toBeVisible();
-  // Et l'entrée ne lui est pas proposée dans la navigation.
+  // The entry is not offered in the navigation either.
   await expect(
     assistante.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Tableau de bord" }),
   ).toHaveCount(0);
@@ -96,31 +92,30 @@ test("un rapport se compile sur la période choisie, et une période vide reste 
   await page.goto("/rapports");
   await expect(page.getByRole("heading", { name: "Rapport d’activité", level: 1 })).toBeVisible();
 
-  // Rien ne part avant le clic : le rapport est une action, pas une lecture d'écran.
+  // Nothing is sent before the click: the report is an action, not a screen read.
   await expect(page.getByText("Choisissez une période, puis affichez le rapport.")).toBeVisible();
 
-  // Période large : la base de développement porte de l'activité.
+  // Wide period: the development database has activity.
   await page.locator("#rapport-debut").fill("2020-01-01");
   await page.locator("#rapport-fin").fill("2030-12-31");
   await page.getByRole("button", { name: "Afficher le rapport" }).click();
   await expect(page.getByText("Dossiers ouverts")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Délibérés rendus")).toBeVisible();
   /*
-   * Des nombres, pas un pourcentage (métier, 2026-10-06). Le rapport portait une ligne
-   * « Succès du recouvrement » en pourcentage ; il porte les trois décomptes qu'elle résumait.
+   * Counts, not a percentage: the report shows the three counts instead of a recovery success rate.
    */
   await expect(page.getByText("Litiges gagnés")).toBeVisible();
   await expect(page.getByText("Litiges perdus")).toBeVisible();
   await expect(page.getByText("Décisions mixtes")).toBeVisible();
   await expect(page.getByText("Succès du recouvrement")).toHaveCount(0);
 
-  // RG-REP-02 : période sans activité → 204, affiché comme un état vide et non comme une erreur.
+  // RG-REP-02: a period without activity returns 204, shown as an empty state, not an error.
   await page.locator("#rapport-debut").fill("2000-01-01");
   await page.locator("#rapport-fin").fill("2000-01-02");
   await page.getByRole("button", { name: "Afficher le rapport" }).click();
   await expect(page.getByText("Aucune activité sur cette période")).toBeVisible({ timeout: 30_000 });
-  // Aucun état d'erreur : `role="alert"` est cherché **dans le contenu**, l'annonceur de route de
-  // Next en porte un lui aussi, hors de `<main>`.
+  // No error state: `role="alert"` is searched inside the content, as Next's route announcer also
+  // has one, outside `<main>`.
   await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
 
   await page.context().close();
@@ -151,7 +146,7 @@ test("le rapport s'exporte dans les trois formats binaires", async ({ page }) =>
     const telechargement = page.waitForEvent("download");
     await page.getByRole("button", { name: "Exporter" }).click();
     const fichier = await telechargement;
-    // Nom construit par l'écran : l'en-tête Content-Disposition n'est pas exposé en CORS.
+    // Name built by the screen: the Content-Disposition header is not exposed through CORS.
     expect(fichier.suggestedFilename()).toMatch(new RegExp(`\\.${extension}$`));
   }
 
@@ -180,29 +175,20 @@ test("les écrans de reporting sont traduits", async ({ page }) => {
 });
 
 /**
- * L'activité par personne (observation 14, N6) — REC-E2E-036.
- *
- * Trois choses se tiennent ici, et aucune des trois ne se vérifie en test unitaire :
- *
- * 1. **Qui la voit.** Le rapport nomme des collègues. Il est réservé au DJ et à la DJA, et le
- *    serveur le tient sur leurs rôles propres : l'adosser à `ROLE_JURISTE`, composite depuis Q-81,
- *    le donnerait à chaque juriste, donc à chacun des nommés.
- * 2. **Des indicateurs, pas une note.** Ni pourcentage, ni score, ni classement par volume -
- *    l'application compte, le responsable apprécie. C'est la ligne arrêtée avec le métier, et un
- *    test est le seul moyen qu'elle survive à la prochaine demande de « total global ».
- * 3. **Le 204 d'une période vide**, comme pour le rapport périodique (RG-REP-02) : un état vide,
- *    pas une erreur.
+ * Activity per person (N6), REC-E2E-036.
+ * 1. Visibility: the report names colleagues, so it is restricted to DJ and DJA on their own roles
+ *    (`ROLE_JURISTE` is composite and would give it to every legal officer).
+ * 2. Indicators, not a grade: no percentage, score or ranking by volume.
+ * 3. An empty period returns 204, shown as an empty state (RG-REP-02).
  */
 const BORNES_LARGES = ["2020-01-01", "2030-12-31"] as const;
 
-/** Les deux champs de l'écran nominatif ; le rapport périodique porte les siens, `#rapport-*`. */
+/** The two fields of the per-person screen; the periodic report has its own, `#rapport-*`. */
 async function posePeriodeNominative(page: Page, debut: string, fin: string) {
   await page.locator("#nominatif-debut").fill(debut);
   await page.locator("#nominatif-fin").fill(fin);
   /*
-   * Par son **nom accessible**, et non par son texte visible. Deux tableaux coexistent sur cet écran
-   * depuis Q-136, tous deux avec un bouton « Afficher » : le texte seul ne dit pas lequel. Le nom
-   * accessible le dit, et c'est aussi ce qu'un lecteur d'écran annonce.
+   * By accessible name, not visible text: two tables on this screen both have a "Afficher" button.
    */
   await page.getByRole("button", { name: "Afficher l’activité par personne" }).click();
 }
@@ -213,10 +199,8 @@ test("le DJ lit l'activité de chacun, et une période vide y reste un état vid
   await expect(dj.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
 
   /*
-   * Rien ne part avant le clic, et surtout rien ne s'affiche : le rapport nomme des personnes, il ne
-   * se déclenche pas en ouvrant l'écran. **Deux** blocs portent cette phrase depuis Q-136 - celui
-   * des internes et celui des avocats -, et c'est bien ce qu'on veut vérifier : ni l'un ni l'autre
-   * ne se déclenche seul.
+   * Nothing is sent or shown before the click: the report names people. Two blocks carry this
+   * sentence (internal staff and lawyers), and neither triggers on its own.
    */
   await expect(dj.getByText("Choisissez une période, puis affichez.", { exact: true })).toHaveCount(2);
 
@@ -238,21 +222,18 @@ test("le DJ lit l'activité de chacun, et une période vide y reste un état vid
   await expect(tableau.locator("tbody tr").first()).toBeVisible();
 
   /*
-   * Des indicateurs, pas une note. Un pourcentage dans ce tableau serait un taux de réussite
-   * individuel, c'est-à-dire exactement ce que le métier a refusé.
+   * Indicators, not a grade: a percentage here would be an individual success rate.
    */
   expect(await tableau.innerText()).not.toContain("%");
 
   /*
-   * L'ordre est celui des **noms**. Trier par volume ferait du rapport un palmarès, où le premier
-   * passerait pour le meilleur - alors que trente dossiers simples ne valent pas deux affaires
-   * difficiles.
+   * Sorted by name: sorting by volume would turn the report into a ranking.
    */
   const personnes = await tableau.locator("tbody tr td:nth-child(1)").allInnerTexts();
   const nomsSeuls = personnes.map((cellule) => cellule.split("\n")[0].trim());
   expect(nomsSeuls).toEqual([...nomsSeuls].sort((a, b) => a.localeCompare(b, "fr")));
 
-  // RG-REP-02 : période sans activité → 204, affiché comme un état vide et non comme une erreur.
+  // RG-REP-02: a period without activity returns 204, shown as an empty state, not an error.
   await posePeriodeNominative(dj, "2000-01-01", "2000-01-02");
   await expect(dj.getByText("Aucune activité sur cette période")).toBeVisible({ timeout: 30_000 });
   await expect(dj.getByRole("main").getByRole("alert")).toHaveCount(0);
@@ -267,9 +248,9 @@ test("la DJA lit l'activité par personne ; le juriste garde son rapport sans la
   await dja.context().close();
 
   /*
-   * Le point sensible. Le juriste atteint `/rapports` par son rôle, et le DJ comme la DJA
-   * l'atteignent par le même composite : rien dans l'URL ne distingue les trois. C'est la section
-   * qui doit manquer au juriste, sans rien lui retirer de ce qu'il avait.
+   * The sensitive point: the legal officer, DJ and DJA all reach `/rapports` through the same role,
+   * and the URL does not distinguish them. The section must be missing for the legal officer
+   * without removing anything else.
    */
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto("/rapports");
@@ -292,14 +273,9 @@ test("l'activité par personne est traduite", async ({ page }) => {
 });
 
 /**
- * La fiche d'activité (Q-133) — REC-E2E-037.
- *
- * Les deux demandes du métier du 2026-10-09 : **télécharger son propre rapport** sur la période
- * choisie, et **cliquer sur un élément** pour arriver aux détails de la tâche.
- *
- * Ce qu'un test unitaire ne peut pas tenir ici : que l'Assistante et le supérieur hiérarchique, qui
- * n'entrent pas sur `/rapports`, y aient tout de même accès - c'est la raison pour laquelle la fiche
- * vit sur « Mon compte » -, et que le clic aboutisse réellement sur la fiche d'un dossier.
+ * Activity sheet, REC-E2E-037: download one's own report for the chosen period, and click an item
+ * to reach the task details. The sheet lives on "Mon compte" so the Assistant and the SH, who
+ * cannot enter `/rapports`, can reach it.
  */
 async function afficherMonActivite(page: Page) {
   await page.goto("/mon-compte");
@@ -312,10 +288,10 @@ async function afficherMonActivite(page: Page) {
 test("un juriste affiche son activité, la télécharge, puis clique jusqu'au dossier", async ({ page }) => {
   await seConnecter(page, "juriste.test");
 
-  // Rien avant le clic : la fiche nomme une personne, elle ne se déclenche pas à l'ouverture.
+  // Nothing before the click: the sheet names a person, it does not trigger on opening.
   await page.goto("/mon-compte");
   await expect(page.getByText("Choisissez une période, puis affichez.", { exact: true })).toBeVisible();
-  // Et le téléchargement n'est pas proposé avant : on n'emporte pas un document qu'on n'a pas vu.
+  // Download is not offered before: a document is not taken away unseen.
   await expect(page.getByRole("button", { name: "Télécharger" })).toHaveCount(0);
 
   await afficherMonActivite(page);
@@ -324,13 +300,12 @@ test("un juriste affiche son activité, la télécharge, puis clique jusqu'au do
   await expect(tableau.getByRole("columnheader", { name: "Nature de l’action" })).toBeVisible();
   await expect(tableau.locator("tbody tr").first()).toBeVisible();
 
-  // Ni note, ni score : le refus posé avec le métier se vérifie à l'œil.
+  // No grade, no score.
   expect(await tableau.innerText()).not.toContain("%");
 
   /*
-   * « Chaque utilisateur doit être capable de télécharger ses propres rapports » : les trois
-   * formats, et un nom de fichier qui porte la personne et la période - le serveur le construit
-   * aussi de son côté, l'en-tête n'étant pas exposée en CORS.
+   * Each user can download their own reports: three formats, and a file name with the person and
+   * the period (built client-side too, as the header is not exposed through CORS).
    */
   for (const [format, extension] of [
     ["PDF", "pdf"],
@@ -347,8 +322,8 @@ test("un juriste affiche son activité, la télécharge, puis clique jusqu'au do
   }
 
   /*
-   * « Cliquer sur un élément doit directement le renvoyer aux détails de la dite tâche. » Le
-   * décompte ouvre les actions comptées ; une action ouvre le dossier concerné.
+   * Clicking an item leads to the task details: a count opens the counted actions; an action opens
+   * the related case.
    */
   await tableau.getByRole("button", { name: /^Voir les \d+ actions - / }).first().click();
   const modale = page.getByRole("dialog");
@@ -359,14 +334,11 @@ test("un juriste affiche son activité, la télécharge, puis clique jusqu'au do
   await expect(versDossier).toBeVisible({ timeout: 30_000 });
   await versDossier.click();
   await page.waitForURL(/\/dossiers\/\d+/, { timeout: 60_000 });
-  // On arrive sur la fiche du dossier, pas sur une page d'erreur.
+  // Lands on the case page, not an error page.
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   /*
-   * **Et sur un onglet qui existe.** Cette assertion manquait, et son absence a laissé passer une
-   * carte qui envoyait les frais sur un onglet « frais » - la fiche dossier n'en a pas. Rien ne
-   * cassait, un onglet inconnu retombant sur la synthèse : la promesse faite à l'utilisateur était
-   * fausse en silence. Vérifier « on arrive sur une fiche » ne suffisait pas.
+   * And on a tab that exists: an unknown tab silently falls back to the summary.
    */
   const onglet = new URL(page.url()).searchParams.get("onglet");
   if (onglet !== null) {
@@ -387,10 +359,8 @@ test("un juriste affiche son activité, la télécharge, puis clique jusqu'au do
 });
 
 /**
- * Le cœur du choix d'emplacement. `/rapports` exige `ROLE_JURISTE` : l'Assistante et le SH n'y
- * entrent pas, et leur ouvrir cet écran leur montrerait le rapport périodique du service, dont
- * l'appel échouerait sous leurs yeux. « Mon compte » est le seul écran que les cinq profils
- * internes partagent.
+ * `/rapports` requires `ROLE_JURISTE`: the Assistant and the SH cannot enter it. "Mon compte" is the
+ * only screen shared by the five internal profiles.
  */
 test("l'Assistante et le SH ont leur fiche, là où ils peuvent l'atteindre", async ({ browser }) => {
   for (const identifiant of ["assistante.test", "sh.test"]) {
@@ -404,9 +374,8 @@ test("l'Assistante et le SH ont leur fiche, là où ils peuvent l'atteindre", as
     await page.locator("#activite-fin-moi").fill("2030-12-31");
     await page.getByRole("button", { name: "Afficher mon activité" }).click();
     /*
-     * Fidèle, et non comparable : le tableau de la direction tient sur six colonnes de production,
-     * dont aucune n'est le métier du SH. Sa fiche, elle, porte ce qu'il a fait - ou un état vide,
-     * jamais une page de zéros.
+     * Faithful, not comparable: the management table has six production columns, none of which is
+     * the SH's job. Their sheet shows what they did, or an empty state, never a page of zeros.
      */
     await expect(
       page.getByRole("table", { name: /Activité du/ }).or(page.getByText("Aucune activité sur cette période")),
@@ -430,16 +399,15 @@ test("une période sans activité reste un état vide, et une période inversée
   await page.getByRole("button", { name: "Afficher mon activité" }).click();
   await expect(page.getByText("Aucune activité sur cette période")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
-  // Pas de document à emporter pour une période vide.
+  // No document to take away for an empty period.
   await expect(page.getByRole("button", { name: "Télécharger" })).toHaveCount(0);
 
   await page.context().close();
 });
 
 /**
- * Les deux niveaux se rejoignent ici : le DJ compare six colonnes, puis ouvre le nom d'une personne
- * pour voir **tout** ce qu'elle a fait. C'est ce que le métier a demandé le 2026-10-09 en corrigeant
- * la première version, qui s'arrêtait aux six colonnes.
+ * Both levels meet here: the DJ compares six columns, then opens a person's name to see everything
+ * they did.
  */
 test("le DJ ouvre la fiche complète d'un collègue depuis son nom", async ({ page }) => {
   await seConnecter(page, "dj.test");
@@ -453,8 +421,8 @@ test("le DJ ouvre la fiche complète d'un collègue depuis son nom", async ({ pa
   await premier.click();
 
   await expect(page.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toBeVisible();
-  // La fiche du collègue a ses propres bornes, distinctes de celles de « Mon activité » : deux
-  // blocs sur un même écran ne peuvent pas partager leurs identifiants.
+  // The colleague's sheet has its own date fields, distinct from "Mon activité": two blocks on
+  // the same screen cannot share their ids.
   await expect(page.locator("#activite-debut-moi")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Fermer la fiche" })).toBeVisible();
 
@@ -465,11 +433,8 @@ test("le DJ ouvre la fiche complète d'un collègue depuis son nom", async ({ pa
 });
 
 /**
- * **L'entrée de menu, et pourquoi ce parcours existe.** La fiche d'activité a été livrée le
- * 2026-10-13 sans entrée de navigation : la seule porte vers « Mon compte » était le nom dans
- * l'en-tête, souligné et sans étiquette, et ce nom est masqué sous 640 px (F17) - la page était donc
- * purement inatteignable sur un écran étroit. Le porteur du projet ne l'a pas trouvée. Livrer une
- * fonction qu'on ne peut pas atteindre, c'est ne pas l'avoir livrée.
+ * Menu entry for the activity sheet: the user name in the header is hidden below 640 px, so the
+ * page must be reachable through the navigation on narrow screens.
  */
 test("chaque profil interne trouve « Mon compte » dans le menu ; l'avocat non", async ({ browser }) => {
   for (const identifiant of ["juriste.test", "assistante.test", "sh.test", "dj.test", "dja.test"]) {
@@ -484,7 +449,7 @@ test("chaque profil interne trouve « Mon compte » dans le menu ; l'avocat non"
     await page.context().close();
   }
 
-  // L'avocat ne porte pas ROLE_CONSULTATION : ni l'entrée, ni la page.
+  // The lawyer does not hold ROLE_CONSULTATION: neither the entry nor the page.
   const avocat = await pageConnectee(browser, "avocat.test");
   await expect(
     avocat.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Mon compte" }),
@@ -507,17 +472,10 @@ test("la fiche d'activité est traduite", async ({ page }) => {
 });
 
 /**
- * L'activité d'un avocat (Q-135) — REC-E2E-038.
- *
- * **Ce jalon corrige une affirmation fausse.** J'avais exclu l'avocat de la fiche d'activité en
- * soutenant qu'il n'aurait rien à y lire : « aucune des natures comptées n'est la sienne ». Il
- * dépose ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond
- * aux demandes d'explication - quatre natures, toutes tracées sous son compte.
- *
- * Trois choses se tiennent ici, et aucune ne se vérifie en test unitaire : que l'avocat atteigne sa
- * fiche **sur son propre écran**, que ses lignes de détail ne lui proposent **aucun lien** vers un
- * dossier qu'il ne peut pas ouvrir, et que la direction atteigne la sienne **depuis le répertoire**,
- * là où elle le juge déjà.
+ * A lawyer's activity, REC-E2E-038. The lawyer files expense requests, hearing reports, other
+ * publications and answers to explanation requests. Checks that the lawyer reaches their sheet on
+ * their own screen, that detail rows offer no link to a case they cannot open, and that management
+ * reaches it from the directory.
  */
 test("un avocat lit et télécharge sa propre activité, sans lien vers les dossiers", async ({ page }) => {
   await seConnecter(page, "avocat.test");
@@ -531,10 +489,10 @@ test("un avocat lit et télécharge sa propre activité, sans lien vers les doss
   const tableau = page.getByRole("table", { name: /Activité du/ });
   await expect(tableau).toBeVisible({ timeout: 30_000 });
   await expect(tableau.locator("tbody tr").first()).toBeVisible();
-  // Ni note, ni score, pour lui comme pour les autres.
+  // No grade, no score, for them as for the others.
   expect(await tableau.innerText()).not.toContain("%");
 
-  // Il télécharge la sienne, dans les trois formats.
+  // They download their own sheet, in the three formats.
   for (const [format, extension] of [
     ["PDF", "pdf"],
     ["Excel", "xlsx"],
@@ -550,9 +508,8 @@ test("un avocat lit et télécharge sa propre activité, sans lien vers les doss
   }
 
   /*
-   * Le point qui lui est propre : **aucun lien vers un dossier**. Il n'a pas d'écran de fiche
-   * dossier (QF-01), et lui en proposer un l'aurait mené à un refus de droits - une invitation à se
-   * faire claquer la porte au nez. Il lit la référence, qui lui suffit.
+   * No link to a case: the lawyer has no case page, and a link would lead to a permission refusal.
+   * The reference is enough.
    */
   await tableau.getByRole("button", { name: /^Voir les \d+ actions - / }).first().click();
   const modale = page.getByRole("dialog");
@@ -566,14 +523,14 @@ test("un avocat lit et télécharge sa propre activité, sans lien vers les doss
 test("l'avocat n'atteint ni Mon compte, ni l'activité d'un confrère", async ({ page }) => {
   await seConnecter(page, "avocat.test");
 
-  // « Mon compte » porte aussi « Ma signature », qui n'a pas de sens pour lui : ni entrée, ni page.
+  // "Mon compte" also holds "Ma signature", meaningless for them: neither entry nor page.
   await expect(
     page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Mon compte" }),
   ).toHaveCount(0);
   await page.goto("/mon-compte");
   await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
 
-  // Et le répertoire, d'où la direction ouvre l'activité d'un avocat, lui reste fermé.
+  // The directory, from which management opens a lawyer's activity, stays closed to them.
   await page.goto("/repertoire/avocats");
   await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
 
@@ -581,8 +538,8 @@ test("l'avocat n'atteint ni Mon compte, ni l'activité d'un confrère", async ({
 });
 
 /**
- * La direction atteint l'activité d'un avocat **depuis le répertoire** : c'est là qu'elle le juge
- * déjà, à côté de sa charge et de ses délibérés gagnés, au moment où elle lui confie un dossier.
+ * Management reaches a lawyer's activity from the directory, next to their workload and won
+ * deliberations, when assigning a case.
  */
 test("le DJ ouvre l'activité d'un avocat depuis le répertoire ; le juriste n'en a pas la possibilité", async ({
   browser,
@@ -602,8 +559,8 @@ test("le DJ ouvre l'activité d'un avocat depuis le répertoire ; le juriste n'e
   await dj.context().close();
 
   /*
-   * Le juriste et l'Assistante atteignent ce répertoire - c'est leur outil de choix d'un avocat -
-   * mais l'activité d'une personne nommée reste à la direction. La colonne n'existe pas pour eux.
+   * The legal officer and the Assistant reach this directory to choose a lawyer, but a named
+   * person's activity stays with management: the column does not exist for them.
    */
   for (const identifiant of ["juriste.test", "assistante.test"]) {
     const page = await pageConnectee(browser, identifiant);
@@ -628,23 +585,19 @@ test("la fiche d'activité de l'avocat est traduite", async ({ page }) => {
 });
 
 /**
- * Le tableau comparatif des avocats (Q-136) — complète REC-E2E-038.
- *
- * **Ce que ce parcours garde.** Le porteur du projet a relevé que « Activité par personne » ne
- * montrait que les profils internes. C'était exact : ses six colonnes comptent des natures de
- * production interne qu'un avocat n'accomplit jamais - il dépose, c'est le juriste qui enregistre.
- * Les réunir n'aurait affiché que des lignes de zéros. D'où **deux tableaux sur le même écran**, et
- * ce parcours vérifie qu'ils y sont tous les deux, avec leurs colonnes propres.
+ * Lawyer comparison table, complementing REC-E2E-038. Internal production columns do not apply to
+ * lawyers (they file, the legal officer records), hence two tables on the same screen, each with
+ * its own columns.
  */
 test("le DJ lit les deux tableaux : les internes, puis les avocats", async ({ page }) => {
   await seConnecter(page, "dj.test");
   await page.goto("/rapports");
 
-  // Les deux blocs coexistent, et ne se confondent pas.
+  // Both blocks coexist and stay distinct.
   await expect(page.getByRole("heading", { name: "Activité par personne", level: 2 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Activité des avocats", level: 2 })).toBeVisible();
 
-  // Rien avant le clic : les deux tableaux nomment des personnes.
+  // Nothing before the click: both tables name people.
   await expect(page.getByText("Choisissez une période, puis affichez.", { exact: true })).toHaveCount(2);
 
   await page.locator("#avocats-debut").fill("2020-01-01");
@@ -654,8 +607,7 @@ test("le DJ lit les deux tableaux : les internes, puis les avocats", async ({ pa
   const tableau = page.getByRole("table", { name: /Activité des avocats du/ });
   await expect(tableau).toBeVisible({ timeout: 30_000 });
   /*
-   * Ses colonnes sont celles de ce qu'un avocat **fait**, et aucune n'est celle du tableau interne.
-   * C'est tout l'objet de ce jalon : quatre colonnes utiles plutôt que six colonnes de zéros.
+   * Its columns reflect what a lawyer does, and none matches the internal table.
    */
   for (const colonne of [
     "Avocat",
@@ -670,12 +622,12 @@ test("le DJ lit les deux tableaux : les internes, puis les avocats", async ({ pa
   await expect(tableau.locator("tbody tr").first()).toBeVisible();
   expect(await tableau.innerText()).not.toContain("%");
 
-  // Par nom, comme les internes : un avocat chargé n'est pas un avocat méritant.
+  // By name, like internal staff: a busy lawyer is not a deserving one.
   const noms = await tableau.locator("tbody tr td:nth-child(1)").allInnerTexts();
   const premiers = noms.map((cellule) => cellule.split("\n")[0].trim());
   expect(premiers).toEqual([...premiers].sort((a, b) => a.localeCompare(b, "fr")));
 
-  // Son nom ouvre sa fiche complète, comme pour un collègue.
+  // Their name opens their full sheet, as for a colleague.
   const nom = premiers[0]!;
   await tableau.locator("tbody tr td:nth-child(1) button").first().click();
   await expect(page.getByRole("heading", { name: `Activité de ${nom}`, level: 2 })).toBeVisible();
@@ -722,11 +674,8 @@ test("le tableau des avocats est traduit", async ({ page }) => {
 });
 
 /**
- * Le détail des blocs du tableau de bord (Q-137) — REC-E2E-039.
- *
- * **Ce qu'aucun test unitaire ne peut tenir ici** : que les **neuf** blocs s'ouvrent, qu'une ligne
- * mène réellement à sa fiche, et que le total annoncé par la modale soit celui du bloc - la
- * concordance des deux chiffres est ce qui fait leur crédibilité, et elle se vérifie à l'œil.
+ * Dashboard block details, REC-E2E-039: all nine blocks open, a row leads to its page, and the
+ * total in the dialog matches the block.
  */
 const BLOCS_DU_TABLEAU = [
   "Dossiers actifs",
@@ -752,9 +701,9 @@ test("les neuf blocs du tableau de bord s'ouvrent tous sur leur détail", async 
 
     const modale = page.getByRole("dialog");
     await expect(modale).toBeVisible();
-    // Le titre répète le mot sur lequel on a cliqué : sans cela, neuf modales se ressemblent.
+    // The title repeats the clicked word: otherwise nine dialogs look alike.
     await expect(modale.getByRole("heading", { name: libelle })).toBeVisible({ timeout: 30_000 });
-    // Soit des lignes, soit un état vide - jamais une erreur.
+    // Either rows or an empty state, never an error.
     await expect(
       modale.getByRole("table").or(modale.getByText("Rien à afficher.")),
     ).toBeVisible({ timeout: 30_000 });
@@ -782,9 +731,7 @@ test("une ligne du détail mène à la fiche du dossier, sur l'onglet qui corres
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   /*
-   * L'onglet d'arrivée doit exister. C'est l'assertion qui manquait sur la fiche d'activité, et dont
-   * l'absence avait laissé passer un onglet « frais » que la fiche dossier n'a pas : un onglet
-   * inconnu retombe silencieusement sur la synthèse, et la promesse était fausse sans bruit.
+   * The target tab must exist: an unknown tab silently falls back to the summary.
    */
   const onglet = new URL(page.url()).searchParams.get("onglet");
   if (onglet !== null) {
@@ -805,15 +752,9 @@ test("une ligne du détail mène à la fiche du dossier, sur l'onglet qui corres
 });
 
 /**
- * Le détail dit ce que le libellé du bloc ne dit pas — mais **plus la restriction au recouvrement**.
- *
- * **Ce test affirmait l'inverse jusqu'à Q-138**, et c'était juste alors : les trois indicateurs de
- * litiges étaient figés sur le recouvrement, le libellé du bloc ne le disait pas, et le détail
- * portait la phrase qui l'expliquait. Le métier a demandé un vrai suivi des deux catégories : le
- * périmètre est désormais choisi en tête d'écran, et une note n'a plus à rattraper un libellé.
- *
- * Reste celle sur les alertes : elle ne parle pas de périmètre mais de ce qu'une **ligne**
- * représente - une alerte envoyée, et non un dossier.
+ * Details explain what the block label does not, without the former recovery-only restriction: the
+ * category scope is now chosen at the top of the screen. The alerts note remains: a row there is an
+ * alert sent, not a case.
  */
 test("le détail dit ce qu'une ligne représente, sans plus parler de périmètre", async ({ page }) => {
   await seConnecter(page, "dja.test");
@@ -824,7 +765,7 @@ test("le détail dit ce qu'une ligne représente, sans plus parler de périmètr
   await expect(
     modale.getByRole("table").or(modale.getByText("Rien à afficher.")),
   ).toBeVisible({ timeout: 30_000 });
-  // La phrase a disparu avec le sélecteur : c'est le signe que le problème est réglé à la source.
+  // The note is gone with the selector: the scope is stated at the source.
   await expect(modale.getByText("Ce décompte ne porte que sur les dossiers de recouvrement.")).toHaveCount(0);
   await modale.getByRole("button", { name: "Fermer" }).click();
 
@@ -861,12 +802,9 @@ test("le détail du tableau de bord est traduit", async ({ page }) => {
 });
 
 /**
- * Le périmètre de catégories (Q-138) — REC-E2E-040.
- *
- * **L'invariant est la seule chose qui rende cet écran crédible** : Recouvrement + Litiges
- * d'exploitation = Toutes catégories, pour les neuf indicateurs. Un test d'intégration le tient
- * contre la base ; ce parcours le vérifie **à travers l'écran**, qui est l'endroit où un sous-total
- * faux se verrait.
+ * Category scope, REC-E2E-040. Invariant: Recouvrement + Litiges d'exploitation = Toutes
+ * catégories, for all nine indicators. An integration test checks it against the database; this
+ * journey checks it through the screen.
  */
 const BLOCS_MESURES = [
   "Dossiers actifs",
@@ -879,7 +817,7 @@ const BLOCS_MESURES = [
   "Décisions mixtes",
 ] as const;
 
-/** Les valeurs des blocs du tableau de bord, lues dans l'ordre d'affichage. */
+/** Dashboard block values, read in display order. */
 async function valeursDesBlocs(page: Page): Promise<Record<string, number>> {
   const valeurs: Record<string, number> = {};
   for (const libelle of BLOCS_MESURES) {
@@ -894,7 +832,7 @@ async function valeursDesBlocs(page: Page): Promise<Record<string, number>> {
 
 async function choisirPerimetre(page: Page, option: string) {
   await page.locator("#tdb-perimetre").selectOption({ label: option });
-  // Le périmètre vit dans l'URL : attendre qu'il y soit, sinon on lit les chiffres d'avant.
+  // The scope lives in the URL: wait for it, otherwise the previous figures are read.
   await expect(page.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
 }
 
@@ -902,7 +840,7 @@ test("les deux catégories s'additionnent pour faire le total, à l'écran", asy
   await seConnecter(page, "dj.test");
   await page.goto("/tableau-de-bord");
 
-  // Le défaut est « Toutes catégories » : c'est ce que l'écran montrait avant Q-138.
+  // The default is "Toutes catégories".
   await expect(page.locator("#tdb-perimetre")).toHaveValue("");
 
   const toutes = await valeursDesBlocs(page);
@@ -916,9 +854,7 @@ test("les deux catégories s'additionnent pour faire le total, à l'écran", asy
   const exploitation = await valeursDesBlocs(page);
 
   /*
-   * L'invariant, bloc par bloc. S'il tombe faux, c'est qu'une requête a oublié sa jointure sur le
-   * dossier - et un tableau de bord dont les sous-totaux ne s'additionnent pas, personne ne le
-   * regarde deux fois.
+   * The invariant, block by block. If it fails, a query has missed its join on the case.
    */
   for (const libelle of BLOCS_MESURES) {
     expect(
@@ -931,8 +867,8 @@ test("les deux catégories s'additionnent pour faire le total, à l'écran", asy
 });
 
 /**
- * Les trois compteurs de litiges **ne sont plus figés sur le recouvrement** (Q-138). La garantie
- * faite au porteur du projet : son chiffre d'hier reste lisible, sous le périmètre « Recouvrement ».
+ * The three litigation counters are no longer fixed on recovery; the recovery figure stays
+ * available under the "Recouvrement" scope.
  */
 test("le détail d'un bloc suit le périmètre choisi", async ({ page }) => {
   await seConnecter(page, "dj.test");
@@ -947,9 +883,7 @@ test("le détail d'un bloc suit le périmètre choisi", async ({ page }) => {
   ).toBeVisible({ timeout: 30_000 });
 
   /*
-   * La note « ce décompte ne porte que sur les dossiers de recouvrement » a disparu avec Q-138, et
-   * c'est le signe que le problème est réglé à la source : le sélecteur dit le périmètre, une note
-   * n'a plus à l'expliquer.
+   * The recovery-only note is gone: the selector states the scope.
    */
   await expect(modale.getByText("Ce décompte ne porte que sur les dossiers de recouvrement.")).toHaveCount(0);
 
@@ -962,16 +896,15 @@ test("le périmètre se partage par l'URL et survit au rechargement", async ({ p
 
   await expect(page.locator("#tdb-perimetre")).toHaveValue("EXPLOITATION_LITIGES");
   await page.reload();
-  // Un rechargement ne doit pas ramener sur « toutes catégories » sans qu'on l'ait demandé.
+  // A reload must not return to "toutes catégories" unrequested.
   await expect(page.locator("#tdb-perimetre")).toHaveValue("EXPLOITATION_LITIGES");
 
   await page.context().close();
 });
 
 /**
- * Le rapport périodique suit le même périmètre, sinon l'écran et le PDF ne voudraient plus dire la
- * même chose par « Litiges gagnés ». Et le nom du fichier le porte : un document qui voyage doit
- * dire ce qu'il couvre.
+ * The periodic report follows the same scope, so the screen and the PDF mean the same thing by
+ * "Litiges gagnés". The file name carries the scope too.
  */
 test("le rapport périodique porte le périmètre, jusque dans le nom du fichier", async ({ page }) => {
   await seConnecter(page, "dj.test");

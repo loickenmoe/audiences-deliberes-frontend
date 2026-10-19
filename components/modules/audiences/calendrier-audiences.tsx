@@ -20,16 +20,12 @@ import type { EntreeCalendrier } from "@/types/domaine";
 import { PeriodeCalendrier, TypeEtape } from "@/types/enums";
 
 /**
- * Écran 22 — calendrier des audiences (FR-AUD-05).
- *
- * Présenté en **agenda** — une liste par jour — plutôt qu'en grille : sur un trimestre, une grille
- * de 90 cases serait illisible, et ce que cherche un juriste, c'est la prochaine audience et son
- * dossier. Les trois périodes du backend sont alignées sur des bornes naturelles (lundi, 1er du
- * mois, 1er du trimestre) pour une navigation prévisible.
- *
- * Le backend renvoie **toutes** les audiences de la période, sans filtre par juriste : un filtre
- * « mes audiences » supposerait de connaître l'identifiant de l'utilisateur connecté, que rien
- * n'expose (QF-27).
+ * Screen 22 - hearing calendar (FR-AUD-05).
+ * Shown as an agenda (one list per day) rather than a grid, which would be unreadable over a
+ * quarter. The three backend periods are aligned on natural boundaries (Monday, 1st of the month,
+ * 1st of the quarter).
+ * The backend returns all hearings of the period, not filtered by lawyer: the logged-in user's id
+ * is not exposed.
  */
 export function CalendrierAudiences() {
   const t = useTranslations("calendrier");
@@ -55,8 +51,8 @@ export function CalendrierAudiences() {
     setExportEnCours(format);
     try {
       const contenu = await audienceService.exporterCalendrier(periode, dateDebut, format);
-      // Nom construit ici : l'en-tête Content-Disposition n'est pas exposé en CORS, et un nom
-      // daté vaut mieux que « calendrier.pdf » quand on en archive plusieurs.
+      // File name built here: the Content-Disposition header is not exposed through CORS, and a
+      // dated name is more useful than "calendrier.pdf" when archiving several.
       telechargerBlob(contenu, `calendrier-${periode.toLowerCase()}-${dateDebut}.${format === "PDF" ? "pdf" : "xlsx"}`);
     } catch (erreur) {
       setErreurExport(messageErreur(erreur));
@@ -123,8 +119,7 @@ export function CalendrierAudiences() {
           </div>
 
           <p className="text-[length:var(--taille-sm)] font-medium" aria-live="polite">
-            {/* `{debut}` est un argument simple, qui n'accepte qu'un texte : les dates sont formatées
-                ici. Des fonctions — réservées aux balises `<debut>…</debut>` — n'affichaient rien. */}
+            {/* `{debut}` is a simple argument that only accepts text, so dates are formatted here. */}
             {t("intervalle", {
               debut: formaterDate(dateDebut, langue),
               fin: formaterDate(versIso(finDePeriode(periode, debut)), langue),

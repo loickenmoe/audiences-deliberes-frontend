@@ -1,19 +1,18 @@
 import type { ConfigurationSysteme, LigneCanalNotification } from "@/types/domaine";
 
 /**
- * Réglages des notifications externes (backend Q-118).
+ * External notification settings.
  *
- * Deux publics, chacun avec son interrupteur de canaux et sa grille :
- * - les utilisateurs internes : Outlook et Teams, interrupteur `CANAUX_NOTIFICATION_DEFAUT` ;
- * - les prestataires : courriel personnel, SMS et WhatsApp, interrupteur
- *   `CANAUX_NOTIFICATION_PRESTATAIRES`.
+ * Two audiences, each with its channel switch and grid:
+ * - internal users: Outlook and Teams, switch `CANAUX_NOTIFICATION_DEFAUT`;
+ * - external providers: personal email, SMS and WhatsApp, switch `CANAUX_NOTIFICATION_PRESTATAIRES`.
  *
- * Une colonne de la grille est une clé de configuration : la liste des événements envoyés sur ce
- * canal. Les lignes viennent des valeurs acceptées publiées par le backend ; rien n'est redéclaré ici.
+ * A grid column is a configuration key listing the events sent on that channel. Rows come from the
+ * accepted values published by the backend.
  */
 export interface SectionGrille {
   identifiant: "internes" | "prestataires";
-  /** Clé qui active ou coupe les canaux de ce public. */
+  /** Key enabling or disabling this audience's channels. */
   cleCanaux: string;
   colonnes: { cle: string; canal: string }[];
 }
@@ -38,18 +37,18 @@ export const SECTIONS_GRILLE: SectionGrille[] = [
   },
 ];
 
-/** Les colonnes de grille s'affichent dans le tableau, pas dans la liste générique des paramètres. */
+/** Grid columns are shown in the grid, not in the generic settings list. */
 export function estCleDeGrille(cle: string): boolean {
   return cle.startsWith("GRILLE_NOTIFICATION_");
 }
 
-/** Clés dont les valeurs sont des canaux : leurs cases portent un libellé traduit, pas un code. */
+/** Keys whose values are channels: their checkboxes show a translated label, not a code. */
 export const CLES_CANAUX: Record<string, "CanalAlerte" | "CanalPrestataire"> = {
   CANAUX_NOTIFICATION_DEFAUT: "CanalAlerte",
   CANAUX_NOTIFICATION_PRESTATAIRES: "CanalPrestataire",
 };
 
-/** Éléments d'une liste `A,B,C`, normalisés ; une liste vide donne un tableau vide. */
+/** Normalized items of an `A,B,C` list; an empty list yields an empty array. */
 export function lireListe(valeur: string): string[] {
   return valeur
     .split(",")
@@ -57,7 +56,7 @@ export function lireListe(valeur: string): string[] {
     .filter((element) => element !== "");
 }
 
-/** État de saisie d'une section : pour chaque clé de colonne, les événements cochés. */
+/** Section input state: checked events per column key. */
 export type SaisieGrille = Record<string, string[]>;
 
 export function saisieInitiale(section: SectionGrille, configurations: ConfigurationSysteme[]): SaisieGrille {
@@ -66,7 +65,7 @@ export function saisieInitiale(section: SectionGrille, configurations: Configura
   );
 }
 
-/** Coche ou décoche un événement dans une colonne, en gardant l'ordre publié par le backend. */
+/** Toggles an event in a column, keeping the order published by the backend. */
 export function basculerCase(
   saisie: SaisieGrille,
   cle: string,
@@ -80,8 +79,8 @@ export function basculerCase(
 }
 
 /**
- * Colonnes modifiées, avec la valeur à envoyer. Seules celles-ci partent : chaque clé enregistrée
- * laisse une trace dans l'audit, et une colonne inchangée n'a rien à y écrire.
+ * Modified columns with the value to send. Only these are sent: each saved key leaves an audit
+ * trail entry.
  */
 export function colonnesModifiees(
   saisie: SaisieGrille,
@@ -92,7 +91,7 @@ export function colonnesModifiees(
     .filter(({ cle, valeur }) => valeur !== lireListe(trouver(configurations, cle)?.valeur ?? "").join(","));
 }
 
-/** Un canal est actif quand l'interrupteur de son public le contient. */
+/** A channel is active when its audience switch contains it. */
 export function canalActif(section: SectionGrille, canal: string, configurations: ConfigurationSysteme[]): boolean {
   return lireListe(trouver(configurations, section.cleCanaux)?.valeur ?? "").includes(canal);
 }
@@ -102,27 +101,21 @@ export function trouver(configurations: ConfigurationSysteme[], cle: string): Co
 }
 
 /**
- * Numéros que le backend accepte (étape 11), même règle des deux côtés.
+ * Phone numbers accepted by the backend (same rule on both sides).
  *
- * **Cameroun** : exactement neuf chiffres commençant par 6, que l'indicatif soit écrit ou non. Ni
- * plus, ni moins — un numéro amputé d'un chiffre partirait vers quelqu'un d'autre. Tous les mobiles
- * du pays commencent par 6, Camtel compris ; les lignes fixes, en 2, ne reçoivent pas de SMS.
- *
- * **Hors Cameroun** : l'indicatif est obligatoire. Sans lui, il faudrait le deviner.
- *
- * Refuser à la saisie évite une ligne « non joignable » découverte bien plus tard en supervision,
- * loin de la personne qui pouvait corriger la fiche.
+ * Cameroon: exactly nine digits starting with 6, with or without the country code (all mobiles
+ * start with 6; landlines start with 2 and receive no SMS). Elsewhere the country code is required.
  */
 export function telephoneValide(saisie: string): boolean {
   const numero = saisie.replace(/[\s.()-]/g, "");
   if (numero === "") return true;
   if (/^(\+?237)?6\d{8}$/.test(numero)) return true;
-  // Un numéro camerounais mal formé ne doit pas être rattrapé par la règle internationale.
+  // A malformed Cameroonian number must not be accepted by the international rule.
   if (numero.startsWith("+237") || numero.startsWith("237")) return false;
   return /^\+[1-9]\d{7,14}$/.test(numero);
 }
 
-/** Les trente derniers jours, bornes incluses, au format ISO attendu par le backend. */
+/** The last thirty days, inclusive, in the ISO format expected by the backend. */
 export function fenetreParDefaut(): { debut: string; fin: string } {
   const aujourdHui = new Date();
   const ilYATrenteJours = new Date(aujourdHui.getTime() - 29 * 86_400_000);
@@ -131,11 +124,10 @@ export function fenetreParDefaut(): { debut: string; fin: string } {
 }
 
 /**
- * Part de ce qui est parti ou en passe de partir, en pourcentage à une décimale.
+ * Share of messages sent or about to be sent, as a percentage with one decimal.
  *
- * Les lignes sans coordonnée sont **exclues du calcul** : elles signalent une fiche à compléter, pas
- * un canal défaillant. Un canal sans aucun envoi ne rend aucun taux — afficher « 0 % » laisserait
- * croire à un échec là où il ne s'est rien passé.
+ * Unreachable rows (missing contact details) are excluded: they flag a record to complete, not a
+ * failing channel. A channel with no sends returns `null` rather than a misleading 0 %.
  */
 export function tauxAboutissement(ligne: LigneCanalNotification): number | null {
   const total =

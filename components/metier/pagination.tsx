@@ -7,15 +7,10 @@ import { Button } from "@/components/ui/button";
 import { TAILLES_PAGE } from "@/hooks/const";
 
 /**
- * Pagination adossée à la forme de réponse du backend : `{content, totalPages, totalElements}`.
- *
- * Le backend **ne renvoie pas** la page courante — elle est tenue par l'appelant. Ne pas la déduire
- * du nombre d'éléments : deux appels concurrents la feraient diverger.
- *
- * **Sélecteur de taille.** Dix lignes par défaut, pour qu'un tableau tienne sans défilement. Mais la
- * règle a un revers — retrouver un dossier parmi soixante demande six pages là où un défilement
- * suffisait. Le sélecteur rend la main à l'utilisateur : dix pour lire, cinquante pour balayer. Il
- * n'apparaît que si l'écran sait changer de taille (`onChangementTaille` fourni).
+ * Pagination based on the backend response shape `{content, totalPages, totalElements}`.
+ * The backend does not return the current page: the caller owns it. Do not infer it from the
+ * element count, as concurrent calls would make it diverge.
+ * The page size selector (10 rows by default) only appears when `onChangementTaille` is provided.
  */
 export function Pagination({
   page,
@@ -26,12 +21,12 @@ export function Pagination({
   onChangementTaille,
   className,
 }: {
-  /** Index de page, base 0 — comme le backend. */
+  /** Zero-based page index, as in the backend. */
   page: number;
   totalPages: number;
   totalElements: number;
   onChangement: (page: number) => void;
-  /** Taille courante ; omise, le sélecteur n'est pas rendu. */
+  /** Current page size; when omitted, the selector is not rendered. */
   taille?: number;
   onChangementTaille?: (taille: number) => void;
   className?: string;

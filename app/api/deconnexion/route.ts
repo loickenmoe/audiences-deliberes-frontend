@@ -6,26 +6,15 @@ import { getEnvServeur } from "@/lib/env.server";
 import { DUREE_MARQUEUR_S, MARQUEUR_DECONNEXION } from "@/lib/marqueur-deconnexion";
 
 /**
- * Déconnexion.
+ * Logout, in this order:
+ * 1. Revoke the Keycloak session with the refresh token; otherwise it stays valid until expiry.
+ * 2. Clear the application session cookie.
+ * 3. Set the logout marker: a session read started just before logout could otherwise re-set the
+ *    cookie; the marker lets the server reject and clear any session that reappears.
  *
- * Deux gestes, dans cet ordre :
- * 1. **Révoquer la session côté Keycloak** en lui renvoyant le refresh token. Sans cela, le jeton
- *    resterait valable jusqu'à son expiration (30 minutes) alors que l'utilisateur se croit
- *    déconnecté — quiconque l'aurait intercepté pourrait continuer à obtenir des jetons d'accès.
- * 2. Effacer le cookie de session de l'application.
- * 3. Poser le **marqueur de déconnexion** (QF-42) : effacer le cookie ne suffit pas, une lecture de
- *    session partie juste avant revient juste après et le repose. Le marqueur permet au serveur de
- *    refuser — et d'effacer — toute session qui réapparaîtrait.
- *
- * La révocation se fait **de serveur à serveur**, sans redirection du navigateur : le formulaire
- * d'identification vivant dans l'application (QF-18), le navigateur n'a jamais ouvert de session de
- * connexion unique chez Keycloak. C'est aussi plus robuste — une redirection externe déclenchée
- * depuis Next ne se comporte pas toujours comme attendu.
- *
- * Le refresh token est lu dans le jeton de session brut, jamais exposé à la session côté client.
- *
- * Méthode POST : une déconnexion ne doit pas être déclenchable par un simple lien ou une image
- * distante.
+ * Revocation is server-to-server (the login form lives in the app, so the browser never opened an
+ * SSO session at Keycloak). The refresh token is read from the raw session token, never exposed
+ * client-side. POST only, so a plain link or remote image cannot trigger a logout.
  */
 export async function POST(requete: Request) {
   const env = getEnvServeur();
@@ -50,16 +39,15 @@ export async function POST(requete: Request) {
         }),
       });
     } catch {
-      // Keycloak injoignable : on déconnecte quand même localement. Le jeton expirera de lui-même.
+      // Keycloak unreachable: log out locally anyway; the token will expire on its own.
     }
   }
 
   await signOut({ redirect: false });
 
-  // Redirection **relative** : le navigateur la résout contre l'adresse qu'il a réellement utilisée.
-  // Dériver l'origine de `requete.url` renvoyait `localhost` dès que le serveur écoute sur toutes les
-  // interfaces (`next start`) — un testeur arrivé par l'adresse IP du poste était renvoyé chez lui.
-  // Le même raisonnement écarte l'en-tête `Host`, que le client contrôle.
+  // Relative redirect: the browser resolves it against the address it actually used. Deriving the
+  // origin from `requete.url` yields `localhost` when the server listens on all interfaces, and the
+  // `Host` header is client-controlled.
   const reponse = new NextResponse(null, { status: 303, headers: { Location: "/login" } });
   reponse.cookies.set(MARQUEUR_DECONNEXION, "1", {
     httpOnly: true,

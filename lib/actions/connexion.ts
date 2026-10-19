@@ -7,10 +7,7 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/lib/auth";
 import { MARQUEUR_DECONNEXION } from "@/lib/marqueur-deconnexion";
 
-/**
- * L'action renvoie une **clé de message**, jamais un texte traduit : la traduction appartient au
- * composant, qui connaît la langue active au moment du rendu.
- */
+/** The action returns a message key, never translated text: the component knows the active language. */
 export type CleErreurConnexion =
   | "champsRequis"
   | "identifiantsRefuses"
@@ -31,17 +28,16 @@ export async function connexion(
 
   try {
     /**
-     * `redirect: false` est indispensable : avec la redirection intégrée, NextAuth renvoie
-     * lui-même vers la page d'erreur en cas d'échec, et l'état retourné par cette action est perdu
-     * — l'utilisateur retrouve un formulaire vide, sans explication.
+     * `redirect: false` is required: otherwise NextAuth redirects to its error page on failure and
+     * the state returned by this action is lost.
      */
     await signIn("credentials", { identifiant, motDePasse, redirect: false });
   } catch (erreur) {
     if (erreur instanceof AuthError) {
       const code = (erreur as AuthError & { code?: string }).code;
       /**
-       * Un refus reçoit **toujours la même clé**, que le compte n'existe pas, soit désactivé ou
-       * attende une action : distinguer ces cas révélerait quels identifiants existent.
+       * Every rejection gets the same key (unknown, disabled or pending account): distinguishing
+       * them would reveal which usernames exist.
        */
       return {
         cleErreur: code === "service_indisponible" ? "serviceIndisponible" : "identifiantsRefuses",
@@ -51,15 +47,14 @@ export async function connexion(
   }
 
   /*
-   * La connexion lève le marqueur de déconnexion (QF-42) : sans cela, la session qui vient d'être
-   * ouverte serait effacée par le middleware, et se reconnecter aussitôt après s'être déconnecté
-   * deviendrait impossible.
+   * Logging in clears the logout marker; otherwise the middleware would wipe the new session and
+   * logging back in right after a logout would be impossible.
    */
   (await cookies()).delete(MARQUEUR_DECONNEXION);
 
   /**
-   * Hors du `try` : `redirect()` fonctionne en levant une exception interne à Next, qui ne doit
-   * surtout pas être interceptée comme un échec de connexion.
+   * Outside the `try`: `redirect()` throws an internal Next exception that must not be caught as a
+   * login failure.
    */
   redirect("/");
 }

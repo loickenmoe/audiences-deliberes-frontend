@@ -35,17 +35,13 @@ import type { StatutAudience } from "@/types/enums";
 const TON: Record<StatutAudience, TonStatut> = { PLANIFIEE: "info", TENUE: "succes", ANNULEE: "neutre" };
 
 /**
- * Écran 09 — audiences du dossier, la plus récente d'abord (ordre du backend).
- *
- * Deux règles du backend commandent les actions proposées :
- * · on ne planifie que sur une étape **en cours** (RG-AUD-01), à une date qui ne précède pas
- *   l'ouverture du dossier (RG-AUD-08) ;
- * · le compte rendu n'est recevable qu'**à partir du jour de l'audience**.
- * L'interface n'offre donc ni une étape qui serait refusée, ni un compte rendu sur une audience à
- * venir.
- *
- * Une audience planifiée peut être **annulée**, motif obligatoire (QF-30, Q-76 backend) : elle quitte
- * alors le calendrier et ses rappels. Un renvoi du tribunal = annuler, puis planifier la nouvelle date.
+ * Screen 09 - case hearings, most recent first (backend order).
+ * Two backend rules drive the available actions:
+ * · scheduling only on a step **in progress** (RG-AUD-01), on a date not before the case opening
+ *   (RG-AUD-08);
+ * · the hearing report is only accepted **from the hearing day onwards**.
+ * A scheduled hearing can be **cancelled** with a required reason: it then leaves the calendar and
+ * its reminders. A court adjournment = cancel, then schedule the new date.
  */
 export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
   const t = useTranslations("audiences");
@@ -54,12 +50,9 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
   const peutGerer = peut(roles, "gererAudiences");
 
   /*
-   * Le compte rendu de l'avocat vit dans les **publications**, rattaché à l'audience mais pas porté
-   * par elle. Sans ce croisement, l'onglet n'affichait que le récit du juriste : une audience dont
-   * l'avocat avait rendu compte paraissait muette, et personne ne savait où chercher.
-   *
-   * Seules les publications **validées** comptent : un dépôt en attente n'est lisible d'aucun
-   * juriste, et le montrer ici ferait croire à une information disponible.
+   * The counsel's report lives in **publications**, linked to the hearing but not held by it;
+   * without this join, a hearing reported by the counsel would look empty.
+   * Only **validated** publications count: a pending submission is not readable by lawyers.
    */
   const peutVoirPublications = peut(roles, "consulterPublications");
   const publications = usePublications(
@@ -75,7 +68,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
   const [planification, setPlanification] = useState(false);
   const [compteRendu, setCompteRendu] = useState<Audience | null>(null);
   const [annulation, setAnnulation] = useState<Audience | null>(null);
-  /** QF-64 : la note destinée à l'avocat constitué, distincte du compte rendu interne. */
+  /** The note for the appointed counsel, separate from the internal hearing report. */
   const [note, setNote] = useState<Audience | null>(null);
   const peutEcrireNote = peut(roles, "ecrireNoteAvocat");
   const langue = useLocale() as Langue;
@@ -123,7 +116,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
             </thead>
             <tbody className="divide-y divide-bordure">
               {audiences.map((audience) => {
-                // Recevable le jour même : « pas après aujourd'hui », comme le backend.
+                // Accepted on the same day: "not after today", as in the backend.
                 const compteRenduPossible =
                   peutGerer && audience.statut === "PLANIFIEE" && audience.datePlanifiee <= aujourdhui();
                 return (
@@ -133,7 +126,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     </td>
                     <td className="px-4 py-2">
                       {libelleEtape(audience.etapeId)}
-                      {/* Là où elle se tient : un appel ne siège pas devant le tribunal qui a jugé. */}
+                      {/* Where it sits: an appeal is not heard by the court that ruled. */}
                       {audience.juridiction ? (
                         <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
                           {audience.juridiction}
@@ -168,9 +161,8 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                         ) : null}
 
                         {/*
-                          La note à l'avocat, **à part** du compte rendu (QF-64) : celui-ci reste
-                          interne, celle-là lui est écrite. Les confondre à l'écran ferait croire que
-                          l'avocat lit le compte rendu.
+                          The note to the counsel, kept **separate** from the internal report:
+                          mixing them on screen would suggest the counsel reads the report.
                         */}
                         {audience.noteAvocat ? (
                           <p
@@ -255,9 +247,9 @@ function ModalePlanification({
   onFermeture,
 }: {
   dossierId: number;
-  /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-08). */
+  /** Case opening date, `YYYY-MM-DD`: lower bound of the hearing date (RG-AUD-08). */
   ouvertureDossier: string;
-  /** Juridiction de la saisine : ce que la planification propose par défaut. */
+  /** Court seized: the default proposed when scheduling. */
   juridictionDuDossier: string;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
@@ -267,25 +259,25 @@ function ModalePlanification({
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const planifier = usePlanifierAudience(dossierId);
-  // La confirmation d'un doublon rejoue **la demande refusée**, gardée ici telle quelle : relire le
-  // formulaire à ce moment-là exposait la date à une réinitialisation intercalée (envoi d'une date
-  // vide, 400 « Requête invalide » — e2e F8, le 2026-09-10).
+  // Confirming a duplicate replays **the rejected request**, kept here as is: re-reading the form
+  // at that point exposed the date to an intervening reset (sending an empty date, 400 "Invalid
+  // request").
   const [confirmation, setConfirmation] = useState<PlanifierAudience | null>(null);
   const etapeParDefaut = etapes[0]?.id;
 
-  // RG-AUD-08 (2026-09-23) : une audience s'enregistre le jour même et après coup — une
-  // audience tenue sans avoir été saisie doit pouvoir être régularisée. La seule borne est
-  // l'ouverture du dossier, comme côté serveur : les deux doivent refuser la même chose.
+  // RG-AUD-08: a hearing can be recorded on the same day and afterwards (a hearing held without
+  // being entered must be regularizable). The only bound is the case opening, as on the server:
+  // both must reject the same thing.
   const schema = useMemo(
     () =>
       z.object({
         etapeId: z.coerce.number().int().positive(tm("champObligatoire")),
-        // Comparaison de chaînes `YYYY-MM-DD` : l'ordre lexical est l'ordre chronologique.
+        // Comparing `YYYY-MM-DD` strings: lexical order is chronological order.
         datePlanifiee: z
           .string()
           .min(1, tm("champObligatoire"))
           .refine((date) => date >= ouvertureDossier, { message: t("dateAvantOuverture") }),
-        // Facultative : laissée vide, le serveur reprend la juridiction du dossier.
+        // Optional: when left empty, the server uses the case's court.
         juridiction: z.string().trim().max(100).optional(),
       }),
     [tm, t, ouvertureDossier],
@@ -299,8 +291,8 @@ function ModalePlanification({
     formState: { errors },
   } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({ resolver: zodResolver(schema) });
 
-  // Réinitialiser à l'ouverture seulement. Dépendre de la liste des étapes — un tableau recréé à
-  // chaque rendu du parent — effaçait la saisie à chaque rechargement du dossier.
+  // Reset on opening only. Depending on the step list (an array recreated on every parent render)
+  // would clear the input on every case reload.
   useEffect(() => {
     if (ouvert) {
       reset({ etapeId: etapeParDefaut, datePlanifiee: "", juridiction: juridictionDuDossier });
@@ -315,7 +307,7 @@ function ModalePlanification({
       setConfirmation(null);
       onFermeture();
     } catch (erreur) {
-      // ERR-005 : un doublon n'est pas un échec, c'est une demande de confirmation (RG-AUD-06).
+      // ERR-005: a duplicate is not a failure but a confirmation request (RG-AUD-06).
       if (erreur instanceof ErreurApi && erreur.demandeConfirmation) {
         setConfirmation(audience);
         return;
@@ -475,7 +467,7 @@ function ModaleCompteRendu({
   );
 }
 
-/** Annulation motivée (QF-30) : le motif est exigé par le backend et reste lisible dans la liste. */
+/** Cancellation with a reason: required by the backend and shown in the list. */
 function ModaleAnnulation({
   dossierId,
   audience,
@@ -555,14 +547,12 @@ function ModaleAnnulation({
 }
 
 /**
- * La note destinée à l'avocat constitué (QF-64, backend Q-139).
- *
- * **Distincte du compte rendu**, qui reste interne : il peut juger la stratégie, voire le travail de
- * l'avocat lui-même (RG-INT-07). La note, elle, lui est écrite - « apportez l'original de l'acte » se
- * dit avant l'audience, d'où un champ ouvert dès la planification.
- *
- * Elle se reprend telle qu'elle a été écrite, et **vide, elle s'efface** : c'est ainsi qu'on retire
- * une note devenue sans objet, sans second bouton pour le même geste.
+ * The note for the appointed counsel.
+ * Separate from the hearing report, which stays internal: it may assess the strategy or even the
+ * counsel's own work (RG-INT-07). The note is written to the counsel and can be entered as soon as
+ * the hearing is scheduled.
+ * It is edited as written, and **an empty note is deleted**: that is how an obsolete note is
+ * removed, without a second button.
  */
 function ModaleNoteAvocat({
   dossierId,
@@ -579,7 +569,7 @@ function ModaleNoteAvocat({
   const [texte, setTexte] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // La note en vigueur, reprise à l'ouverture : on la corrige, on ne la réécrit pas de mémoire.
+  // The current note, loaded on opening: it is corrected, not rewritten from memory.
   const audienceId = audience?.id;
   const noteEnVigueur = audience?.noteAvocat ?? "";
   useEffect(() => {

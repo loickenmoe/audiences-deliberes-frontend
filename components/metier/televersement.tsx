@@ -11,14 +11,10 @@ import { formaterOctets } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 /**
- * Sélection d'un fichier, avec contrôle du format et du poids **avant** l'envoi.
- *
- * Le backend contrôle déjà les deux et refuse par `ERR-008` — ce contrôle local ne le remplace pas,
- * il évite à l'utilisateur d'attendre le téléversement d'un fichier de 40 Mo pour apprendre qu'il
- * est trop lourd.
- *
- * **Le format est dérivé de l'extension, pas du type MIME déclaré** — c'est la règle du backend
- * (Q-46) : s'en écarter ferait accepter localement un fichier que le serveur refusera.
+ * File selection with format and size checks **before** upload.
+ * The backend also checks both and rejects with `ERR-008`; this local check only spares the user a
+ * long upload. The format is derived from the extension, not the declared MIME type, to match the
+ * backend rule.
  */
 export function Televersement({
   nom,
@@ -31,36 +27,26 @@ export function Televersement({
 }: {
   nom: string;
   /**
-   * Nom accessible du champ de fichier. Celui-ci est masqué visuellement (`sr-only`) et déclenché
-   * par un bouton : sans nom, un lecteur d'écran l'annonce « champ de fichier » et rien d'autre —
-   * violation `label` d'axe, d'impact critique, relevée à l'audit AA de F17. Un libellé propre à
-   * l'usage vaut mieux que le texte du bouton, quand plusieurs téléversements coexistent.
+   * Accessible name of the file input, which is visually hidden (`sr-only`) and triggered by a
+   * button;
+   * without it a screen reader only announces "file input".
    */
   label?: string;
-  /** Extensions admises, sans point. Défaut : les formats de la GED (RG-GED-08). */
+  /** Allowed extensions, without the dot. Default: the DMS formats (RG-GED-08). */
   formatsAcceptes?: readonly string[];
-  /** Plafond en octets. Défaut : 10 Mo, valeur de `TAILLE_MAX_GED`. */
+  /** Size limit in bytes. Default: 10 MB, the value of `TAILLE_MAX_GED`. */
   tailleMax?: number;
   /**
-   * Garder le bouton, le nom du fichier et son poids **sur une seule ligne**, en tronquant le nom
-   * plutôt qu'en passant à la ligne (QF-56).
-   *
-   * <p>Le défaut qui l'a rendue nécessaire : sur le dépôt de frais, un bouton d'aperçu est posé à
-   * côté de ce composant, et un nom de fichier long élargissait le bloc jusqu'à repousser ce bouton
-   * à la ligne suivante. C'est le nom qui doit céder, pas la disposition - on le lit en entier dans
-   * l'infobulle et dans le nom accessible de l'aperçu.
-   *
-   * <p><b>Optionnelle, et c'est voulu.</b> Ce composant sert aussi à la création d'un dossier, à
-   * l'onglet Documents et au dépôt d'une publication, où le passage à la ligne ne gêne personne :
-   * leur mise en page n'a pas à changer pour corriger celle-ci.
+   * Keeps the button, file name and size on a single line, truncating the name instead of wrapping,
+   * so a neighbouring button (e.g. preview) is not pushed to the next line. Optional, so other
+   * screens keep their layout.
    */
   surUneLigne?: boolean;
   onChangement?: (fichier: File | null) => void;
   className?: string;
 }) {
-  // Les formats par défaut recopient `FORMATS_GED` (RG-GED-08) : toute évolution de ce paramètre
-  // doit se répercuter ici, sans quoi l'écran refuserait un fichier que le serveur accepte.
-  // Word ajouté le 2026-10-02.
+  // The default formats mirror `FORMATS_GED` (RG-GED-08): any change to that setting must be
+  // reflected here, otherwise the screen would reject a file the server accepts.
   const formats = formatsAcceptes ?? ["pdf", "png", "jpg", "txt", "xlsx", "docx", "doc"];
   const plafond = tailleMax ?? 10 * 1024 * 1024;
 
@@ -140,8 +126,8 @@ export function Televersement({
             )}
           >
             {/*
-              `title` porte le nom entier : tronqué, il reste lisible au survol. Le nom accessible
-              des actions voisines le porte aussi, pour qui n'a pas de souris.
+              `title` holds the full name so it stays readable on hover when truncated; neighbouring
+              actions also carry it in their accessible name.
             */}
             <span
               className={cn("truncate", surUneLigne ? "min-w-0" : "max-w-[18rem]")}

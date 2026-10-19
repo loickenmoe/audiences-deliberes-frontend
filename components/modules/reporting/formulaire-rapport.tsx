@@ -20,14 +20,12 @@ import type { Rapport } from "@/types/domaine";
 const FORMATS_BINAIRES = FormatRapport.filter((format) => format !== "JSON") as ("PDF" | "EXCEL" | "CSV")[];
 
 /**
- * Écran 40 — rapport d'activité (FR-REP-01, US 8.4).
+ * Screen 40 - activity report (FR-REP-01, US 8.4).
  *
- * Le rapport est une **action**, pas une lecture : rien ne part tant que l'utilisateur n'a pas
- * choisi sa période et cliqué. Changer le type d'étiquette recalcule les bornes proposées (voir
- * `lib/rapports.ts`) sans rien demander au backend.
- *
- * **Le 204 est un état vide, pas une erreur** (RG-REP-02) : une période sans activité affiche une
- * explication et une sortie, jamais un bandeau rouge. L'export est alors refusé, faute de contenu.
+ * The report is an action, not a read: nothing is sent until the user picks a period and clicks.
+ * Changing the label type recomputes the proposed bounds (see `lib/rapports.ts`) without calling
+ * the backend.
+ * A 204 is an empty state, not an error (RG-REP-02): an explanation is shown and export is refused.
  */
 export function FormulaireRapport() {
   const t = useTranslations("rapports");
@@ -43,10 +41,10 @@ export function FormulaireRapport() {
   const valide = periodeValide(periode);
 
   function changerType(type: (typeof TypeRapport)[number]) {
-    // Le type gouverne les bornes proposées : les laisser inchangées afficherait une étiquette
-    // « annuel » sur trois jours de données.
-    // Le périmètre survit au changement d'étiquette de période : il répond à une autre
-    // question, et le réinitialiser obligerait à le reposer à chaque essai de période.
+    // The type drives the proposed bounds: keeping them would show an "annual" label on three days
+    // of data.
+    // The scope survives a period label change: it answers another question, and resetting it would
+    // force the user to set it again on each try.
     setPeriode((courante) => ({ ...periodeParDefaut(type), categorie: courante.categorie }));
     setAffiche(false);
   }
@@ -71,7 +69,7 @@ export function FormulaireRapport() {
     try {
       const contenu = await reportingService.exporterRapport(periode, format);
       if (!contenu) {
-        // 204 : le backend n'a rien à produire. Le dire vaut mieux qu'un fichier vide.
+        // 204: the backend has nothing to produce. Saying so beats an empty file.
         setRapport(null);
         setAffiche(true);
         toast.info(t("exportVide"));
@@ -109,9 +107,8 @@ export function FormulaireRapport() {
         </Champ>
 
         {/*
-          Le périmètre de catégories (Q-138). Il est posé **avant les bornes** et non après, parce
-          qu'il commande ce que les sept indicateurs comptent - le lire après les dates laisserait
-          croire qu'il ne concerne que l'export.
+          Category scope, placed before the date bounds because it drives what all seven indicators
+          count; placed after, it would seem to concern only the export.
         */}
         <Champ
           id="rapport-perimetre"
@@ -201,9 +198,8 @@ export function FormulaireRapport() {
               valeur={<span data-nombres>{rapport.nbDeliberesEnregistres}</span>}
             />
             {/*
-              Des nombres, pas un pourcentage (métier, 2026-10-06). La ligne portait un taux ;
-              elle porte désormais ce que ce taux résumait. « Perdus » n'est pas le complément des
-              gagnés : un délibéré mixte n'est ni l'un ni l'autre, et il a sa propre ligne.
+              Counts, not a percentage. "Lost" is not the complement of "won": a mixed deliberation is
+              neither, and has its own line.
             */}
             <Ligne libelle={t("nbLitigesGagnes")} valeur={<span data-nombres>{rapport.nbLitigesGagnes}</span>} />
             <Ligne libelle={t("nbLitigesPerdus")} valeur={<span data-nombres>{rapport.nbLitigesPerdus}</span>} />

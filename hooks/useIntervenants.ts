@@ -10,12 +10,9 @@ import type { CreerIntervenant, ModifierIntervenant } from "@/types/domaine";
 import type { TypeIntervenant } from "@/types/enums";
 
 /**
- * Le référentiel des intervenants, paginé et cherchable (Q-100/Q-105).
- *
- * ⚠ Cet endpoint sert **trois** usages qu'il ne faut pas confondre : le tableau de l'écran 42 (dix
- * lignes), les **sélecteurs** d'affectation et de constitution (recherche au fil de la frappe), et
- * la **table de correspondance** de `useLibelles`, qui a besoin de tout l'annuaire. Chacun dit
- * explicitement ce qu'il veut — c'est la seule façon de ne pas tronquer l'un en réglant l'autre.
+ * Paginated, searchable stakeholder directory. This endpoint serves three distinct uses: the
+ * screen 42 table, the assignment/constitution pickers (search-as-you-type), and the `useLibelles`
+ * lookup table, which needs the whole directory. Each caller states its own paging explicitly.
  */
 export function useIntervenants(
   params: { type?: TypeIntervenant; nom?: string; page?: number; size?: number } = {},
@@ -40,8 +37,8 @@ export function useCreerIntervenant() {
   return useMutation({
     mutationFn: (corps: CreerIntervenant) => intervenantService.creer(corps),
     onSuccess: () => {
-      // Toutes les variantes de filtre sont invalidées : un nouvel avocat doit apparaître aussi
-      // bien dans la liste filtrée que dans les sélecteurs d'affectation d'un dossier.
+      // Invalidate every filter variant: a new lawyer must appear in the filtered list and in the
+      // case assignment pickers.
       void queryClient.invalidateQueries({ queryKey: [CLES.intervenants] });
       toast.success(t("creationReussie"));
     },
@@ -55,7 +52,7 @@ export function useModifierIntervenant(id: number) {
   return useMutation({
     mutationFn: (corps: ModifierIntervenant) => intervenantService.modifier(id, corps),
     onSuccess: () => {
-      // Le nom corrigé doit apparaître partout : référentiel, sélecteurs d'affectation, constitutions.
+      // The corrected name must appear everywhere: directory, assignment pickers, constitutions.
       void queryClient.invalidateQueries({ queryKey: [CLES.intervenants] });
       toast.success(t("modificationReussie"));
     },

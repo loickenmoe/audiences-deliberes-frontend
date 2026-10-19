@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  *
- * Alertes (#44, #45, #46) et paramètres système (#47, #48) : ce qui part sur le fil, la règle de
- * saisie reprise du contrat, et la cadence du repli HTTP quand le canal temps réel est coupé.
+ * Alerts (#44, #45, #46) and system settings (#47, #48): what goes over the wire, the input rule
+ * taken from the contract, and the HTTP polling fallback rate when the real-time channel is down.
  */
 import { HttpResponse, http, type JsonBodyType } from "msw";
 import { setupServer } from "msw/node";
@@ -73,7 +73,7 @@ afterEach(() => {
 });
 afterAll(() => serveur.close());
 
-/** Fabrique une configuration telle que le backend la publie (règle de saisie comprise). */
+/** Builds a setting as the backend publishes it (input rule included). */
 function config(partiel: Partial<ConfigurationSysteme>): ConfigurationSysteme {
   return {
     cle: "SEUIL_PROROGATIONS",
@@ -229,17 +229,14 @@ describe("paramètres système sur le fil", () => {
     expect(derniere?.methode).toBe("PUT");
     expect(derniere?.url.pathname).toBe("/api/v1/configurations/FORMATS_GED");
     expect(derniere?.corps).toEqual({ valeur: "PDF,XLSX" });
-    // La réponse du backend fait foi : c'est elle qui porte la valeur normalisée.
+    // The backend response is authoritative: it carries the normalized value.
     expect(mise.valeur).toBe("PDF,XLSX");
   });
 });
 
 /**
- * Supervision du canal applicatif (backend Q-109, NF-ALR-02).
- *
- * Ce qui est vérifié ici n'est pas le calcul — il appartient au backend, qui le teste — mais **ce
- * qui part sur le fil** et la lecture des deux taux. Les confondre serait l'erreur la plus facile à
- * commettre, et la plus coûteuse : l'un est opposable, l'autre non.
+ * In-app channel monitoring (NF-ALR-02). The computation belongs to the backend; this checks
+ * **what goes over the wire** and how the two rates are read. Only one of them is a binding target.
  */
 describe("supervision des alertes", () => {
   it("envoie la fenêtre demandée, bornes comprises", async () => {
@@ -254,12 +251,12 @@ describe("supervision des alertes", () => {
   it("distingue le taux opposable du taux d'usage", async () => {
     const stats = await alerteService.statistiquesDiffusion("2026-09-01", "2026-09-30");
 
-    // 995 alertes sur 1000 remises : les différées comptent comme délivrées, seuls les 5 échecs
-    // pèsent. C'est ce taux que NF-ALR-02 borne à 99 %.
+    // 995 of 1000 alerts delivered: deferred ones count as delivered, only the 5 failures count.
+    // NF-ALR-02 bounds this rate at 99%.
     expect(stats.tauxDelivrance).toBe(99.5);
     expect(stats.seuilRespecte).toBe(true);
-    // Tout autre chose : 700 destinataires sur 1000 étaient connectés. Aucun seuil ne s'y oppose,
-    // et un chiffre bas ici ne dit rien d'une panne.
+    // Unrelated: 700 of 1000 recipients were online. No threshold applies, and a low figure here
+    // does not indicate an outage.
     expect(stats.tauxDiffusionTempsReel).toBe(70);
     expect(stats.tauxDiffusionTempsReel).not.toBe(stats.tauxDelivrance);
   });
@@ -267,8 +264,7 @@ describe("supervision des alertes", () => {
   it("rapporte les non traitées sans les mêler aux taux", async () => {
     const stats = await alerteService.statistiquesDiffusion("2026-09-01", "2026-09-30");
 
-    // Une alerte délivrée que personne n'a ouverte relève d'un autre problème que la délivrance :
-    // le compte existe, il n'entre dans aucun quotient.
+    // A delivered but unopened alert is not a delivery issue: it is counted but enters no ratio.
     expect(stats.nonTraitees).toBe(42);
     expect(stats.diffusees + stats.differees + stats.echecs).toBe(stats.observees);
   });

@@ -23,15 +23,12 @@ async function contenuPiece(documentId: number): Promise<Blob> {
 }
 
 /**
- * Les partages à valider (QF-64, backend Q-139).
+ * Document shares awaiting approval.
  *
- * Sur un dossier **sensible**, le partage d'une pièce avec l'avocat est réservé au DJ et à la DJA :
- * le juriste le propose, et rien n'est visible de l'avocat avant leur validation. Cette file est
- * l'endroit où ils trouvent les propositions, le plus ancien d'abord - comme celle des demandes de
- * suppression, dont elle reprend la forme.
- *
- * **La pièce se lit avant de décider** : l'œil l'ouvre sans quitter la file. On ne valide pas la
- * sortie d'un document qu'on n'a pas vu. Un rejet exige un motif, transmis au juriste.
+ * On a sensitive case file, sharing a document with the lawyer is reserved to the DJ and the DJA:
+ * the legal officer proposes it, and nothing is visible to the lawyer before approval. Oldest first,
+ * same layout as the deletion request queue.
+ * The document can be previewed before deciding; a rejection requires a reason, sent to the legal officer.
  */
 export function FilePartages() {
   const t = useTranslations("partages");
@@ -90,7 +87,7 @@ export function FilePartages() {
                 <tr key={partage.documentId}>
                   <td className="px-4 py-2">{partage.nomFichier}</td>
                   <td className="px-4 py-2">
-                    {/* Vers l'onglet Documents : c'est là que la pièce vit, avec ses voisines. */}
+                    {/* Links to the Documents tab, where the document lives alongside the others. */}
                     <Link
                       href={`/dossiers/${partage.dossierId}?onglet=documents`}
                       className="font-mono underline underline-offset-2"

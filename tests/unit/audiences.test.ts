@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  *
- * Sous Node : l'export du calendrier est une réponse **binaire**, et c'est son traitement que ce
- * fichier vérifie — jsdom et MSW s'accordent mal sur les corps binaires (cf. `ged.test.ts`).
+ * Runs under Node: the calendar export is a **binary** response, and jsdom and MSW do not handle
+ * binary bodies well (see `ged.test.ts`).
  */
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
@@ -124,7 +124,7 @@ describe("calendrier (#15)", () => {
       ),
     );
 
-    // Sans relecture du Blob, seul un message générique atteindrait l'utilisateur.
+    // Without reading the Blob back, only a generic message would reach the user.
     await expect(audienceService.exporterCalendrier("HEBDOMADAIRE", "2026-09-07", "PDF")).rejects.toMatchObject({
       code: "ERR-FORBIDDEN",
       message: "Droits insuffisants",

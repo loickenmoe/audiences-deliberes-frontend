@@ -6,8 +6,8 @@ import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * GED (écrans 36 et 37) **contre le backend réel et MinIO** : la file des demandes de suppression
- * du DJ/DJA et le rapport journalier.
+ * Document management (screens 36 and 37) against the real backend and MinIO: the DJ/DJA deletion
+ * request queue and the daily report.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -37,8 +37,8 @@ function suffixe() {
 }
 
 /**
- * Le juriste crée un dossier avec un PV au nom unique, puis en demande la suppression. Le nom est
- * unique pour retrouver la ligne dans la file du DJ, qui voit les demandes de tous les dossiers.
+ * The legal officer creates a case with a uniquely named PV, then requests its deletion. The unique
+ * name locates the row in the DJ queue, which shows requests for all cases.
  */
 async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   const nom = `pv-${suffixe()}.pdf`;
@@ -48,10 +48,10 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   await juriste.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await juriste.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await juriste.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // At least one party on each side is required.
   await juriste.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await juriste.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Required: the branch comes from the reference data.
   await choisirAgenceOrigine(juriste);
   await juriste.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-GED");
   await juriste.getByLabel("PV de transfert", { exact: true }).fill("PV-GED");
@@ -61,7 +61,7 @@ async function pieceDontLaSuppressionEstDemandee(browser: Browser) {
   await juriste.getByRole("button", { name: "Enregistrer" }).click();
   await juriste.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
   const url = juriste.url();
-  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  // The reference is system-assigned: read it from the case page.
   const reference = await referenceDuDossier(juriste);
 
   await juriste.getByRole("tab", { name: "Documents" }).click();
@@ -88,15 +88,15 @@ test("le DJ voit quoi supprimer, rejette avec un motif, puis approuve la demande
   await dj.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Demandes de suppression" }).click();
   await dj.waitForURL(/\/ged\/demandes-suppression/, { timeout: 60_000 });
 
-  // La demande nomme son fichier et son dossier (Q-79). La file « En attente » est FIFO : une
-  // demande qu'on vient de déposer est la dernière, pas la première — d'où le parcours des pages.
+  // The request names its file and case. The pending queue is FIFO: a new request is last, hence
+  // paging through the queue.
   const ligne = await ligneDansLaFile(dj, new RegExp(nom));
   await expect(ligne).toContainText(reference);
 
   await dj.getByRole("button", { name: `Rejeter la demande - ${nom}` }).click();
   const rejet = dj.getByRole("dialog", { name: "Rejeter la demande" });
   await rejet.getByRole("button", { name: "Rejeter" }).click();
-  // Sans motif, rien ne part.
+  // Nothing is sent without a reason.
   await expect(rejet.getByText(/obligatoire/i)).toBeVisible();
   await rejet.getByLabel("Motif du rejet", { exact: true }).fill("Pièce encore utile au dossier");
   await rejet.getByRole("button", { name: "Rejeter" }).click();
@@ -105,11 +105,11 @@ test("le DJ voit quoi supprimer, rejette avec un motif, puis approuve la demande
   await dj.getByRole("button", { name: "Toutes" }).click();
   await expect(dj.getByRole("row", { name: new RegExp(nom) }).first()).toContainText("Motif : Pièce encore utile au dossier");
 
-  // Le juriste redemande ; cette fois le DJ approuve, et la pièce quitte le dossier.
+  // The legal officer asks again; this time the DJ approves and the document leaves the case.
   await redemander(browser, url, nom);
   await dj.getByRole("button", { name: "En attente" }).click();
   await dj.reload();
-  // Le rechargement ramène en première page : la demande, à nouveau la plus récente, est en queue.
+  // Reloading returns to the first page; the request, again the newest, is at the end.
   const redeposee = await ligneDansLaFile(dj, new RegExp(nom));
   await redeposee.getByRole("button", { name: `Approuver la suppression - ${nom}` }).click();
   await dj.getByRole("dialog", { name: "Approuver la suppression ?" }).getByRole("button", { name: "Approuver" }).click();
@@ -131,7 +131,7 @@ test("une suppression directe par le DJ ferme la demande en attente (Q-79)", asy
 
   await dj.goto("/ged/demandes-suppression");
   await expect(dj.getByRole("heading", { name: "Demandes de suppression", level: 1 })).toBeVisible();
-  // Plus de demande fantôme en attente : elle est close avec le document.
+  // No orphan pending request: it is closed with the document.
   await expect(dj.getByRole("row", { name: new RegExp(nom) })).toHaveCount(0);
   await dj.getByRole("button", { name: "Toutes" }).click();
   await expect(dj.getByRole("row", { name: new RegExp(nom) }).first()).toContainText("Approuvée");

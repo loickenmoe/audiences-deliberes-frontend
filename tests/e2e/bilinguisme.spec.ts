@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Bilinguisme français / anglais, vérifié de bout en bout (QF-09, révisé).
+ * French / English bilingualism, checked end to end.
  *
- * La langue vit dans un cookie et l'URL ne porte aucun préfixe : `/login` reste `/login` dans les
- * deux langues. Ces tests vérifient que la bascule tient, y compris après navigation.
+ * The language lives in a cookie and the URL has no prefix: `/login` stays `/login` in both
+ * languages. These tests check that the switch holds, including after navigation.
  */
 
 test("l'écran de connexion s'affiche en français par défaut", async ({ page }) => {
@@ -25,7 +25,7 @@ test("la bascule vers l'anglais traduit l'écran sans changer l'URL", async ({ p
   await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
-  // L'URL est inchangée : les liens profonds des notifications resteront valables.
+  // The URL is unchanged: deep links in notifications stay valid.
   await expect(page).toHaveURL(/\/login$/);
 });
 
@@ -51,8 +51,8 @@ test("les messages d'erreur de connexion sont traduits", async ({ page }) => {
   await page.getByLabel("Password", { exact: true }).fill("mauvais-mot-de-passe");
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // Attente explicite : le refus vient d'un vrai Keycloak, et le rendu du message traverse une
-  // action serveur. Les 5 s par défaut ne couvrent pas ce trajet (cf. `authentification.spec.ts`).
+  // Explicit wait: the rejection comes from a real Keycloak and the message goes through a server
+  // action. The default 5 s does not cover this (see `authentification.spec.ts`).
   const alerte = page.getByRole("main").getByRole("alert");
   await expect(alerte).toBeVisible({ timeout: 20_000 });
   await expect(alerte).toHaveText("Incorrect username or password.");
@@ -68,7 +68,7 @@ test("un juriste connecté en anglais voit son profil traduit", async ({ page })
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
 
   await expect(page.getByRole("heading", { name: /Hello/ })).toBeVisible();
-  // Le profil métier est traduit, pas affiché en français ni en code technique.
+  // The business profile is translated, not shown in French nor as a technical code.
   await expect(page.getByRole("banner").getByText("Legal Officer")).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 });

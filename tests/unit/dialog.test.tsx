@@ -5,9 +5,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { rendre as render } from "../utils/rendu";
 
 /**
- * Un `<dialog>` fermé reste dans le DOM : la fiche dossier en monte plusieurs à la fois. Chacun
- * doit donc porter **son** nom accessible. Avec un identifiant de titre fixe, la confirmation
- * d'affectation s'annonçait « Modifier l'affectation » — le titre de la modale voisine.
+ * A closed `<dialog>` stays in the DOM and the case file screen mounts several at once, so each one
+ * must carry **its own** accessible name. A fixed title id would make one dialog announce another's title.
  */
 describe("Dialog", () => {
   it("donne à chaque modale son propre nom, même quand plusieurs coexistent", () => {
@@ -37,9 +36,8 @@ describe("Dialog", () => {
   });
 
   /**
-   * Le navigateur émet `close` que la fermeture vienne de l'utilisateur ou du programme. Relayer la
-   * seconde rappelait `onFermeture` en cascade : masquer la modale d'affectation pour afficher sa
-   * confirmation refermait tout le parcours (ERR-003, F7).
+   * The browser emits `close` whether closing comes from the user or from code. Relaying the latter
+   * would call `onFermeture` in cascade and close the whole flow (ERR-003, F7).
    */
   it("ne relaie pas une fermeture décidée par le parent", () => {
     const onFermeture = vi.fn();
@@ -54,16 +52,15 @@ describe("Dialog", () => {
     const onFermeture = vi.fn();
     render(<Dialog ouvert onFermeture={onFermeture} titre="Affectation" />);
 
-    // Échap et le bouton de fermeture ferment l'élément sans passer par le parent.
+    // Escape and the close button close the element without going through the parent.
     (screen.getByRole("dialog") as HTMLDialogElement).close();
 
     expect(onFermeture).toHaveBeenCalledTimes(1);
   });
 
   /**
-   * La modale est rendue dans des formulaires (l'aperçu d'une pièce, dans celui du dossier) : elle
-   * ne doit contenir aucun `<form>`, qu'HTML interdit d'imbriquer. Son bouton de fermeture passe
-   * par `close()`, donc par la même voie que ci-dessus.
+   * The dialog is rendered inside forms, so it must not contain a `<form>` (HTML forbids nesting).
+   * Its close button goes through `close()`, the same path as above.
    */
   it("se ferme par son bouton, sans formulaire qui s'imbriquerait dans celui du parent", () => {
     const onFermeture = vi.fn();

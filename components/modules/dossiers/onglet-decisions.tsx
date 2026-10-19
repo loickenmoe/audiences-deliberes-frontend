@@ -32,9 +32,8 @@ const TON_PAIEMENT: Record<StatutPaiementCondamnation, TonStatut> = {
 };
 
 /**
- * Écran 14 — décisions devenues définitives du dossier (UC-DEF-01 à 03) : adjudications,
- * condamnations pécuniaires et décisions archivées. La lecture existe depuis Q-88 (QF-03) ; sans
- * elle, le statut d'une condamnation devenait inatteignable après un rechargement.
+ * Screen 14 - final decisions of the case (UC-DEF-01 to 03): awards, monetary judgments and
+ * archived decisions.
  */
 export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
   const t = useTranslations("decisions");
@@ -46,11 +45,9 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
   const etapes = dossier.etapes ?? [];
   const etapesCloturees = etapes.filter((e) => e.statutCycleVie === "CLOTURE");
   /*
-   * **Le dossier est clos** quand plus aucune étape n'est ouverte - clôturée ou archivée (QF-66).
-   * C'est la garde que le serveur applique déjà au versement en jurisprudence (`FERMES`) : une
-   * décision n'y entre qu'une fois définitive, tous recours épuisés. L'écran la reflète désormais ;
-   * il proposait le bouton sur un dossier tout juste ouvert, et ne refusait qu'à l'envoi, une fois
-   * le formulaire rempli.
+   * **The case is closed** when no step is open anymore (closed or archived). This is the guard the
+   * server already applies to case-law filing (`FERMES`): a decision only enters once final, with
+   * all appeals exhausted. The screen reflects it instead of failing on submit.
    */
   const dossierClos =
     etapes.length > 0 && etapes.every((e) => e.statutCycleVie === "CLOTURE" || e.statutCycleVie === "ARCHIVE");
@@ -127,7 +124,7 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
             </Button>
           ) : null}
         </div>
-        {/* QF-66 : la règle de l'adjudication, et la même explication quand elle bloque. */}
+        {/* The award rule, and the same explanation when it blocks. */}
         {peutGerer && etapesCloturees.length === 0 ? (
           <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("sansEtapeClotureeCondamnation")}</p>
         ) : null}
@@ -210,7 +207,7 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
   );
 }
 
-/** UC-DEF-02 étape 8 : le statut de paiement se met à jour au fil de l'exécution. */
+/** UC-DEF-02 step 8: the payment status is updated as enforcement progresses. */
 function LigneCondamnation({
   condamnation,
   dossierId,
@@ -283,7 +280,7 @@ function aujourdhui() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** UC-DEF-01 : bénéficiaire et suivi financier, sur une étape clôturée (RG-DEF-01/02). */
+/** UC-DEF-01: beneficiary and financial follow-up, on a closed step (RG-DEF-01/02). */
 function ModaleAdjudication({
   dossierId,
   etapes,
@@ -412,7 +409,7 @@ function ModaleAdjudication({
   );
 }
 
-/** UC-DEF-02 : sens, nature du paiement, date ; l'étape est facultative (Q-59). */
+/** UC-DEF-02: direction, payment nature, date; the step is optional. */
 function ModaleCondamnation({
   dossierId,
   etapes,
@@ -451,7 +448,7 @@ function ModaleCondamnation({
       sens: sens ? undefined : obligatoire,
       nature: nature.trim() ? undefined : obligatoire,
       dateDecision: dateDecision ? undefined : obligatoire,
-      // QF-66 : obligatoire, comme pour l'adjudication - le serveur refuse une condamnation sans elle.
+      // Required, as for an award: the server rejects a judgment without it.
       etapeId: etapeId ? undefined : obligatoire,
     };
     setErreurs(suivantes);

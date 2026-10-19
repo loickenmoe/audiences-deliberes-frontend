@@ -35,7 +35,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
         accessorKey: "reference",
         header: t("colonneReference"),
         cell: ({ row }) => (
-          // La référence est le point d'entrée naturel vers la vue consolidée du client.
+          // The reference is the natural entry point to the client's consolidated view.
           <Link
             href={`/clients/${row.original.id}`}
             className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
@@ -85,12 +85,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
       </header>
 
       <BarreFiltres nbFiltresActifs={nbFiltresActifs} onEffacer={effacer}>
-        {/*
-          **Au fil de la frappe** (QF-57). Les deux champs se validaient sur `onBlur`, et le
-          commentaire qui s'y trouvait disait « une requête **et une entrée d'historique** par
-          caractère » : la seconde moitié était fausse - `useFiltresUrl` écrit avec `router.replace`,
-          qui n'empile rien -, et la première est réglée par la pause de 300 ms de `ChampRecherche`.
-        */}
+        {/* Filter as the user types (debounced by `ChampRecherche`). */}
         <ChampRecherche
           id="filtre-nom"
           label={t("rechercheNom")}

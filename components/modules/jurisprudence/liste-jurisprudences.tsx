@@ -12,8 +12,8 @@ import { gedService } from "@/services/gedService";
 import type { Jurisprudence } from "@/types/domaine";
 
 /**
- * Lignes de jurisprudences, partagées par la base (38) et la fiche (14). L'URL de téléchargement ne
- * vit que 10 minutes : on la redemande au moment d'ouvrir (`rafraichir`), jamais celle de l'affichage.
+ * Case law rows, shared by the database (screen 38) and the case file (screen 14). The download URL
+ * is valid for 10 minutes only: a fresh one is requested on open (`rafraichir`), never the displayed one.
  */
 export function ListeJurisprudences({
   jurisprudences,

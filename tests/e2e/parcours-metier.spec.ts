@@ -8,33 +8,20 @@ import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Les neuf parcours métier **P1 à P9** de `FUNCTIONAL_MAP.md`, joués de bout en bout dans
- * l'interface.
+ * Business journeys P1 to P9 from `FUNCTIONAL_MAP.md`, played end to end in the UI. They check the
+ * hand-over between profiles and screens (continuity of a case), not isolated screens.
  *
- * **Ce que ces parcours ajoutent aux 110 autres.** Les suites par module vérifient chacune un écran
- * et ses règles ; elles ne disent rien de la **continuité** — qu'un dossier créé par un juriste
- * porte bien l'audience qu'il planifie, que le délibéré s'y rattache, que la décision définitive
- * s'archive sur la même étape. C'est le passage de relais entre profils et entre écrans qui est
- * éprouvé ici, jamais un écran isolé.
- *
- * Chaque parcours change de compte autant de fois que la vie du dossier l'exige, comme dans la
- * réalité : le juriste ouvre, l'avocat dépose, l'Assistante contrôle, la DJA arbitre, le DJ valide.
- *
- * **Couverture des neuf parcours — ce fichier n'en rejoue que cinq, et c'est délibéré.** P3, P4, P5
- * et P7 sont déjà éprouvés de bout en bout par leur suite de module ; les redoubler ici allongerait
- * la suite sans rien prouver de neuf. Le tableau dit où chacun est tenu :
- *
- * | Parcours | Où il est joué |
+ * | Journey | Where it is played |
  * |---|---|
- * | P1 — ouverture d'un dossier | **ici** |
- * | P2 — cycle d'une audience | **ici**, jusqu'au compte rendu de l'avocat |
- * | P3 — cycle d'un délibéré | `deliberes.spec.ts` (prorogation, rabattement, vidage) |
- * | P4 — voie de recours | `deliberes.spec.ts` (délibéré défavorable, recours, clôture) |
- * | P5 — décision définitive | `decisions.spec.ts` (adjudication, condamnation, archivage) |
- * | P6 — demande de frais | **ici**, de l'avocat au contrôle de conformité |
- * | P7 — constitution d'un prestataire | `publications.spec.ts` (sollicitation, signature SH, lettre) |
- * | P8 — suppression d'un document | **ici**, du juriste au DJ |
- * | P9 — pilotage | **ici**, les quatre étapes enchaînées |
+ * | P1 - opening a case | here |
+ * | P2 - hearing cycle | here, up to the lawyer's report |
+ * | P3 - deliberation cycle | `deliberes.spec.ts` (extension, reopening, ruling) |
+ * | P4 - appeal | `deliberes.spec.ts` (unfavourable deliberation, appeal, closing) |
+ * | P5 - final decision | `decisions.spec.ts` (adjudication, conviction, archiving) |
+ * | P6 - expense request | here, from the lawyer to the compliance check |
+ * | P7 - provider appointment | `publications.spec.ts` (request, SH signature, letter) |
+ * | P8 - document deletion | here, from the legal officer to the DJ |
+ * | P9 - steering | here, the four steps chained |
  */
 
 loadEnvConfig(process.cwd());
@@ -46,8 +33,8 @@ function suffixe() {
 }
 
 /*
- * L'intervenant rattaché au compte `avocat.test` (Q-84) est **lu** au référentiel, et non supposé :
- * son nom appartient aux données, qu'un DJ peut changer — voir `avocat-de-test.ts`.
+ * The party linked to the `avocat.test` account is read from the reference data, not assumed: a DJ
+ * can change its name. See `avocat-de-test.ts`.
  */
 
 const PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
@@ -68,9 +55,8 @@ async function pageConnectee(browser: Browser, identifiant: string) {
 }
 
 /**
- * P1 — ouverture d'un dossier de recouvrement, dans l'interface : création avec sa pièce, puis
- * relecture de la fiche. Renvoie la référence et l'URL, sur lesquelles les parcours suivants
- * s'appuient.
+ * P1 - opening a recovery case in the UI: creation with its document, then reading the case page.
+ * Returns the reference and URL used by the following journeys.
  */
 async function ouvrirUnDossier(page: Page, marque: string) {
   await page.goto("/dossiers/nouveau");
@@ -78,19 +64,17 @@ async function ouvrirUnDossier(page: Page, marque: string) {
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // At least one party on each side is required.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Required: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill(`CRD-${marque}`);
   await page.getByLabel("PV de transfert", { exact: true }).fill(`PV-${marque}`);
   await deposerPiecesDeCreation(page, { marque });
   /*
-   * L'avocat est choisi **par son nom**, jamais par son rang : `{ index: 0 }` désignait un avocat
-   * arbitraire du référentiel, et le dossier n'appartenait donc pas à `avocat.test` — son portail
-   * ne le proposait pas, et les parcours P2 et P6 restaient bloqués sur un sélecteur sans l'option
-   * attendue.
+   * The lawyer is chosen by name, never by position: otherwise the case may not belong to
+   * `avocat.test` and would not appear in its portal.
    */
   await affecterParDefaut(page, { avocat: (await avocatDeTest()).nom });
   await page
@@ -98,16 +82,13 @@ async function ouvrirUnDossier(page: Page, marque: string) {
     .setInputFiles({ name: `pv-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  // The reference is system-assigned: read it from the case page.
   return { reference: await referenceDuDossier(page), url: page.url() };
 }
 
 /**
- * Choisit un dossier dans le portail avocat, par sa référence.
- *
- * Le champ est un combobox cherchable depuis le 2026-09-28 : il interroge le serveur au fil de la
- * frappe, au lieu de charger une page des dossiers les plus récents — dans laquelle les anciens
- * manquaient, sans que rien ne le dise.
+ * Picks a case in the lawyer portal by reference. The field is a searchable combobox querying the
+ * server as the user types, so older cases are reachable too.
  */
 async function choisirDossierAvocat(page: Page, reference: string) {
   const champ = page.getByRole("combobox", { name: "Dossier" });
@@ -126,12 +107,12 @@ test("P1 — un dossier de recouvrement s'ouvre, avec ses affectations et sa pi�
   await seConnecter(page, "juriste.test");
   const { reference, url } = await ouvrirUnDossier(page, suffixe());
 
-  // La fiche porte la référence saisie — en surtitre, le `h1` étant la nature de la procédure.
+  // The case page shows the reference as overline; the `h1` is the procedure type.
   await expect(page.getByText(reference).first()).toBeVisible();
   await page.getByRole("tab", { name: "Documents" }).click();
   await expect(page.getByRole("row", { name: /\.pdf/ }).first()).toBeVisible({ timeout: 30_000 });
 
-  // Et il est immédiatement retrouvable dans la liste — NF-PERF-01 le veut indexé en moins d'une seconde.
+  // It is immediately findable in the list (NF-PERF-01: indexed in under a second).
   await page.goto("/dossiers");
   await page.getByLabel("Référence", { exact: true }).fill(reference);
   await expect(page.getByRole("link", { name: reference })).toBeVisible({ timeout: 30_000 });
@@ -146,9 +127,8 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   const { reference, url } = await ouvrirUnDossier(juriste, marque);
 
   /*
-   * L'étape d'instance doit d'abord passer `EN_COURS` : une audience se planifie sur une instance
-   * ouverte, pas sur un dossier qui vient d'être créé. C'est précisément le genre d'enchaînement que
-   * ces parcours existent pour tenir — une suite par module l'aurait pris pour acquis.
+   * The instance step must first move to `EN_COURS`: a hearing is scheduled on an open instance,
+   * not on a freshly created case.
    */
   await juriste.getByRole("tab", { name: "Étapes" }).click();
   await juriste.getByLabel("Faire passer à", { exact: true }).selectOption("EN_COURS");
@@ -165,20 +145,20 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
     .click();
   await expect(juriste.getByText("Audience planifiée.")).toBeVisible({ timeout: 30_000 });
 
-  // L'audience apparaît dans le calendrier : le juriste la retrouve sans passer par la fiche.
+  // The hearing appears in the calendar: the legal officer finds it without the case page.
   await juriste.goto("/audiences/calendrier");
   await expect(juriste.getByRole("heading", { name: "Calendrier des audiences" })).toBeVisible();
 
-  // L'avocat dépose son compte rendu sur cette audience (US 5.1).
+  // The lawyer files a report on this hearing (US 5.1).
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/publications/nouvelle");
-  // La référence est **attribuée** (2026-09-29) : on emploie celle que la création a rendue,
-  // jamais une référence fabriquée à partir de la marque du parcours.
+  // The reference is system-assigned: use the one returned at creation, never one built from the
+  // journey marker.
   await choisirDossierAvocat(avocat, reference);
   await expect(avocat.locator("#publication-audience")).toBeEnabled({ timeout: 30_000 });
   await avocat.locator("#publication-audience").selectOption({ index: 1 });
   await avocat.locator("#publication-contenu").fill(`Audience renvoyée - ${marque}`);
-  // Q-98 : le plumitif accompagne le récit, en un seul dépôt.
+  // The court record accompanies the report, in a single upload.
   await avocat
     .locator('input[name="piece-jointe"]')
     .setInputFiles({ name: `plumitif-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
@@ -188,19 +168,18 @@ test("P2 — une audience se planifie puis se tient, et le compte rendu de l'avo
   });
   await avocat.context().close();
 
-  // L'Assistante la valide : elle devient alors consultable par le juriste (RG-INT-10).
+  // The Assistant validates it, making it visible to the legal officer (RG-INT-10).
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/publications");
-  // File FIFO et paginée : la publication qu'on vient de déposer est en queue, pas en tête.
+  // FIFO paginated queue: the publication just filed is at the end, not the top.
   const ligne = await ligneDansLaFile(assistante, new RegExp(reference));
   await expect(ligne).toBeVisible({ timeout: 30_000 });
 
-  // Q-98 : la pièce du compte rendu s'ouvre depuis la publication elle-même — c'est ce qui
-  // manquait quand le plumitif partait en dépôt séparé, sans lien avec l'audience.
+  // The report document opens from the publication itself.
   await ligne.getByRole("link", { name: /Compte rendu/ }).click();
   await assistante.waitForURL(/\/publications\/\d+$/, { timeout: 60_000 });
   await expect(assistante.getByRole("heading", { name: "Pièce jointe" })).toBeVisible({ timeout: 30_000 });
-  // `exact` : le dialogue d'aperçu porte le même nom, précédé de « Aperçu — ».
+  // `exact`: the preview dialog has the same name, prefixed with "Aperçu — ".
   await expect(assistante.getByText(`plumitif-${marque}.pdf`, { exact: true })).toBeVisible();
   await assistante.context().close();
 
@@ -214,7 +193,7 @@ test("P6 — une demande de frais traverse tout son circuit, de l'avocat au paie
   const { reference } = await ouvrirUnDossier(juriste, marque);
   await juriste.context().close();
 
-  // 1. L'avocat dépose, pièce justificative comprise (UC-INT-01).
+  // 1. The lawyer files the request, supporting document included (UC-INT-01).
   const avocat = await pageConnectee(browser, "avocat.test");
   await avocat.goto("/frais/nouvelle");
   const facture = `FAC-${marque}`;
@@ -229,7 +208,7 @@ test("P6 — une demande de frais traverse tout son circuit, de l'avocat au paie
   await expect(avocat.getByText("Demande de frais déposée.")).toBeVisible({ timeout: 30_000 });
   await avocat.context().close();
 
-  // 2. L'Assistante contrôle la conformité — et doit pouvoir **ouvrir** la pièce (UC-INT-02 ét. 3).
+  // 2. The Assistant checks compliance and must be able to open the document (UC-INT-02 step 3).
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/frais");
   await assistante.getByRole("link", { name: facture }).click();
@@ -244,7 +223,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
   const marque = suffixe();
   const juriste = await pageConnectee(browser, "juriste.test");
   const { reference, url } = await ouvrirUnDossier(juriste, marque);
-  // Le même nom que celui déposé par `ouvrirUnDossier` : la casse compte pour retrouver la ligne.
+  // Same name as uploaded by `ouvrirUnDossier`: case matters to find the row.
   const nom = `pv-${marque}.pdf`;
 
   await juriste.goto(`${url}?onglet=documents`);
@@ -255,7 +234,7 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
   });
   await juriste.context().close();
 
-  // Le DJ arbitre : la demande lui est parvenue, nommée par son fichier et son dossier (Q-79).
+  // The DJ decides: the request reached them, named by its file and case.
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/ged/demandes-suppression");
   const ligne = await ligneDansLaFile(dj, new RegExp(nom));
@@ -267,11 +246,11 @@ test("P8 — une suppression de document est demandée par le juriste et arbitr�
 test("P9 — le pilotage s'enchaîne : tableau de bord, rapport, vue client, seuils", async ({ browser }) => {
   const dj = await pageConnectee(browser, "dj.test");
 
-  // 1. Le tableau de bord, réservé à la direction (Q-95).
+  // 1. The dashboard, restricted to management.
   await dj.goto("/tableau-de-bord");
   await expect(dj.getByRole("heading", { name: "Tableau de bord", level: 1 })).toBeVisible();
 
-  // 2. Le rapport, atteint par le composite ROLE_JURISTE du DJ (Q-81, QF-04).
+  // 2. The report, reached through the DJ's composite ROLE_JURISTE.
   await dj.getByRole("link", { name: "Générer un rapport" }).click();
   await dj.waitForURL(/\/rapports/, { timeout: 60_000 });
   await dj.locator("#rapport-debut").fill("2020-01-01");
@@ -279,7 +258,7 @@ test("P9 — le pilotage s'enchaîne : tableau de bord, rapport, vue client, seu
   await dj.getByRole("button", { name: "Afficher le rapport" }).click();
   await expect(dj.getByText("Dossiers ouverts")).toBeVisible({ timeout: 30_000 });
 
-  // 3. La vue consolidée d'un client.
+  // 3. The consolidated client view.
   await dj.goto("/clients");
   await dj.getByRole("link").filter({ hasText: /^CLI/ }).first().click();
   await dj.waitForURL(/\/clients\/\d+/, { timeout: 60_000 });
@@ -287,7 +266,7 @@ test("P9 — le pilotage s'enchaîne : tableau de bord, rapport, vue client, seu
     timeout: 30_000,
   });
 
-  // 4. L'ajustement d'un seuil, dernier maillon du parcours de pilotage.
+  // 4. Adjusting a threshold, last step of the steering journey.
   await dj.goto("/admin/configurations");
   await expect(dj.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
   await expect(dj.locator("#configuration-SEUIL_MONTANT_DEFAUT")).toBeEnabled();

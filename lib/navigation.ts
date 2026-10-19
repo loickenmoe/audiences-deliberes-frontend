@@ -25,41 +25,31 @@ import {
 import type { Capacite } from "@/lib/rbac";
 
 /**
- * Navigation principale.
+ * Main navigation.
  *
- * Chaque entrée porte une **clé de traduction** et une **capacité**, jamais un texte ni une liste de
- * rôles en dur : le libellé vient des fichiers de messages, la correspondance rôle → capacité de
- * `lib/rbac.ts`, elle-même dérivée des `@PreAuthorize` du backend.
+ * Each entry has a translation key and a capability, never hard-coded text or roles: labels come
+ * from the message files, and the role-to-capability mapping from `lib/rbac.ts`, itself derived
+ * from the backend `@PreAuthorize` rules.
  */
 export interface EntreeNavigation {
-  /** Clé dans l'espace `navigation` des fichiers de messages. */
+  /** Key in the `navigation` namespace of the message files. */
   cle: string;
   href: string;
   icone: LucideIcon;
   capacite: Capacite;
-  /** Jalon de livraison — les entrées non encore livrées ne sont pas affichées. */
+  /** Delivery flag: entries not yet delivered are hidden. */
   livre: boolean;
 }
 
 export const NAVIGATION: EntreeNavigation[] = [
   /*
-   * **Accueil et Notifications sont ouverts à tout compte, avocat compris** (QF-59).
-   *
-   * Les deux entrées étaient adossées à `consulterReferentiels`, que l'avocat ne porte pas : elles
-   * disparaissaient de son menu alors que les deux pages s'ouvraient parfaitement pour lui. Il les
-   * atteignait par le **logo de la banque** et par la **cloche** - deux portes sans étiquette, qui
-   * ne disent pas où elles mènent et ne marquent pas l'onglet de la page où l'on arrive. Signalé
-   * par le porteur du projet le 2026-10-14.
-   *
-   * La capacité citée est celle de la page, pas celle d'un écran voisin : c'est l'erreur contre
-   * laquelle met en garde le commentaire de « Mon compte », plus bas.
+   * Home and Notifications are open to every account, lawyers included. Each entry uses the
+   * capability of its own page, not that of a neighbouring screen (see "Mon compte" below).
    */
   { cle: "accueil", href: "/", icone: LayoutDashboard, capacite: "consulterAccueil", livre: true },
-  // Portail Avocat (F16) : les trois entrées qui lui sont **propres**, un prestataire externe ne
-  // portant que `ROLE_AVOCAT`. Elles restent invisibles aux profils internes, sans capacité de
-  // dépôt. **Elles n'étaient déjà pas les seules qu'il voie** : « Frais d'avocats » et
-  // « Explications » le nomment aussi dans leurs capacités. QF-59 y ajoute Accueil et ses
-  // Notifications.
+  // Lawyer portal: the three entries specific to external lawyers (`ROLE_AVOCAT` only), hidden from
+  // internal profiles, which lack the filing capabilities. Lawyers also see lawyer fees and
+  // explanation requests, Home and Notifications.
   { cle: "monEspace", href: "/portail", icone: Briefcase, capacite: "deposerPublication", livre: true },
   { cle: "deposerFrais", href: "/frais/nouvelle", icone: Receipt, capacite: "deposerFrais", livre: true },
   { cle: "deposerPublication", href: "/publications/nouvelle", icone: FileSignature, capacite: "deposerPublication", livre: true },
@@ -75,31 +65,23 @@ export const NAVIGATION: EntreeNavigation[] = [
   { cle: "explications", href: "/demandes-explication", icone: MessageSquare, capacite: "consulterExplications", livre: true },
   { cle: "jurisprudence", href: "/jurisprudences", icone: Library, capacite: "consulterJurisprudence", livre: true },
   /*
-   * Mon compte, et ce qui s’y trouve : ma signature (N8) et **mon activité** (Q-133).
+   * My account: my signature and my activity. The header name linking here is hidden below 640 px,
+   * so this entry is the only way to reach the page on narrow screens.
    *
-   * **Cette entrée manquait, et son absence rendait la page introuvable.** La seule porte était le
-   * nom dans l’en-tête, souligné et sans étiquette - et ce nom est **masqué sous 640 px** (F17),
-   * donc la page était purement inatteignable sur un écran étroit. Tant que « Mon compte » ne
-   * portait qu’une signature déposée une fois pour toutes, s’en passer se défendait ; elle porte
-   * désormais un rapport que chacun consulte sur la période qu’il choisit. Signalé par le porteur
-   * du projet le 2026-10-13.
-   *
-   * **La capacité est celle de la page, `consulterReferentiels`, et pas `consulterMonActivite`.**
-   * Depuis que l’avocat lit lui aussi son activité (Q-135), `consulterMonActivite` l’inclut : s’y
-   * adosser lui aurait proposé une entrée menant à un refus de droits, *Mon compte* portant aussi
-   * « Ma signature », qui n’a pas de sens pour lui - il ne signe aucune lettre de la banque. Son
-   * activité est sur *Mon espace*, l’écran qui est le sien.
+   * The capability is the page's (`consulterReferentiels`), not `consulterMonActivite`: the latter
+   * includes lawyers, who would be led to a permission denial (they sign no bank letters). A
+   * lawyer's activity is shown on their own portal.
    */
   { cle: "monCompte", href: "/mon-compte", icone: UserCircle, capacite: "consulterReferentiels", livre: true },
   { cle: "tableauDeBord", href: "/tableau-de-bord", icone: LayoutDashboard, capacite: "consulterTableauDeBord", livre: true },
   { cle: "rapports", href: "/rapports", icone: FileBarChart, capacite: "genererRapport", livre: true },
   { cle: "demandesSuppression", href: "/ged/demandes-suppression", icone: Trash2, capacite: "arbitrerSuppressions", livre: true },
-  // QF-64 : les partages de pièces proposés sur des dossiers sensibles, que le DJ et la DJA valident.
+  // Document shares proposed on sensitive case files, approved by the DJ and the DJA.
   { cle: "partagesAvocat", href: "/ged/partages-avocat", icone: Share2, capacite: "arbitrerPartages", livre: true },
   { cle: "rapportJournalier", href: "/ged/rapport-journalier", icone: ClipboardList, capacite: "consulterRapportJournalier", livre: true },
   { cle: "intervenants", href: "/admin/intervenants", icone: Users, capacite: "consulterReferentiels", livre: true },
   { cle: "agences", href: "/admin/agences", icone: Landmark, capacite: "consulterReferentiels", livre: true },
   { cle: "configuration", href: "/admin/configurations", icone: Settings, capacite: "consulterConfigurations", livre: true },
-  // Audit (Q-112) : écran d'enquête, distinct de l'administration. Visible du DJ et de la DJA seuls.
+  // Audit: investigation screen, separate from administration. Visible to the DJ and the DJA only.
   { cle: "audit", href: "/admin/audit", icone: ScrollText, capacite: "consulterAudit", livre: true },
 ];

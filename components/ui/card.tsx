@@ -3,11 +3,11 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Surface portante. Convention relevée sur GFA, application Afriland en production : carte blanche
- * posée sur un fond gris clair, ombre discrète, angles peu marqués.
+ * Container surface, following the GFA convention (Afriland application in production): white card
+ * on a light grey background, subtle shadow, slightly rounded corners.
  *
- * Une carte signale un objet distinct — ne pas en envelopper chaque bloc, sous peine d'aplatir la
- * hiérarchie qu'elle est censée créer.
+ * A card marks a distinct object: do not wrap every block in one, or it flattens the hierarchy it
+ * is meant to create.
  */
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (

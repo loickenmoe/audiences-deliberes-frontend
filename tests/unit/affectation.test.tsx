@@ -10,9 +10,8 @@ const JURISTES = [
 ];
 
 /**
- * Bloc Affectation (2026-09-22) : les juristes se cochent, les avocats se cherchent. La liste native à
- * sélection multiple qu'ils remplacent exigeait Ctrl (ou Cmd), et un clic sans Ctrl effaçait toute la
- * sélection sans le dire.
+ * Assignment block: legal officers are picked with checkboxes, lawyers with a search field.
+ * A native multi-select would require Ctrl (or Cmd), and a plain click would silently clear the selection.
  */
 describe("CasesACocher", () => {
   it("coche et décoche d'un seul clic, sans effacer les autres choix", () => {
@@ -29,7 +28,7 @@ describe("CasesACocher", () => {
   it("nomme le groupe par son intitulé et annonce le nombre de choix", () => {
     render(<CasesACocher label="Juristes affectés" obligatoire options={JURISTES} valeur={[2, 3]} onChangement={() => {}} />);
 
-    // Le legend nomme le groupe seulement s'il est le premier enfant du fieldset.
+    // The legend names the group only if it is the fieldset's first child.
     expect(screen.getByRole("group", { name: "Juristes affectés" })).toBeInTheDocument();
     expect(screen.getByText("2 sélectionnés")).toBeInTheDocument();
   });
@@ -53,8 +52,8 @@ describe("CasesACocher", () => {
 
 describe("SelecteurCherchable", () => {
   /**
-   * En choix multiple, la valeur du champ est la saisie en cours, presque toujours vide : un
-   * « required » natif bloquait l'envoi du formulaire de création même avec des avocats choisis.
+   * In multiple choice, the input value is the current search text, almost always empty: a native
+   * "required" would block the creation form even with lawyers selected.
    */
   it("annonce l'obligation sans contrôle natif qui bloquerait un formulaire", () => {
     render(
@@ -72,10 +71,10 @@ describe("SelecteurCherchable", () => {
     );
 
     const champ = screen.getByRole("combobox", { name: "Avocats affectés" }) as HTMLInputElement;
-    // Ce qui compte : le navigateur tient le formulaire pour valide, la saisie étant vide.
+    // The browser must consider the form valid even though the input is empty.
     expect(champ.required).toBe(false);
     expect(champ.form?.checkValidity()).toBe(true);
-    // Et l'obligation reste annoncée aux lecteurs d'écran.
+    // The requirement is still announced to screen readers.
     expect(champ).toHaveAttribute("aria-required", "true");
   });
 });

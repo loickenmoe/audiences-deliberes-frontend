@@ -11,15 +11,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Accueil.
+ * Home.
  *
- * **QF-19** : une seule racine pour tous les profils, dont le contenu s'adapte — pas de redirection
- * par rôle. Aucun profil interne n'a de métier unique.
- *
- * **Achevé en F17.** L'écran affichait jusqu'ici les identifiants de capacités en police à chasse
- * fixe : une vue de mise au point, utile pendant la construction du socle, sans valeur pour un
- * juriste. Il présente désormais les **files de travail** de chaque profil — ce qui l'attend, avec
- * le compte et le lien direct.
+ * A single root for all profiles, with content adapted to each, and no role-based redirect: no
+ * internal profile has a single job. It shows each profile's **work queues** with counts and direct links.
  */
 export default async function PageAccueil() {
   const session = await exigerSession();

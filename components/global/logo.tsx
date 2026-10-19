@@ -3,19 +3,16 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * Logo officiel Afriland First Bank.
+ * Official Afriland First Bank logo (original bank files, unmodified).
  *
- * `lockup` — signature horizontale (284,7 × 57,6), usage par défaut : en-têtes, page de connexion.
- * `symbole` — marque seule (71,7 × 57,6). **Elle comporte un aplat rouge sur son flanc gauche** :
- * elle s'emploie à fond perdu, jamais détourée sur un fond clair où l'aplat paraîtrait accidentel.
+ * `lockup` - horizontal signature (284.7 x 57.6), the default: headers, login page.
+ * `symbole` - mark only (71.7 x 57.6). **It has a red solid area on its left edge**: use it
+ * full-bleed, never cut out on a light background where that area would look accidental.
  *
- * Les fichiers sont les originaux fournis par la banque, non retouchés.
- *
- * `decoratif` — vide le texte alternatif. À n'employer que lorsque le logo est **à l'intérieur
- * d'un élément qui porte déjà son propre libellé**, typiquement le lien de retour à l'accueil : sans
- * cela, le nom accessible du lien serait « Afriland First Bank », qui dit à qui appartient le logo
- * et non où le lien mène. Partout ailleurs — connexion, page introuvable, accès refusé — le texte
- * alternatif reste indispensable : le logo y est la seule identification de l'émetteur.
+ * `decoratif` - empties the alt text. Use only when the logo sits **inside an element that already
+ * has its own label** (e.g. the home link), otherwise that link's accessible name would be the bank's
+ * name instead of its destination. Everywhere else the alt text is required: the logo is the only
+ * identification of the issuer.
  */
 export function Logo({
   variante = "lockup",

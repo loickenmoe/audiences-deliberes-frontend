@@ -17,9 +17,9 @@ import { peut } from "@/lib/rbac";
 const DEFAUTS = { motCle: "", natureDecision: "", juridiction: "" };
 
 /**
- * Écran 38 — base jurisprudentielle (UC-DEF-03). Recherche par mot-clé, nature et juridiction, chaque
- * filtre partiel et insensible à la casse (Q-89) ; les filtres vivent dans l'URL. Le juriste y
- * archive aussi une décision sans dossier.
+ * Screen 38 - case law database (UC-DEF-03). Search by keyword, nature and court, each filter
+ * partial and case-insensitive; filters live in the URL. Legal officers can also archive a decision
+ * not linked to any case file here.
  */
 export function BaseJurisprudentielle({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("jurisprudence");
@@ -29,15 +29,10 @@ export function BaseJurisprudentielle({ roles }: { roles: readonly string[] }) {
   const jurisprudences = requete.data?.content ?? [];
 
   /**
-   * Un filtre texte, au fil de la frappe (QF-57).
-   *
-   * Les trois se validaient au `blur` ou sur Entrée : il fallait quitter le champ ou valider pour
-   * voir le résultat. `ChampRecherche` cherche après une pause de 300 ms - une requête par pause, pas
-   * par caractère, qui était la seule objection valable - et garde le raccourci Entrée pour qui en
-   * avait pris l'habitude.
-   *
-   * Le `trim` reste ici : c'est l'appelant qui décide de ce qu'il met dans l'URL, et un filtre fait
-   * d'espaces ne filtre rien.
+   * A text filter applied as the user types (`ChampRecherche` debounces 300 ms, one request per
+   * pause; Enter still applies it immediately).
+   * The `trim` stays here: the caller decides what goes into the URL, and a whitespace-only filter
+   * filters nothing.
    */
   function champ(cle: keyof typeof DEFAUTS, libelle: string) {
     return (

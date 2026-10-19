@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Pastille de statut. La couleur **double** le libellé, elle ne le remplace jamais : un statut doit
- * rester lisible sans percevoir la couleur.
+ * Status chip. Colour **doubles** the label and never replaces it: a status must remain readable
+ * without perceiving colour.
  *
- * La famille sémantique est distincte du rouge de marque — voir `globals.css`.
+ * The semantic colour family is distinct from the brand red - see `globals.css`.
  */
 const TONS = {
   neutre: "bg-surface-attenuee text-texte-secondaire border-bordure-forte",

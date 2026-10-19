@@ -16,7 +16,7 @@ export type CleVueFrais = "aControler" | "aPayer" | "opportunite" | "conjointe" 
 
 export interface VueFrais {
   cle: CleVueFrais;
-  /** `null` : toutes les demandes. */
+  /** `null`: all requests. */
   statut: StatutCircuitFrais | null;
 }
 
@@ -29,10 +29,9 @@ const VUES: Record<CleVueFrais, VueFrais> = {
 };
 
 /**
- * La file s'ouvre sur **ce qui attend l'utilisateur** : le backend la sert transverse au personnel
- * interne, filtrée par statut — c'est le profil qui choisit les statuts utiles. L'Assistante contrôle
- * la conformité puis enregistre le paiement ; la DJA contrôle l'opportunité puis vote conjointement ;
- * le DJ ne vote que conjointement. L'avocat ne voit que ses propres demandes, toutes à la fois.
+ * The queue opens on what awaits the user; the profile picks the relevant statuses. The Assistant
+ * checks compliance then records payment; the DJA checks appropriateness then votes jointly; the DJ
+ * only votes jointly. A lawyer only sees their own requests, all at once.
  */
 export function vuesFrais(roles: readonly string[] | undefined): [VueFrais, ...VueFrais[]] {
   switch (profilPrincipal(roles)) {
@@ -47,7 +46,7 @@ export function vuesFrais(roles: readonly string[] | undefined): [VueFrais, ...V
   }
 }
 
-/** L'accord conjoint que porte ce profil — le DJ et la DJA votent chacun le leur (US 4.5). */
+/** Joint approval step held by this profile; the DJ and the DJA each cast their own (US 4.5). */
 export function etapeConjointeDe(roles: readonly string[] | undefined): EtapeValidationFrais | null {
   const profil = profilPrincipal(roles);
   if (profil === "ROLE_DJ") return "CONJOINTE_DJ";
@@ -55,7 +54,7 @@ export function etapeConjointeDe(roles: readonly string[] | undefined): EtapeVal
   return null;
 }
 
-/** Vrai si ce profil a déjà voté sur la validation conjointe : le backend refuserait un second vote. */
+/** True if this profile already voted on the joint approval; the backend rejects a second vote. */
 export function aDonneSonAccord(demande: DemandeFrais, roles: readonly string[] | undefined): boolean {
   const etape = etapeConjointeDe(roles);
   return etape !== null && demande.validations.some((v) => v.etape === etape);

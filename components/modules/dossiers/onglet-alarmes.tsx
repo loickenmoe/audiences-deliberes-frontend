@@ -22,12 +22,11 @@ import { peut } from "@/lib/rbac";
 import type { Alarme, Dossier } from "@/types/domaine";
 
 /**
- * Écran 11 — alarmes du dossier, l'échéance la plus proche d'abord (ordre du backend).
- *
- * Reprogrammer n'édite pas une alarme : le backend **clôt** l'ancienne (`TRAITEE`) et en crée une
- * nouvelle qui la cite (RG-AUD-04). La liste garde donc les deux, et signale la filiation. Une alarme
- * active dont l'échéance est passée est marquée « échue » : le backend l'a signalée, mais ne la clôt
- * jamais d'elle-même. « Marquer traitée » la clôt sans la remplacer (QF-29, Q-77 backend).
+ * Screen 11 - case alarms, nearest due date first (backend order).
+ * Rescheduling does not edit an alarm: the backend closes the old one (`TRAITEE`) and creates a new
+ * one referencing it (RG-AUD-04); the list keeps both and shows the link. An active alarm past its
+ * due date is marked "overdue": the backend never closes it on its own. "Mark as handled" closes it
+ * without replacing it.
  */
 export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
   const t = useTranslations("audiences");
@@ -173,7 +172,7 @@ export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: rea
 
 function useSchemaEcheance() {
   const tm = useTranslations("metier");
-  // Comparaison de chaînes `YYYY-MM-DDTHH:mm` : l'ordre lexical est l'ordre chronologique.
+  // Comparing `YYYY-MM-DDTHH:mm` strings: lexical order is chronological order.
   return z.string().min(1, tm("champObligatoire")).refine((valeur) => valeur > maintenantLocal(), {
     message: tm("champObligatoire"),
   });
@@ -213,8 +212,8 @@ function ModaleCreation({
     formState: { errors },
   } = useForm<z.input<typeof schema>>({ resolver: zodResolver(schema) });
 
-  // Réinitialiser à l'ouverture seulement : `etapes` est recréé à chaque rendu du parent, et en
-  // dépendre effaçait la saisie à chaque rechargement du dossier.
+  // Reset on opening only: `etapes` is recreated on every parent render, and depending on it would
+  // clear the input on every case reload.
   const etapeParDefaut = etapes.at(-1)?.id;
   useEffect(() => {
     if (ouvert) reset({ etapeId: etapeParDefaut, objet: "", dateEcheance: "" });
@@ -316,7 +315,7 @@ function ModaleReprogrammation({
     try {
       await reprogrammer.mutateAsync({
         alarmeId: alarme.id,
-        // Vide : ne rien envoyer, le backend reprend l'objet de l'alarme précédente.
+        // Empty: send nothing, the backend reuses the previous alarm's subject.
         reprogrammation: { objet: valeurs.objet?.trim() || undefined, dateEcheance: String(valeurs.dateEcheance) },
       });
       toast.success(t("alarmeReprogrammee"));

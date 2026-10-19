@@ -16,7 +16,7 @@ import { useUtilisateurs } from "@/hooks/useReferentiels";
 import type { PerimetreAudit } from "@/services/auditService";
 import type { HistoriqueAction } from "@/types/domaine";
 
-/** Rend une valeur de `details`, dont la forme varie d'une action à l'autre. */
+/** Renders a `details` value, whose shape varies from one action to another. */
 function valeurLisible(valeur: unknown): string {
   if (valeur === null || valeur === undefined || valeur === "") return "—";
   if (Array.isArray(valeur)) return valeur.join(", ");
@@ -25,29 +25,12 @@ function valeurLisible(valeur: unknown): string {
 }
 
 /**
- * Écran d'audit — DJ et DJA (backend Q-112).
- *
- * **Ce qu'il ouvre.** Le journal de Q-110 répondait à une question de *couverture* : des lignes
- * existaient sans aucun point de lecture. Restait une question de *point d'entrée* — « qu'a fait X
- * le mois dernier ? », « toutes les suppressions du trimestre ? », « que s'est-il passé entre le 1er
- * et le 15 ? ». Aucune ne part d'un dossier, et aucune n'était donc possible. C'est ce que cet écran
- * permet, et c'est pourquoi le journal y déménage plutôt que de coexister : deux endroits où
- * chercher la même trace sont la fragmentation qu'on voulait supprimer.
- *
- * **Deux tâches, deux écrans.** Administrer — lire un réglage, le changer — reste sur l'écran des
- * paramètres. Enquêter — remonter le temps, croiser auteur, période et nature — se fait ici. Un
- * journal paginé à quatre filtres est un outil d'enquête ; le placer sous les paramètres revenait à
- * poser un outil d'enquête sur un écran d'administration.
- *
- * **Pourquoi « audit » cette fois, et pas « journal ».** Le nom se justifie parce que la portée est
- * complète — tout l'historique, tous les périmètres. Il reste une limite, que l'écran énonce
- * lui-même plutôt que de la laisser découvrir : **seules les modifications sont tracées**. Aucune
- * consultation ne l'est, hormis celle de cet écran. L'absence de ligne ne prouve pas l'absence
- * d'action.
- *
- * **Toute consultation est historisée**, avec ses critères. Ce n'est pas une contrainte imposée au
- * DJ et à la DJA : c'est ce qui leur permet de démontrer qu'ils n'ont regardé que ce qu'ils devaient
- * — protection de ceux qui consultent autant que de ceux qui sont consultés.
+ * Audit screen - DJ and DJA.
+ * Search across the whole audit log by author, period, nature and case, independently of any case.
+ * Settings administration stays on the settings screen.
+ * Only modifications are logged; no read access is, except this screen's own consultations (with
+ * their criteria). The missing line does not prove an action did not happen, and the screen says
+ * so.
  */
 export function ConsultationAudit() {
   const t = useTranslations("audit");
@@ -99,8 +82,8 @@ export function ConsultationAudit() {
       {
         id: "action",
         header: t("colonneAction"),
-        // QF-24 : le libellé vient du **code typé**, pas de la phrase du backend. Celle-ci reste
-        // le repli, pour qu'un code non encore traduit s'affiche lisiblement plutôt qu'en brut.
+        // The label comes from the typed code, not the backend sentence, which remains the fallback
+        // so an untranslated code is still readable.
         cell: ({ row }: { row: { original: HistoriqueAction } }) =>
           libelleAction(row.original.code, row.original.action),
       },
@@ -127,8 +110,8 @@ export function ConsultationAudit() {
   );
 
   /**
-   * Tout changement de filtre ramène en page 1 : rester en page 4 d'un résultat qui n'en a plus
-   * qu'une afficherait un tableau vide sans rien expliquer.
+   * Any filter change returns to page 1: staying on page 4 of a result with one page would show an
+   * empty table with no explanation.
    */
   function filtrer(appliquer: () => void) {
     appliquer();
@@ -145,11 +128,7 @@ export function ConsultationAudit() {
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">
           {t("perimetreCouvert")}
         </p>
-        {/*
-          Dit à qui consulte que sa consultation est tracée. L'annoncer plutôt que de le taire est ce
-          qui distingue un dispositif accepté d'un dispositif subi — et cela protège autant le DJ et
-          la DJA, en démontrant qu'ils n'ont regardé que ce qu'ils devaient.
-        */}
+        {/* Tells the viewer that their consultation is logged. */}
         <p className="max-w-prose text-[length:var(--taille-sm)] font-medium">{t("consultationTracee")}</p>
       </header>
 
@@ -211,10 +190,7 @@ export function ConsultationAudit() {
             onChange={(evenement) => filtrer(() => setCode(evenement.target.value))}
           >
             <option value="">{t("toutesLesActions")}</option>
-            {/*
-              Le libellé du filtre est traduit comme celui des lignes (QF-24) : sans cela, on aurait
-              choisi une entrée en français pour voir se remplir un tableau en anglais.
-            */}
+            {/* The filter label is translated like the rows' labels. */}
             {actionsDisponibles.map((option) => (
               <option key={option.code} value={option.code}>
                 {libelleAction(option.code, option.libelle)}
@@ -260,14 +236,10 @@ export function ConsultationAudit() {
         </Button>
 
         {/*
-          Les critères incohérents sont arrêtés ici plutôt que laissés partir : le backend les refuse
-          en 400, mais l'utilisateur lirait un message technique là où il a simplement inversé deux
-          dates ou oublié un numéro de dossier.
-
-          Le message vit **dans la section des filtres**, auprès de ce qui le provoque. Le placer
-          au-dessus du tableau l'éloignait du champ fautif — et le rendait indiscernable, pour un
-          test comme pour un lecteur d'écran, de l'annonceur de route que Next pose à la racine du
-          document avec le même rôle.
+          Inconsistent criteria are stopped here: the backend rejects them with a 400, but the user
+          would see a technical message for swapping two dates or omitting a case number.
+          The message sits in the filter section, next to its cause, and stays distinct from the
+          Next route announcer that uses the same role at the document root.
         */}
         {criteresInvalides ? (
           <p role="alert" className="w-full text-[length:var(--taille-sm)] text-danger">
@@ -276,11 +248,7 @@ export function ConsultationAudit() {
         ) : null}
       </section>
 
-      {/*
-        L'extraction vit sous les filtres, et reprend les mêmes : ce qu'on exporte est ce qu'on
-        regarde. Un bloc d'export qui aurait ses propres critères aurait produit des archives sans
-        rapport avec l'écran où on les demande.
-      */}
+      {/* The export sits under the filters and reuses them: what is exported is what is displayed. */}
       <ExportAudit
         filtres={{
           perimetre,
@@ -299,8 +267,8 @@ export function ConsultationAudit() {
       />
 
       {/*
-        Le vérificateur suit l'extraction : produire une pièce et pouvoir la vérifier sont les deux
-        moitiés du même geste. Séparés, l'empreinte reste une curiosité que personne ne contrôle.
+        The verifier follows the export: producing a document and verifying it are two halves of one
+        task.
       */}
       <VerificateurEmpreinte />
 

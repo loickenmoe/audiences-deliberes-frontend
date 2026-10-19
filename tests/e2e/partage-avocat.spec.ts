@@ -4,15 +4,12 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { avocatDeTest } from "./avocat-de-test";
 
 /**
- * Le partage des pièces et la note à l'avocat, **contre le backend réel** (QF-64, backend Q-139).
+ * Document sharing and lawyer notes against the real backend.
  *
- * Les règles arbitrées le 2026-10-15 : l'avocat voit une pièce s'il est affecté **et constitué** ;
- * tout juriste partage ; sur un dossier **sensible**, le juriste propose et le DJ ou la DJA valide ;
- * une note par audience, distincte du compte rendu interne.
- *
- * La préparation passe par l'API (dossier, constitution, pièce) : ce sont des préparatifs, et les
- * faire à l'écran n'éprouverait que des écrans déjà couverts ailleurs. **Ce qui est vérifié ici,
- * c'est ce que chacun voit et peut faire à l'écran.**
+ * Rules: the lawyer sees a document if assigned and appointed; any legal officer shares; on a
+ * sensitive case the legal officer proposes and the DJ or DJA validates; one note per hearing,
+ * separate from the internal report. Setup goes through the API; what each user sees and can do is
+ * checked on screen.
  */
 
 loadEnvConfig(process.cwd());
@@ -77,7 +74,7 @@ interface DossierCree {
   etapes: { id: number; statutCycleVie: string }[];
 }
 
-/** Un dossier neuf, l'avocat de test affecté ; constitué si demandé ; sensible si demandé. */
+/** A new case with the test lawyer assigned; appointed and/or sensitive on request. */
 async function dossierAvecAvocat({ constitue, sensible = false }: { constitue: boolean; sensible?: boolean }) {
   const avocat = await avocatDeTest();
   const juristes = await appel<{ id: number }[]>("/utilisateurs?profil=JURISTE", "juriste.test");
@@ -127,7 +124,7 @@ async function dossierAvecAvocat({ constitue, sensible = false }: { constitue: b
   return { ...dossier, nom };
 }
 
-/** L'avocat ouvre son espace et choisit le dossier dans « Mes dossiers ». */
+/** The lawyer opens their space and picks the case in "Mes dossiers". */
 async function ouvrirMonDossier(page: Page, reference: string) {
   await page.goto("/portail");
   const champ = page.locator("#dossier-espace");
@@ -139,9 +136,7 @@ async function ouvrirMonDossier(page: Page, reference: string) {
   await champ.press("Escape");
 }
 
-/**
- * **Le cas nominal** : le juriste partage, l'avocat constitué lit la pièce dans son espace.
- */
+/** Nominal case: the legal officer shares, the appointed lawyer reads the document. */
 test("une pièce partagée par le juriste se lit dans l'espace de l'avocat constitué", async ({ browser }) => {
   const dossier = await dossierAvecAvocat({ constitue: true });
 
@@ -166,8 +161,8 @@ test("une pièce partagée par le juriste se lit dans l'espace de l'avocat const
 });
 
 /**
- * **Affecté sans être constitué** : rien ne s'ouvre, même une pièce partagée - et l'écran dit
- * pourquoi, car cela se règle par une signature, pas par une demande au juriste.
+ * Assigned but not appointed: nothing opens, even a shared document, and the screen says why (it is
+ * resolved by a signature, not by asking the legal officer).
  */
 test("l'avocat affecté mais pas constitué ne voit aucune pièce, et sait pourquoi", async ({ browser }) => {
   const dossier = await dossierAvecAvocat({ constitue: false });
@@ -184,8 +179,8 @@ test("l'avocat affecté mais pas constitué ne voit aucune pièce, et sait pourq
 });
 
 /**
- * **Le dossier sensible** : le juriste propose, l'avocat ne voit rien ; le DJ valide depuis sa
- * file, et la pièce apparaît chez l'avocat.
+ * Sensitive case: the legal officer proposes, the lawyer sees nothing; the DJ validates from their
+ * queue, and the document appears for the lawyer.
  */
 test("sur un dossier sensible, le juriste propose et la pièce n'apparaît qu'après le DJ", async ({ browser }) => {
   const dossier = await dossierAvecAvocat({ constitue: true, sensible: true });
@@ -200,7 +195,7 @@ test("sur un dossier sensible, le juriste propose et la pièce n'apparaît qu'ap
   await expect(ligne.getByText("En attente de validation")).toBeVisible();
   await juriste.context().close();
 
-  // Avant la validation, l'avocat ne voit rien.
+  // Before validation, the lawyer sees nothing.
   const avocat = await pageConnectee(browser, "avocat.test");
   await ouvrirMonDossier(avocat, dossier.reference);
   await expect(avocat.getByText("Aucune pièce partagée")).toBeVisible({ timeout: 30_000 });
@@ -220,9 +215,8 @@ test("sur un dossier sensible, le juriste propose et la pièce n'apparaît qu'ap
 });
 
 /**
- * **La note à l'avocat** : écrite par le juriste sur une audience, lue par l'avocat constitué. Que
- * le compte rendu interne n'atteigne jamais l'avocat est gardé côté serveur (`PortailAvocatPiecesTest`) :
- * son DTO n'a aucun champ pour le porter.
+ * Lawyer note: written by the legal officer on a hearing, read by the appointed lawyer. The internal
+ * report never reaching the lawyer is guarded server-side (`PortailAvocatPiecesTest`).
  */
 test("la note du juriste se lit chez l'avocat constitué", async ({ browser }) => {
   const dossier = await dossierAvecAvocat({ constitue: true });
@@ -245,7 +239,7 @@ test("la note du juriste se lit chez l'avocat constitué", async ({ browser }) =
   await modale.getByLabel("Note à l'avocat", { exact: true }).fill(note);
   await modale.getByRole("button", { name: "Enregistrer" }).click();
   await expect(juriste.getByText("Note enregistrée.")).toBeVisible();
-  // Dans le tableau : la zone de texte de la boîte fermée reste dans le DOM, et porte le même texte.
+  // In the table: the closed box's text area stays in the DOM and holds the same text.
   await expect(juriste.getByRole("table").getByText(note)).toBeVisible();
   await juriste.context().close();
 
@@ -255,7 +249,7 @@ test("la note du juriste se lit chez l'avocat constitué", async ({ browser }) =
   await avocat.context().close();
 });
 
-/** La file des partages n'est pas au menu du juriste : la validation reste à la direction. */
+/** The share queue is not in the legal officer's menu: validation stays with management. */
 test("la file des partages à valider est réservée au DJ et à la DJA", async ({ browser }) => {
   const juriste = await pageConnectee(browser, "juriste.test");
   await expect(
@@ -265,9 +259,8 @@ test("la file des partages à valider est réservée au DJ et à la DJA", async 
 });
 
 /**
- * **QF-65 : l'absence de constitution se dit à celui qui partage.** Signalé en recette sur
- * DOS-2026-1303 : le juriste partageait, lisait « Partagé », et l'avocat ne voyait rien, faute de
- * lettre signée. Le partage n'était pas faux - il prend effet à la signature - mais rien ne le disait.
+ * The missing appointment is shown to whoever shares: the share takes effect on signature, and the
+ * screen must say so.
  */
 test("un bandeau prévient qu'aucun avocat n'est constitué, et disparaît une fois constitué", async ({ browser }) => {
   const sansConstitution = await dossierAvecAvocat({ constitue: false });
@@ -278,7 +271,7 @@ test("un bandeau prévient qu'aucun avocat n'est constitué, et disparaît une f
   await juriste.goto(`/dossiers/${sansConstitution.id}?onglet=documents`);
   await expect(juriste.getByRole("note").filter({ hasText: bandeau })).toBeVisible({ timeout: 30_000 });
 
-  // Et la confirmation le répète, là où la décision se prend.
+  // The confirmation repeats it, where the decision is made.
   await juriste.getByRole("button", { name: `Partager avec l'avocat - ${sansConstitution.nom}` }).click();
   await expect(
     juriste.getByRole("dialog", { name: "Partager cette pièce avec l'avocat ?" })
@@ -294,8 +287,8 @@ test("un bandeau prévient qu'aucun avocat n'est constitué, et disparaît une f
 });
 
 /**
- * **QF-65 : le SH et l'Assistante partagent**, « ils sont à la base des juristes ». Même principe
- * que le juriste : le SH partage un dossier ordinaire, l'Assistante propose sur un dossier sensible.
+ * The SH and the Assistant share too, like the legal officer: the SH shares an ordinary case, the
+ * Assistant proposes on a sensitive one.
  */
 test("le SH partage un dossier ordinaire, l'Assistante propose sur un dossier sensible", async ({ browser }) => {
   const ordinaire = await dossierAvecAvocat({ constitue: true });
@@ -315,7 +308,7 @@ test("le SH partage un dossier ordinaire, l'Assistante propose sur un dossier se
   await assistante.getByRole("dialog", { name: "Proposer le partage de cette pièce ?" })
     .getByRole("button", { name: "Proposer le partage" }).click();
   await expect(assistante.getByText("Partage proposé : il attend la validation du DJ ou de la DJA.")).toBeVisible();
-  // La validation reste à la direction : aucune coche pour l'Assistante.
+  // Validation stays with management: no checkbox for the Assistant.
   await expect(assistante.getByRole("button", { name: `Valider le partage - ${sensible.nom}` })).toHaveCount(0);
   await assistante.context().close();
 });

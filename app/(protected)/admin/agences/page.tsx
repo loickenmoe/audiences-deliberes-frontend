@@ -9,11 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Référentiel des agences (métier, 2026-10-03, observation 2).
+ * Agency reference data.
  *
- * Consultation ouverte à tous les profils internes, comme celui des intervenants : cette liste
- * explique ce que propose le formulaire de création d'un dossier. La tenue - créer, corriger,
- * fermer - est réservée au DJ et à la DJA, et masquée pour les autres.
+ * Readable by every internal profile (it explains what the case creation form offers). Creating,
+ * correcting and closing agencies is reserved to the DJ and DJA, and hidden from everyone else.
  */
 export default async function PageAgences() {
   const session = await exigerCapacite("consulterReferentiels");

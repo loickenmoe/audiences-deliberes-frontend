@@ -38,12 +38,9 @@ const DEFAUTS = {
 };
 
 /**
- * Écran 05 — recherche de dossiers.
- *
- * Les filtres `reference` et « mes dossiers » n'existaient pas côté backend : ils ont été ajoutés
- * en M16 (QF-07). Sans eux, l'écran n'aurait offert que nature, catégorie et juridiction — trois
- * filtres qui ne permettent pas de retrouver *un* dossier précis. Et les rejouer côté navigateur
- * aurait menti : sur une liste paginée, la recherche n'aurait porté que sur la page affichée.
+ * Screen 05 - case search.
+ * Filters run on the backend (including `reference` and "my cases"): filtering in the browser would
+ * only search the displayed page of a paginated list.
  */
 export function ListeDossiers({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("dossiers");
@@ -77,7 +74,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       {
         accessorKey: "reference",
         header: t("colonneReference"),
-        // La référence est le point d'entrée naturel vers la fiche (écran 07).
+        // The reference is the natural entry point to the case page (screen 07).
         cell: ({ row }) => (
           <Link
             href={`/dossiers/${row.original.id}`}
@@ -90,7 +87,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       {
         accessorKey: "clientNom",
         header: t("colonneClient"),
-        // Le backend renvoie `clientNom`, mais le laisse à `null` sur certaines projections.
+        // The backend returns `clientNom`, but leaves it `null` on some projections.
         cell: ({ row }) => row.original.clientNom ?? `#${row.original.clientId}`,
       },
       { accessorKey: "nature", header: t("colonneNature") },
@@ -107,11 +104,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         id: "etape",
         header: t("colonneEtape"),
         /*
-         * L'étape la plus avancée — les étapes arrivent triées par type — **et** le pourvoi CCJA
-         * s'il existe, car les deux cassations sont concurrentes : un dossier peut être devant la
-         * Cour Suprême et devant la CCJA en même temps, l'une en délibéré et l'autre clôturée.
-         * N'en montrer qu'une reviendrait à cacher la moitié de la procédure, et laquelle serait
-         * cachée dépendrait d'un ordre de tri.
+         * The most advanced step (steps arrive sorted by type) **and** the CCJA appeal if any: both
+         * cassation appeals can run concurrently, and showing only one would hide half of the
+         * procedure.
          */
         cell: ({ row }) => {
           const etapes = row.original.etapes;
@@ -145,8 +140,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </div>
 
         {peutCreer ? (
-          // Un lien, pas un bouton : la création est une navigation vers l'écran 06, et doit rester
-          // ouvrable dans un nouvel onglet.
+          // A link, not a button: creation navigates to screen 06 and must be openable in a new
+          // tab.
           <Link href="/dossiers/nouveau" className={classesBouton()}>
             <Plus size={15} aria-hidden />
             {t("nouveauDossier")}
@@ -156,10 +151,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
 
       <BarreFiltres nbFiltresActifs={nbFiltresActifs} onEffacer={effacer}>
         {/*
-          **Au fil de la frappe** (QF-57). Les deux champs se validaient sur `onBlur` : il fallait
-          quitter le champ pour voir le résultat, et rien ne disait que l'application avait compris.
-          `ChampRecherche` absorbe la frappe et ne propage qu'après une pause de 300 ms - une requête
-          par pause, pas par caractère, ce qui était la seule objection valable à `onChange`.
+          Filter as the user types: `ChampRecherche` debounces input and only propagates after a 300
+          ms pause, one request per pause.
         */}
         <ChampRecherche
           id="filtre-reference"
@@ -184,7 +177,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
             id="filtre-categorie"
             value={filtres.categorie}
             onChange={(evenement) => {
-              // Changer de catégorie invalide la nature choisie : elle appartenait à l'autre.
+              // Changing the category invalidates the selected nature, which belonged to the other
+              // one.
               definirFiltre("nature", undefined);
               definirFiltre("categorie", evenement.target.value || undefined);
             }}
@@ -206,7 +200,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           >
             <option value="">{t("toutesNatures")}</option>
             {(natures.data ?? []).map((nature) => (
-              // Le backend filtre sur le **libellé**, pas sur le code.
+              // The backend filters on the **label**, not the code.
               <option key={nature.id} value={nature.libelle}>
                 {nature.libelle}
               </option>
@@ -215,10 +209,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </Champ>
 
         {/*
-          Observation métier du 2026-09-25 — « trier les dossiers en fonction de leur étape et
-          pendant une période donnée ». Les deux critères d'étape portent sur une **même** étape :
-          choisir « Appel » et « En cours » donne les appels en cours, et non les dossiers ayant un
-          appel par ailleurs et autre chose en cours.
+          Both step criteria apply to the **same** step: "Appeal" and "In progress" give appeals in
+          progress, not cases with an appeal and something else in progress.
         */}
         <Champ id="filtre-type-etape" label={t("filtreTypeEtape")} className="w-48">
           <Select
@@ -251,9 +243,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </Champ>
 
         {/*
-          La période porte sur les **audiences**, non sur l'ouverture du dossier : la question du
-          métier est « quels dossiers sont passés devant un juge entre ces deux dates ». Les
-          audiences annulées en sont exclues côté serveur — elles ne se sont pas tenues.
+          The period applies to **hearings**, not case opening: which cases went before a judge
+          between these two dates. Cancelled hearings are excluded server-side.
         */}
         <Champ id="filtre-date-debut" label={t("filtreAudienceDebut")} className="w-40">
           <Input
@@ -290,9 +281,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </Champ>
 
         {/*
-          Q-101 — filtrer les dossiers sensibles, demandé par le porteur du projet. Le statut de
-          validation ne relève pas du confort : `EN_ATTENTE` donne au DJ et à la DJA la file des
-          sensibilités qui les attendent, que rien n'exposait jusqu'ici.
+          Filter on sensitive cases. `EN_ATTENTE` gives the DJ and DJA the queue of sensitivity
+          proposals awaiting them.
         */}
         <Champ id="filtre-sensibilite" label={t("filtreSensibiliteStatut")} className="w-52">
           <Select
@@ -333,14 +323,10 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       </BarreFiltres>
 
       {/*
-        **Le nombre de résultats, annoncé** (QF-57). Il est déjà visible - la pagination le porte -
-        mais dans un simple `<span>` : il changeait donc en silence pour qui écoute, alors que le
-        filtrage au fil de la frappe modifie la liste sans action explicite. Un filtre qui agit tout
-        seul doit dire ce qu'il a trouvé.
-
-        `sr-only` : le chiffre est déjà à l'écran, le répéter visuellement serait du bruit. Et il
-        n'est annoncé qu'une fois la requête terminée - pendant le chargement, l'état de la table
-        porte son propre `role="status"`.
+        Announces the result count: live filtering changes the list without explicit action, so the
+        change must be announced. `sr-only` since the number is already visible in the pagination;
+        announced only once the request completes (the table's loading state has its own
+        `role="status"`).
       */}
       <p role="status" aria-live="polite" className="sr-only">
         {requete.isLoading ? "" : tm("elements", { nombre: requete.data?.totalElements ?? 0 })}

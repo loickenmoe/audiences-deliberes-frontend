@@ -23,7 +23,7 @@ import type { DemandeSuppression, StatutSuppression } from "@/types/domaine";
 
 const TON: Record<StatutSuppression, TonStatut> = { EN_ATTENTE: "attention", APPROUVEE: "neutre", REJETEE: "info" };
 
-/** Longueur de `demande_suppression.motif_rejet` en base. */
+/** Length of `demande_suppression.motif_rejet` in the database. */
 const MOTIF_MAX = 255;
 
 type Vue = "EN_ATTENTE" | "TOUTES";
@@ -35,22 +35,18 @@ async function contenuDocument(documentId: number): Promise<Blob> {
 }
 
 /**
- * Écran 36 — demandes de suppression (UC-GED-03). Un juriste ne supprime pas lui-même une pièce :
- * sa demande attend ici la décision du DJ ou de la DJA, relancée toutes les 72 heures. Le document
- * se consulte avant de décider ; un rejet exige un motif, transmis au juriste.
- *
- * Deux vues : **en attente** (la plus ancienne d'abord, l'ordre de traitement) et **toutes** (l'historique,
- * la plus récente d'abord). Depuis Q-79, chaque demande nomme son fichier et son dossier.
+ * Screen 36 - deletion requests (UC-GED-03). A legal officer cannot delete a document directly:
+ * the request waits here for the DJ or DJA decision, with a reminder every 72 hours. The document
+ * can be viewed before deciding; a rejection requires a reason, sent to the legal officer.
+ * Two views: pending (oldest first, processing order) and all (history, newest first).
  */
 export function FileSuppressions() {
   const t = useTranslations("suppressions");
   const tdoc = useTranslations("documents");
   const [vue, setVue] = useState<Vue>("EN_ATTENTE");
   /*
-   * La file est paginée **côté serveur**, dix lignes par page. Elle l'a toujours été : ce qui
-   * manquait, c'était le moyen d'atteindre les pages suivantes. L'écran n'en montrait donc que dix,
-   * et la vue « en attente » étant la plus ancienne d'abord, **les demandes les plus récentes
-   * étaient invisibles** — celles-là même qu'un juriste venait de déposer.
+   * The queue is paginated server-side, ten rows per page. Without pagination controls, the most
+   * recent pending requests (oldest-first order) would be unreachable.
    */
   const [page, setPage] = useState(0);
   const requete = useDemandesSuppression(vue === "EN_ATTENTE" ? "EN_ATTENTE" : null, page);
@@ -209,10 +205,7 @@ export function FileSuppressions() {
         </div>
       )}
 
-      {/*
-        Rendue dès qu'une page suivante existe : une file tronquée sans le dire est pire qu'une file
-        longue, car rien n'indique à qui décide qu'il lui manque quelque chose.
-      */}
+      {/* Shown whenever a next page exists: a silently truncated queue hides requests from the decision maker. */}
       {requete.data && requete.data.totalPages > 1 ? (
         <Pagination
           page={page}
@@ -245,7 +238,7 @@ export function FileSuppressions() {
   );
 }
 
-/** Rejet motivé (UC-GED-03 alt. 9-a) : le document est conservé, le juriste reçoit le motif. */
+/** Rejection with a reason (UC-GED-03 alt. 9-a): the document is kept and the legal officer receives the reason. */
 function ModaleRejet({ demande, onFermeture }: { demande: DemandeSuppression | null; onFermeture: () => void }) {
   const t = useTranslations("suppressions");
   const tc = useTranslations("commun");

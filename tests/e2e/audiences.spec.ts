@@ -6,12 +6,10 @@ import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Audiences, alarmes et calendrier (écrans 09, 11, 22 à 25) **contre le backend réel**.
+ * Hearings, alarms and calendar (screens 09, 11, 22 to 25) against the real backend.
  *
- * Depuis RG-AUD-08 (2026-09-23), une audience s'enregistre **à la date du jour** et
- * même après coup : le cycle complet — planifier, tenir, rendre compte — se joue donc entièrement
- * ici, ce qu'aucun parcours ne pouvait faire tant que seule une date future était acceptée. On
- * vérifie aussi qu'une audience **à venir** ne propose toujours pas son compte rendu.
+ * RG-AUD-08: a hearing can be recorded for today, even after the fact, so the full cycle (plan,
+ * hold, report) is covered here. A future hearing must still not offer its report.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -24,7 +22,7 @@ async function seConnecter(page: Page, identifiant: string) {
   await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
 }
 
-/** Une session à part, pour les parcours qui font travailler deux rôles l'un après l'autre. */
+/** A separate session, for tests that run two roles one after the other. */
 async function pageConnectee(browser: Browser, identifiant: string) {
   const contexte = await browser.newContext({ locale: "fr-FR" });
   const page = await contexte.newPage();
@@ -33,7 +31,7 @@ async function pageConnectee(browser: Browser, identifiant: string) {
 }
 
 
-/** `YYYY-MM-DD` local, dans `jours` jours. */
+/** Local `YYYY-MM-DD`, `jours` days from now. */
 function dansJours(jours: number) {
   const date = new Date();
   date.setDate(date.getDate() + jours);
@@ -41,25 +39,24 @@ function dansJours(jours: number) {
 }
 
 /**
- * La ligne dont la **cellule de statut** vaut exactement `statut`. Un `filter({ hasText })` ne suffit
- * pas : il compare une sous-chaîne sans tenir compte de la casse, et le bouton « Marquer traitée »
- * d'une alarme active suffisait à la compter parmi les « Traitée ».
+ * The row whose status cell is exactly `statut`. `filter({ hasText })` is not enough: it matches a
+ * case-insensitive substring, so an active alarm's "Marquer traitée" button would count as "Traitée".
  */
 function ligneAuStatut(page: Page, statut: string) {
   return page.getByRole("row").filter({ has: page.getByRole("cell", { name: statut, exact: true }) });
 }
 
-/** Crée un dossier et fait passer son instance « En cours » : la condition d'une audience. */
+/** Creates a case and moves its proceeding to "En cours", which a hearing requires. */
 async function dossierEnCours(page: Page) {
   await page.goto("/dossiers/nouveau");
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // Mandatory: at least one party on each side.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Mandatory: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-AUD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-AUD");
@@ -68,7 +65,7 @@ async function dossierEnCours(page: Page) {
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
-  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  // The reference is assigned by the system: read it from the case page.
   const reference = await referenceDuDossier(page);
 
   await page.getByRole("tab", { name: "Étapes" }).click();
@@ -85,10 +82,10 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // Mandatory: at least one party on each side.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Mandatory: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV");
@@ -98,7 +95,7 @@ test("sans étape en cours, la planification est expliquée plutôt que proposé
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
 
   await page.getByRole("tab", { name: "Audiences" }).click();
-  // L'instance est encore « Ouverture » : le backend refuserait (RG-AUD-01).
+  // The proceeding is still "Ouverture": the backend would reject it (RG-AUD-01).
   await expect(page.getByRole("button", { name: "Planifier une audience" })).toBeDisabled();
   await expect(page.getByText(/Aucune étape n’est en cours/)).toBeVisible();
 });
@@ -115,25 +112,21 @@ test("planifier une audience, puis confirmer un doublon (ERR-005)", async ({ pag
     await page.getByRole("dialog", { name: "Planifier une audience" }).getByRole("button", { name: "Enregistrer" }).click();
 
     if (tentative === 2) {
-      // Même étape, même date : le backend demande confirmation, il ne refuse pas.
+      // Same step, same date: the backend asks for confirmation instead of rejecting.
       const confirmation = page.getByRole("dialog", { name: "Confirmer l’audience" });
       await expect(confirmation).toBeVisible();
       await confirmation.getByRole("button", { name: "Confirmer" }).click();
     }
-    // Attendre la **nouvelle** ligne, pas le message : le toast de la première tentative reste à
-    // l'écran et masquait l'échec de la seconde.
+    // Wait for the new row, not the message: the first attempt's toast is still on screen.
     await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(tentative);
   }
 
   await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(2);
-  // Audience à venir : le compte rendu n'est pas encore recevable, donc pas proposé.
+  // Future hearing: the report is not admissible yet, so it is not offered.
   await expect(page.getByRole("button", { name: "Saisir le compte rendu" })).toHaveCount(0);
 });
 
-/**
- * RG-AUD-08 : l'audience du jour s'enregistre, et son compte rendu suit immédiatement.
- * C'est le besoin qui a motivé l'arbitrage — une audience apprise le matin pour le jour même.
- */
+/** RG-AUD-08: today's hearing can be recorded, and its report follows immediately. */
 test("une audience du jour reçoit son compte rendu dans la foulée (RG-AUD-08)", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await dossierEnCours(page);
@@ -144,22 +137,22 @@ test("une audience du jour reçoit son compte rendu dans la foulée (RG-AUD-08)"
   await page.getByRole("dialog", { name: "Planifier une audience" }).getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(1);
 
-  // Le compte rendu est recevable dès le jour de l'audience : l'action est proposée sans attendre.
+  // The report is admissible from the hearing day: the action is offered right away.
   await page.getByRole("button", { name: "Saisir le compte rendu" }).click();
   const modale = page.getByRole("dialog", { name: "Compte rendu d’audience" });
   await modale.getByLabel("Compte rendu", { exact: true }).fill("Affaire appelée, renvoi contradictoire.");
   await modale.getByRole("button", { name: "Enregistrer" }).click();
 
   await expect(page.getByText("Compte rendu enregistré.")).toBeVisible();
-  // Viser la cellule de statut, non la ligne : l'en-tête porte une colonne « Tenue le ».
+  // Target the status cell, not the row: the header has a "Tenue le" column.
   const cellulesTenue = page.getByRole("cell", { name: "Tenue", exact: true });
   await expect(cellulesTenue).toHaveCount(1);
-  // QF-32 : l'audience est datée du jour où elle s'est tenue, ici celui de la saisie.
+  // The hearing is dated the day it was held, here the day of entry.
   const ligneTenue = page.getByRole("row").filter({ has: cellulesTenue });
   await expect(ligneTenue).toContainText(String(new Date().getDate()));
 });
 
-/** Une audience ne peut pas avoir eu lieu avant que le dossier existe : la borne est là, et là seulement. */
+/** A hearing cannot predate the case: that is the only lower bound. */
 test("une audience antérieure à l'ouverture du dossier est refusée", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await dossierEnCours(page);
@@ -174,11 +167,8 @@ test("une audience antérieure à l'ouverture du dossier est refusée", async ({
 });
 
 /**
- * V34 — la juridiction propre à l'audience (observation métier du 2026-09-25).
- *
- * Une audience d'appel ne siège pas devant le tribunal qui a jugé : le calendrier annonçait
- * pourtant la juridiction du **dossier** pour toutes les audiences. L'information n'était pas
- * absente, elle était fausse — et rien n'invitait à la vérifier.
+ * V34: each hearing has its own court. An appeal hearing does not sit before the court that ruled,
+ * so the calendar must show the hearing's court, not the case's.
  */
 test("une audience se tient devant sa propre juridiction, pas celle du dossier", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -187,7 +177,7 @@ test("une audience se tient devant sa propre juridiction, pas celle du dossier",
 
   await page.getByRole("button", { name: "Planifier une audience" }).click();
   const modale = page.getByRole("dialog", { name: "Planifier une audience" });
-  // Le champ propose la juridiction du dossier : le cas courant du premier degré.
+  // The field defaults to the case's court: the usual first-instance case.
   await expect(modale.getByLabel("Juridiction", { exact: true })).toHaveValue("TGI Douala");
 
   await modale.getByLabel("Juridiction", { exact: true }).fill("Cour d'appel du Littoral");
@@ -198,7 +188,7 @@ test("une audience se tient devant sa propre juridiction, pas celle du dossier",
   await expect(ligne).toHaveCount(1);
   await expect(ligne).toContainText("Cour d'appel du Littoral");
 
-  // Le calendrier annonce le même lieu : c'est là que le juriste se rendra.
+  // The calendar shows the same place.
   await page.goto("/audiences/calendrier");
   await page.getByRole("button", { name: "Trimestre" }).click();
   const entree = page.getByRole("row", { name: new RegExp(reference) }).first();
@@ -227,11 +217,11 @@ test("annuler une audience avec son motif, puis la replanifier à la même date 
   await annulation.getByLabel("Motif de l’annulation", { exact: true }).fill("Renvoi prononcé par le tribunal");
   await annulation.getByRole("button", { name: "Annuler l’audience", exact: true }).click();
 
-  // Le motif reste lisible dans la liste ; l'audience n'est plus proposée à l'annulation.
+  // The reason stays readable in the list; the hearing can no longer be cancelled.
   await expect(page.getByRole("row").filter({ hasText: "Motif : Renvoi prononcé par le tribunal" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: /^Annuler l’audience du / })).toHaveCount(0);
 
-  // Même étape, même date : l'audience annulée ne compte plus — pas de demande de confirmation.
+  // Same step, same date: the cancelled hearing no longer counts, so no confirmation is requested.
   await planifier();
   await expect(page.getByRole("row").filter({ hasText: "Planifiée" })).toHaveCount(1);
   await expect(page.getByRole("dialog", { name: "Confirmer l’audience" })).toBeHidden();
@@ -253,7 +243,7 @@ test("marquer une alarme traitée la clôt sans la remplacer (QF-29)", async ({ 
   const confirmation = page.getByRole("dialog", { name: "Marquer l’alarme comme traitée" });
   await confirmation.getByRole("button", { name: "Marquer traitée" }).click();
 
-  // Une seule ligne, close — contrairement à la reprogrammation, aucune remplaçante.
+  // A single closed row: unlike rescheduling, no replacement.
   await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
   await expect(page.getByRole("row").filter({ hasText: "Appeler l’huissier" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Reprogrammer - Appeler l’huissier" })).toHaveCount(0);
@@ -277,7 +267,7 @@ test("créer puis reprogrammer une alarme : l'ancienne est close, la nouvelle la
   await reprog.getByRole("button", { name: "Reprogrammer" }).click();
   await expect(page.getByText("Alarme reprogrammée.")).toBeVisible();
 
-  // Deux lignes : l'ancienne « Traitée », la nouvelle « Active » qui la cite.
+  // Two rows: the old one "Traitée", the new "Active" one referencing it.
   await expect(ligneAuStatut(page, "Traitée")).toHaveCount(1);
   await expect(ligneAuStatut(page, "Active")).toContainText("Reprend une alarme précédente");
 });
@@ -295,9 +285,8 @@ test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel
   await navigation.getByRole("link", { name: "Calendrier" }).click();
   await page.waitForURL(/\/audiences\/calendrier/, { timeout: 60_000 });
 
-  // Demain peut tomber la semaine suivante (un lundi) : la vue trimestrielle le contient, sauf le
-  // dernier jour d'un trimestre. On calcule le trimestre plutôt que de sonder l'écran : un
-  // `isVisible()` pendant le chargement répondait « non » et faisait avancer d'un trimestre de trop.
+  // Tomorrow may fall in the next week: the quarterly view contains it, except on a quarter's last
+  // day. Compute the quarter instead of probing the screen, which may still be loading.
   await page.getByRole("button", { name: "Trimestre" }).click();
   const trimestre = (date: Date) => Math.floor(date.getMonth() / 3) + date.getFullYear() * 4;
   const aujourdHui = new Date();
@@ -306,7 +295,7 @@ test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel
     await page.getByRole("button", { name: "Période suivante" }).click();
   }
   await expect(page.getByRole("link", { name: reference })).toBeVisible();
-  // L'intervalle affiché porte bien ses deux dates (régression : « Du au », arguments mal passés).
+  // The displayed range shows both dates (regression: "Du au").
   await expect(page.getByText(/^Du .+ au .+/)).toBeVisible();
 
   const pdf = page.waitForEvent("download");
@@ -319,11 +308,8 @@ test("le calendrier montre l'audience planifiée et s'exporte en PDF et en Excel
 });
 
 /**
- * Écran 44 — journal des audiences (observation métier du 2026-09-25).
- *
- * Le parcours crée une audience du jour, saisit son compte rendu, puis vérifie que le journal du
- * DJ la rapporte. C'est la chaîne complète : ce qu'un juriste écrit doit se lire dans la vue
- * d'ensemble de la direction, sans autre geste.
+ * Screen 44, hearing log: a hearing created today with its report must appear in the DJ's log
+ * without any further action.
  */
 test("le journal du jour rapporte le compte rendu que le juriste vient de saisir", async ({ browser }) => {
   const juriste = await pageConnectee(browser, "juriste.test");
@@ -348,23 +334,18 @@ test("le journal du jour rapporte le compte rendu que le juriste vient de saisir
   await dj.goto("/audiences/journal");
   await expect(dj.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
 
-  /*
-   * Le journal est paginé, et une journée de recette accumule les audiences des exécutions
-   * précédentes. Élargir la page à cinquante lignes a tenu un temps, puis le journal a franchi ce
-   * seuil à son tour - c'est précisément ce que l'en-tête de `ligneDansLaFile` annonçait. On
-   * parcourt donc les pages de **cette section**, qui a sa propre pagination.
-   */
+  // The log is paginated and accumulates previous runs: walk through the pages of this section,
+  // which has its own pagination.
   const sectionJournal = dj.getByRole("region", { name: "Audiences du jour" });
   const ligne = await ligneDansLaFile(sectionJournal, new RegExp(reference));
   await expect(ligne).toContainText("Renvoi contradictoire au mois prochain.");
-  // L'avocat n'a rien déposé : l'écran le dit, sans le confondre avec un compte rendu manquant.
+  // The lawyer filed nothing: the screen says so, without confusing it with a missing report.
   await expect(ligne).toContainText("Non déposé");
   await dj.context().close();
 });
 
 /**
- * Le journal est ouvert aux juristes depuis le 2026-09-28 : savoir ce qui s'est dit aux audiences
- * du jour fait partie de leur métier. Il reste fermé aux profils qui n'écrivent pas de compte rendu.
+ * The log is open to legal officers. It stays closed to profiles that do not write reports.
  */
 test("le journal des audiences est ouvert aux juristes, fermé à l'Assistante", async ({ browser }) => {
   const juriste = await pageConnectee(browser, "juriste.test");
@@ -389,8 +370,8 @@ test("le calendrier est réservé au juriste et au DJ", async ({ page }) => {
 test("le calendrier est traduit", async ({ page }) => {
   await seConnecter(page, "dj.test");
   await page.getByRole("button", { name: "en", exact: true }).click();
-  // Le choix de langue passe par une action serveur : attendre qu'il soit appliqué avant de naviguer,
-  // sinon la page suivante part encore en français.
+  // The language choice goes through a server action: wait until it is applied before navigating,
+  // otherwise the next page still loads in French.
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.goto("/audiences/calendrier");
   await expect(page.getByRole("heading", { name: "Hearing calendar", level: 1 })).toBeVisible();

@@ -34,14 +34,12 @@ const VIDE: Record<CleVueNotifications, string> = {
 };
 
 /**
- * Écran 03 — mes notifications.
+ * Screen 03 - my notifications.
  *
- * La liste appartient au destinataire : le backend ne renvoie que ses alertes et n'accepte que de
- * lui qu'elles soient marquées traitées (403 sinon). Elle s'ouvre donc sur les non lues.
- *
- * L'état du canal temps réel est affiché : c'est la seule façon pour l'utilisateur de savoir s'il
- * regarde un flux vivant ou une liste rafraîchie toutes les 30 secondes. Dans les deux cas la
- * liste est complète — le backend enregistre l'alerte avant de tenter de la pousser.
+ * The list belongs to the recipient: the backend returns only their alerts and only lets them mark
+ * them as handled (403 otherwise). It opens on unread ones.
+ * The real-time channel status is shown so the user knows whether the feed is live or refreshed
+ * every 30 seconds. Either way the list is complete: the backend stores the alert before pushing it.
  */
 export function FileNotifications({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("notifications");
@@ -59,7 +57,7 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
     (filtres.type || undefined) as TypeAlerte | undefined,
   );
   const traiter = useTraiterAlerte();
-  // L'avocat n'accède pas aux dossiers : la référence resterait un lien mort.
+  // Lawyers cannot access case files: the reference would be a dead link.
   const lienDossier = peut(roles, "consulterDossiers");
 
   const marquerTraitee = (id: number) => {
@@ -141,7 +139,7 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
           ),
       },
     ],
-    // `marquerTraitee` est recréée à chaque rendu : la lister ici recalculerait les colonnes en boucle.
+    // `marquerTraitee` is recreated on every render: listing it here would recompute the columns endlessly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, td, lienDossier, traiter.isPending],
   );
@@ -172,10 +170,9 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
         </div>
 
         {/*
-          Q-102 — filtrer par type d'alerte. Dix-sept types existent, et les rappels d'audience se
-          déclenchent trois fois par audience (J-7, J-3, J-1) : sans ce filtre, une échéance de
-          recours se perd dans la masse. Le filtrage est **serveur** — le rejouer ici n'aurait
-          cherché que dans la page affichée.
+          Filter by alert type: there are seventeen types and hearing reminders fire three times per
+          hearing (D-7, D-3, D-1), so appeal deadlines would get lost. Filtering is server-side; doing it
+          here would only search the displayed page.
         */}
         <label className="flex items-center gap-2 text-[length:var(--taille-sm)]">
           {t("filtreType")}

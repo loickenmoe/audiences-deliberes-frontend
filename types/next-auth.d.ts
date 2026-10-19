@@ -1,22 +1,20 @@
 import type { DefaultSession } from "next-auth";
 
 /**
- * Le modèle « un rôle par utilisateur » du projet de référence est remplacé par `roles: string[]` :
- * dans ce domaine, un utilisateur porte simultanément son profil métier, `ROLE_CONSULTATION` et
- * `ROLE_SAISIE`. Vérifié en réel : `juriste.test` reçoit trois rôles dans son jeton.
+ * `roles: string[]`: a user holds their business profile, `ROLE_CONSULTATION` and `ROLE_SAISIE` at
+ * the same time.
  */
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
-    /** Jeton d'identité, requis par la déconnexion OIDC (`id_token_hint`). */
+    /** ID token, required by OIDC logout (`id_token_hint`). */
     idToken?: string;
     roles: string[];
-    /** Positionné quand la rotation du jeton a définitivement échoué : impose une reconnexion. */
+    /** Set when token rotation has definitively failed: forces a new login. */
     erreur?: string;
     /**
-     * Époque en millisecondes à partir de laquelle le serveur renouvellera les jetons. Publiée pour
-     * que le navigateur sache **jusqu'à quand** garder son jeton en mémoire sans relire la session
-     * (QF-42) ; calculée par `prochainRafraichissement`, jamais recalculée côté client.
+     * Epoch in milliseconds from which the server will renew the tokens, so the browser knows how
+     * long to keep its token in memory. Computed by `prochainRafraichissement`, never client-side.
      */
     rafraichirApres?: number;
     user: {
@@ -28,18 +26,17 @@ declare module "next-auth" {
 }
 
 /**
- * L'augmentation vise **`@auth/core/jwt`** et non `next-auth/jwt` : ce dernier se contente d'un
- * `export * from "@auth/core/jwt"`, et une réexportation ne permet pas d'enrichir l'interface
- * d'origine. Viser le mauvais module laisse silencieusement chaque champ en `unknown`.
+ * Augments `@auth/core/jwt`, not `next-auth/jwt`: the latter only re-exports it, and a re-export
+ * cannot be augmented (every field would silently stay `unknown`).
  */
 declare module "@auth/core/jwt" {
   interface JWT {
     accessToken?: string;
     refreshToken?: string;
     idToken?: string;
-    /** Époque en millisecondes. */
+    /** Epoch in milliseconds. */
     expiresAt?: number;
-    /** Époque en millisecondes. Plus courte que `expiresAt` sur ce realm — cf. RF-02. */
+    /** Epoch in milliseconds. Earlier than `expiresAt` on this realm. */
     refreshExpiresAt?: number;
     roles?: string[];
     keycloakId?: string;

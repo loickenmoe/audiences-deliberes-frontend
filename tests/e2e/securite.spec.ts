@@ -1,12 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Revue de sécurité du frontend, tenue par des contrôles plutôt que par une note d'intention.
- *
- * Ce que ce fichier vérifie relève strictement de ce que le **frontend** maîtrise : les en-têtes
- * qu'il émet, l'endroit où vit le jeton, et le fait qu'aucune route protégée ne s'ouvre sans
- * session. L'autorisation elle-même appartient au backend — masquer un écran n'est pas le protéger,
- * et c'est pourquoi les parcours de droits interrogent aussi l'API directement.
+ * Frontend security checks: emitted headers, token storage, and protected routes without a session.
+ * Authorization itself belongs to the backend; hiding a screen does not protect it.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -28,7 +24,7 @@ test("les en-têtes de sécurité sont posés sur toutes les réponses", async (
   expect(entetes["x-content-type-options"], "devinette de type MIME").toBe("nosniff");
   expect(entetes["referrer-policy"]).toBe("strict-origin-when-cross-origin");
   expect(entetes["permissions-policy"]).toContain("camera=()");
-  // La pile n'a pas à s'annoncer.
+  // The stack must not advertise itself.
   expect(entetes["x-powered-by"]).toBeUndefined();
 });
 
@@ -39,9 +35,8 @@ test("les en-têtes valent aussi pour une page authentifiée", async ({ page }) 
 });
 
 /**
- * Le jeton d'accès ne doit **jamais** vivre dans un stockage lisible par un script : il réside dans
- * le cookie de session de NextAuth, marqué `httpOnly`. Une faille d'injection ne peut alors pas
- * l'exfiltrer.
+ * The access token must never live in script-readable storage: it stays in the `httpOnly` NextAuth
+ * session cookie, so an injection flaw cannot exfiltrate it.
  */
 test("aucun jeton n'est déposé dans un stockage accessible aux scripts", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -57,7 +52,7 @@ test("aucun jeton n'est déposé dans un stockage accessible aux scripts", async
   expect(suspect(stockage.local), "localStorage").toEqual([]);
   expect(suspect(stockage.session), "sessionStorage").toEqual([]);
 
-  // Et le cookie de session n'est pas lisible depuis le document.
+  // The session cookie is not readable from the document either.
   const cookiesLisibles = await page.evaluate(() => document.cookie);
   expect(cookiesLisibles).not.toMatch(/eyJ/);
 });
@@ -73,7 +68,7 @@ test("le cookie de session est httpOnly et restreint aux requêtes de même site
 });
 
 test("une route protégée renvoie vers la connexion sans session", async ({ page }) => {
-  // Aucune authentification : chaque écran métier doit renvoyer au formulaire, jamais s'afficher.
+  // Unauthenticated: every business screen must redirect to the login form.
   for (const chemin of ["/", "/dossiers", "/frais", "/tableau-de-bord", "/admin/configurations", "/portail"]) {
     await page.goto(chemin);
     await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
@@ -81,9 +76,8 @@ test("une route protégée renvoie vers la connexion sans session", async ({ pag
 });
 
 /**
- * Masquer une entrée de menu ne protège rien : l'URL forcée doit être refusée elle aussi. C'est le
- * garde de route qui le fait, adossé aux mêmes capacités que la navigation — et le backend refuse
- * de toute façon la requête.
+ * Hiding a menu entry protects nothing: a forced URL must be refused too, by the route guard (same
+ * capabilities as the navigation). The backend refuses the request anyway.
  */
 test("une URL forcée vers un écran interdit est refusée", async ({ page }) => {
   await seConnecter(page, "assistante.test");
@@ -102,7 +96,7 @@ test("la déconnexion ferme la session et interdit le retour en arrière", async
   await page.getByRole("button", { name: "Se déconnecter" }).click();
   await page.waitForURL(/\/login/, { timeout: 60_000 });
 
-  // Revenir en arrière ne doit pas ressusciter la session : le garde s'exécute côté serveur.
+  // Going back must not revive the session: the guard runs server-side.
   await page.goto("/dossiers");
   await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
 });

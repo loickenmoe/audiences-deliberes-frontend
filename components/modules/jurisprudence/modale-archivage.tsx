@@ -18,9 +18,9 @@ import { TypeArchiveJurisprudence } from "@/types/enums";
 type Erreurs = Partial<Record<"fichier" | "typeArchive" | "motsCles" | "natureDecision" | "juridiction" | "dateDecision" | "general", string>>;
 
 /**
- * UC-DEF-03 — archiver une décision de justice : le PDF (10 Mo au plus) et son indexation, toute
- * obligatoire (RG-DEF-05). Ouverte depuis la fiche, la décision est rattachée au dossier ; depuis la
- * base jurisprudentielle, elle peut ne l'être à aucun (Q-58 backend).
+ * UC-DEF-03 - archive a court decision: the PDF (10 MB max) and its indexing, all mandatory
+ * (RG-DEF-05). Opened from a case file, the decision is linked to it; from the case law database,
+ * it may be linked to none.
  */
 export function ModaleArchivage({
   dossierId,
@@ -35,12 +35,12 @@ export function ModaleArchivage({
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
-  // « Consulter » et « Aperçu » vivent dans l espace documents : les deux boutons d’œil du
-  // projet y puisent, et un troisième libellé pour le même geste serait un libellé de trop.
+  // "Consulter" and "Aperçu" labels come from the documents space: both preview buttons use them,
+  // avoiding a third label for the same action.
   const tdoc = useTranslations("documents");
   const archiver = useArchiverJurisprudence();
   const [fichier, setFichier] = useState<File | null>(null);
-  /** L'aperçu de la décision chargée, avant de l'archiver (QF-62). */
+  /** Preview of the loaded decision, before archiving. */
   const [apercu, setApercu] = useState(false);
   const [typeArchive, setTypeArchive] = useState("");
   const [motsCles, setMotsCles] = useState("");
@@ -48,7 +48,7 @@ export function ModaleArchivage({
   const [juridiction, setJuridiction] = useState("");
   const [dateDecision, setDateDecision] = useState("");
   const [erreurs, setErreurs] = useState<Erreurs>({});
-  // Le composant de téléversement garde son propre état : on le recrée à chaque ouverture.
+  // The upload component keeps its own state: it is recreated on each opening.
   const [cleFormulaire, setCleFormulaire] = useState(0);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export function ModaleArchivage({
         </>
       }
     >
-      {/* Le fichier n'est pas encore parti : il se relit depuis la mémoire, sans aller-retour. */}
+      {/* The file has not been sent yet: it is previewed from memory, without a server round trip. */}
       {apercu && fichier ? (
         <ApercuFichier
           ouvert
@@ -125,10 +125,8 @@ export function ModaleArchivage({
 
       <div className="flex flex-col gap-4">
         {/*
-          **La décision se relit avant d'être archivée** (QF-62). `surUneLigne` place l'œil d'aperçu
-          à côté du nom du fichier plutôt qu'en dessous, et tronque un nom long : même disposition
-          qu'au dépôt de frais et de publication (QF-56). Une décision archivée fait jurisprudence -
-          la relire avant de valider évite d'archiver la mauvaise pièce.
+          The decision can be reviewed before archiving. `surUneLigne` places the preview button next to
+          the file name and truncates long names, as in the expense and publication forms.
         */}
         <Champ id="fichier-jurisprudence" label={t("champFichier")} obligatoire erreur={erreurs.fichier}>
           <div className="flex min-w-0 items-center gap-3">
@@ -141,15 +139,10 @@ export function ModaleArchivage({
               onChangement={setFichier}
             />
             {/*
-              **La décision se relit avant d'être archivée** (QF-62).
-
-              `surUneLigne` ne suffisait pas : il ne règle que la mise en page du téléversement, qui
-              ne rend **aucun** bouton d'aperçu - ce sont ses appelants qui le placent à côté, comme
-              le font les formulaires de frais et de publication depuis QF-56.
-
-              Une décision archivée fait jurisprudence et ne se corrige pas : la relire avant de
-              valider évite d'archiver la mauvaise pièce. `min-w-0` sur les deux éléments et
-              `shrink-0` sur le bouton gardent l'œil sur la ligne, un nom long étant tronqué.
+              The decision can be reviewed before archiving: an archived decision becomes case law and
+              cannot be corrected. The upload component renders no preview button itself, so it is placed
+              here. `min-w-0` on both elements and `shrink-0` on the button keep it on the line, truncating
+              long file names.
             */}
             {fichier ? (
               <Button

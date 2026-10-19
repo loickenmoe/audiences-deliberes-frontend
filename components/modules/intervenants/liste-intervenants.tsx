@@ -18,13 +18,12 @@ import type { Intervenant } from "@/types/domaine";
 import { TypeIntervenant } from "@/types/enums";
 
 /**
- * Écran 42 — référentiel des intervenants.
+ * Screen 42 - third-party directory.
  *
- * **C'est l'écran qui débloque la suite** : `avocatsAffectes` est obligatoire à la création d'un
- * dossier, donc sans avocat ici, aucun dossier n'est créable. C'est pourquoi il arrive dès F5.
- *
- * La liste n'est pas paginée côté backend (#62, RF-05) : on affiche tout, sans pagination
- * artificielle qui laisserait croire à un découpage serveur.
+ * `avocatsAffectes` is mandatory when creating a case file, so no case file can be created
+ * without a lawyer registered here.
+ * The list is not paginated by the backend (RF-05): everything is displayed, without artificial
+ * client-side pagination.
  */
 export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("intervenants");
@@ -32,7 +31,7 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
   const [type, setType] = useState<TypeIntervenant | "">("");
   const { page, taille, definirPage, definirTaille } = useFiltresUrl({});
   const [creationOuverte, setCreationOuverte] = useState(false);
-  // Pas de fiche intervenant : la correction s'ouvre depuis sa ligne du référentiel (Q-117).
+  // No third-party detail page: editing opens from the directory row.
   const [enEdition, setEnEdition] = useState<Intervenant | null>(null);
 
   const requete = useIntervenants({ type: type || undefined, page, size: taille });
@@ -175,7 +174,7 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
         />
       ) : null}
 
-      {/* La clé remonte le formulaire à chaque intervenant : ses valeurs de départ sont les siennes. */}
+      {/* The key remounts the form for each third party so its initial values are that party's own. */}
       {enEdition ? (
         <FormulaireIntervenant
           key={enEdition.id}

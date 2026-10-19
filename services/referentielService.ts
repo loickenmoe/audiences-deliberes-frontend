@@ -10,30 +10,17 @@ import type {
 import type { CategorieDossier } from "@/types/enums";
 
 /**
- * Référentiels de formulaire, annuaire interne (#64, #65, #66) et référentiel des agences.
- *
- * Les listes `naturesDossier`, `typesClientSensible` et `utilisateurs` sont **fermées, petites et
- * stables** : elles se chargent une fois par session en cache long, et servent aussi à résoudre les
- * identifiants numériques que le backend renvoie sans libellé (cf. `hooks/useLibelles.ts`). Elles
- * restent en lecture seule - administrées par le DJ directement en base (CONF02) - et Keycloak
- * reste la source de vérité des identités.
- *
- * Les **agences** font exception sur les deux points : elles sont paginées et cherchées côté
- * serveur (82 entrées, recherche au fil de la frappe demandée par le métier), et elles s'écrivent
- * depuis l'application, par le DJ ou la DJA. Le code d'agence engage les dossiers qui le portent :
- * il n'est plus question de le saisir à la main.
+ * Form reference data, internal directory (#64, #65, #66) and bank branches.
+ * `naturesDossier`, `typesClientSensible` and `utilisateurs` are small, stable, read-only lists
+ * (administered in the database, CONF02), cached long and also used to resolve numeric ids
+ * (see `hooks/useLibelles.ts`). Keycloak remains the source of truth for identities.
+ * Branches are the exception: paginated, searched server-side and editable by the DJ or DJA.
  */
 export const referentielService = {
   /**
-   * Agences de la banque (métier, 2026-10-03, observation 2).
-   *
-   * **Paginée et cherchée côté serveur**, contrairement aux trois listes ci-dessous : 82 agences ne
-   * tiennent pas dans une liste déroulante lisible, et le métier a demandé la recherche au fil de
-   * la frappe - « si on commence par entrer le nom d'une agence, l'app nous renvoie progressivement
-   * les agences avec ces noms ». La recherche porte sur le **code** et sur le **nom**.
-   *
-   * `actifSeulement` vaut vrai par défaut : la saisie ne propose que les agences ouvertes. Seul
-   * l'écran d'administration demande tout.
+   * Bank branches, paginated and searched server-side (search-as-you-type on code and name).
+   * `actifSeulement` defaults to true so input only offers open branches; only the admin screen
+   * requests all.
    */
   agences: async (params?: {
     recherche?: string;
@@ -47,16 +34,15 @@ export const referentielService = {
     return data;
   },
 
-  /** `ROLE_DJ` ou `ROLE_DJA` : le code engage les dossiers qui le portent. */
+  /** `ROLE_DJ` or `ROLE_DJA`, since the code is referenced by cases. */
   creerAgence: async (corps: AgenceEcriture): Promise<Agence> => {
     const { data } = await apiClient.post<Agence>("/referentiels/agences", corps);
     return data;
   },
 
   /**
-   * `ROLE_DJ` ou `ROLE_DJA`. Le **code ne se modifie pas** : les dossiers le portent en clair, sans
-   * clé étrangère, et le changer les détacherait silencieusement de leur agence. Le backend refuse
-   * un code différent de celui enregistré.
+   * `ROLE_DJ` or `ROLE_DJA`. The code is immutable: cases store it as plain text without a foreign
+   * key, so changing it would detach them. The backend rejects a different code.
    */
   modifierAgence: async (id: number, corps: AgenceEcriture): Promise<Agence> => {
     const { data } = await apiClient.put<Agence>(`/referentiels/agences/${id}`, corps);
@@ -64,9 +50,8 @@ export const referentielService = {
   },
 
   /**
-   * **Désactive, ne supprime pas** - malgré le verbe HTTP. Un dossier ouvert sous une agence fermée
-   * reste un dossier valide, et son code doit continuer de désigner quelque chose. La fermeture est
-   * réversible : cf. `reactiverAgence`.
+   * Deactivates, despite the HTTP verb, so cases opened under a closed branch still reference a
+   * valid code. Reversible with `reactiverAgence`.
    */
   desactiverAgence: async (id: number): Promise<Agence> => {
     const { data } = await apiClient.delete<Agence>(`/referentiels/agences/${id}`);
@@ -74,18 +59,15 @@ export const referentielService = {
   },
 
   /**
-   * Rouvre une agence fermée (métier, 2026-10-06). `ROLE_DJ` ou `ROLE_DJA`.
-   *
-   * `PATCH` et non `PUT` : on ne remplace pas l'agence, on change son seul état d'ouverture. Le
-   * **code est conservé** - c'est la même agence qui rouvre, et les dossiers ouverts sous elle
-   * n'ont jamais cessé de le désigner.
+   * Reopens a closed branch (`ROLE_DJ` or `ROLE_DJA`). `PATCH` because only the open state changes;
+   * the code is kept.
    */
   reactiverAgence: async (id: number): Promise<Agence> => {
     const { data } = await apiClient.patch<Agence>(`/referentiels/agences/${id}/reactivation`);
     return data;
   },
 
-  /** #64 — filtrable par catégorie ; seules les entrées actives sont retournées. */
+  /** #64: filterable by category; only active entries are returned. */
   naturesDossier: async (categorie?: CategorieDossier): Promise<NatureDossier[]> => {
     const { data } = await apiClient.get<NatureDossier[]>("/referentiels/natures-dossier", {
       params: categorie ? { categorie } : {},
@@ -102,12 +84,9 @@ export const referentielService = {
   },
 
   /**
-   * #66 — annuaire interne. `ROLE_CONSULTATION` : **l'avocat en est exclu par conception**, il ne
-   * doit pas énumérer le personnel. Comptes actifs seuls par défaut.
-   *
-   * ⚠ Un utilisateur n'y figure qu'**après sa première connexion** (QF-16, provisionnement
-   * paresseux) : la liste n'est pas l'annuaire de la Direction Juridique, c'est celui des comptes
-   * déjà utilisés.
+   * #66: internal directory, `ROLE_CONSULTATION` (lawyers are excluded so they cannot enumerate
+   * staff). Active accounts only by default. A user only appears after their first login (lazy
+   * provisioning).
    */
   utilisateurs: async (params?: {
     profil?: string;

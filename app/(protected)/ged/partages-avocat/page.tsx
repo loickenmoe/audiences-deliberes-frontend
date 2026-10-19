@@ -9,9 +9,9 @@ export async function generateMetadata() {
 }
 
 /**
- * QF-64 — les partages de pièces proposés sur des dossiers sensibles, que le DJ et la DJA valident.
- * Le backend refuse la file à tout autre profil (`GET /ged/partages-avocat`) ; la garde de page
- * évite seulement d'afficher un écran voué au refus.
+ * Document shares proposed on sensitive cases, validated by the DJ and DJA.
+ * The backend refuses the queue to any other profile (`GET /ged/partages-avocat`); the page guard
+ * only avoids showing a screen bound to be refused.
  */
 export default async function PagePartagesAvocat() {
   await exigerCapacite("arbitrerPartages");

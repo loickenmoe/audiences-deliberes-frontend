@@ -10,12 +10,12 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 07 — fiche dossier, avec ses onglets (08 étapes, 15 historique) et ses modales (16
- * affectation, 17 dérogation, 18 sensibilité).
+ * Screen 07 - case file, with its tabs (08 steps, 15 history) and modals (16 assignment,
+ * 17 waiver, 18 sensitivity).
  *
- * `GET /dossiers/{id}` exige `ROLE_CONSULTATION` : l'avocat, qui ne le porte pas, est arrêté ici.
- * Les actions de la fiche sont ensuite filtrées capacité par capacité — mais c'est le backend qui
- * les refuse réellement : masquer un bouton ne protège rien.
+ * `GET /dossiers/{id}` requires `ROLE_CONSULTATION`, so the lawyer is stopped here. Actions are then
+ * filtered capability by capability, but the backend is what actually refuses them: hiding a button
+ * protects nothing.
  */
 export default async function PageDossier({
   params,
@@ -28,10 +28,10 @@ export default async function PageDossier({
 
   const { id } = await params;
   const dossierId = Number.parseInt(id, 10);
-  // Une URL malformée ne doit pas produire un appel `/dossiers/NaN` au backend.
+  // A malformed URL must not trigger a `/dossiers/NaN` backend call.
   if (Number.isNaN(dossierId) || dossierId <= 0) notFound();
 
-  // `?onglet=documents` : après une création dont une pièce a échoué, on ouvre là où la redéposer.
+  // `?onglet=documents`: after a creation where a document upload failed, open where it can be re-uploaded.
   const { onglet } = await searchParams;
 
   return <FicheDossier dossierId={dossierId} roles={session.roles} ongletInitial={onglet} />;

@@ -24,14 +24,11 @@ function BoutonSoumettre() {
 }
 
 /**
- * Formulaire d'identification.
- *
- * Les champs sont transmis à une action serveur : **le mot de passe ne figure jamais dans un état
- * React ni dans le paquet navigateur**. Il part du champ vers le serveur Next.js, qui le présente à
- * Keycloak, et n'est conservé nulle part — l'état local ne porte que la visibilité du champ.
- *
- * L'action renvoie une **clé** de message, jamais un texte : c'est le composant qui traduit, dans
- * la langue active au moment de l'affichage.
+ * Login form.
+ * Fields are sent to a server action: the password is never stored in React state nor in the
+ * browser bundle. It goes from the field to the Next.js server, which presents it to Keycloak, and
+ * is not kept anywhere.
+ * The action returns a message key, never text: the component translates it in the active language.
  */
 export function FormulaireConnexion({ messageInitial }: { messageInitial?: string | null }) {
   const [etat, action] = useActionState(connexion, ETAT_INITIAL);
@@ -76,10 +73,7 @@ export function FormulaireConnexion({ messageInitial }: { messageInitial?: strin
           <input
             id="motDePasse"
             name="motDePasse"
-            /**
-             * Bascule de visibilité : l'utilisateur doit pouvoir relire ce qu'il a saisi avant de
-             * valider — une faute de frappe invisible est la première cause d'échec de connexion.
-             */
+            /** Visibility toggle so the user can check what they typed before submitting. */
             type={motDePasseVisible ? "text" : "password"}
             autoComplete="current-password"
             required

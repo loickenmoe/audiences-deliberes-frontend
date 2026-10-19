@@ -4,14 +4,14 @@ import { ajouterMois, debutDePeriode, decalerPeriode, depuisIso, finDePeriode, v
 import { formaterDate } from "@/lib/utils";
 
 /**
- * Périodes du calendrier et lecture des dates. Toutes les attentes sont en dates **locales** : la
- * moindre conversion UTC ferait reculer une date d'audience d'un jour à l'ouest de Greenwich.
+ * Calendar periods and date parsing. All expectations use **local** dates: any UTC conversion
+ * would shift a hearing date back one day west of Greenwich.
  */
 describe("bornes des périodes", () => {
   it("commence une semaine le lundi, quel que soit le jour donné", () => {
-    // Jeudi 10 septembre 2026 → lundi 7.
+    // Thursday 10 September 2026 → Monday 7.
     expect(versIso(debutDePeriode("HEBDOMADAIRE", new Date(2026, 8, 10)))).toBe("2026-09-07");
-    // Un dimanche appartient à la semaine commencée six jours plus tôt, pas à la suivante.
+    // A Sunday belongs to the week that started six days earlier, not the next one.
     expect(versIso(debutDePeriode("HEBDOMADAIRE", new Date(2026, 8, 13)))).toBe("2026-09-07");
   });
 
@@ -29,11 +29,11 @@ describe("bornes des périodes", () => {
   });
 
   it("annonce la même fin que le backend, borne incluse (QF-31)", () => {
-    // Le backend ajoute une semaine et interroge BETWEEN : le lundi suivant est inclus.
+    // The backend adds one week and queries with BETWEEN: the following Monday is included.
     expect(versIso(finDePeriode("HEBDOMADAIRE", depuisIso("2026-09-07")))).toBe("2026-09-13");
     expect(versIso(finDePeriode("MENSUELLE", depuisIso("2026-09-01")))).toBe("2026-09-30");
     expect(versIso(finDePeriode("TRIMESTRIELLE", depuisIso("2026-09-01")))).toBe("2026-11-30");
-    // QF-31 : la période suivante commence le lendemain, jamais le même jour.
+    // The next period starts the following day, never the same day.
     expect(versIso(decalerPeriode("HEBDOMADAIRE", depuisIso("2026-09-07"), 1))).toBe("2026-09-14");
   });
 
@@ -44,8 +44,7 @@ describe("bornes des périodes", () => {
 
 describe("lecture d'une date seule", () => {
   it("affiche le jour exact, sans décalage par le fuseau horaire", () => {
-    // L'attente est construite en date locale : sous l'ancienne lecture (minuit UTC), ce test
-    // échouerait dès que le poste est à l'ouest de Greenwich.
+    // The expectation is built as a local date: parsing as UTC midnight would fail west of Greenwich.
     const attendu = new Intl.DateTimeFormat("fr-CM", { dateStyle: "long" }).format(new Date(2026, 8, 10));
     expect(formaterDate("2026-09-10", "fr")).toBe(attendu);
   });

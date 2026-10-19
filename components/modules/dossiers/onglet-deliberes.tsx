@@ -38,13 +38,13 @@ const TON_RESULTAT: Record<ResultatDelibere, TonStatut> = { FAVORABLE: "succes",
 type Action = "vider" | "proroger" | "rabattre";
 
 /**
- * Écran 10 — délibérés du dossier, le plus récent d'abord (ordre du backend).
- *
- * Cycle (Q-78, conforme aux sources RG-DEL-06/07, UC-DEL-04/05) : l'affaire est **mise en délibéré**
- * à une date annoncée ; tant que la décision n'est pas rendue, le délibéré peut être **prorogé**
- * (« délibéré prorogé au … ») ou **rabattu** (le juge rouvre les débats) ; quand la décision tombe,
- * on l'enregistre et le délibéré est **vidé**. Viennent alors l'expédition et le délai de recours.
- * L'écran ne propose que les actions recevables à chaque état ; le backend reste l'arbitre.
+ * Screen 10 - case deliberations, most recent first (backend order).
+ * Cycle (RG-DEL-06/07, UC-DEL-04/05): the case is **taken under advisement** until an announced
+ * date;
+ * until the decision is delivered, the deliberation can be **extended** or **reopened** (the judge
+ * reopens proceedings); when the decision is delivered it is recorded and the deliberation is
+ * **closed**. Then come the certified copy and the appeal deadline.
+ * The screen only offers the actions valid in each state; the backend remains the authority.
  */
 export function OngletDeliberes({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
   const t = useTranslations("deliberes");
@@ -66,8 +66,8 @@ export function OngletDeliberes({ dossier, roles }: { dossier: Dossier; roles: r
   if (requete.error) return <EtatErreur message={messageErreur(requete.error)} />;
   const deliberes = requete.data ?? [];
 
-  // Au plus un délibéré en attente par étape (Q-78) : une étape qui en porte déjà un ne se remet
-  // pas en délibéré — on proroge, on rabat ou on enregistre la décision.
+  // At most one pending deliberation per step: a step that already has one cannot be put under
+  // advisement again; it is extended, reopened, or the decision is recorded.
   const etapesEnAttente = new Set(deliberes.filter((d) => d.etat === "EN_ATTENTE").map((d) => d.etapeId));
   const etapesDisponibles = dossier.etapes
     .filter((etape) => etape.statutCycleVie === "EN_DELIBERE" && !etapesEnAttente.has(etape.id))
@@ -251,7 +251,7 @@ function CarteDelibere({
   );
 }
 
-/** Écran 27 — suivi du délai de recours. La lecture (#21) est réservée au juriste. */
+/** Screen 27 - appeal deadline tracking. Reading it is reserved to the lawyer. */
 function PanneauRecours({ delibere, peutConsulter }: { delibere: Delibere; peutConsulter: boolean }) {
   const t = useTranslations("deliberes");
   const requete = useRecours(delibere.id, peutConsulter);
@@ -284,8 +284,8 @@ function PanneauRecours({ delibere, peutConsulter }: { delibere: Delibere; peutC
 }
 
 /**
- * Résultat et échéance de recours, communs à la mise en délibéré « déjà rendue » et à
- * l'enregistrement de la décision. L'échéance n'apparaît que si le résultat ouvre un recours.
+ * Outcome and appeal deadline, shared by "already delivered" advisement and decision recording. The
+ * deadline only appears if the outcome opens an appeal.
  */
 function ChampsResultat({
   prefixe,
@@ -343,7 +343,9 @@ function useSchemaResultat() {
   );
 }
 
-/** Le résultat et, s'il ouvre un recours, son échéance — jamais d'échéance pour un résultat favorable. */
+/**
+ * The outcome and, if it opens an appeal, its deadline; never a deadline for a favourable outcome.
+ */
 function corpsResultat(resultat: string, dateEcheanceRecours: string) {
   const valeur = resultat as ResultatDelibere;
   return valeur === "FAVORABLE" ? { resultat: valeur } : { resultat: valeur, dateEcheanceRecours };
@@ -404,7 +406,7 @@ function ModaleMiseEnDelibere({
     formState: { errors },
   } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({ resolver: zodResolver(schema) });
 
-  // Réinitialiser à l'ouverture seulement (dépendances primitives — cf. leçon F8).
+  // Reset on opening only (primitive dependencies, so parent re-renders do not clear the input).
   useEffect(() => {
     if (ouvert) {
       reset({ etapeId: etapeParDefaut, dateDeliberee: "", dejaRendu: false, resultat: "", dateEcheanceRecours: "" });
@@ -582,7 +584,7 @@ function ModaleProroger({
   const schema = useMemo(
     () =>
       z.object({
-        // Comparaison de chaînes `YYYY-MM-DD` : l'ordre lexical est l'ordre chronologique.
+        // Comparing `YYYY-MM-DD` strings: lexical order is chronological order.
         date: z.string().min(1, tm("champObligatoire")).refine((date) => date >= demain(), {
           message: tm("champObligatoire"),
         }),
@@ -611,7 +613,7 @@ function ModaleProroger({
         corps: motif.trim() ? { date, motif: motif.trim() } : { date },
       });
       const nouvelleDate = formaterDate(prorogation.date, langue);
-      // Au-delà du seuil : un avertissement, pas une erreur — la prorogation est bien enregistrée.
+      // Beyond the threshold: a warning, not an error; the extension is recorded.
       if (prorogation.alerte) {
         toast.warning(t("seuilDepasse", { date: nouvelleDate, n: prorogation.compteur }));
       } else {
@@ -731,7 +733,7 @@ function ModaleRabattre({
   );
 }
 
-/** Historique des prorogations (FR-DEL-04 critère 2), chargé seulement à l'ouverture. */
+/** Extension history (FR-DEL-04 criterion 2), loaded only when opened. */
 function ModaleProrogations({ delibere, onFermeture }: { delibere: Delibere | null; onFermeture: () => void }) {
   const t = useTranslations("deliberes");
   const tc = useTranslations("commun");

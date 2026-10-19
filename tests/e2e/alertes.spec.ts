@@ -2,11 +2,11 @@ import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 /**
- * Alertes, notifications et paramètres système (écrans 03 et 41) **contre le backend réel**.
+ * Alerts, notifications and system settings (screens 03 and 41) against the real backend.
  *
- * Le canal temps réel est vérifié dans les deux sens : ouvert, une alerte déclenchée par l'API
- * apparaît sans rechargement ; coupé, la même alerte finit par apparaître par le repli HTTP. C'est
- * le cœur de QF-11 — le push est un accélérateur, jamais la source de vérité.
+ * The real-time channel is checked both ways: open, an alert triggered through the API appears
+ * without reload; cut, the same alert eventually appears through the HTTP fallback. Push is an
+ * accelerator, never the source of truth.
  */
 
 loadEnvConfig(process.cwd());
@@ -46,7 +46,7 @@ async function json<T>(chemin: string, jetonAcces: string, init: RequestInit = {
   return (await reponse.json()) as T;
 }
 
-/** Une ligne de la supervision des notifications externes (backend D17). */
+/** A row of the external notification monitoring (backend D17). */
 interface LigneSupervision {
   canal: string;
   enAttente: number;
@@ -76,7 +76,7 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-/** L'avocat du référentiel rattaché au compte `avocat.test`, par son identifiant de connexion (Q-84). */
+/** The reference-data lawyer linked to the `avocat.test` account. */
 async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
@@ -99,9 +99,8 @@ async function avocatDuCompteTest(): Promise<number> {
 }
 
 /**
- * Déclenche une alerte pour **l'Assistante** : le dépôt d'une demande de frais notifie le profil
- * ASSISTANTE (RG-INT-01). Le texte du déclencheur porte la référence du dossier, ce qui donne au
- * test une ligne identifiable parmi les notifications déjà présentes.
+ * Triggers an alert for the Assistant: filing a fee request notifies the ASSISTANTE profile
+ * (RG-INT-01). The trigger text contains the case reference, which identifies the row.
  */
 async function deposerDemandeDeFrais(): Promise<string> {
   const juriste = await jeton("juriste.test");
@@ -119,9 +118,9 @@ async function deposerDemandeDeFrais(): Promise<string> {
       pvTransfert: "PV-ALR",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocatId],
-      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      // Mandatory.
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
-      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      // Mandatory: 00002 = Bonanjo.
       codeAgenceOrigine: "00002",
     }),
   });
@@ -134,8 +133,7 @@ async function deposerDemandeDeFrais(): Promise<string> {
       referenceFacture: `FAC-${suffixe()}`,
     }),
   });
-  // La référence est ATTRIBUÉE par le système (2026-09-29) : celle qu'on aurait
-  // envoyée n'existe nulle part. On lit celle que le serveur a donnée.
+  // The reference is assigned by the server: read the one it returned.
   return dossier.reference;
 }
 
@@ -150,23 +148,21 @@ test("une alerte déclenchée sur le backend apparaît sans rechargement, et se 
   await page.waitForURL(/\/notifications/, { timeout: 60_000 });
   await expect(page.getByRole("heading", { name: "Mes notifications", level: 1 })).toBeVisible();
 
-  // Le canal STOMP doit être établi avant de déclencher : sinon le test mesurerait le repli.
+  // The STOMP channel must be up before triggering, otherwise the test would measure the fallback.
   await expect(page.getByText("Temps réel actif")).toBeVisible({ timeout: 60_000 });
 
   const reference = await deposerDemandeDeFrais();
 
   /*
-   * Aucun `reload()` : la ligne arrive d'elle-même. La fenêtre dépasse volontairement la période du
-   * repli (30 s) — ce que le jalon garantit, c'est « poussée temps réel **ou** repli », pas que la
-   * poussée gagne à tous les coups. Avec exactement 30 s, une poussée perdue faisait échouer le test
-   * à l'instant précis où le repli allait jouer : c'était le test qui mentait, pas l'application.
+   * No `reload()`: the row arrives by itself. The timeout deliberately exceeds the fallback period
+   * (30 s): the guarantee is "real-time push or fallback", not that push always wins.
    */
   const ligne = page.getByRole("row", { name: new RegExp(reference) });
   await expect(ligne).toBeVisible({ timeout: 75_000 });
   await expect(ligne).toContainText("Nouvelle demande de frais");
   await expect(page.getByTestId("compteur-notifications")).toBeVisible();
 
-  // #46 — le destinataire la marque traitée ; elle quitte la vue « Non lues ».
+  // #46: the recipient marks it as handled; it leaves the "Non lues" view.
   await ligne.getByRole("button", { name: "Marquer traitée" }).click();
   await expect(page.getByText("Notification marquée comme traitée.")).toBeVisible();
   await expect(page.getByRole("row", { name: new RegExp(reference) })).toHaveCount(0);
@@ -180,7 +176,7 @@ test("une alerte déclenchée sur le backend apparaît sans rechargement, et se 
 test("canal coupé, la notification arrive quand même par le repli HTTP", async ({ browser }) => {
   const contexte = await browser.newContext({ locale: "fr-FR" });
   const page = await contexte.newPage();
-  // Le canal est coupé au niveau du réseau : ni négociation SockJS, ni transport.
+  // Cut the channel at network level: neither SockJS negotiation nor transport.
   await page.route("**/ws/**", (route) => route.abort());
   await seConnecter(page, "assistante.test");
   await page.goto("/notifications");
@@ -189,7 +185,7 @@ test("canal coupé, la notification arrive quand même par le repli HTTP", async
 
   const reference = await deposerDemandeDeFrais();
 
-  // Cadence de repli : 30 s. La marge couvre le déclenchement et un cycle manqué.
+  // Fallback period: 30 s. The margin covers the trigger and one missed cycle.
   await expect(page.getByRole("row", { name: new RegExp(reference) })).toBeVisible({ timeout: 90_000 });
 
   await contexte.close();
@@ -229,13 +225,13 @@ test("le DJ modifie un seuil, qui s'applique immédiatement ; une saisie incohé
   const initiale = (await champ.inputValue()) || "50000000";
   const nouvelle = String(Number(initiale) + 1_000_000);
 
-  // Saisie incohérente : refusée à l'écran, sans appel au backend.
+  // Inconsistent input: rejected on screen, without a backend call.
   await champ.fill("50 000 000");
   await expect(dj.getByText("Un nombre entier est attendu, sans espace ni séparateur")).toBeVisible();
   const article = dj.locator("article", { has: dj.locator("#configuration-SEUIL_MONTANT_DEFAUT") });
   await expect(article.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
 
-  // Valeur hors bornes : même refus, sur la règle publiée par le backend.
+  // Out-of-range value: same rejection, based on the rule published by the backend.
   await champ.fill("0");
   await expect(article.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
 
@@ -243,7 +239,7 @@ test("le DJ modifie un seuil, qui s'applique immédiatement ; une saisie incohé
   await article.getByRole("button", { name: "Enregistrer" }).click();
   await expect(dj.getByText("Paramètre SEUIL_MONTANT_DEFAUT enregistré.")).toBeVisible();
 
-  // Prise en compte immédiate : le module frais relit le seuil à chaque réponse (Q-82).
+  // Applied immediately: the fees module rereads the threshold on every response.
   const demandes = await json<{ content: { seuilApplicable: number }[] }>(
     "/frais/demandes?size=1",
     await jeton("dj.test"),
@@ -252,7 +248,7 @@ test("le DJ modifie un seuil, qui s'applique immédiatement ; une saisie incohé
     expect(demandes.content[0]!.seuilApplicable).toBe(Number(nouvelle));
   }
 
-  // Remise en état pour les autres parcours.
+  // Restore for the other tests.
   await champ.fill(initiale);
   await article.getByRole("button", { name: "Enregistrer" }).click();
   await expect(dj.getByText("Paramètre SEUIL_MONTANT_DEFAUT enregistré.")).toBeVisible();
@@ -266,7 +262,7 @@ test("les formats de la GED se choisissent dans la liste publiée ; le juriste n
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/admin/configurations");
   const formats = dj.locator("article", { hasText: "FORMATS_GED" });
-  // La liste des valeurs vient du backend — l'écran n'en déclare aucune.
+  // The list of values comes from the backend; the screen declares none.
   for (const format of ["PDF", "PNG", "JPG", "TXT", "XLSX"]) {
     await expect(formats.getByRole("checkbox", { name: format, exact: true })).toBeVisible();
   }
@@ -287,11 +283,8 @@ test("les formats de la GED se choisissent dans la liste publiée ; le juriste n
 });
 
 /**
- * Backend Q-108 — la DJA administre les paramètres comme le DJ.
- *
- * Le motif est la **continuité de service** : le DJ absent, plus personne ne pouvait relever un
- * seuil, alors qu'un Adjoint existe pour suppléer. Le parcours vérifie l'écriture de bout en bout —
- * l'écran pouvait auparavant afficher le formulaire à un profil que le backend refusait ensuite.
+ * The DJA administers settings like the DJ, for continuity of service when the DJ is absent.
+ * Checks the write end to end.
  */
 test("la DJA enregistre un paramètre système comme le DJ (Q-108)", async ({ browser }) => {
   const dja = await pageConnectee(browser, "dja.test");
@@ -308,7 +301,7 @@ test("la DJA enregistre un paramètre système comme le DJ (Q-108)", async ({ br
   await article.getByRole("button", { name: "Enregistrer" }).click();
   await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
 
-  // Remise en état : ce seuil pilote les alertes de prorogation des autres parcours.
+  // Restore: this threshold drives the extension alerts of other tests.
   await champ.fill(initiale);
   await article.getByRole("button", { name: "Enregistrer" }).click();
   await expect(dja.getByText("Paramètre SEUIL_PROROGATIONS enregistré.")).toBeVisible();
@@ -330,27 +323,25 @@ test("le backend refuse une valeur qui casserait un autre module (Q-91)", async 
   });
   expect(horsBornes.status).toBe(400);
 
-  // `ODT` n'est pas un FormatDocument, et n'a aucune raison de le devenir : le refus est sûr, et
-  // la configuration reste intacte. `DOCX`, employé ici jusqu'au 2026-10-02, est devenu valide -
-  // l'appel passait alors, et ce test RÉÉCRIVAIT FORMATS_GED sur l'environnement.
+  // `ODT` is not a FormatDocument: the rejection is certain and the configuration stays intact.
   const formatInconnu = await appel("/configurations/FORMATS_GED", dj, {
     method: "PUT",
     body: JSON.stringify({ valeur: "PDF,ODT" }),
   });
   expect(formatInconnu.status).toBe(400);
 
-  // Et la liste des formats n'a pas bougé : un test ne laisse pas l'application déréglée.
+  // The list of formats is unchanged.
   const formats = await json<{ cle: string; valeur: string }[]>("/configurations", dj);
   expect(formats.find((c) => c.cle === "FORMATS_GED")?.valeur).toContain("PNG");
 
-  // Et la valeur en base n'a pas bougé.
+  // And the stored value is unchanged.
   const configurations = await json<{ cle: string; valeur: string }[]>("/configurations", dj);
   expect(configurations.find((c) => c.cle === "SEUIL_PROROGATIONS")?.valeur).toBe("10");
 });
 
 /**
- * Q-118 — la grille des notifications externes, de l'écran à la base. Une colonne entièrement
- * décochée est un réglage (« rien par SMS ») : le backend doit l'accepter, et l'écran la relire vide.
+ * External notification grid, from screen to database. A fully unchecked column is a valid setting
+ * ("nothing by SMS"): the backend must accept it and the screen must read it back empty.
  */
 test("le DJ vide une colonne de la grille des notifications, puis la rétablit (Q-118)", async ({ browser }) => {
   const jetonDj = await jeton("dj.test");
@@ -361,18 +352,13 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/admin/configurations");
   await expect(dj.getByRole("heading", { name: "Grille des notifications externes" })).toBeVisible();
-  // Les colonnes de la grille ne sont pas répétées dans la liste des paramètres.
+  // The grid columns are not repeated in the settings list.
   await expect(dj.locator("article", { hasText: "GRILLE_NOTIFICATION_SMS" })).toHaveCount(0);
 
   const casesSms = dj.getByRole("checkbox", { name: / par SMS$/ });
   /*
-   * Douze événements prestataires : compte rendu attendu (RG-INT-11) et compte rendu reçu
-   * (RG-INT-06 amendée), tous deux du 2026-10-05, puis **demande d'explication** (N7 temps 2,
-   * 2026-10-07).
-   *
-   * Ce compte est un garde-fou, pas une formalité : un événement ajouté sans entrer dans la grille
-   * partirait dans l'application et **sur aucun canal**. C'est le défaut qu'a révélé V45 ; V46 le
-   * ferme à son tour, et cette ligne le vérifie à l'écran.
+   * Twelve provider events, including expected report (RG-INT-11), received report (RG-INT-06) and
+   * explanation request. Guard: an event missing from the grid would be sent on no channel.
    */
   await expect(casesSms).toHaveCount(12);
   for (const caseSms of await casesSms.all()) {
@@ -387,7 +373,7 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
   await expect(dj.getByRole("checkbox", { name: "Rappel d’audience par SMS" })).not.toBeChecked();
   await dj.context().close();
 
-  // Remise en état : les autres parcours partent de la grille initiale.
+  // Restore: other tests start from the initial grid.
   const retabli = await appel("/configurations/GRILLE_NOTIFICATION_SMS", jetonDj, {
     method: "PUT",
     body: JSON.stringify({ valeur: initiale }),
@@ -396,15 +382,15 @@ test("le DJ vide une colonne de la grille des notifications, puis la rétablit (
 });
 
 /**
- * D17 — la supervision des notifications externes, sur l'écran 41. Elle distingue ce que
- * l'application a remis au moteur de ce qu'il a confirmé : « remise » n'est pas « reçue ».
+ * D17: external notification monitoring on screen 41. It distinguishes what the application
+ * handed to the engine from what the engine confirmed: "handed over" is not "received".
  */
 test("le DJ supervise les notifications externes ; le juriste n'y a pas accès (D17)", async ({ browser }) => {
   const jetonDj = await jeton("dj.test");
   const aujourdHui = new Date().toISOString().slice(0, 10);
   const debut = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10);
 
-  // Le contrat d'abord : la lecture est réservée au DJ et à la DJA.
+  // Read access is restricted to the DJ and the DJA.
   const refus = await appel(`/notifications/supervision?dateDebut=${debut}&dateFin=${aujourdHui}`, await jeton("juriste.test"));
   expect(refus.status).toBe(403);
 
@@ -414,10 +400,10 @@ test("le DJ supervise les notifications externes ; le juriste n'y a pas accès (
 
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/admin/configurations");
-  // Comparaison exacte : « Grille des notifications externes » contiendrait ce fragment.
+  // Exact match: "Grille des notifications externes" would contain this fragment.
   await expect(dj.getByRole("heading", { name: "Notifications externes", exact: true })).toBeVisible();
   await expect(dj.getByRole("table", { name: "Notifications par canal" })).toBeVisible();
-  // Le moteur est coupé sur le serveur : l'écran doit le dire plutôt que laisser croire aux envois.
+  // The engine is disabled on the server: the screen must say so rather than imply messages are sent.
   if (!supervision.engineActif) {
     await expect(dj.getByText(/Notification Engine est désactivé/)).toBeVisible();
   }
@@ -440,12 +426,9 @@ test("le backend refuse le vide là où il n'est pas un réglage (Q-118)", async
 });
 
 /**
- * Q-109 — le taux de délivrance du canal applicatif, mesuré **en conditions réelles**.
- *
- * Ce parcours vérifie ce qu'aucun test unitaire ne peut établir : que l'issue enregistrée
- * correspond à la présence réelle d'une session STOMP. C'est tout l'enjeu de la mesure —
- * `convertAndSendToUser` réussit même quand personne n'écoute, si bien qu'un indicateur fondé sur
- * l'absence d'exception afficherait 100 % en permanence, panne comprise.
+ * Delivery rate of the in-app channel, measured in real conditions: the recorded outcome must match
+ * the actual presence of a STOMP session. `convertAndSendToUser` succeeds even when nobody listens,
+ * so an indicator based on the absence of exceptions would always show 100%.
  */
 async function statistiques(dateDebut: string, dateFin: string) {
   return json<{
@@ -459,7 +442,7 @@ async function statistiques(dateDebut: string, dateFin: string) {
   }>(`/alertes/statistiques-diffusion?dateDebut=${dateDebut}&dateFin=${dateFin}`, await jeton("dj.test"));
 }
 
-/** La fenêtre du jour : l'alerte qu'on va déclencher y tombe forcément. */
+/** Today's window: the alert about to be triggered necessarily falls in it. */
 function aujourdHui() {
   const jour = new Date().toISOString().slice(0, 10);
   return { debut: jour, fin: jour };
@@ -471,7 +454,7 @@ test("une alerte poussée à un destinataire connecté est comptée comme diffus
   const { debut, fin } = aujourdHui();
   const page = await pageConnectee(browser, "assistante.test");
   await page.goto("/notifications");
-  // Sans cette attente, le test mesurerait une différée et croirait à un défaut.
+  // Without this wait, the alert would be deferred and the test would report a false defect.
   await expect(page.getByText("Temps réel actif")).toBeVisible({ timeout: 60_000 });
 
   const avant = await statistiques(debut, fin);
@@ -482,17 +465,15 @@ test("une alerte poussée à un destinataire connecté est comptée comme diffus
   expect(apres.observees).toBeGreaterThan(avant.observees);
   expect(apres.diffusees).toBeGreaterThan(avant.diffusees);
   expect(apres.echecs).toBe(avant.echecs);
-  // Le point central : une remise réussie ne fait pas bouger le taux de délivrance, qui ne compte
-  // que les échecs.
+  // A successful delivery does not move the delivery rate, which only counts failures.
   expect(apres.seuilRespecte).toBe(true);
 
   await page.context().close();
 });
 
 /**
- * Le pendant du précédent, et le plus important des deux : personne n'est connecté, l'alerte part
- * quand même et **n'est pas comptée comme un échec**. Le canal applicatif comprend la liste des
- * notifications, alimentée inconditionnellement — la remise est plus tardive, pas manquée.
+ * Nobody is connected: the alert is still sent and is not counted as a failure. The in-app channel
+ * includes the notification list, which is always fed: delivery is later, not missed.
  */
 test("une alerte destinée à quelqu'un de déconnecté reste délivrée (Q-109)", async () => {
   const { debut, fin } = aujourdHui();
@@ -501,16 +482,9 @@ test("une alerte destinée à quelqu'un de déconnecté reste délivrée (Q-109)
   await deposerDemandeDeFrais();
 
   /*
-   * Ce qui est vérifié ici est que **rien ne se perd** : l'alerte est délivrée, poussée si le
-   * destinataire écoute, mise de côté sinon, jamais en échec. C'était toute la découverte de Q-109 —
-   * `convertAndSendToUser` ne lève pas quand personne n'écoute.
-   *
-   * Une version précédente exigeait que ce soit précisément le compteur des **différées** qui monte,
-   * au motif qu'aucun navigateur n'était ouvert pour l'Assistante dans ce parcours. La prémisse est
-   * fausse en suite complète : douze fichiers ouvrent une session Assistante, et la suite s'exécute
-   * en parallèle. Qu'un autre worker en tienne une, et l'alerte part en temps réel — le test échoue
-   * alors sur l'ordonnancement, pas sur le produit. On mesure donc la propriété qui tient dans les
-   * deux cas ; `echecs`, lui, reste le compteur qui ne doit jamais bouger.
+   * Nothing is lost: the alert is pushed if the recipient listens, deferred otherwise, never failed.
+   * Whether it is pushed or deferred depends on parallel workers holding an Assistant session, so
+   * only `echecs` is asserted to stay unchanged.
    */
   const delivrees = (etat: { differees: number; diffusees: number }) => etat.differees + etat.diffusees;
 
@@ -533,14 +507,14 @@ test("la supervision s'affiche pour le DJ et la DJA, jamais pour un juriste (Q-1
     await expect(page.getByRole("heading", { name: "Supervision des alertes", level: 2 })).toBeVisible({
       timeout: 60_000,
     });
-    // Les deux taux sont montrés séparément : les réunir viderait la mesure de son sens.
+    // Both rates are shown separately: merging them would make the measure meaningless.
     await expect(page.getByText("Taux de délivrance")).toBeVisible();
     await expect(page.getByText("Diffusion en temps réel")).toBeVisible();
     await expect(page.getByText("Indicateur d’usage, sans seuil opposable")).toBeVisible();
     await page.context().close();
   }
 
-  // Les paramètres restent lisibles par un juriste ; le taux global, non.
+  // Settings stay readable by a legal officer; the global rate does not.
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto("/admin/configurations");
   await expect(juriste.getByRole("heading", { name: "Paramètres système", level: 1 })).toBeVisible();
@@ -558,8 +532,8 @@ test("une fenêtre inversée est expliquée à l'écran, pas renvoyée en erreur
   });
 
   await page.locator("#supervision-debut").fill("2026-12-31");
-  // Le message est cherché **dans la section** : Next pose son propre `role="alert"` à la racine du
-  // document pour annoncer les changements de route, et un sélecteur global les confondrait.
+  // Search the message within the section: Next adds its own root `role="alert"` for route
+  // announcements, which a global selector would match.
   const supervision = page.locator("section", { hasText: "Supervision des alertes" });
   await expect(supervision.getByRole("alert")).toContainText("date de début est postérieure");
   await expect(page.locator("#supervision-debut")).toHaveAttribute("aria-invalid", "true");
@@ -568,17 +542,9 @@ test("une fenêtre inversée est expliquée à l'écran, pas renvoyée en erreur
 
 
 /**
- * Étape 13 — le parcours entier, d'un bout à l'autre : le DJ règle la grille à l'écran, une action
- * métier réelle a lieu, et la supervision en rend compte.
- *
- * <b>Ce que ce parcours mesure, et ce qu'il ne mesure pas.</b> Les compteurs de supervision sont
- * partagés : la suite s'exécute en parallèle, et d'autres parcours mettent des notifications en file
- * au même moment. Une mesure exacte (« retiré, il ne part rien de plus ») y serait fausse un jour
- * sur deux — elle est faite côté backend, sur une base isolée, par
- * <code>ChaineNotificationIntegrationTest</code>. Ici on vérifie ce que seul l'écran peut montrer :
- * le réglage fait à l'écran atteint la base et en revient, et l'activité réelle apparaît en
- * supervision. Les compteurs ne faisant que croître, l'assertion de croissance reste vraie quoi que
- * fassent les parcours voisins.
+ * Step 13, end to end: the DJ configures the grid on screen, a real business action happens, and
+ * monitoring reports it. Counters are shared with parallel tests, so only growth is asserted; the
+ * exact measure is done backend-side by <code>ChaineNotificationIntegrationTest</code>.
  */
 test("le réglage du DJ commande ce qui part, et la supervision le montre (étape 13)", async ({ browser }) => {
   const jetonDj = await jeton("dj.test");
@@ -607,7 +573,7 @@ test("le réglage du DJ commande ce qui part, et la supervision le montre (étap
   const caseOutlook = dj.getByRole("checkbox", { name: "Nouvelle demande de frais par Outlook" });
   await expect(caseOutlook).toBeChecked();
 
-  // 1. Décoché à l'écran, l'événement quitte la colonne en base, et l'écran le relit ainsi.
+  // 1. Unchecked on screen, the event leaves the column in the database and is read back that way.
   await caseOutlook.uncheck();
   await dj.getByRole("button", { name: "Enregistrer la grille « Utilisateurs internes »" }).click();
   await expect(dj.getByText("Grille des notifications enregistrée.")).toBeVisible();
@@ -615,19 +581,19 @@ test("le réglage du DJ commande ce qui part, et la supervision le montre (étap
   await dj.reload();
   await expect(caseOutlook).not.toBeChecked();
 
-  // 2. Recoché, il y revient : l'aller-retour écran ↔ base est complet.
+  // 2. Checked again, it comes back: full screen-to-database round trip.
   await caseOutlook.check();
   await dj.getByRole("button", { name: "Enregistrer la grille « Utilisateurs internes »" }).click();
   await expect(dj.getByText("Grille des notifications enregistrée.")).toBeVisible();
   expect(await grille()).toContain("NOUVELLE_DEMANDE_FRAIS");
 
-  // 3. Une action métier réelle, le réglage actif : la supervision compte davantage qu'avant.
+  // 3. A real business action with the setting active: monitoring counts more than before.
   const avant = await courriels();
   await deposerDemandeDeFrais();
   expect(await courriels(), "le dépôt met la notification de l'Assistante en file")
     .toBeGreaterThan(avant);
 
-  // 4. L'écran de supervision reflète la même fenêtre, et la relance y est offerte sur les défauts.
+  // 4. Monitoring reflects the same window, and retry is offered on failures.
   await dj.reload();
   await expect(dj.getByRole("table", { name: "Notifications par canal" })).toBeVisible();
   const defauts = await json<{ derniersEchecs: { id: number; destinataire: string | null }[] }>(
@@ -638,12 +604,12 @@ test("le réglage du DJ commande ce qui part, et la supervision le montre (étap
   }
   await dj.context().close();
 
-  // 5. La relance est réservée au DJ, et ne ressuscite pas un envoi qui n'existe pas.
+  // 5. Retry is restricted to the DJ and does not resurrect a non-existent send.
   expect((await appel("/notifications/999999999/relancer", await jeton("juriste.test"), { method: "POST" })).status)
     .toBe(403);
   expect((await appel("/notifications/999999999/relancer", jetonDj, { method: "POST" })).status).toBe(404);
 
-  // Remise en état : la grille repart de sa valeur initiale pour les autres parcours.
+  // Restore the initial grid for the other tests.
   const retabli = await appel("/configurations/GRILLE_NOTIFICATION_OUTLOOK", jetonDj, {
     method: "PUT",
     body: JSON.stringify({ valeur: initiale }),

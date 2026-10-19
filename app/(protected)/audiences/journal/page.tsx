@@ -9,9 +9,9 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 44 — journal des audiences et comptes rendus attendus (observation métier du 2026-09-25).
+ * Screen 44 - hearings log and expected hearing reports.
  *
- * Réservé au DJ et à la DJA : l'écran nomme des personnes et mesure ce qu'elles ont rapporté.
+ * Reserved to the DJ and DJA: the screen names people and measures what they have reported.
  */
 export default async function PageJournalAudiences() {
   await exigerCapacite("consulterJournalAudiences");

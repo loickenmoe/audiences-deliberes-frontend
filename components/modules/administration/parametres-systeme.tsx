@@ -21,15 +21,12 @@ import { CLES_CANAUX, estCleDeGrille } from "@/lib/notifications";
 import type { ConfigurationSysteme } from "@/types/domaine";
 
 /**
- * Écran 41 — paramètres système (CONF01-07).
- *
- * Le formulaire se **règle sur le contrat** : chaque clé annonce si elle attend un entier borné ou
- * une liste fermée (backend Q-91), et l'écran en déduit le champ de saisie, les bornes affichées et
- * le contrôle immédiat. Rien n'est redéclaré ici — une clé ajoutée côté backend apparaît avec le
- * bon champ sans toucher à ce fichier.
- *
- * Les valeurs partent une par une, jamais en bloc : chacune prend effet immédiatement pour tous les
- * modules qui la relisent, et un enregistrement groupé masquerait laquelle a échoué.
+ * Screen 41 - system settings (CONF01-07).
+ * The form is driven by the contract: each key declares whether it expects a bounded integer or a
+ * closed list, and the screen derives the input, displayed bounds and validation. A key added on
+ * the backend shows up with the right input without changing this file.
+ * Values are saved one by one, never in bulk: each takes effect immediately, and a bulk save would
+ * hide which one failed.
  */
 export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
   const t = useTranslations("configurations");
@@ -50,7 +47,7 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
   }
 
   const configurations = requete.data ?? [];
-  // Les colonnes de la grille des notifications (Q-118) se lisent ensemble, dans leur tableau.
+  // Notification grid columns are read together, in their own table.
   const parametres = configurations.filter((configuration) => !estCleDeGrille(configuration.cle));
 
   return (
@@ -100,17 +97,17 @@ function LigneParametre({
   const modifie = valeur.trim() !== configuration.valeur;
   const identifiant = `configuration-${configuration.cle}`;
   const elements = valeur.split(",").map((item) => item.trim().toUpperCase());
-  // Les canaux s'affichent par leur nom (« Courriel personnel ») ; les autres listes, par leur code.
+  // Channels are displayed by name ("Personal email"); other lists by code.
   const enumCanaux = CLES_CANAUX[configuration.cle];
   const libelleValeur = (code: string) => (enumCanaux ? td(`${enumCanaux}.${code}` as never) : code);
 
-  // La description métier est traduite ; celle du backend reste le repli pour une clé inconnue.
+  // The business description is translated; the backend one is the fallback for an unknown key.
   const messages = tr.raw("configurations") as Record<string, string | undefined>;
   const description = messages[configuration.cle] ?? configuration.description ?? "";
 
   /**
-   * Seul le motif « bornes » est paramétré : le regrouper avec les autres dans un `t(cle as never)`
-   * ferait perdre le typage des variables du message.
+   * Only the "bounds" message is parameterized: grouping it with the others in a `t(cle as never)`
+   * would lose the typing of the message variables.
    */
   const messageRefus = (motif: MotifRefusConfiguration) =>
     motif === "bornes"
@@ -194,11 +191,8 @@ function LigneParametre({
             <PoidsFichier valeur={Number(configuration.valeur)} />
           ) : null}
           {/*
-            Q-112 : « modifié le … par … ». Le journal des actions système a déménagé vers l'écran
-            d'audit — un outil d'enquête n'avait pas sa place sous les paramètres. Mais la question
-            qui naît **en regardant un réglage** — « pourquoi vaut-il 14, et qui l'a mis là ? » —
-            mérite une réponse sur place, et non un changement d'écran. Elle est ici, rattachée à la
-            ligne qui la pose.
+            "Modified on ... by ...": answers who changed a setting and when, directly on its row.
+            The full system action log lives on the audit screen.
           */}
           <span>
             {configuration.dateModification

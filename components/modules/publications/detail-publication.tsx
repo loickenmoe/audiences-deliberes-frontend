@@ -28,17 +28,16 @@ import { publicationService } from "@/services/publicationService";
 import type { Publication } from "@/types/domaine";
 import { cleStatutPublication } from "@/lib/publications";
 
-/** Longueur de `publication.motif_rejet` en base. */
+/** Length of `publication.motif_rejet` in the database. */
 const MOTIF_MAX = 255;
 
 /**
- * Écran 32 — une publication d'avocat, et ce qu'on en fait selon son profil (UC-INT-08, UC-INT-10) :
- * l'Assistante la valide ou la rejette ; un juriste la commente pour le DJ et la DJA, jamais pour
- * l'avocat ; le DJ ou la DJA transmet la correspondance unique à l'avocat (RG-INT-07).
+ * Screen 32 - a lawyer's publication and what each profile does with it (UC-INT-08, UC-INT-10):
+ * the Assistant validates or rejects it; a legal officer comments for the DJ and DJA, never for the
+ * lawyer; the DJ or DJA sends the single correspondence to the lawyer (RG-INT-07).
  *
- * Une restriction d'accès désignant un autre juriste rend 403 `ERR-009` : on l'affiche comme un
- * accès restreint, pas comme une panne. Une publication non validée rend 404 à qui n'est pas
- * l'Assistante.
+ * An access restriction naming another legal officer returns 403 `ERR-009`: shown as restricted
+ * access, not as a failure. An unvalidated publication returns 404 to anyone but the Assistant.
  */
 export function DetailPublication({ publicationId, roles }: { publicationId: number; roles: readonly string[] }) {
   const t = useTranslations("publications");
@@ -125,10 +124,8 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
           ) : null}
 
           {/*
-            Q-98 : le fichier n'appartient plus au seul sous-type « autre publication ». Un compte
-            rendu peut porter sa pièce — et n'en porte pas toujours : le bloc disparaît alors, au
-            lieu d'afficher un « — » et deux boutons qui échoueraient. Une autre publication a
-            toujours son fichier, et garde donc son bloc quoi qu'il arrive.
+            A hearing report may or may not carry a file: without one, the block is hidden rather than
+            showing "—" and two failing buttons. Other publications always have a file.
           */}
           {publication.type !== "CR_AUDIENCE" || publication.nomFichier ? (
             <div className="flex flex-col gap-2">
@@ -180,16 +177,12 @@ function Retour() {
 }
 
 /**
- * UC-INT-10 — ce que l'Assistante fait d'un dépôt, et qui dépend de sa nature.
+ * UC-INT-10 - what the Assistant does with a submission, depending on its kind.
  *
- * Sur une **autre publication**, elle valide ou rejette : sa décision commande la lecture, et un
- * rejet exige son motif, transmis à l'avocat.
- *
- * Sur un **compte rendu d'audience**, elle n'accuse que réception (RG-INT-06 amendée, 2026-10-05).
- * La pièce est lue de toute la Direction Juridique depuis son dépôt ; il n'y a plus rien à
- * autoriser, et rien à rejeter — le récit d'un avocat ne s'écarte pas, il se conteste par une
- * correspondance. Le serveur refuse d'ailleurs le rejet : garder le bouton n'offrirait qu'une
- * erreur à qui le presse.
+ * Other publication: validate or reject; the decision governs read access and a rejection requires
+ * a reason, sent to the lawyer.
+ * Hearing report: acknowledge receipt only (amended RG-INT-06). It is readable by the whole Legal
+ * Department from submission; it is contested through a correspondence, and the server refuses a rejection.
  */
 function PanneauValidation({ publication }: { publication: Publication }) {
   const t = useTranslations("publications");
@@ -299,8 +292,8 @@ function PanneauValidation({ publication }: { publication: Publication }) {
 }
 
 /**
- * UC-INT-08 : les commentaires des juristes, lus par tous les profils internes ; le formulaire de
- * commentaire pour un juriste ; la correspondance unique pour le DJ et la DJA.
+ * UC-INT-08: legal officers' comments, read by all internal profiles; the comment form for a legal
+ * officer; the single correspondence for the DJ and the DJA.
  */
 function PanneauEchanges({ publication, roles }: { publication: Publication; roles: readonly string[] }) {
   const t = useTranslations("publications");

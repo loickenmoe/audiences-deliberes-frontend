@@ -14,7 +14,7 @@ export default async function PageClient({ params }: { params: Promise<{ id: str
 
   const { id } = await params;
   const clientId = Number.parseInt(id, 10);
-  // Une URL malformée ne doit pas produire un appel `/clients/NaN` au backend.
+  // A malformed URL must not trigger a `/clients/NaN` backend call.
   if (Number.isNaN(clientId) || clientId <= 0) notFound();
 
   return <VueClient clientId={clientId} roles={session.roles} />;

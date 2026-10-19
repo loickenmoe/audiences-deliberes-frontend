@@ -3,11 +3,11 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Variantes d'action.
+ * Action variants.
  *
- * **`principale` est anthracite, jamais rouge.** Le rouge de marque mesure 4,38:1 sur blanc —
- * insuffisant pour du texte — et, s'il servait de fond d'action, il deviendrait indiscernable du
- * rouge d'erreur dans une interface pleine de rejets et de suppressions.
+ * **`principale` is charcoal, never red.** The brand red measures 4.38:1 on white (insufficient for
+ * text), and as an action background it would be indistinguishable from the error red in an
+ * interface full of rejections and deletions.
  */
 const VARIANTES = {
   principale:
@@ -15,7 +15,7 @@ const VARIANTES = {
   secondaire:
     "border border-bordure-forte bg-surface text-texte hover:bg-surface-attenuee disabled:text-texte-tertiaire",
   discrete: "text-texte-secondaire hover:bg-surface-attenuee hover:text-texte",
-  /** Réservée aux suppressions et rejets. Contour plutôt qu'aplat : l'acte doit être délibéré. */
+  /** Reserved for deletions and rejections. Outline rather than fill: the act must be deliberate. */
   destructive:
     "border border-danger text-danger hover:bg-danger-fond disabled:border-bordure-forte disabled:text-texte-tertiaire",
 } as const;
@@ -32,8 +32,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /**
- * Classes d'une action, exposées pour les cas où l'élément doit être un lien : imbriquer un `<a>`
- * dans un `<button>` produit du HTML invalide et casse la navigation clavier.
+ * Classes of an action, exposed for cases where the element must be a link: nesting an `<a>` inside
+ * a `<button>` produces invalid HTML and breaks keyboard navigation.
  */
 export function classesBouton({
   variante = "principale",

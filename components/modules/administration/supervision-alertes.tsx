@@ -12,27 +12,13 @@ import { fenetreParDefaut } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 /**
- * Supervision du canal applicatif (backend Q-109, NF-ALR-02).
- *
- * **Le défaut qu'elle corrige.** NF-ALR-02 fait du canal applicatif le canal obligatoire, avec une
- * délivrance supérieure à 99 %. Ce taux n'était mesuré nulle part : un échec de diffusion ne
- * produisait qu'une ligne de journal, que personne ne lit. C'était la seule exigence non
- * fonctionnelle dont la rupture était **silencieuse pour tout le monde** — y compris pour le
- * juriste qui découvrait après coup l'audience qu'on ne lui avait pas rappelée.
- *
- * **Deux taux, affichés séparément, et c'est le cœur de l'écran.** Les réunir en un seul chiffre
- * rassurant aurait vidé la mesure de son sens :
- *
- * - **Délivrance** — le canal a-t-il fait son travail ? Seuls les échecs comptent contre nous. Une
- *   alerte remise plus tard, parce que son destinataire n'était pas connecté, a bien été délivrée :
- *   le canal applicatif comprend la liste des notifications, alimentée inconditionnellement.
- *   C'est **ce taux** que NF-ALR-02 borne à 99 %.
- * - **Diffusion temps réel** — à quel point les gens sont-ils connectés quand on les alerte ? Un
- *   chiffre bas n'est **pas** un défaut du système ; c'est une information sur les usages, et
- *   souvent la raison de brancher enfin un second canal. Aucun seuil ne lui est opposé.
- *
- * L'écran le dit explicitement plutôt que de laisser deviner : un tableau de bord qu'on interprète
- * de travers est pire qu'un tableau de bord absent.
+ * In-app channel monitoring (NF-ALR-02).
+ * Two rates are shown separately on purpose:
+ * - Delivery: did the channel do its job? Only failures count. An alert delivered later because the
+ *   recipient was offline is still delivered (the notification list is always fed). NF-ALR-02 sets
+ *   this rate above 99%.
+ * - Real-time broadcast: how many people were connected when alerted. A low value is usage
+ *   information, not a system defect; no threshold applies.
  */
 export function SupervisionAlertes() {
   const t = useTranslations("supervisionAlertes");
@@ -82,9 +68,8 @@ export function SupervisionAlertes() {
       </div>
 
       {/*
-        La fenêtre inversée est arrêtée ici plutôt que laissée partir : le backend la refuse (400),
-        mais l'utilisateur lirait alors un message d'erreur technique là où il a simplement inversé
-        deux dates.
+        An inverted window is stopped here: the backend rejects it (400), but the user would see a
+        technical error for simply swapping two dates.
       */}
       {fenetreInversee ? (
         <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
@@ -104,8 +89,8 @@ export function SupervisionAlertes() {
       ) : stats ? (
         <div className="flex flex-col gap-4">
           {stats.observees === 0 ? (
-            // Une fenêtre vide n'est ni conforme ni fautive : afficher « 0 % » laisserait croire à
-            // une panne totale, alors qu'aucune alerte n'a simplement été déclenchée.
+            // An empty window is neither compliant nor failing: showing "0%" would suggest a total
+            // outage when no alert was triggered.
             <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucuneMesure")}</p>
           ) : (
             <>

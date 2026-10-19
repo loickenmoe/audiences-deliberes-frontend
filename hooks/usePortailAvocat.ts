@@ -10,11 +10,9 @@ import type { DeposerCompteRendu, DeposerFrais } from "@/types/domaine";
 import type { TypeAutrePublication } from "@/types/enums";
 
 /**
- * Ses dossiers, éventuellement cherchés par référence. Cache long : la liste alimente un sélecteur
- * et ne change qu'au rythme d'une décision d'affectation, pas d'une session de travail.
- *
- * La recherche entre dans la clé de cache : deux saisies différentes sont deux listes différentes,
- * et la précédente reste affichée pendant que la suivante arrive.
+ * The lawyer's cases, optionally searched by reference. Long cache: the list feeds a picker and
+ * only changes with assignment decisions. The search term is part of the cache key, and the
+ * previous list stays displayed while the next one loads.
  */
 export function useMesDossiers(reference?: string) {
   return useQuery({
@@ -26,8 +24,8 @@ export function useMesDossiers(reference?: string) {
 }
 
 /**
- * Les audiences d'un de ses dossiers. `enabled` évite un appel tant qu'aucun dossier n'est choisi —
- * sans lui, l'écran interrogerait `/avocat/mes-dossiers/undefined/audiences` au premier rendu.
+ * Hearings of one of the lawyer's cases. `enabled` prevents calling
+ * `/avocat/mes-dossiers/undefined/audiences` before a case is selected.
  */
 export function useAudiencesDeMonDossier(dossierId: number | null) {
   return useQuery({
@@ -37,7 +35,7 @@ export function useAudiencesDeMonDossier(dossierId: number | null) {
   });
 }
 
-/** QF-64 — les pièces partagées d'un de ses dossiers ; rien n'est demandé tant qu'aucun n'est choisi. */
+/** Shared documents of one of the lawyer's cases; nothing is fetched until a case is selected. */
 export function usePiecesDeMonDossier(dossierId: number | null) {
   return useQuery({
     queryKey: [CLES.piecesDossierAvocat, dossierId],
@@ -60,7 +58,7 @@ export function useMesConstitutions() {
   });
 }
 
-/** #23 — dépôt d'une demande de frais. Sa file (#28) la montrera aussitôt. */
+/** #23: submits an expense request; its queue (#28) is refreshed. */
 export function useDeposerFrais() {
   const client = useQueryClient();
   return useMutation({
@@ -69,7 +67,7 @@ export function useDeposerFrais() {
   });
 }
 
-/** #29 — dépôt d'un compte rendu d'audience, avec sa pièce facultative (Q-98). */
+/** #29: submits a hearing report with its optional attachment. */
 export function useDeposerCompteRendu() {
   const client = useQueryClient();
   return useMutation({
@@ -79,7 +77,7 @@ export function useDeposerCompteRendu() {
   });
 }
 
-/** #31 — dépôt d'une pièce, d'une décision ou d'une conclusion (multipart). */
+/** #31: submits a document, decision or submission brief (multipart). */
 export function useDeposerAutrePublication() {
   const client = useQueryClient();
   return useMutation({

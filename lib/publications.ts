@@ -9,11 +9,9 @@ export const TON_STATUT_PUBLICATION: Record<StatutPublication, TonStatut> = {
 };
 
 /**
- * La clé de libellé d'un statut, selon la nature du dépôt.
- *
- * Sur un compte rendu, « Validée » décrirait une autorisation qui n'existe plus : depuis
- * RG-INT-06 amendée (2026-10-05), la pièce est lue de tous dès son dépôt et l'Assistante n'en
- * accuse que réception. Les autres publications gardent leur vocabulaire, et leur contrôle.
+ * Label key of a status, depending on the kind of filing. A hearing report is readable by all as
+ * soon as it is filed and the Assistant only acknowledges it (RG-INT-06), so "Validated" does not
+ * apply; other publications keep their wording and review.
  */
 export function cleStatutPublication(type: TypePublication, statut: StatutPublication): string {
   return `${type === "CR_AUDIENCE" ? "StatutCompteRendu" : "StatutPublication"}.${statut}`;
@@ -33,13 +31,9 @@ export interface VuePublications {
 }
 
 /**
- * L'Assistante instruit les publications : sa file s'ouvre sur celles à traiter, et elle voit aussi
- * les rejetées.
- *
- * Les autres profils n'ont plus de filtre à proposer : depuis RG-INT-06 amendée (2026-10-05), ce
- * qu'ils voient ne dépend plus d'un statut mais de la nature du dépôt — tous les comptes rendus,
- * et les autres publications une fois validées. C'est le serveur qui le décide ; offrir ici un
- * filtre « Validées » laisserait croire qu'il manque les autres.
+ * The Assistant reviews publications: her queue opens on those to process, and she also sees the
+ * rejected ones. Other profiles get no filter: per RG-INT-06 the server decides what they see by
+ * kind of filing (all hearing reports, other publications once validated).
  */
 export function vuesPublications(roles: readonly string[] | undefined): [VuePublications, ...VuePublications[]] {
   if (profilPrincipal(roles) === "ROLE_ASSISTANTE") {
@@ -53,14 +47,14 @@ export function vuesPublications(roles: readonly string[] | undefined): [VuePubl
   return [{ cle: "toutes", statut: null }];
 }
 
-/** Le DJ et la DJA centralisent les échanges avec l'avocat (RG-INT-07). */
+/** The DJ and the DJA centralize exchanges with the lawyer (RG-INT-07). */
 export function estCentralisateur(roles: readonly string[] | undefined): boolean {
   return peut(roles, "transmettreCorrespondance");
 }
 
 /**
- * Un juriste commente pour le DJ/DJA. Depuis Q-81, le DJ et la DJA portent aussi `ROLE_JURISTE` :
- * ils écrivent, eux, la correspondance — commenter pour eux-mêmes n'aurait pas de sens.
+ * A legal officer comments for the DJ/DJA. The DJ and the DJA also hold `ROLE_JURISTE` but write the
+ * correspondence themselves, so commenting for themselves makes no sense.
  */
 export function peutCommenter(roles: readonly string[] | undefined): boolean {
   return peut(roles, "commenterPublication") && !estCentralisateur(roles);
@@ -68,7 +62,7 @@ export function peutCommenter(roles: readonly string[] | undefined): boolean {
 
 export type CleVueConstitutions = "aSigner" | "toutes";
 
-/** Le SH signe : sa file s'ouvre sur les demandes en attente. Le juriste suit l'historique. */
+/** The SH signs: their queue opens on pending requests. The legal officer follows the history. */
 export function vuesConstitutions(roles: readonly string[] | undefined): [CleVueConstitutions, ...CleVueConstitutions[]] {
   return profilPrincipal(roles) === "ROLE_SH" ? ["aSigner", "toutes"] : ["toutes", "aSigner"];
 }

@@ -6,12 +6,9 @@ import { ErreurApi } from "@/lib/api/errors";
 import { dossierService } from "@/services/dossierService";
 
 /**
- * Couche de services des dossiers, contre un backend simulé.
- *
- * L'enjeu de ces tests n'est pas la donnée renvoyée mais la **requête émise** : le contrat de
- * `POST /dossiers` comporte trois pièges qu'un test d'affichage ne verrait pas — la nature envoyée
- * par libellé, la catégorie qu'il ne faut *pas* transmettre, et le type de client sensible attendu
- * par code.
+ * Case file service layer against a mocked backend. What matters is the **request sent**:
+ * `POST /dossiers` has three traps a display test would miss: the nature is sent by label, the
+ * category must *not* be sent, and the sensitive client type is expected by code.
  */
 const BASE = "http://localhost:8080/api/v1";
 
@@ -31,8 +28,8 @@ const serveur = setupServer(
 );
 
 beforeAll(() => {
-  // La validation de configuration est volontairement stricte et échoue vite (`lib/env`) : les
-  // tests doivent donc fournir ces variables, comme le fait `services.test.ts`.
+  // Configuration validation is strict and fails fast (`lib/env`), so tests must provide these
+  // variables, as `services.test.ts` does.
   process.env.NEXT_PUBLIC_API_URL = BASE;
   process.env.NEXT_PUBLIC_WS_URL = "http://localhost:8080/ws";
   serveur.listen({ onUnhandledRequest: "error" });
@@ -57,8 +54,7 @@ describe("dossierService.lister", () => {
   it("n'envoie pas `mesDossiers` quand il est faux", async () => {
     await dossierService.lister({ mesDossiers: false });
 
-    // `false` est déjà le défaut du backend : le transmettre alourdirait l'URL partagée sans rien
-    // changer au résultat.
+    // `false` is already the backend default: sending it would lengthen the shared URL for nothing.
     expect(derniereUrl?.searchParams.has("mesDossiers")).toBe(false);
   });
 
@@ -70,9 +66,8 @@ describe("dossierService.lister", () => {
   });
 
   /*
-   * Observation métier du 2026-09-25 : filtrer par étape et par période d'audience, et trier.
-   * Ce qui se teste ici est la requête émise — le filtrage lui-même est vérifié en base par
-   * `DossierFiltresIntegrationTest`, seul endroit où un EXISTS peut être pris en défaut.
+   * Filtering by step and hearing period, and sorting. Only the request sent is tested here; the
+   * filtering itself is checked against the database by `DossierFiltresIntegrationTest`.
    */
   it("transmet le type et le statut d'étape", async () => {
     await dossierService.lister({ typeEtape: "RECOURS_1", statutEtape: "EN_COURS" });
@@ -91,8 +86,7 @@ describe("dossierService.lister", () => {
   it("n'envoie pas le tri par défaut", async () => {
     await dossierService.lister({ tri: "RECENT" });
 
-    // `RECENT` est déjà le défaut du serveur : le transmettre allongerait l'URL partagée sans
-    // rien changer à l'ordre des lignes.
+    // `RECENT` is already the server default: sending it would lengthen the shared URL for nothing.
     expect(derniereUrl?.searchParams.has("tri")).toBe(false);
   });
 
@@ -112,15 +106,14 @@ describe("dossierService.creer", () => {
     risqueEncouru: 1_000_000,
     juristesAffectes: [3],
     avocatsAffectes: [5],
-    // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
     parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
   };
 
   it("envoie la nature par son libellé, fût-il long", async () => {
     await dossierService.creer(base);
 
-    // 71 caractères : le backend les accepte depuis la migration V7. Le libellé est ce qu'il
-    // résout — ni le code, ni l'identifiant.
+    // 71 characters, accepted by the backend since migration V7. The backend resolves the label,
+    // not the code or the id.
     expect(dernierCorps?.nature).toBe(base.nature);
     expect(String(dernierCorps?.nature)).toHaveLength(71);
   });
@@ -128,8 +121,8 @@ describe("dossierService.creer", () => {
   it("ne transmet jamais la catégorie", async () => {
     await dossierService.creer(base);
 
-    // Le backend la déduit de la nature (RG-DOS-02) et rejette une valeur divergente : l'envoyer
-    // n'apporterait qu'un risque d'incohérence.
+    // The backend derives it from the nature (RG-DOS-02) and rejects a different value: sending it
+    // would only risk inconsistency.
     expect(dernierCorps).not.toHaveProperty("categorie");
   });
 

@@ -10,17 +10,13 @@ import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
 /**
- * Navigation principale, filtrée par capacité. Une entrée non autorisée n'est pas affichée — et
- * resterait de toute façon refusée par le backend si l'URL était forcée.
+ * Main navigation, filtered by capability. An unauthorised entry is not shown, and the backend would
+ * refuse it anyway if the URL were forced.
  *
- * L'état actif est signalé par un filet rouge **et** par `aria-current` : la couleur seule ne
- * suffirait pas.
+ * The active entry is marked by a red rule **and** `aria-current`: colour alone is not enough.
  *
- * **Responsive (F17).** En `w-64 shrink-0` sur toutes les largeurs, cette barre poussait le contenu
- * hors de l'écran — 324 px de débordement horizontal mesurés sur un mobile de 375 px, qui rendaient
- * l'application inutilisable. En dessous de `lg`, elle devient une **bande horizontale** défilant
- * dans son propre conteneur : toutes les entrées restent atteignables, sans menu à bascule ni
- * JavaScript supplémentaire.
+ * Below `lg` it becomes a **horizontal strip** scrolling in its own container (a fixed-width sidebar
+ * overflowed the screen on mobile): every entry stays reachable, with no toggle menu or extra JavaScript.
  */
 export function AppSidebar({ roles }: { roles: readonly string[] }) {
   const chemin = usePathname();
@@ -33,25 +29,14 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
       className="flex w-full shrink-0 flex-col border-b border-bordure bg-surface lg:h-svh lg:w-64 lg:border-b-0 lg:border-r"
     >
       {/*
-        Le nom de l'application est déjà dans l'en-tête : sur mobile, ce bandeau ferait doublon.
+        The application name is already in the header: on mobile this banner would duplicate it.
 
-        **Le logo ramène à l'accueil (QF-49).** Convention universelle, et devenue nécessaire depuis
-        QF-47 : l'en-tête ne défile plus, ce logo est donc un point d'ancrage **en permanence à
-        l'écran**, à l'endroit exact où l'on a l'habitude de cliquer. Inerte, il faisait une zone
-        morte au meilleur emplacement de l'interface.
+        The logo links home (`/`, unconditionally: one root for all profiles). The header no longer
+        scrolls, so this logo is a permanent anchor where users expect to click.
 
-        La cible est `/` sans condition : QF-19 a tranché une racine unique pour tous les profils,
-        dont le contenu s'adapte — l'avocat y trouve au moins sa file de notifications.
-
-        Le lien porte son propre libellé et le logo devient décoratif : un lien doit annoncer sa
-        destination, pas le propriétaire de l'image qu'il contient. Pas d'`aria-current` en
-        revanche — l'entrée « Accueil » ci-dessous le porte déjà, et deux éléments revendiquant la
-        page courante ne feraient que du bruit.
-
-        **Cette dernière phrase était fausse pour l'avocat jusqu'à QF-59**, et c'est ce qui a été
-        signalé : son menu n'avait pas d'entrée « Accueil » - elle était adossée à une capacité
-        qu'il ne porte pas -, si bien que sur l'accueil **rien** ne revendiquait la page courante.
-        Le logo l'y menait sans jamais dire où il était arrivé.
+        The link carries its own label and the logo becomes decorative: a link must announce its
+        destination, not the owner of its image. No `aria-current` here: the "Home" entry below
+        already carries it (for every profile, lawyer included).
       */}
       <div className="hidden h-16 items-center border-b border-bordure px-5 lg:flex">
         <Link

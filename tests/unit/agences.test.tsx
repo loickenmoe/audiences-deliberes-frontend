@@ -6,12 +6,8 @@ import { SelecteurAgence } from "@/components/metier/selecteur-agence";
 import { rendre as render } from "../utils/rendu";
 
 /**
- * Le référentiel des agences (métier, 2026-10-03, observation 2).
- *
- * Les deux codes d'agence d'un dossier étaient du texte libre : sur les 341 dossiers de recette, un
- * seul était renseigné - `5466546546` - et il ne désignait aucune agence. Ce que ces tests
- * garantissent est ce qui empêche la faute de revenir : la liste **montre** de quoi reconnaître
- * l'agence, et le formulaire reçoit le **code**, jamais l'identifiant technique.
+ * Branch directory. The list **shows** enough to recognize a branch, and the form receives the
+ * **code**, never the technical id.
  */
 const BONANJO = {
   id: 3,
@@ -23,7 +19,7 @@ const BONANJO = {
   actif: true,
 };
 
-/** Les deux homonymes du référentiel : même nom, même ville, adresses différentes. */
+/** The two namesakes in the directory: same name, same city, different addresses. */
 const MBALLA_UN = {
   id: 75,
   code: "00108",
@@ -55,10 +51,8 @@ vi.mock("@/hooks/useReferentiels", () => ({
 
 describe("SelecteurAgence", () => {
   /**
-   * « Le code de l'agence, son nom et sa ville, pour mieux orienter l'utilisateur » (métier,
-   * 2026-10-05) : le code pour celui qui le connaît par cœur, le nom pour celui qui le cherche, la
-   * ville pour l'orienter. Le mot « Agence » précède le nom depuis le 2026-10-06 : les noms sont
-   * des toponymes, et « 00001 HIPPODROME » pouvait se lire comme un lieu.
+   * Branch code, name and city are shown. The word "Agence" precedes the name because names are
+   * place names, and "00001 HIPPODROME" could read as a location.
    */
   it("affiche code, nom et ville sur la ligne de l'agence", async () => {
     contenu = [BONANJO];
@@ -70,8 +64,8 @@ describe("SelecteurAgence", () => {
   });
 
   /**
-   * Deux agences portent le même nom dans la même ville. Sans l'adresse, la liste les présenterait
-   * à l'identique et le choix serait un tirage au sort.
+   * Two branches share the same name in the same city: without the address, the list would show
+   * them identically.
    */
   it("sépare deux agences homonymes par leur adresse", async () => {
     contenu = [MBALLA_UN, MBALLA_DEUX];
@@ -81,14 +75,14 @@ describe("SelecteurAgence", () => {
 
     expect(await screen.findByText("Mballa 2")).toBeInTheDocument();
     expect(screen.getByText("Carrefour Regie")).toBeInTheDocument();
-    // Les deux lignes existent bel et bien, et portent des codes différents.
+    // Both rows exist and carry different codes.
     expect(screen.getByRole("option", { name: /00108 · Agence MBALLA II/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /^108 · Agence MBALLA II/ })).toBeInTheDocument();
   });
 
   /**
-   * Le dossier porte le **code** en clair, sans clé étrangère : c'est lui que le formulaire doit
-   * recevoir. Rendre l'identifiant technique aurait enregistré « 3 » comme code d'agence.
+   * The case file stores the plain **code**, with no foreign key: the form must receive it, not the
+   * technical id.
    */
   it("rend le code de l'agence, non son identifiant technique", async () => {
     contenu = [BONANJO];
@@ -103,9 +97,8 @@ describe("SelecteurAgence", () => {
   });
 
   /**
-   * Le choix retenu doit rester lisible une fois la liste refermée : l'utilisateur relit son
-   * formulaire avant de l'envoyer, et un champ redevenu vide lui ferait croire à une perte de
-   * saisie.
+   * The selection must stay visible once the list closes, otherwise an empty field would look like
+   * lost input.
    */
   it("garde l'agence choisie affichée après la fermeture de la liste", async () => {
     contenu = [BONANJO];
@@ -119,8 +112,7 @@ describe("SelecteurAgence", () => {
   });
 
   /**
-   * Le préfixe est **traduit**, demandé « en français comme en anglais » (métier, 2026-10-06). Un
-   * mot écrit en dur aurait laissé « Agence » dans l'interface anglaise.
+   * The prefix is **translated**: a hard-coded word would leave "Agence" in the English interface.
    */
   it("traduit le mot qui précède le nom", async () => {
     contenu = [BONANJO];
@@ -134,8 +126,8 @@ describe("SelecteurAgence", () => {
   });
 
   /**
-   * Proposer une agence fermée ferait saisir un code que le backend refuse : la demande part donc
-   * toujours avec `actifSeulement`.
+   * Offering a closed branch would lead to a code the backend rejects, so the request is always sent
+   * with `actifSeulement`.
    */
   it("ne demande que les agences ouvertes", () => {
     contenu = [BONANJO];
@@ -147,12 +139,8 @@ describe("SelecteurAgence", () => {
 });
 
 /**
- * L'astérisque d'obligation, et le texte d'aide (N5, 2026-10-07).
- *
- * **Deux défauts corrigés ensemble.** Elle était noire là où tous les autres champs la portent en
- * rouge, et elle vivait **dans** le `<label>` : le nom accessible du champ valait « Agence
- * d'origine * », si bien qu'une recherche par libellé exact ne le trouvait pas. Les parcours y
- * échappaient en employant une expression régulière - un contournement, non une solution.
+ * Required asterisk and help text (N5). The asterisk is red like on every other field, and sits
+ * **outside** the `<label>` so the accessible name is the label alone.
  */
 describe("SelecteurAgence, marque d'obligation et aide", () => {
   it("rend l'astérisque en rouge, hors du nom accessible du champ", () => {
@@ -161,13 +149,13 @@ describe("SelecteurAgence, marque d'obligation et aide", () => {
       <SelecteurAgence valeur={null} onChangement={() => {}} label="Agence d'origine" obligatoire />,
     );
 
-    // Le nom accessible est le libellé **seul** : c'est lui qu'un lecteur d'écran annonce.
+    // The accessible name is the label **alone**: that is what a screen reader announces.
     const champ = screen.getByRole("combobox", { name: "Agence d'origine" });
     expect(champ).toHaveAttribute("aria-required", "true");
 
     const asterisque = screen.getByText("*");
     expect(asterisque).toHaveClass("text-danger");
-    // Décorative : l'obligation est portée par `aria-required`, pas par ce caractère.
+    // Decorative: the requirement is conveyed by `aria-required`, not by this character.
     expect(asterisque).toHaveAttribute("aria-hidden");
   });
 

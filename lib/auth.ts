@@ -10,20 +10,17 @@ import {
 } from "@/lib/rotation-jeton";
 
 /**
- * Authentification par formulaire intégré, adossée à Keycloak.
+ * Authentication through an in-app login form, backed by Keycloak.
  *
- * **Décision utilisateur du 2026-09-08 (QF-18)** : le formulaire d'identification vit dans
- * l'application, pour la cohérence visuelle avec les autres applications internes de la banque
- * (GFA). Keycloak reste le seul détenteur des identités et le seul émetteur de jetons — il valide
- * les credentials via le flux « mot de passe » (`grant_type=password`, `directAccessGrantsEnabled`
- * déjà actif sur le client `audiences-api`).
+ * The form lives in the application for visual consistency with the bank's other internal apps.
+ * Keycloak remains the sole identity holder and token issuer; it validates credentials through the
+ * password grant (`grant_type=password`, `directAccessGrantsEnabled` on the `audiences-api` client).
  *
- * **Le mot de passe ne quitte jamais le serveur** : `authorize` s'exécute côté Next.js. Il ne
- * figure ni dans le paquet navigateur, ni dans la session, ni dans aucun journal.
+ * The password never leaves the server: `authorize` runs in Next.js and the password is never in
+ * the browser bundle, the session or any log.
  *
- * Limites assumées, consignées en QF-18 : ce flux ne prend en charge ni second facteur, ni
- * réinitialisation de mot de passe, ni connexion unique inter-applications. Si la DSI active l'un
- * d'eux sur le realm, ce chemin devra être repris.
+ * Known limits: no second factor, no password reset, no cross-app SSO. If any of these is enabled
+ * on the realm, this flow must be revisited.
  */
 
 interface JetonsKeycloak {
@@ -34,16 +31,16 @@ interface JetonsKeycloak {
   refresh_expires_in?: number;
 }
 
-/** Le service d'identité est injoignable — à distinguer d'un refus d'identifiants. */
+/** Identity service unreachable, as opposed to rejected credentials. */
 class ServiceIndisponible extends CredentialsSignin {
   code = "service_indisponible";
 }
 
 /**
- * Échange identifiant + mot de passe contre des jetons auprès de Keycloak.
+ * Exchanges username and password for Keycloak tokens.
  *
- * Renvoie `null` si les identifiants sont refusés, **quelle qu'en soit la raison précise** : ne pas
- * révéler si un compte existe, est désactivé ou attend une action.
+ * Returns `null` whenever credentials are rejected, whatever the reason, so as not to reveal whether
+ * an account exists, is disabled or awaits an action.
  */
 async function obtenirJetons(
   identifiant: string,
@@ -69,7 +66,7 @@ async function obtenirJetons(
     throw new ServiceIndisponible();
   }
 
-  // 5xx : le service est en défaut, ce n'est pas la faute de l'utilisateur — le distinguer.
+  // 5xx: the service is failing, not the user's credentials.
   if (reponse.status >= 500) throw new ServiceIndisponible();
   if (!reponse.ok) return null;
 
@@ -77,14 +74,11 @@ async function obtenirJetons(
 }
 
 /**
- * Échec de rafraîchissement, **qualifié**.
+ * Qualified refresh failure.
  *
- * `refus` : Keycloak a répondu et a rejeté le jeton — il est expiré ou révoqué. La session est bien
- * terminée, se reconnecter est la bonne action.
- *
- * Sinon : Keycloak n'a pas répondu, ou a répondu par une erreur serveur. La session n'est pas en
- * cause, et demander à l'utilisateur de se reconnecter serait doublement faux — le diagnostic et la
- * consigne, puisque la connexion passe par ce même service.
+ * `refus`: Keycloak rejected the token (expired or revoked); the session is over and logging in
+ * again is the right action. Otherwise Keycloak did not answer or returned a server error: the
+ * session is not at fault and asking the user to log in again would be wrong.
  */
 class EchecRafraichissement extends Error {
   constructor(
@@ -110,14 +104,14 @@ async function rafraichir(refreshToken: string): Promise<JetonsKeycloak> {
       }),
     });
   } catch (cause) {
-    // Aucune réponse : réseau coupé, service arrêté, DNS. Ce n'est pas la session qui est en cause.
+    // No response (network, service down, DNS): the session is not at fault.
     throw new EchecRafraichissement(`Keycloak injoignable : ${String(cause)}`, false);
   }
 
   if (!reponse.ok) {
     /*
-     * 4xx : Keycloak a examiné le jeton et l'a rejeté — `invalid_grant` quand il est expiré ou
-     * révoqué. 5xx : il n'a pas pu répondre, la session n'y est pour rien.
+     * 4xx: Keycloak rejected the token (`invalid_grant` when expired or revoked).
+     * 5xx: it could not answer; the session is not at fault.
      */
     const refus = reponse.status >= 400 && reponse.status < 500;
     throw new EchecRafraichissement(
@@ -128,7 +122,7 @@ async function rafraichir(refreshToken: string): Promise<JetonsKeycloak> {
   return (await reponse.json()) as JetonsKeycloak;
 }
 
-/** Décode la charge utile d'un JWT sans en vérifier la signature — Keycloak vient de l'émettre. */
+/** Decodes a JWT payload without verifying the signature: Keycloak has just issued it. */
 function claims(jeton: string): Record<string, unknown> {
   try {
     const charge = jeton.split(".")[1];
@@ -142,8 +136,8 @@ function claims(jeton: string): Record<string, unknown> {
 }
 
 /**
- * Le claim `roles` du jeton d'accès porte les rôles du realm, **composites déjà résolus** — vérifié
- * en réel : `juriste.test` reçoit `["ROLE_JURISTE","ROLE_SAISIE","ROLE_CONSULTATION"]`.
+ * The access token `roles` claim carries realm roles with composites already resolved (e.g.
+ * `["ROLE_JURISTE","ROLE_SAISIE","ROLE_CONSULTATION"]`).
  */
 function rolesDepuisJeton(accessToken: string): string[] {
   const valeur = claims(accessToken).roles;
@@ -174,7 +168,7 @@ export const authConfig: NextAuthConfig = {
         const c = claims(jetons.access_token);
         const maintenant = Date.now();
 
-        // Alimente le callback `jwt` au premier passage. Ne contient évidemment pas le mot de passe.
+        // Feeds the `jwt` callback on first pass. Never contains the password.
         return {
           id: texte(c.sub) ?? identifiant,
           email: texte(c.email),
@@ -198,7 +192,7 @@ export const authConfig: NextAuthConfig = {
   pages: { signIn: "/login", error: "/login" },
   callbacks: {
     async jwt({ token, user }) {
-      // Première connexion : `user` est l'objet renvoyé par `authorize`.
+      // First login: `user` is the object returned by `authorize`.
       if (user) {
         const u = user as typeof user & {
           keycloakId?: string;
@@ -224,7 +218,7 @@ export const authConfig: NextAuthConfig = {
         return token;
       }
 
-      // Jetons encore valides — politique dans `lib/rotation-jeton.ts`.
+      // Tokens still valid; policy in `lib/rotation-jeton.ts`.
       if (!doitRafraichir(Date.now(), token.expiresAt, token.refreshExpiresAt)) return token;
 
       if (!token.refreshToken) return { ...token, erreur: ERREUR_RAFRAICHISSEMENT };
@@ -235,7 +229,7 @@ export const authConfig: NextAuthConfig = {
         return {
           ...token,
           accessToken: jetons.access_token,
-          // Keycloak fait tourner le refresh token : conserver l'ancien condamnerait la session.
+          // Keycloak rotates the refresh token: keeping the old one would doom the session.
           refreshToken: jetons.refresh_token ?? token.refreshToken,
           idToken: jetons.id_token ?? token.idToken,
           expiresAt: maintenant + jetons.expires_in * 1000,
@@ -245,12 +239,9 @@ export const authConfig: NextAuthConfig = {
         };
       } catch (echec) {
         /**
-         * Échec définitif : on marque la session plutôt que de boucler sur des 401. La coquille
-         * redirige alors vers la connexion — une déconnexion nette vaut mieux qu'une interface qui
-         * refuse silencieusement chaque appel.
-         *
-         * Le marqueur **qualifie** la cause depuis 2026-09-16 : un jeton rejeté n'est pas un service
-         * à terre, et l'utilisateur n'a pas la même chose à faire dans les deux cas.
+         * Final failure: flag the session instead of looping on 401s; the shell then redirects to
+         * login. The flag qualifies the cause: a rejected token is not a service outage, and the
+         * user has different things to do in each case.
          */
         const indisponible = echec instanceof EchecRafraichissement && !echec.refus;
         return { ...token, erreur: indisponible ? ERREUR_AUTH_INDISPONIBLE : ERREUR_RAFRAICHISSEMENT };
@@ -262,9 +253,9 @@ export const authConfig: NextAuthConfig = {
       session.roles = token.roles ?? [];
       session.erreur = token.erreur;
       /*
-       * QF-42 : le navigateur garde le jeton en mémoire jusqu'à cette échéance au lieu de relire la
-       * session à chaque requête. La fenêtre est calculée ici, par la même fonction que la rotation
-       * — dupliquer la règle côté client rouvrirait RF-02.
+       * The browser keeps the token in memory until this deadline instead of re-reading the session
+       * on every request. Computed here with the rotation function so the rule is not duplicated
+       * client-side.
        */
       session.rafraichirApres =
         token.expiresAt && token.refreshExpiresAt

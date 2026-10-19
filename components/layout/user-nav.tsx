@@ -25,13 +25,12 @@ export async function UserNav({
   return (
     <div className="flex items-center gap-2 sm:gap-4">
       {/*
-        Identité masquée en dessous de `sm` (F17) : l'en-tête débordait de la fenêtre sur un mobile
-        de 375 px. Le nom reste accessible — il est répété sur l'accueil, et le bouton de déconnexion
-        porte son propre libellé.
+        Identity hidden below `sm`: the header overflowed the window on a 375 px mobile. The name
+        stays accessible: it is repeated on the home page, and the logout button has its own label.
       */}
       {/*
-        L'identité mène au compte : c'est là qu'on cherche « ma signature » (N8), et non dans une
-        entrée de menu que six profils sur sept n'ouvriraient jamais.
+        The identity links to the account page: that is where users look for "my signature", rather
+        than in a menu entry six profiles out of seven would never open.
       */}
       <div className="hidden text-right leading-tight sm:block">
         <Link href="/mon-compte" className="underline-offset-4 hover:underline">
@@ -41,8 +40,8 @@ export async function UserNav({
           {profil ? tr(profil) : tc("profilInconnu")}
         </p>
       </div>
-      {/* POST vers un gestionnaire de route : révoque aussi le jeton côté Keycloak.
-          Voir app/api/deconnexion/route.ts pour la raison du choix, et QF-42 pour le verrou. */}
+      {/* POST to a route handler: also revokes the token at Keycloak.
+          See app/api/deconnexion/route.ts for the rationale. */}
       <BoutonDeconnexion libelle={t("deconnexion")} />
     </div>
   );

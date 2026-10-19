@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { gedService } from "@/services/gedService";
 import type { DemandeConstitution } from "@/types/domaine";
 
-/** Longueur de `demande_constitution.motif_rejet` en base. */
+/** Length of `demande_constitution.motif_rejet` in the database. */
 const MOTIF_MAX = 255;
 
 async function contenuLettre(documentId: number): Promise<Blob> {
@@ -34,9 +34,10 @@ async function contenuLettre(documentId: number): Promise<Blob> {
 }
 
 /**
- * Écran 35 — constitutions de prestataires (UC-INT-05, UC-INT-06). Le SH ouvre sur les demandes à
- * signer ; le juriste suit les siennes et celles de ses collègues. La signature génère la lettre de
- * constitution et la dépose dans la GED du dossier ; un rejet revient au juriste avec son motif.
+ * Screen 35 - service provider representation requests (UC-INT-05, UC-INT-06). The SH lands on the
+ * requests to sign; the lawyer follows their own and their colleagues'. Signing generates the
+ * representation letter and stores it in the case DMS; a rejection goes back to the lawyer with its
+ * reason.
  */
 export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const router = useRouter();
@@ -45,37 +46,27 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   const vues = useMemo(() => vuesConstitutions(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0] as string }), [vues]);
   /*
-   * `page` vient d'ici et non d'un état local : changer de vue remet alors de lui-même à la première
-   * page, et un lien partagé montre la file telle que son auteur la voyait.
+   * `page` comes from the URL rather than local state: switching view resets to the first page, and
+   * a shared link shows the queue as its author saw it.
    */
   const { filtres, definirFiltre, page, definirPage } = useFiltresUrl(defauts);
   const vue: CleVueConstitutions = vues.find((v) => v === filtres.vue) ?? vues[0];
-  /*
-   * La file est paginée côté serveur, dix lignes par page. Elle l'a toujours été : ce qui manquait,
-   * c'était le moyen d'atteindre les suivantes. La vue « à signer » étant la plus ancienne d'abord,
-   * une demande fraîche restait invisible passé la dixième en attente.
-   */
+  /* The queue is paginated server-side, ten rows per page, oldest first in the "to sign" view. */
   const requete = useConstitutions(vue === "aSigner" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderConstitution();
   const peutSigner = peut(roles, "signerConstitution");
-  // N8 : le SH corrige la lettre avant de la signer, le juriste la rédige. Deux rôles, une
-  // seule capacité - distincte de celle qui ouvre la sollicitation.
+  // The SH corrects the letter before signing, the lawyer drafts it: two roles, one capability,
+  // distinct from the one that opens the request.
   const [signature, setSignature] = useState<DemandeConstitution | null>(null);
   const [rejet, setRejet] = useState<DemandeConstitution | null>(null);
   const [lettre, setLettre] = useState<DemandeConstitution | null>(null);
-  /** La lettre ouverte dans la modale (Q-115 B2) : rédigeable par le juriste, lue par le SH. */
+  /** The letter opened in the modal: editable by the lawyer, read-only for the SH. */
   const [lettreOuverte, setLettreOuverte] = useState<number | null>(null);
 
   /**
-   * La signature, puis **l'onglet Documents du dossier** (QF-60).
-   *
-   * La signature dépose la lettre dans la GED du dossier, et rien n'y menait : le SH signait, lisait
-   * « Constitution signée », et restait devant sa file sans voir la pièce qu'il venait de produire.
-   * L'onglet est déjà atteignable par l'URL - `?onglet=documents`, posé pour qu'une pièce manquante
-   * à la création puisse être redéposée.
-   *
-   * `dossierId` est lu **avant** la navigation : `setSignature(null)` vide l'état, et le lire après
-   * donnerait `undefined`.
+   * Signs, then opens the case's Documents tab (`?onglet=documents`), where the signed letter has
+   * just been stored.
+   * `dossierId` is read before navigating: `setSignature(null)` clears the state.
    */
   async function signer() {
     if (!signature) return;
@@ -187,12 +178,11 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
                       <div className="flex justify-end gap-1">
                         {enAttente ? (
                           /*
-                            Le même bouton, deux droits - et c'est le **serveur** qui dit lequel
-                            (Q-126). La lettre appartient à celui qui a sollicité la constitution :
-                            lui l'écrit, le SH la corrige avant de signer, et tout autre la lit sans
-                            y toucher. L'écran ne saurait pas le calculer, et le déduire d'un rôle
-                            proposerait « Rédiger » à qui recevrait ensuite un 403.
-                          */
+                           * Same button, two permissions, and the server decides which. The letter
+                           * belongs to whoever requested the representation: they draft it, the SH
+                           * corrects it before signing, and anyone else reads it. Deriving this
+                           * from a role would offer "Draft" to someone who would then get a 403.
+                           */
                           <Button
                             variante="secondaire"
                             taille="sm"
@@ -242,8 +232,8 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
       )}
 
       {/*
-        Rendue dès qu'une page suivante existe : une file tronquée sans le dire est pire qu'une file
-        longue, car rien n'avertit celui qui signe qu'il lui manque des demandes.
+        Rendered as soon as a next page exists: silently truncating the queue would hide pending
+        requests from the signer.
       */}
       {requete.data && requete.data.totalPages > 1 ? (
         <Pagination
@@ -291,7 +281,7 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
   );
 }
 
-/** UC-INT-06 alt. 5-a : la demande retourne au juriste avec le motif ; aucune lettre n'est envoyée. */
+/** UC-INT-06 alt. 5-a: the request goes back to the lawyer with the reason; no letter is sent. */
 function ModaleRejet({ demande, onFermeture }: { demande: DemandeConstitution | null; onFermeture: () => void }) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
@@ -301,7 +291,7 @@ function ModaleRejet({ demande, onFermeture }: { demande: DemandeConstitution | 
   const [erreur, setErreur] = useState<string | null>(null);
   const [pour, setPour] = useState<number | null>(null);
 
-  // Réinitialiser à chaque ouverture sur une autre demande.
+  // Reset each time the dialog opens on another request.
   if (demande && demande.id !== pour) {
     setPour(demande.id);
     setMotif("");

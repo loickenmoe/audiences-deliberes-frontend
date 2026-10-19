@@ -6,11 +6,8 @@ import type { Audience, Dossier, Publication } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
 
 /**
- * Le compte rendu de l'avocat, rattaché à son audience (signalé en recette, 2026-09-28).
- *
- * **Ce que ces tests protègent.** Le compte rendu de l'avocat vit dans les publications, rattaché à
- * l'audience mais pas porté par elle : l'onglet n'affichait donc que le récit du juriste, et une
- * audience dont l'avocat avait rendu compte paraissait muette. Personne ne savait où chercher.
+ * The lawyer's report, linked to its hearing. It lives in publications, linked to the hearing but
+ * not stored on it: the tab must show it next to the legal officer's account.
  */
 const audiences = vi.fn();
 const publications = vi.fn();
@@ -20,7 +17,7 @@ vi.mock("@/hooks/useAudiences", () => ({
   usePlanifierAudience: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useEnregistrerCompteRendu: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAnnulerAudience: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  // QF-64 : la note à l’avocat, montée pour qui peut l’écrire.
+  // The note to the lawyer, mounted for whoever may write it.
   useModifierNoteAvocat: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
@@ -84,7 +81,7 @@ describe("compte rendu de l'avocat sur l'audience", () => {
     expect(lien).toHaveAttribute("href", "/publications/44");
   });
 
-  /** Sans dépôt de l'avocat, rien n'est annoncé : l'écran ne promet pas un document absent. */
+  /** Without a lawyer submission nothing is announced: the screen does not promise a missing document. */
   it("n'annonce rien quand l'avocat n'a pas déposé", () => {
     rendre(<OngletAudiences dossier={DOSSIER} roles={["ROLE_ASSISTANTE", "ROLE_CONSULTATION"]} />);
 
@@ -92,8 +89,8 @@ describe("compte rendu de l'avocat sur l'audience", () => {
   });
 
   /**
-   * Un dépôt en attente de validation n'est lisible d'aucun juriste : le rattacher ferait croire à
-   * une information disponible. Le filtre porte sur la requête — le composant demande les validées.
+   * A submission pending validation is readable by no legal officer. The filter is on the request:
+   * the component asks for validated ones only.
    */
   it("ne demande que les publications validées", () => {
     rendre(<OngletAudiences dossier={DOSSIER} roles={["ROLE_JURISTE", "ROLE_CONSULTATION"]} />);
@@ -102,8 +99,8 @@ describe("compte rendu de l'avocat sur l'audience", () => {
   });
 
   /**
-   * L'onglet « Audiences » est ouvert à tous les profils internes, la liste des publications ne
-   * l'est pas : sans ce garde-fou, le SH recevrait un 403 sur un écran qui lui est permis.
+   * The "Hearings" tab is open to all internal profiles, the publication list is not: without this
+   * guard, SH would get a 403 on a screen it is allowed to see.
    */
   it("n'interroge pas les publications pour un profil qui n'y a pas droit", () => {
     rendre(<OngletAudiences dossier={DOSSIER} roles={["ROLE_SH", "ROLE_CONSULTATION"]} />);

@@ -3,12 +3,9 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ligneDansLaFile } from "./files-de-travail";
 
 /**
- * Portail Avocat (écrans 30 et 33) **contre le backend réel**.
- *
- * Ce jalon ouvre l'application à un utilisateur **externe**. Le parcours le plus important n'est
- * donc pas le dépôt, c'est le **cloisonnement** : l'avocat ne doit voir que ses dossiers, et rien
- * du portefeuille de la banque. Deux parcours s'y consacrent, dont un qui interroge l'API
- * directement avec son jeton.
+ * Lawyer portal (screens 30 and 33) against the real backend. The key concern is isolation: an
+ * external lawyer must only see their own cases and nothing of the bank's portfolio. Two journeys
+ * check it, one of them calling the API directly with the lawyer's token.
  */
 
 loadEnvConfig(process.cwd());
@@ -50,7 +47,7 @@ async function json<T>(chemin: string, jetonAcces: string): Promise<T> {
   return (await reponse.json()) as T;
 }
 
-/** Un nom de facture tel qu'un cabinet en produit : c'est la longueur qui cassait la rangée. */
+/** An invoice name as a law firm would produce it: the length used to break the row. */
 const NOM_LONG = "facture-honoraires-cabinet-fotso-et-associes-septembre-2026.pdf";
 
 function suffixe() {
@@ -73,17 +70,8 @@ async function pageConnectee(browser: Browser, identifiant: string) {
 }
 
 /**
- * Choisit un dossier dans le sélecteur du portail.
- *
- * Le champ interroge le serveur au fil de la frappe depuis le 2026-09-28 : il ne charge plus une
- * page de dossiers récents, dans laquelle les anciens manquaient. Sans référence, on prend le
- * premier proposé ; avec, on le cherche — c'est ce que fait l'avocat qui sait ce qu'il veut.
- */
-/**
- * Crée un dossier affecté à l'avocat de test, par l'API, et rend sa référence.
- *
- * Passe par le juriste, seul habilité à créer et affecter : c'est le geste réel, et il garantit que
- * l'affectation existe vraiment plutôt que d'être supposée.
+ * Creates a case assigned to the test lawyer through the API and returns its reference. Goes
+ * through the legal officer, the only one allowed to create and assign.
  */
 async function creerDossierAffecteALAvocat(): Promise<string> {
   const juriste = await jeton("juriste.test");
@@ -115,14 +103,14 @@ async function creerDossierAffecteALAvocat(): Promise<string> {
       pvTransfert: "PV-RECH",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [fiche!.id],
-      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      // At least one party on each side is required.
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
-      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      // Required: the branch comes from the reference data (00002 = Bonanjo).
       codeAgenceOrigine: "00002",
     }),
   });
   expect(creation.status, "le dossier de recherche doit être créé").toBe(201);
-  // La référence est attribuée par le serveur (2026-09-29) : elle se lit dans la réponse.
+  // The reference is server-assigned: read it from the response.
   const cree = (await creation.json()) as { reference: string };
   return cree.reference;
 }
@@ -151,25 +139,23 @@ test("l'avocat ne voit que ses dossiers, et rien du portefeuille de la banque (Q
   const tousLesDossiers = await json<{ totalElements: number }>("/dossiers?size=1", await jeton("juriste.test"));
 
   /*
-   * L'avocat ne voit jamais **plus** que ce qui existe. L'inégalité était stricte auparavant, ce qui
-   * supposait qu'un autre avocat détienne au moins un dossier — vrai sur la base de l'époque, faux
-   * sur une base neuve où `avocat.test` est le seul avocat inscrit : tous les dossiers sont alors
-   * légitimement les siens. Une assertion qui dépend de la composition du jeu de données ne mesure
-   * pas le cloisonnement ; ce sont la **forme de la réponse** et les **403** ci-dessous qui le font.
+   * The lawyer never sees more than exists. A strict inequality would depend on the dataset (on a
+   * fresh database `avocat.test` may own every case); isolation is proven by the response shape and
+   * the 403s below.
    */
   expect(mesDossiers.totalElements).toBeLessThanOrEqual(tousLesDossiers.totalElements);
 
-  // La réponse est réduite à l'identification : aucun champ du portefeuille ne doit filtrer.
+  // The response is limited to identification: no portfolio field may leak.
   const premier = mesDossiers.content[0];
   expect(premier, "l'avocat de test doit être affecté à au moins un dossier").toBeDefined();
   expect(Object.keys(premier!).sort()).toEqual(["id", "juridictionSaisie", "nature", "reference"]);
 
-  // Les endpoints internes lui restent fermés.
+  // Internal endpoints stay closed to the lawyer.
   for (const chemin of ["/dossiers", "/publications", "/clients", "/utilisateurs"]) {
     expect((await appel(chemin, avocat)).status, `${chemin} doit rester fermé à l'avocat`).toBe(403);
   }
 
-  // Et le portail reste fermé aux profils internes, qui ont leurs propres écrans.
+  // The portal stays closed to internal profiles, which have their own screens.
   expect((await appel("/avocat/mes-dossiers", await jeton("juriste.test"))).status).toBe(403);
 });
 
@@ -182,31 +168,31 @@ test("l'avocat dépose une demande de frais en choisissant son dossier (écran 3
   await avocat.waitForURL(/\/frais\/nouvelle/, { timeout: 60_000 });
 
   const reference = `FAC-E2E-${suffixe()}`;
-  // Le sélecteur est alimenté par `GET /avocat/mes-dossiers` : c'est ce que QF-01 rendait impossible.
+  // The selector is fed by `GET /avocat/mes-dossiers`.
   await choisirDossier(avocat, "frais-dossier");
   await avocat.locator("#frais-reference").fill(reference);
   await avocat.locator("#frais-montant").fill("450000");
-  // UC-INT-01 étape 4 : la pièce est un vrai fichier, transmis dès qu'il est choisi (Q-97).
+  // UC-INT-01 step 4: the document is a real file, uploaded as soon as it is chosen.
   await avocat
     .locator('input[name="piece-justificative"]')
     .setInputFiles({ name: "facture.pdf", mimeType: "application/pdf", buffer: PDF });
   await expect(avocat.getByText("facture.pdf")).toBeVisible({ timeout: 30_000 });
 
   /*
-   * Relire la pièce **avant** d'envoyer : une fois la demande déposée, la remplacer suppose de
-   * repasser par une nouvelle demande. L'aperçu s'ouvre sans quitter le formulaire.
+   * Review the document before sending: once filed, replacing it requires a new request. The
+   * preview opens without leaving the form.
    */
   await avocat.getByRole("button", { name: "Consulter - facture.pdf" }).click();
   const apercuAvocat = avocat.getByRole("dialog", { name: "Aperçu - facture.pdf" });
   await expect(apercuAvocat).toBeVisible({ timeout: 30_000 });
-  // Deux boutons ferment la fenêtre — la croix et le bouton du pied : on prend le premier.
+  // Two buttons close the window (the cross and the footer button): take the first.
   await apercuAvocat.getByRole("button", { name: "Fermer" }).first().click();
 
   await avocat.getByRole("button", { name: "Déposer", exact: true }).click();
 
   await expect(avocat.getByText("Demande de frais déposée.")).toBeVisible({ timeout: 30_000 });
   await avocat.waitForURL(/\/frais$/, { timeout: 60_000 });
-  // Sa file (#28) ne montre que les siennes.
+  // Their queue (#28) only shows their own requests.
   await expect(avocat.getByRole("row", { name: new RegExp(reference) })).toBeVisible({ timeout: 30_000 });
 
   await avocat.context().close();
@@ -232,7 +218,7 @@ test("une référence de facture en doublon est signalée sur le champ concerné
     }
   }
 
-  // Le backend nomme le champ fautif (QF-21) : le message se pose dessus, pas dans un bandeau.
+  // The backend names the faulty field: the message sits on it, not in a banner.
   await expect(avocat.locator("#frais-reference")).toHaveAttribute("aria-invalid", "true", { timeout: 30_000 });
 
   await avocat.context().close();
@@ -245,12 +231,12 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
   await avocat.goto("/publications/nouvelle");
   await expect(avocat.getByRole("heading", { name: "Déposer une publication", level: 1 })).toBeVisible();
 
-  // Les deux natures de dépôt sont décrites côte à côte, pas cachées derrière des onglets.
-  // `exact` : le chapô de l'écran reprend les deux expressions dans sa phrase d'introduction.
+  // Both filing types are described side by side, not hidden behind tabs.
+  // `exact`: the screen's intro sentence repeats both expressions.
   await expect(avocat.getByText("Compte rendu d’audience", { exact: true })).toBeVisible();
   await expect(avocat.getByText("Document du dossier", { exact: true })).toBeVisible();
 
-  // Tant qu'aucun dossier n'est choisi, l'audience ne peut pas l'être : elle lui appartient.
+  // Until a case is chosen, the hearing cannot be: it belongs to the case.
   await expect(avocat.locator("#publication-audience")).toBeDisabled();
 
   await choisirDossier(avocat, "publication-dossier");
@@ -261,7 +247,7 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
   if ((await audiences.locator("option").count()) > 1) {
     await audiences.selectOption({ index: 1 });
     await avocat.locator("#publication-contenu").fill(marque);
-    // Q-98 : la pièce est **facultative** — ce dépôt-ci n'en porte pas, et doit aboutir.
+    // The document is optional: this filing has none and must succeed.
     await avocat.getByRole("button", { name: "Déposer le compte rendu" }).click();
     await expect(avocat.getByText("Compte rendu déposé. Il est immédiatement consultable par la Direction Juridique ; l’Assistante en accusera réception.")).toBeVisible({
       timeout: 30_000,
@@ -269,7 +255,7 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
     await avocat.waitForURL(/\/portail/, { timeout: 60_000 });
     await expect(avocat.getByRole("heading", { name: "Mon espace", level: 1 })).toBeVisible();
   } else {
-    // Aucune audience planifiée : l'écran l'explique au lieu de laisser un sélecteur vide.
+    // No scheduled hearing: the screen explains it instead of showing an empty selector.
     await expect(avocat.getByText("Aucune audience n’est encore planifiée sur ce dossier.")).toBeVisible();
   }
 
@@ -277,10 +263,9 @@ test("l'avocat dépose un compte rendu rattaché à une audience de son dossier 
 });
 
 /**
- * Q-98 : le récit **et** sa pièce partent en un seul dépôt, rattachés à la même audience. Le volet
- * lecture — l'Assistante qui ouvre la pièce depuis la publication — est vérifié par P2
- * (`parcours-metier.spec.ts`), sur un dossier créé pour l'occasion : ici le dossier est choisi par
- * position, et rien ne garantirait qu'on relise bien ce dépôt-ci.
+ * The report and its document are filed in a single upload, attached to the same hearing. The
+ * reading side (the Assistant opening the document from the publication) is checked by P2 in
+ * `parcours-metier.spec.ts`, on a dedicated case.
  */
 test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser }) => {
   const avocat = await pageConnectee(browser, "avocat.test");
@@ -289,7 +274,7 @@ test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser
   const audiences = avocat.locator("#publication-audience");
   await expect(audiences).toBeEnabled({ timeout: 30_000 });
 
-  if ((await audiences.locator("option").count()) <= 1) return; // dossier sans audience : rien à joindre
+  if ((await audiences.locator("option").count()) <= 1) return; // case without a hearing: nothing to attach
 
   const marque = suffixe();
   await audiences.selectOption({ index: 1 });
@@ -299,8 +284,8 @@ test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser
     .setInputFiles({ name: `plumitif-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
 
   /*
-   * Il relit sa pièce avant de déposer son compte rendu : le fichier n'est pas encore parti, et une
-   * publication déposée ne se corrige pas — elle se redépose.
+   * The lawyer reviews the document before filing the report: a filed publication cannot be
+   * corrected, only filed again.
    */
   await avocat.getByRole("button", { name: `Consulter - plumitif-${marque}.pdf` }).click();
   const apercuPiece = avocat.getByRole("dialog", { name: `Aperçu - plumitif-${marque}.pdf` });
@@ -312,7 +297,7 @@ test("un compte rendu part avec sa pièce, en un seul dépôt", async ({ browser
     timeout: 30_000,
   });
 
-  // Le dépôt apparaît dans son espace, où il relit ce qu'il a transmis.
+  // The filing appears in their space, where they can review what they sent.
   await avocat.goto("/portail");
   await expect(avocat.getByRole("heading", { name: "Mon espace", level: 1 })).toBeVisible({ timeout: 30_000 });
   await avocat.context().close();
@@ -334,13 +319,9 @@ test("l'avocat relit ses dépôts et ses constitutions dans son espace", async (
 });
 
 /**
- * Le défaut signalé en recette (2026-09-28) : le sélecteur chargeait une page des dossiers les plus
- * récents, et un avocat qui en suit davantage ne voyait plus les anciens — ni demande de frais, ni
- * compte rendu possible pour eux. Le dossier existait, l'affectation aussi ; seule la liste était
- * tronquée, en silence.
- *
- * Le parcours crée un dossier, en crée d'autres par-dessus pour le repousser dans la liste, puis
- * vérifie que l'avocat le retrouve **en le cherchant**.
+ * The case selector searches the server: a lawyer following many cases must still find older ones.
+ * The journey creates a case, pushes it down with newer ones, then checks the lawyer finds it by
+ * searching.
  */
 test("l'avocat retrouve par la recherche un dossier repoussé hors de la première page", async ({ browser }) => {
   const reference = await creerDossierAffecteALAvocat();
@@ -355,7 +336,7 @@ test("l'avocat retrouve par la recherche un dossier repoussé hors de la premiè
   const liste = avocat.getByRole("listbox", { name: "Dossier" });
   await expect(liste.getByRole("option", { name: new RegExp(reference) })).toBeVisible({ timeout: 30_000 });
 
-  // La recherche ignore la casse : on cherche comme on parle, pas comme la base stocke.
+  // Search is case-insensitive.
   await champ.fill(reference.toLowerCase());
   await expect(liste.getByRole("option", { name: new RegExp(reference) })).toBeVisible({ timeout: 30_000 });
 
@@ -363,12 +344,8 @@ test("l'avocat retrouve par la recherche un dossier repoussé hors de la premiè
 });
 
 /**
- * Le défaut signalé en recette (2026-09-28) : la pièce téléversée par l'avocat arrivait bien dans
- * le stockage, mais l'écran de l'Assistante n'en montrait que le **chemin technique** — ni
- * consultable, ni téléchargeable. Elle devait statuer sur la conformité sans pouvoir ouvrir le
- * document, ce que le guide utilisateur promettait pourtant.
- *
- * Le parcours suit la pièce d'un bout à l'autre : l'avocat la charge, l'Assistante l'ouvre.
+ * The document uploaded by the lawyer must be openable by the Assistant (not just a storage path),
+ * so compliance can be judged. The journey follows it end to end: lawyer uploads, Assistant opens.
  */
 test("la pièce déposée par l'avocat s'ouvre chez l'Assistante", async ({ browser }) => {
   const avocat = await pageConnectee(browser, "avocat.test");
@@ -390,7 +367,7 @@ test("la pièce déposée par l'avocat s'ouvre chez l'Assistante", async ({ brow
   await assistante.getByRole("link", { name: reference }).click();
   await assistante.waitForURL(/\/frais\/\d+/, { timeout: 60_000 });
 
-  // Le nom d'origine, et non le chemin de stockage : c'est ce qu'un humain peut lire.
+  // The original name, not the storage path: what a human can read.
   await expect(assistante.getByText("releve-diligences.pdf")).toBeVisible({ timeout: 30_000 });
   await expect(assistante.getByText(/^frais\//)).toHaveCount(0);
 
@@ -406,19 +383,15 @@ test("la pièce déposée par l'avocat s'ouvre chez l'Assistante", async ({ brow
 });
 
 /**
- * Le défaut signalé en recette (2026-09-28) : une fois la publication validée, le compte rendu de
- * l'avocat restait introuvable depuis l'audience. Il vit dans les publications, rattaché à
- * l'audience mais pas porté par elle — l'onglet « Audiences » n'affichait donc que le récit du
- * juriste, et l'audience paraissait muette.
- *
- * Le parcours suit le compte rendu d'un bout à l'autre : l'avocat dépose, l'Assistante valide, et
- * la ligne de l'audience y mène.
+ * Once the publication is acknowledged, the lawyer's report is reachable from the hearing (it lives
+ * in publications, attached to the hearing). The journey: lawyer files, Assistant acknowledges, the
+ * hearing row links to it.
  */
 test("le compte rendu validé de l'avocat se retrouve depuis son audience", async ({ browser }) => {
   const juriste = await pageConnectee(browser, "juriste.test");
   const marque = suffixe();
 
-  // Un dossier neuf, avec une audience du jour : le compte rendu doit pouvoir s'y rattacher.
+  // A new case with a hearing today: the report must be attachable to it.
   const reference = await creerDossierAffecteALAvocat();
   await juriste.goto("/dossiers");
   await juriste.getByLabel("Référence", { exact: true }).fill(reference);
@@ -458,31 +431,29 @@ test("le compte rendu validé de l'avocat se retrouve depuis son audience", asyn
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto("/publications");
   /*
-   * La file est **FIFO et paginée** : le compte rendu qu'on vient de déposer est le dernier, donc
-   * pas sur la première page. Chercher à l'écran sans parcourir les pages ne tenait que tant que
-   * la file comptait moins de dix éléments.
+   * The queue is FIFO and paginated: the report just filed is last, so not necessarily on the first
+   * page.
    */
   const ligneFile = await ligneDansLaFile(assistante, new RegExp(reference));
   await ligneFile.getByRole("link").first().click();
   await assistante.waitForURL(/\/publications\/\d+/, { timeout: 60_000 });
   /*
-   * Un **compte rendu** ne se valide pas, l'Assistante en **accuse réception**. Depuis l'étape 2 du
-   * lot d'améliorations, il est consultable par les juristes affectés dès son dépôt ; l'accusé de
-   * réception l'ouvre aux autres et dit à l'avocat qu'il a été reçu. Le bouton « Rejeter »,
-   * lui, n'est plus proposé : un récit d'audience se conteste par une correspondance.
+   * A report is not validated: the Assistant acknowledges receipt. Assigned legal officers can read
+   * it as soon as it is filed; acknowledgement opens it to others and tells the lawyer it was
+   * received. There is no reject button: a hearing report is contested through correspondence.
    */
   await assistante.getByRole("button", { name: "Accuser réception" }).click();
   await assistante
     .getByRole("dialog", { name: "Accuser réception du compte rendu ?" })
     .getByRole("button", { name: "Accuser réception" })
     .click();
-  // Attendre la confirmation, et non le seul clic : naviguer trop tôt laissait la publication au
-  // statut « déposée », et l'audience paraissait alors — à juste titre — sans compte rendu.
+  // Wait for the confirmation, not just the click: navigating too early left the publication
+  // "déposée", and the hearing then had no report.
   await expect(assistante.getByText("Réception du compte rendu accusée.")).toBeVisible({
     timeout: 30_000,
   });
 
-  // Depuis l'audience, la ligne mène au compte rendu de l'avocat — c'est ce qui manquait.
+  // From the hearing, the row links to the lawyer's report.
   await assistante.goto(`${url}?onglet=audiences`);
   const lien = assistante.getByRole("link", { name: "Compte rendu de l’avocat" });
   await expect(lien).toBeVisible({ timeout: 30_000 });
@@ -520,12 +491,9 @@ test("les écrans du portail sont traduits", async ({ browser }) => {
 });
 
 /**
- * QF-45 — un avocat dont le compte n'est pas encore inscrit au répertoire.
- *
- * Ce test ne s'exécute que si le référentiel ne connaît pas `avocat.test` : sur une base peuplée, le
- * cas n'existe pas, et le forcer supposerait de supprimer une fiche dont d'autres parcours dépendent.
- * Il garde ce qui compte — que cet état soit **expliqué** et non présenté comme une panne, sur les
- * quatre écrans que l'avocat peut atteindre.
+ * A lawyer whose account is not yet registered in the directory. Only runs if the reference data
+ * does not know `avocat.test` (forcing it would delete a record other journeys depend on). The state
+ * must be explained, not shown as a failure, on the four screens the lawyer can reach.
  */
 test("un compte non rattaché au répertoire est expliqué, pas présenté comme un échec", async ({
   browser,
@@ -536,7 +504,7 @@ test("un compte non rattaché au répertoire est expliqué, pas présenté comme
   const explication = avocat.getByText("pas encore rattaché au répertoire");
   if ((await explication.count()) === 0) {
     await avocat.context().close();
-    return; // le compte est inscrit : ce n'est pas le cas visé
+    return; // the account is registered: not the targeted case
   }
 
   for (const chemin of ["/portail", "/frais", "/frais/nouvelle", "/publications/nouvelle"]) {
@@ -545,19 +513,14 @@ test("un compte non rattaché au répertoire est expliqué, pas présenté comme
       avocat.getByText("pas encore rattaché au répertoire"),
       `${chemin} doit expliquer l'état du compte`,
     ).toBeVisible({ timeout: 30_000 });
-    // Le point de la correction : plus jamais le message d'échec technique.
+    // Never the technical failure message.
     await expect(avocat.getByText("Le chargement a échoué")).toHaveCount(0);
   }
   await avocat.context().close();
 });
 
 /**
- * Les quatre défauts du formulaire de frais, relevés en recette (QF-56) — REC-E2E-041.
- *
- * **Pourquoi aucun test ne les avait vus.** Les parcours existants remplissent le formulaire
- * **correctement** : ils écrivent « 450000 », joignent une pièce, et vérifient que le dépôt passe.
- * Aucun n'avait essayé d'écrire « 12 000 », ni de cliquer « Déposer » les mains vides. Un formulaire
- * ne se juge pas seulement sur le chemin où tout va bien - c'est l'autre que l'utilisateur emprunte.
+ * Expense form validation (REC-E2E-041): amounts with spaces, and submitting an incomplete form.
  */
 test("un montant écrit avec des espaces est accepté, comme on l'écrit partout", async ({ page }) => {
   await seConnecter(page, "avocat.test");
@@ -566,7 +529,7 @@ test("un montant écrit avec des espaces est accepté, comme on l'écrit partout
   const reference = `FAC-E2E-${suffixe()}`;
   await choisirDossier(page, "frais-dossier");
   await page.locator("#frais-reference").fill(reference);
-  // Le défaut exact signalé en recette : le bouton restait éteint, sans un mot d'explication.
+  // The button must not stay disabled without explanation.
   await page.locator("#frais-montant").fill("1 250 000");
   await page
     .locator('input[name="piece-justificative"]')
@@ -574,7 +537,7 @@ test("un montant écrit avec des espaces est accepté, comme on l'écrit partout
   await expect(page.getByText("facture-espaces.pdf")).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("button", { name: "Déposer", exact: true }).click();
-  // Le dépôt aboutit : la page des frais s'ouvre, et aucun message ne reproche le montant.
+  // Filing succeeds: the expenses page opens, and no message complains about the amount.
   await page.waitForURL(/\/frais$/, { timeout: 60_000 });
   await expect(page.getByText(reference)).toBeVisible({ timeout: 30_000 });
 
@@ -582,9 +545,8 @@ test("un montant écrit avec des espaces est accepté, comme on l'écrit partout
 });
 
 /**
- * Le cœur de la correction : **le bouton n'est plus éteint par l'incomplétude**. Un bouton mort sans
- * explication laisse chercher lequel des quatre champs est en cause. La tentative est acceptée, et
- * ce qui manque est nommé champ par champ.
+ * The submit button is not disabled by incompleteness: the attempt is accepted and what is missing
+ * is named field by field.
  */
 test("un dépôt les mains vides nomme ce qui manque, au lieu d'un bouton éteint", async ({ page }) => {
   await seConnecter(page, "avocat.test");
@@ -594,24 +556,24 @@ test("un dépôt les mains vides nomme ce qui manque, au lieu d'un bouton étein
   await expect(deposer).toBeEnabled();
   await deposer.click();
 
-  // Les quatre champs se plaignent, chacun chez lui.
+  // All four fields complain, each on its own.
   await expect(page.getByText("Choisissez le dossier concerné.")).toBeVisible();
   await expect(page.getByText("Indiquez la référence de la facture.")).toBeVisible();
   await expect(page.getByText("Indiquez le montant demandé.")).toBeVisible();
   await expect(page.getByText("Chargez au moins une pièce justificative.")).toBeVisible();
-  // Rien n'est parti : on est resté sur le formulaire.
+  // Nothing was sent: still on the form.
   await expect(page).toHaveURL(/\/frais\/nouvelle/);
 
   /*
-   * Un montant saisi mais illisible est une autre erreur qu'un montant absent, et le message le dit
-   * - en nommant ce qui est accepté plutôt qu'en refusant sans expliquer.
+   * An unreadable amount is a different error from a missing one, and the message names what is
+   * accepted.
    */
   await page.locator("#frais-montant").fill("mille");
   await expect(page.getByText("Indiquez le montant demandé.")).toHaveCount(0);
   await deposer.click();
   await expect(page.getByText(/Le montant doit être un nombre supérieur à zéro/)).toBeVisible();
 
-  // Corriger un champ en efface le reproche : le laisser serait accuser après coup.
+  // Correcting a field clears its error.
   await page.locator("#frais-reference").fill("FAC-TEST");
   await expect(page.getByText("Indiquez la référence de la facture.")).toHaveCount(0);
 
@@ -619,11 +581,8 @@ test("un dépôt les mains vides nomme ce qui manque, au lieu d'un bouton étein
 });
 
 /**
- * Le risque introduit par la correction précédente, et qu'il faut tenir.
- *
- * **La rangée des pièces ne passe plus à la ligne** : si le nom du fichier ne cédait pas, elle
- * déborderait de l'écran sur un mobile. Le test de débordement général ne couvre pas cet écran - il
- * se connecte en DJ, qui ne dépose pas de frais -, et ce trou a été comblé ici plutôt que laissé.
+ * The document row no longer wraps, so a long file name must shrink rather than overflow on mobile.
+ * The general overflow test logs in as DJ, who does not file expenses, hence this check.
  */
 test("le formulaire de frais ne déborde pas en mobile, nom de fichier long compris", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 720 });
@@ -640,7 +599,7 @@ test("le formulaire de frais ne déborde pas en mobile, nom de fichier long comp
 
   const debordement = await page.evaluate(() => {
     const racine = document.documentElement;
-    // Un pixel de tolérance : les arrondis de mise en page en produisent un.
+    // One-pixel tolerance for layout rounding.
     return Math.max(0, racine.scrollWidth - racine.clientWidth - 1);
   });
   expect(debordement, `le formulaire déborde de ${debordement} px en 375 px`).toBe(0);
@@ -653,9 +612,8 @@ test("la pièce justificative est signalée obligatoire", async ({ page }) => {
   await page.goto("/frais/nouvelle");
 
   /*
-   * L'astérisque est **décorative et `aria-hidden`** : à l'intérieur du texte, la légende vaudrait
-   * « Pièces justificatives* » et cesserait de correspondre au mot que l'utilisateur lit. C'est pour
-   * qui écoute que le nom du champ de fichier porte l'information.
+   * The asterisk is decorative and `aria-hidden`: inside the text, the legend would read
+   * "Pièces justificatives*" and stop matching what the user reads.
    */
   const bloc = page.locator("fieldset").filter({ hasText: "Pièces justificatives" });
   await expect(bloc.locator("legend")).toHaveText("Pièces justificatives*");
@@ -665,9 +623,8 @@ test("la pièce justificative est signalée obligatoire", async ({ page }) => {
 });
 
 /**
- * L'œil d'aperçu **sur la même ligne** que le téléversement (QF-56), comme au formulaire de création
- * de dossier. Il s'affichait au-dessus, sur une ligne distincte, et le lien entre le fichier choisi
- * et le bouton qui le relit se perdait.
+ * The preview eye sits on the same line as the upload, as in the case creation form, so the link
+ * between the chosen file and its preview button is clear.
  */
 test("l'aperçu d'une pièce s'affiche sur la même ligne que le téléversement", async ({ page }) => {
   await seConnecter(page, "avocat.test");
@@ -676,25 +633,19 @@ test("l'aperçu d'une pièce s'affiche sur la même ligne que le téléversement
   const televersement = page.getByRole("button", { name: "Choisir un fichier" }).first();
   await expect(televersement).toBeVisible();
 
-  /*
-   * **Un nom volontairement long**, parce que c'est lui qui cassait la disposition. Ma première
-   * version de ce parcours téléversait « m.pdf » : la rangée tenait, le test passait, et le défaut
-   * restait entier dès qu'un avocat nommait sa facture comme on la nomme. Un test qui choisit ses
-   * données pour qu'elles tiennent ne mesure rien.
-   */
+  // A deliberately long name: short names do not exercise the layout.
   await page
     .locator('input[name="piece-justificative"]')
     .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
   const apercu = page.getByRole("button", { name: `Consulter - ${NOM_LONG}` });
   await expect(apercu).toBeVisible({ timeout: 30_000 });
 
-  // Le nom est tronqué à l'écran mais lisible au survol : il cède, il ne disparaît pas.
+  // The name is truncated on screen but readable on hover.
   await expect(page.getByTitle(NOM_LONG)).toBeVisible();
 
   /*
-   * « Sur la même ligne » se mesure, il ne se devine pas : les deux boîtes doivent se chevaucher
-   * verticalement. Une assertion de texte n'aurait rien dit de la disposition, et c'est précisément
-   * la disposition qui était en cause.
+   * "Same line" is measured: both boxes must overlap vertically. A text assertion says nothing about
+   * layout.
    */
   const boiteTeleversement = (await televersement.boundingBox())!;
   const boiteApercu = (await apercu.boundingBox())!;
@@ -709,21 +660,19 @@ test("l'aperçu d'une pièce s'affiche sur la même ligne que le téléversement
 });
 
 /**
- * La même disposition au dépôt de publication (QF-56), dans les **deux** natures.
- *
- * Le bouton de relecture y était enveloppé dans un `<div>`, qui en faisait un bloc occupant toute la
- * largeur : il s'affichait donc sous le téléversement, exactement comme au dépôt de frais.
+ * Same layout when filing a publication, in both filing types: the preview button must not be a
+ * full-width block below the upload.
  */
 async function ouvrirDepotPublication(page: Page, nature: "compteRendu" | "document") {
   await page.goto("/publications/nouvelle");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
   if (nature === "document") {
-    // Les deux natures sont deux choix décrits, pas deux onglets : on coche celui qu'on veut.
+    // Both types are described choices, not tabs: check the wanted one.
     await page.getByRole("radio").nth(1).check();
   }
 }
 
-/** Les deux boîtes doivent se chevaucher verticalement : « sur la même ligne » se mesure. */
+/** Both boxes must overlap vertically: "same line" is measured. */
 async function surLaMemeLigne(page: Page, nomFichier: string) {
   const televersement = page.getByRole("button", { name: "Choisir un fichier" }).first();
   const relire = page.getByRole("button", { name: `Consulter - ${nomFichier}` });
@@ -748,7 +697,7 @@ test("la relecture d'une pièce de compte rendu est sur la même ligne, nom long
     .setInputFiles({ name: NOM_LONG, mimeType: "application/pdf", buffer: PDF });
 
   await surLaMemeLigne(page, NOM_LONG);
-  // Tronqué à l'écran, lisible au survol : le nom cède, il ne disparaît pas.
+  // Truncated on screen, readable on hover.
   await expect(page.getByTitle(NOM_LONG)).toBeVisible();
 
   await page.context().close();
@@ -769,9 +718,8 @@ test("la relecture d'un document du dossier est sur la même ligne, nom long com
 });
 
 /**
- * Le risque que la correction introduit, et qu'il faut tenir dans les deux natures : une rangée qui
- * ne passe plus à la ligne peut déborder de l'écran si le nom ne cède pas. Le test de débordement
- * général ne couvre pas cet écran non plus - il se connecte en DJ, qui ne dépose pas de publication.
+ * A row that no longer wraps can overflow if the name does not shrink, in both filing types. The
+ * general overflow test logs in as DJ, who does not file publications.
  */
 test("le dépôt de publication ne déborde pas en mobile, dans les deux natures", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 720 });
@@ -791,7 +739,7 @@ test("le dépôt de publication ne déborde pas en mobile, dans les deux natures
 
     const debordement = await page.evaluate(() => {
       const racine = document.documentElement;
-      // Un pixel de tolérance : les arrondis de mise en page en produisent un.
+      // One-pixel tolerance for layout rounding.
       return Math.max(0, racine.scrollWidth - racine.clientWidth - 1);
     });
     expect(debordement, `la nature « ${nature} » déborde de ${debordement} px en 375 px`).toBe(0);
@@ -801,22 +749,15 @@ test("le dépôt de publication ne déborde pas en mobile, dans les deux natures
 });
 
 /**
- * **La correspondance du DJ parvient à l'avocat** (QF-58, signalé en recette le 2026-10-14).
- *
- * Le défaut : quand le DJ ou la DJA transmet une correspondance sur une publication, l'avocat en est
- * notifié deux fois - une alerte et une notification prestataire -, mais aucun écran ne la lui
- * montrait. Une notification qui renvoie vers une page muette dit qu'il y a quelque chose à lire
- * sans le donner.
- *
- * Le dépôt et la transmission passent par l'API : ce sont les préparatifs du parcours, et les faire
- * à l'écran n'éprouverait que des écrans déjà couverts ailleurs. **Ce qui est vérifié ici, c'est ce
- * que l'avocat voit.**
+ * The DJ's correspondence reaches the lawyer: when the DJ or DJA forwards correspondence on a
+ * publication, the lawyer must be able to read it, not just be notified. Filing and forwarding go
+ * through the API; what the lawyer sees is checked on screen.
  */
 test("l'avocat lit sur son espace la correspondance que le DJ lui a transmise", async ({ browser }) => {
   const reference = await creerDossierAffecteALAvocat();
   const avocat = await jeton("avocat.test");
 
-  // Son dossier, vu de son côté : c'est la seule façon d'en obtenir l'identifiant avec son jeton.
+  // Their case, seen from their side: the only way to get its id with their token.
   const mesDossiers = await json<{ content: { id: number; reference: string }[] }>(
     `/avocat/mes-dossiers?reference=${reference}`,
     avocat,
@@ -844,7 +785,7 @@ test("l'avocat lit sur son espace la correspondance que le DJ lui a transmise", 
   await page.goto("/portail");
   await expect(page.getByRole("heading", { name: "Mon espace", level: 1 })).toBeVisible({ timeout: 30_000 });
 
-  // La colonne existe, et la correspondance s'y lit - avec la signature de qui l'a transmise.
+  // The column exists and shows the correspondence, signed by whoever forwarded it.
   await expect(
     page.getByRole("columnheader", { name: "Correspondance de la Direction Juridique" }),
   ).toBeVisible({ timeout: 30_000 });
@@ -855,12 +796,9 @@ test("l'avocat lit sur son espace la correspondance que le DJ lui a transmise", 
 });
 
 /**
- * **Ce que l'écran de l'avocat ne doit jamais montrer** (QF-58).
- *
- * Le juriste ne s'adresse jamais directement à l'avocat (Q-20, US 5.5, RG-INT-07) : il commente pour
- * le DJ/DJA, qui tranche et transmet une correspondance unique. Un commentaire interne affiché sur
- * le portail ouvrirait la délibération à celui dont elle discute - et la correction de QF-58 passait
- * à un argument près de le faire.
+ * What the lawyer's screen must never show. The legal officer never addresses the lawyer directly
+ * (US 5.5, RG-INT-07): they comment for the DJ/DJA, who decides and forwards a single
+ * correspondence. Internal comments must not appear on the portal.
  */
 test("le commentaire interne d'un juriste n'atteint pas le portail de l'avocat", async ({ browser }) => {
   const reference = await creerDossierAffecteALAvocat();
@@ -897,22 +835,14 @@ test("le commentaire interne d'un juriste n'atteint pas le portail de l'avocat",
 });
 
 /**
- * **L'avocat trouve l'accueil et ses notifications dans son menu** (QF-59, signalé le 2026-10-14).
- *
- * Le défaut : les deux entrées étaient adossées à `consulterReferentiels`, que l'avocat ne porte
- * pas. Elles disparaissaient de son menu alors que les deux pages s'ouvraient parfaitement pour lui.
- * Il y arrivait par le **logo de la banque** et par la **cloche** - deux portes sans étiquette, qui
- * ne disent pas où elles mènent.
- *
- * Et la seconde moitié, qui manquait aussi : arrivé sur la page, **aucun onglet ne la signalait**.
- * Le commentaire du logo affirmait que « l'entrée Accueil porte déjà `aria-current` » ; c'était vrai
- * des cinq profils internes, faux de l'avocat, dont le menu n'avait pas cette entrée.
+ * The lawyer finds Home and notifications in their menu (not only through the logo and bell), and
+ * the current tab is marked with `aria-current`.
  */
 test("l'avocat a l'accueil et ses notifications dans son menu, et l'onglet suit", async ({ page }) => {
   await seConnecter(page, "avocat.test");
   const menu = page.getByRole("navigation", { name: "Navigation principale" });
 
-  // Les deux entrées existent - c'est ce qui manquait.
+  // Both entries exist.
   const accueil = menu.getByRole("link", { name: "Accueil", exact: true });
   const notifications = menu.getByRole("link", { name: "Notifications", exact: true });
   await expect(accueil).toBeVisible();
@@ -920,7 +850,7 @@ test("l'avocat a l'accueil et ses notifications dans son menu, et l'onglet suit"
 
   await notifications.click();
   await page.waitForURL(/\/notifications/, { timeout: 60_000 });
-  // L'onglet revendique la page courante : c'est la seconde moitié du défaut.
+  // The tab claims the current page.
   await expect(notifications, "aucun onglet ne signale la page des notifications")
     .toHaveAttribute("aria-current", "page");
 
@@ -929,7 +859,7 @@ test("l'avocat a l'accueil et ses notifications dans son menu, et l'onglet suit"
   await expect(accueil, "aucun onglet ne signale la page d'accueil")
     .toHaveAttribute("aria-current", "page");
 
-  // Le logo mène au même endroit, et n'y revendique rien : deux marqueurs feraient du bruit.
+  // The logo leads to the same place without claiming it: two markers would be noise.
   await expect(menu.getByRole("link", { name: "Afriland First Bank, retour à l’accueil" }))
     .not.toHaveAttribute("aria-current", "page");
 
@@ -937,11 +867,8 @@ test("l'avocat a l'accueil et ses notifications dans son menu, et l'onglet suit"
 });
 
 /**
- * Et ce que ces deux entrées **n'ouvrent pas** : son menu reste celui d'un prestataire externe.
- *
- * QF-59 corrige une navigation, pas un périmètre. Si « Dossiers », « Clients » ou « Mon compte »
- * apparaissaient, l'entrée mènerait à un refus de droits - l'erreur contre laquelle met en garde le
- * commentaire de « Mon compte » dans `lib/navigation.ts`.
+ * What these two entries do not open: the menu stays that of an external provider. "Dossiers",
+ * "Clients" or "Mon compte" would lead to a permission refusal (see `lib/navigation.ts`).
  */
 test("le menu de l'avocat ne s'est pas élargi au reste de l'application", async ({ page }) => {
   await seConnecter(page, "avocat.test");

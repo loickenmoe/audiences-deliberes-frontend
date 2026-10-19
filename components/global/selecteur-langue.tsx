@@ -5,11 +5,11 @@ import { changerLangue } from "@/lib/actions/langue";
 import { cn } from "@/lib/utils";
 
 /**
- * Bascule entre les deux langues officielles du Cameroun.
+ * Switches between Cameroon's two official languages.
  *
- * Deux boutons plutôt qu'une liste déroulante : avec seulement deux choix, la liste ajoute un clic
- * et masque l'option non retenue. La langue active est signalée autrement que par la seule couleur —
- * `aria-current` la porte pour les technologies d'assistance.
+ * Two buttons rather than a dropdown: with only two choices, a list adds a click and hides the other
+ * option. The active language is not signalled by colour alone: `aria-current` carries it for
+ * assistive technologies.
  */
 export async function SelecteurLangue({ className }: { className?: string }) {
   const active = await getLocale();

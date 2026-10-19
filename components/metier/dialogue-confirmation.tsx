@@ -6,15 +6,10 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 /**
- * Dialogue de confirmation.
- *
- * **Motif central du domaine** : le backend refuse certaines opérations par un 409 qui n'est pas un
- * échec mais une **demande de confirmation** — `ERR-003` (doublon d'affectation) et `ERR-005`
- * (doublon d'audience). L'appel se rejoue alors avec `?forcer=true`.
- *
- * Présenter ces réponses comme des erreurs bloquerait deux parcours métier parfaitement légitimes :
- * un dossier peut légitimement être réaffecté au même juriste, une audience replanifiée le même
- * jour. C'est pourquoi `ErreurApi.demandeConfirmation` existe.
+ * Confirmation dialog.
+ * Some backend 409 responses are not failures but confirmation requests: `ERR-003` (duplicate
+ * assignment) and `ERR-005` (duplicate hearing). The call is then replayed with `?forcer=true` (see
+ * `ErreurApi.demandeConfirmation`).
  */
 export function DialogueConfirmation({
   ouvert,
@@ -32,7 +27,7 @@ export function DialogueConfirmation({
   titre: string;
   message: string;
   libelleConfirmation?: string;
-  /** Bascule l'action en variante destructive : suppressions et rejets. */
+  /** Switches the action to the destructive variant (deletions and rejections). */
   destructif?: boolean;
   enCours?: boolean;
 }) {

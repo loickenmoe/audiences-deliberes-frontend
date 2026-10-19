@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLibelles } from "@/hooks/useLibelles";
 import type { Dossier } from "@/types/domaine";
 
-/** Paire libellé / valeur. Une valeur absente s'affiche « — » plutôt qu'un blanc ambigu. */
+/** Label / value pair. A missing value is shown as "—" rather than an ambiguous blank. */
 function Donnee({ libelle, children }: { libelle: string; children: ReactNode }) {
   const vide = children === null || children === undefined || children === "";
   return (
@@ -20,12 +20,10 @@ function Donnee({ libelle, children }: { libelle: string; children: ReactNode })
 }
 
 /**
- * Onglet synthèse.
- *
- * Les affectations arrivent du backend sous forme d'**identifiants nus** (`juristesAffectes:
- * [3, 7]`) : `useLibelles` les résout en noms. Un juriste jamais connecté n'est pas dans
- * l'annuaire (QF-16) et s'affiche alors `#id` — un blanc laisserait croire à une absence
- * d'affectation.
+ * Summary tab.
+ * Assignments come from the backend as bare ids (`juristesAffectes: [3, 7]`): `useLibelles`
+ * resolves them to names. A lawyer who never logged in is not in the directory and is shown as
+ * `#id`; a blank would suggest no assignment.
  */
 export function OngletSynthese({ dossier }: { dossier: Dossier }) {
   const t = useTranslations("dossiers");
@@ -59,8 +57,10 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2">
-            {/* Plusieurs parties de chaque côté depuis le 2026-10-05 : on les sépare par un
-                point-virgule plutôt qu'une virgule, les raisons sociales en contenant souvent. */}
+            {/*
+              Several parties per side, separated by a semicolon rather than a comma since company
+              names often contain commas.
+            */}
             <Donnee libelle={t("champDemandeurs")}>
               {dossier.parties?.demandeurs?.join(" ; ")}
             </Donnee>
@@ -78,7 +78,7 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
           <CardTitle>{t("sectionPieces")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Seule la paire exigée par la catégorie a un sens : l'autre est toujours vide. */}
+          {/* Only the pair required by the category is meaningful: the other is always empty. */}
           <dl className="grid gap-4 sm:grid-cols-2">
             {estRecouvrement ? (
               <>
@@ -94,10 +94,8 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
               </>
             )}
             {/*
-              Affiché **seulement s'il porte une valeur**. Le champ n'est plus saisissable depuis
-              le 2026-09-28 ; aucun des dossiers en base n'en portait. La ligne ne subsiste donc
-              que pour d'éventuelles données héritées, sous un libellé qui ne promet plus de
-              déclenchement — c'était la promesse trompeuse du nom « alarme ».
+              Shown only when it has a value: the field is no longer editable and only remains for
+              possible legacy data, under a label that no longer promises a trigger.
             */}
             {dossier.champAlarme ? (
               <Donnee libelle={t("champAlarmeHerite")}>{dossier.champAlarme}</Donnee>
@@ -163,9 +161,9 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
             </dl>
           ) : dossier.sensibiliteMotifRetrait ? (
             /*
-             * Un dossier dont la diligence a été **retirée** (N4) n'est plus sensible : sans ce cas,
-             * le bloc se réduisait à « dossier ordinaire » et le motif du retrait, pourtant exigé du
-             * DJ, n'aurait été lisible nulle part.
+             * A case whose due diligence was **removed** is no longer sensitive: without this case
+             * the block would only say "ordinary case" and the removal reason, required from the
+             * DJ, would be shown nowhere.
              */
             <dl className="grid gap-4 sm:grid-cols-3">
               <Donnee libelle={tf("statutSensibilite")}>{tf("sensibiliteMotifRetrait")}</Donnee>

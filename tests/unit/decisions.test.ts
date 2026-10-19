@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  *
- * Décisions définitives (#51-#53, lecture Q-88) et jurisprudence (#54, #55) : ce qui part sur le
- * fil. Sous Node : MSW ne relit un corps `FormData` que dans cet environnement.
+ * Final decisions (#51-#53) and case law (#54, #55): what goes over the wire.
+ * Runs under Node because MSW can only read back a `FormData` body in this environment.
  */
 import { HttpResponse, http, type JsonBodyType } from "msw";
 import { setupServer } from "msw/node";

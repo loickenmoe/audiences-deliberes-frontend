@@ -5,25 +5,14 @@ import { ChampRecherche, DELAI_RECHERCHE } from "@/components/metier/champ-reche
 import { rendre } from "../utils/rendu";
 
 /**
- * Le filtrage **au fil de la frappe** (QF-57).
+ * Filtering **as you type**. Key guarantee: one request per **pause**, not per character, otherwise
+ * an eight-letter word would reload the list eight times.
  *
- * **Le défaut corrigé.** Les filtres textuels des listes se validaient sur `onBlur` : il fallait
- * quitter le champ pour voir le résultat. Signalé en recette le 2026-10-14 - on tape, et rien ne se
- * passe.
- *
- * **Ce que ces tests protègent, et qui est tout l'enjeu.** Une requête par **pause**, pas par
- * caractère. C'était la seule objection valable à `onChange`, écrite noir sur blanc dans le code
- * d'origine : « écrire dans l'URL à chaque frappe produirait une requête par caractère ». Si le
- * délai sautait, le défaut reviendrait sous une autre forme - une liste rechargée huit fois pour un
- * mot de huit lettres.
- *
- * **Horloge réelle, et délai raccourci par la propriété prévue pour cela.** Les minuteurs simulés
- * entrent en conflit avec l'attente interne de Testing Library : les six tests expiraient. Le
- * composant expose déjà `delai`, et mieux vaut un test rapide sur la vraie horloge qu'un test bloqué
- * sur une fausse.
+ * Uses the real clock with a shortened `delai` prop: fake timers conflict with Testing Library's
+ * internal waiting.
  */
 describe("champ de recherche au fil de la frappe", () => {
-  /** Assez court pour que la suite reste rapide, assez long pour que les marges soient franches. */
+  /** Short enough to keep the suite fast, long enough for clear margins. */
   const DELAI = 200;
   const MARGE = 70;
 
@@ -47,7 +36,7 @@ describe("champ de recherche au fil de la frappe", () => {
 
     fireEvent.change(screen.getByLabelText("Référence"), { target: { value: "DOS" } });
 
-    // La saisie est visible aussitôt - c'est ce qui manquait -, mais rien n'est encore parti.
+    // The input is visible immediately, but nothing has been sent yet.
     expect(screen.getByLabelText("Référence")).toHaveValue("DOS");
     await patienter(MARGE);
     expect(onChangement).not.toHaveBeenCalled();
@@ -58,7 +47,7 @@ describe("champ de recherche au fil de la frappe", () => {
     poser(onChangement);
     const champ = screen.getByLabelText("Référence");
 
-    // Huit frappes successives, comme un mot tapé d'un trait.
+    // Eight successive keystrokes, like a word typed in one go.
     for (const saisie of ["D", "DO", "DOS", "DOS-", "DOS-2", "DOS-20", "DOS-202", "DOS-2026"]) {
       fireEvent.change(champ, { target: { value: saisie } });
     }
@@ -68,8 +57,8 @@ describe("champ de recherche au fil de la frappe", () => {
   });
 
   /**
-   * Le cas qui prouve que le minuteur est **réarmé** et non empilé : sans le `clearTimeout`, la
-   * première pause partielle aurait déjà déclenché un appel.
+   * Proves the timer is **reset**, not stacked: without `clearTimeout`, the first partial pause would
+   * already have triggered a call.
    */
   it("réarme le délai à chaque frappe", async () => {
     const onChangement = vi.fn();
@@ -88,7 +77,7 @@ describe("champ de recherche au fil de la frappe", () => {
     expect(onChangement).toHaveBeenCalledWith("DOS");
   });
 
-  /** Vider le champ est une recherche comme une autre : elle retire le filtre. */
+  /** Clearing the field is a search like any other: it removes the filter. */
   it("propage une saisie vidée", async () => {
     const onChangement = vi.fn();
     poser(onChangement, "DOS");
@@ -99,9 +88,8 @@ describe("champ de recherche au fil de la frappe", () => {
   });
 
   /**
-   * La valeur en vigueur vient de l'URL. Quand elle change sans passer par la frappe - bouton
-   * « Effacer les filtres », lien partagé, retour arrière -, le champ doit suivre : sans cela il
-   * garderait à l'écran un mot qui ne filtre plus rien.
+   * The current value comes from the URL. When it changes without typing ("Clear filters" button,
+   * shared link, back navigation), the field must follow, or it would show a word that no longer filters.
    */
   it("suit une remise à zéro venue de l'extérieur, sans la renvoyer", async () => {
     const onChangement = vi.fn();
@@ -119,15 +107,14 @@ describe("champ de recherche au fil de la frappe", () => {
     );
 
     expect(screen.getByLabelText("Référence")).toHaveValue("");
-    // Et cette remise à zéro ne repart pas vers l'appelant : elle vient de lui.
+    // This reset is not sent back to the caller: it came from it.
     await patienter(DELAI + MARGE);
     expect(onChangement).not.toHaveBeenCalled();
   });
 
   /**
-   * Le piège qui aurait bouclé : `onChangement` est recréée à chaque rendu par l'appelant - une
-   * fonction fléchée dans le JSX. Si elle entrait dans les dépendances de l'effet, le minuteur
-   * repartirait sans fin.
+   * `onChangement` is recreated on every render by the caller (an arrow function in JSX). If it were
+   * an effect dependency, the timer would restart forever.
    */
   it("ne boucle pas quand l'appelant recrée sa fonction à chaque rendu", async () => {
     const espion = vi.fn();
@@ -160,11 +147,8 @@ describe("champ de recherche au fil de la frappe", () => {
   });
 
   /**
-   * **Entrée cherche tout de suite**, sans attendre la pause.
-   *
-   * Deux écrans offraient déjà ce raccourci avant QF-57 - la base jurisprudentielle et le répertoire
-   * des avocats. Le fil de la frappe le rend inutile, mais le retirer aurait enlevé une habitude à
-   * qui l'avait prise, et c'est la touche que tout le monde presse après avoir tapé une recherche.
+   * **Enter searches immediately**, without waiting for the pause: it is the key everyone presses
+   * after typing a search.
    */
   it("cherche aussitôt sur Entrée, sans attendre la pause", async () => {
     const onChangement = vi.fn();
@@ -174,24 +158,18 @@ describe("champ de recherche au fil de la frappe", () => {
     fireEvent.change(champ, { target: { value: "DOS" } });
     fireEvent.keyDown(champ, { key: "Enter" });
 
-    // Sans attente : c'est tout l'objet du raccourci.
+    // No waiting: that is the point of the shortcut.
     expect(onChangement).toHaveBeenCalledWith("DOS");
 
-    // Et le minuteur en cours ne provoque pas un second appel pour la même saisie.
+    // The pending timer does not trigger a second call for the same input.
     await patienter(DELAI + MARGE);
     expect(onChangement).toHaveBeenCalledTimes(1);
   });
 
   /**
-   * **Quitter le champ cherche aussitôt** (QF-61), et c'est un défaut sérieux qui l'a imposé.
-   *
-   * On tape une référence, on clique le résultat **dès qu'il apparaît**, et on revient à la liste :
-   * la minuterie en cours se déclenchait après le clic, et son `router.replace` écrasait la
-   * navigation déjà engagée vers la fiche. Cliquer un lien retire d'abord le focus - la recherche
-   * part donc pendant le `blur`, avant la navigation, et c'est la navigation qui a le dernier mot.
-   *
-   * Ce n'est pas un retour à `onBlur` : le fil de la frappe reste entier, et ceci ne fait que vider
-   * le délai quand il n'a plus lieu d'attendre.
+   * **Leaving the field searches immediately.** Otherwise a pending timer firing after a click on a
+   * result would call `router.replace` and override the navigation to the case file. Clicking a link
+   * blurs first, so the search runs before navigation, and navigation has the last word.
    */
   it("cherche aussitôt en quittant le champ, sans attendre la pause", async () => {
     const onChangement = vi.fn();
@@ -201,15 +179,15 @@ describe("champ de recherche au fil de la frappe", () => {
     fireEvent.change(champ, { target: { value: "DOS" } });
     fireEvent.blur(champ);
 
-    // Sans attente : c'est tout l'objet de la correction.
+    // No waiting: that is the point.
     expect(onChangement).toHaveBeenCalledWith("DOS");
 
-    // Et le minuteur en cours ne provoque pas un second appel pour la même saisie.
+    // The pending timer does not trigger a second call for the same input.
     await patienter(DELAI + MARGE);
     expect(onChangement).toHaveBeenCalledTimes(1);
   });
 
-  /** Quitter un champ sans rien avoir tapé ne relance aucune recherche. */
+  /** Leaving a field without typing anything triggers no search. */
   it("ne cherche pas en quittant un champ inchangé", async () => {
     const onChangement = vi.fn();
     poser(onChangement, "DOS");
@@ -232,7 +210,7 @@ describe("champ de recherche au fil de la frappe", () => {
     expect(onChangement).not.toHaveBeenCalled();
   });
 
-  /** La valeur de production reste celle du reste du projet : 300 ms, comme `SelecteurCherchable`. */
+  /** The production value matches the rest of the project: 300 ms, like `SelecteurCherchable`. */
   it("applique 300 ms par défaut, la valeur déjà retenue ailleurs", () => {
     expect(DELAI_RECHERCHE).toBe(300);
   });

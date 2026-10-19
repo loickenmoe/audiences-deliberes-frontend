@@ -15,20 +15,14 @@ import type { CibleActivite } from "@/services/reportingService";
 import type { RapportAvocats } from "@/types/domaine";
 
 /**
- * L'activité des avocats sur une période (Q-136) — DJ et DJA.
+ * Lawyers' activity over a period - DJ and DJA only.
  *
- * **Pourquoi un second tableau, et non quatre colonnes de plus.** Le porteur du projet l'a relevé le
- * 2026-10-13 : « Activité par personne » ne montrait que les profils internes. C'était exact, et ce
- * n'était pas réparable en y ajoutant les avocats - ce tableau-là compte six natures de **production
- * interne** - ouvrir un dossier, planifier une audience, enregistrer un compte rendu, un délibéré,
- * rédiger une lettre, contrôler des frais - dont un avocat n'accomplit **aucune**. Il **dépose** ;
- * c'est le juriste qui enregistre. L'y faire figurer n'aurait affiché qu'une ligne de zéros, soit
- * exactement ce que la conception refuse.
+ * A separate table rather than extra columns in "Activité par personne": that table counts internal
+ * production (opening case files, scheduling hearings, recording reports and deliberations, drafting
+ * letters, checking expenses) which lawyers never perform - they submit, legal officers record.
  *
- * **Deux populations, deux jeux d'indicateurs, une même règle.** Les avocats se comparent entre eux
- * sur ce qu'ils font réellement. Ni note, ni classement par volume, ni total : les lignes suivent
- * l'ordre des **noms** - un avocat chargé n'est pas un avocat méritant, c'est la banque qui lui
- * confie ses dossiers.
+ * Same rule as for internal profiles: no score, no volume ranking, no total. Rows are sorted by name,
+ * since a heavily loaded lawyer is not a more deserving one.
  */
 export function ActiviteDesAvocats() {
   const t = useTranslations("avocatsActivite");
@@ -80,7 +74,7 @@ export function ActiviteDesAvocats() {
             onChange={(evenement) => setFin(evenement.target.value)}
           />
         </Champ>
-        {/* Même raison que pour le tableau des internes : le nom accessible dit lequel. */}
+        {/* Same reason as for the internal profiles table: the accessible name says which table. */}
         <Button
           onClick={() => generer.mutate()}
           disabled={!valide || generer.isPending}
@@ -118,10 +112,9 @@ export function ActiviteDesAvocats() {
                 <tr key={ligne.utilisateurId}>
                   <td className="px-4 py-2 font-medium">
                     {/*
-                      Le nom ouvre sa fiche complète. L'avocat est désigné par son **inscription**
-                      quand il en a une - c'est ainsi que la direction le connaît - et par son
-                      compte si elle a été retirée depuis : ses dépôts restent comptés, et il faut
-                      bien pouvoir les regarder.
+                      The name opens their full activity sheet. The lawyer is designated by their directory record
+                      when they have one, otherwise by their account if the record was removed: their submissions
+                      remain counted and must stay viewable.
                     */}
                     <button
                       type="button"

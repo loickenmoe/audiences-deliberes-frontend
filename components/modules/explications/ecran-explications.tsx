@@ -10,11 +10,9 @@ import { ModaleDemandeExplication } from "@/components/modules/explications/moda
 import { peut } from "@/lib/rbac";
 
 /**
- * Écran 47 — les demandes d'explication (N7 temps 2, observation 8).
- *
- * **Le même écran, lu des deux bouts.** La direction écrit et relit ; l'avocat répond. Le bouton
- * d'écriture n'apparaît que pour celle qui écrit, mais la liste est la même composante : deux
- * écrans auraient fini par compter différemment la même chose.
+ * Screen 47 - explanation requests. Management writes and reviews them; the lawyer answers.
+ * Only the writing button depends on the profile: both sides share the same list component so
+ * they never count the same thing differently.
  */
 export function EcranExplications({ roles }: { roles: string[] }) {
   const t = useTranslations("explications");

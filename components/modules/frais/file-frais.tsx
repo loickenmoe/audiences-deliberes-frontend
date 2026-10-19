@@ -16,7 +16,7 @@ import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { DemandeFrais } from "@/types/domaine";
 
-/** Message d'une vue vide — ceux des UC-INT-02/03/04 (alt. 1-a). */
+/** Empty-view messages, from UC-INT-02/03/04 (alt. 1-a). */
 const VIDE: Record<CleVueFrais, string> = {
   aControler: "videControle",
   opportunite: "videControle",
@@ -26,10 +26,9 @@ const VIDE: Record<CleVueFrais, string> = {
 };
 
 /**
- * Écran 28 — file des demandes de frais. Elle s'ouvre sur ce qui attend l'utilisateur (voir
- * `vuesFrais`) : conformité puis paiement pour l'Assistante, opportunité puis validation conjointe
- * pour la DJA, validation conjointe pour le DJ. La vue vit dans l'URL, comme les filtres des autres
- * listes : un lien envoyé à un collègue ouvre la même file.
+ * Screen 28 - expense request queue. It opens on what awaits the user (see `vuesFrais`): compliance
+ * then payment for the Assistant, opportunity then joint approval for the DJA, joint approval for
+ * the DJ. The view lives in the URL, so a shared link opens the same queue.
  */
 export function FileFrais({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("frais");
@@ -39,7 +38,7 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
   const { filtres, page, taille, definirTaille, definirFiltre, definirPage } = useFiltresUrl(defauts);
   const vue = vues.find((v) => v.cle === filtres.vue) ?? vues[0];
   const requete = useDemandesFrais(vue.statut, page, taille);
-  // L'avocat ne consulte pas les dossiers (`ROLE_CONSULTATION`) : la référence reste un texte.
+  // Lawyers cannot view case files (`ROLE_CONSULTATION`): the reference stays plain text.
   const lienDossier = peut(roles, "consulterDossiers");
 
 
@@ -103,9 +102,9 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
   );
 
   /*
-   * Q-107 : un avocat dont le compte n'est pas rattaché au référentiel n'a pas de demandes, et n'en
-   * aura pas tant qu'il n'y est pas inscrit. Ce n'est pas un échec de chargement. Le test vient
-   * **après** les hooks : un retour anticipé placé avant en changerait l'ordre d'un rendu à l'autre.
+   * A lawyer whose account is not linked to the directory has no requests: this is not a loading
+   * failure. The check comes after the hooks, since an early return before them would change the
+   * hook order between renders.
    */
   if (estCompteAvocatNonRattache(requete.error)) return <CompteAvocatNonRattache />;
 

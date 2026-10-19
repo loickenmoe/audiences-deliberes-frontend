@@ -15,7 +15,7 @@ export function useDeliberesDossier(dossierId: number) {
   });
 }
 
-/** Chargé à la demande : l'historique ne s'affiche que si on l'ouvre. */
+/** Loaded on demand: the history is only shown when opened. */
 export function useProrogations(delibereId: number | null) {
   return useQuery({
     queryKey: [CLES.prorogations, delibereId],
@@ -24,7 +24,7 @@ export function useProrogations(delibereId: number | null) {
   });
 }
 
-/** `actif` : le suivi n'a de sens que pour une décision qui ouvre une voie de recours. */
+/** `actif`: tracking only makes sense for a decision that opens a means of appeal. */
 export function useRecours(delibereId: number, actif: boolean) {
   return useQuery({
     queryKey: [CLES.recours, delibereId],
@@ -34,8 +34,8 @@ export function useRecours(delibereId: number, actif: boolean) {
 }
 
 /**
- * Invalidation commune : chaque action sur un délibéré peut changer le statut de l'étape (donc la
- * fiche et son historique), la liste des délibérés, leurs prorogations et le suivi du recours.
+ * Shared invalidation: any action on a deliberation may change the step status (hence the case
+ * record and its history), the deliberation list, their extensions and appeal tracking.
  */
 function useInvalidation(dossierId: number) {
   const client = useQueryClient();

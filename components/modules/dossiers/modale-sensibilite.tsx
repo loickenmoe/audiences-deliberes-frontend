@@ -18,10 +18,9 @@ import type { Dossier } from "@/types/domaine";
 const CHAMPS = ["motifRejet", "seuilMontantAjuste", "typeClientSensibleAjuste"] as const;
 
 /**
- * Écran 18 — validation de la sensibilité par le DJ/DJA.
- *
- * Le rejet exige un motif (le backend le refuse sinon) ; la validation permet d'**ajuster** le seuil
- * et le type proposés. Laisser ces deux champs vides conserve la proposition du juriste.
+ * Screen 18 - sensitivity validation by the DJ/DJA.
+ * Rejection requires a reason (the backend refuses otherwise); validation can **adjust** the
+ * proposed threshold and type. Leaving both fields empty keeps the lawyer's proposal.
  */
 export function ModaleSensibilite({
   dossier,
@@ -84,7 +83,7 @@ export function ModaleSensibilite({
           ? { statut: "REJETEE", motifRejet: valeurs.motifRejet?.trim() }
           : {
               statut: "VALIDEE",
-              // Vide = conserver la proposition : ne rien envoyer plutôt qu'un zéro.
+              // Empty = keep the proposal: send nothing rather than zero.
               seuilMontantAjuste:
                 valeurs.seuilMontantAjuste === "" || valeurs.seuilMontantAjuste === undefined
                   ? undefined
@@ -175,7 +174,7 @@ export function ModaleSensibilite({
               <Select id="typeClientSensibleAjuste" {...register("typeClientSensibleAjuste")}>
                 <option value="">{t("conserverProposition")}</option>
                 {(types.data ?? []).map((type) => (
-                  // Un code, validé contre le référentiel côté backend (Q-73).
+                  // A code, validated against the reference list on the backend.
                   <option key={type.id} value={type.code}>
                     {type.libelle}
                   </option>

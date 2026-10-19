@@ -12,9 +12,8 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 41 — paramètres système. La lecture est ouverte à tous les profils internes (#47,
- * `ROLE_CONSULTATION`) : ces seuils expliquent le comportement de l'application, les cacher
- * n'aiderait personne. La modification reste au DJ seul (#48).
+ * Screen 41 - system settings. Readable by every internal profile (#47, `ROLE_CONSULTATION`):
+ * these thresholds explain the application's behaviour. Editing remains DJ-only (#48).
  */
 export default async function PageConfigurations() {
   const session = await exigerCapacite("consulterConfigurations");
@@ -22,16 +21,14 @@ export default async function PageConfigurations() {
     <div className="flex flex-col gap-8">
       <ParametresSysteme modifiable={peut(session.roles, "administrerConfigurations")} />
       {/*
-        Supervision du canal applicatif (Q-109). Elle tient sur cet écran parce que c'est celui de
-        l'administration, mais elle est gardée **séparément** : lire un taux global, tous
-        destinataires confondus, n'est pas la même chose que lire des seuils. Les paramètres sont
-        ouverts à `ROLE_CONSULTATION` ; ce bloc ne l'est pas.
+        In-app channel supervision lives on this administration screen but is guarded
+        **separately**: reading a global rate across all recipients is not the same as reading
+        thresholds. Settings are open to `ROLE_CONSULTATION`; this block is not.
       */}
       {peut(session.roles, "superviserAlertes") ? <SupervisionAlertes /> : null}
       {/*
-        Supervision des notifications externes (D17). Même garde que ci-dessus : ces lignes portent
-        les coordonnées des destinataires et les erreurs des fournisseurs, que le backend réserve au
-        DJ et à la DJA.
+        External notification supervision. Same guard as above: these rows carry recipients'
+        contact details and provider errors, which the backend reserves to the DJ and DJA.
       */}
       {peut(session.roles, "superviserAlertes") ? <SupervisionNotifications /> : null}
     </div>

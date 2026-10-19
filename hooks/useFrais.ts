@@ -7,10 +7,10 @@ import { fraisService, type DecisionFrais } from "@/services/fraisService";
 import type { DemandeFrais } from "@/types/domaine";
 import type { StatutCircuitFrais } from "@/types/enums";
 
-/** Les trois étapes de décision du circuit ; le paiement, sans refus possible, a son propre hook. */
+/** The three decision steps of the workflow; payment, which cannot be refused, has its own hook. */
 export type EtapeDecision = "conformite" | "opportunite" | "conjointe";
 
-/** `null` : toutes les demandes. */
+/** `null`: all requests. */
 export function useDemandesFrais(statut: StatutCircuitFrais | null, page: number, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.demandesFrais, statut ?? "toutes", page, size],
@@ -33,8 +33,8 @@ const APPELS: Record<EtapeDecision, (id: number, decision: DecisionFrais) => Pro
 };
 
 /**
- * Chaque décision renvoie la demande à jour, décisions comprises : le détail est remplacé
- * directement, et toutes les vues de la file sont rechargées — la demande en change.
+ * Each decision returns the updated request, decisions included: the detail is replaced directly
+ * and every queue view is reloaded, since the request changes queue.
  */
 function useApresDecision() {
   const client = useQueryClient();

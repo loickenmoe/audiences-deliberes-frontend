@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  *
- * Publications (#30, #32-#34, #59), constitutions (#35, #36, #60) et répertoire (#37) : ce qui part
- * sur le fil, et ce que chaque profil se voit proposer.
+ * Publications (#30, #32-#34, #59), retainers (#35, #36, #60) and directory (#37): what goes over
+ * the wire, and what each profile is offered.
  */
 import { HttpResponse, http, type JsonBodyType } from "msw";
 import { setupServer } from "msw/node";
@@ -121,10 +121,9 @@ describe("ce que chaque profil se voit proposer", () => {
   });
 
   /**
-   * Depuis RG-INT-06 amendée (2026-10-05), ce qu'un juriste voit ne dépend plus d'un statut mais
-   * de la nature du dépôt : tous les comptes rendus, et les autres publications une fois validées.
-   * Le serveur le décide ; l'écran n'a plus de filtre à proposer, et en offrir un laisserait
-   * croire qu'il manque le reste.
+   * RG-INT-06: what a legal officer sees depends on the kind of submission, not a status: all
+   * reports, and other publications once validated. The server decides; the screen offers no
+   * filter, since one would suggest the rest is missing.
    */
   it("les juristes, le DJ et la DJA n'ont plus de filtre de statut à choisir", () => {
     expect(vuesPublications(["ROLE_JURISTE"]).map((v) => v.statut)).toEqual([null]);

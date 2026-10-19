@@ -1,22 +1,13 @@
 /**
- * Garnit une base vide d'un jeu de dossiers **conformes aux règles du 2026-10-05**.
+ * Seeds an empty database with a set of valid cases (every case has parties and an agency code),
+ * capped at 50 cases. The default of 40 leaves room for cases created during manual testing.
  *
- * **Pourquoi ce script existe.** La base de recette portait 341 dossiers, dont 340 sans parties au
- * procès et 340 sans code d'agence : des données nées avant que ces champs soient obligatoires. Les
- * rendre obligatoires sans vider la base aurait laissé 340 dossiers impossibles à modifier sans
- * ressaisie. Décision du porteur du projet (2026-10-05) : vider (`docker compose down -v`) et
- * regarnir d'**au plus 50 dossiers** conformes.
+ * It invents no business rule: case types and agencies come from the reference data, and clients
+ * and lawyers are created through the real endpoints with real tokens. Party names are explicitly
+ * fictitious so nobody mistakes them for real counterparties.
  *
- * **Quarante, et non cinquante.** La campagne de recette en crée elle-même une dizaine : le jeu de
- * départ laisse la place, pour que le total reste sous la cinquantaine demandée.
- *
- * **Il ne fabrique aucune règle métier.** Les natures viennent du référentiel, les agences du
- * référentiel, les clients et avocats sont créés par les endpoints réels avec les jetons réels. Les
- * noms de parties sont des noms de fiction explicites - « Débiteur », « Caution » - pour qu'aucun
- * lecteur ne les prenne pour de vraies contreparties.
- *
- *   node scripts/garnir-base.mjs           (backend démarré, base vide ou presque)
- *   CIBLE=20 node scripts/garnir-base.mjs  (pour un jeu plus court)
+ *   node scripts/garnir-base.mjs           (backend running, database empty or nearly so)
+ *   CIBLE=20 node scripts/garnir-base.mjs  (for a smaller set)
  */
 import { readFile } from "node:fs/promises";
 
@@ -24,15 +15,9 @@ const PLAFOND = 50;
 const CIBLE = Math.min(Number(process.env.CIBLE ?? 40), PLAFOND);
 
 /*
- * Mêmes défauts que `smoke-backend.mjs`, et même repli pour le secret : il est lu dans l'export du
- * realm plutôt qu'exigé dans l'environnement. `@next/env` n'est pas utilisable ici - c'est un module
- * CommonJS, que l'import nommé d'un script ESM refuse.
- */
-/*
- * Le fichier d'environnement est lu ici, et **rien n'en est affiché** : il porte le secret du client
- * Keycloak. L'export du realm en porte un aussi, mais il peut avoir été régénéré depuis :
- * `.env.local` fait foi, c'est lui que les parcours e2e emploient. `@next/env` n'est pas utilisable
- * ici - module CommonJS, que l'import nommé d'un script ESM refuse.
+ * The env file is read here and nothing from it is printed: it holds the Keycloak client secret.
+ * `.env.local` is authoritative (the realm export may have been regenerated). `@next/env` cannot be
+ * used: it is a CommonJS module, which a named import from an ESM script rejects.
  */
 await chargerEnv(".env.local");
 
@@ -49,14 +34,14 @@ async function chargerEnv(chemin) {
   try {
     contenu = await readFile(chemin, "utf8");
   } catch {
-    // Absent : l'environnement du shell peut suffire. Le contrôle ci-dessus le dira.
+    // Missing file: the shell environment may suffice; the secret check above reports otherwise.
     return;
   }
   for (const ligne of contenu.split(/\r?\n/)) {
     const correspondance = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(ligne);
     if (!correspondance) continue;
     const [, nom, brut] = correspondance;
-    // Les valeurs déjà posées dans le shell gagnent : on n'écrase pas un réglage explicite.
+    // Values already set in the shell win: never override an explicit setting.
     if (process.env[nom] !== undefined) continue;
     process.env[nom] = brut.trim().replace(/^["']|["']$/g, "");
   }
@@ -95,7 +80,7 @@ async function appel(chemin, acces, init = {}) {
   return reponse.status === 204 ? null : reponse.json();
 }
 
-/** Les contreparties : des noms de fiction, assumés comme tels. */
+/** Deliberately fictitious counterparty names. */
 const DEFENDEURS = [
   ["Débiteur principal"],
   ["Débiteur principal", "Caution solidaire"],
@@ -118,10 +103,9 @@ const juriste = await jeton("juriste.test");
 const dj = await jeton("dj.test");
 
 /*
- * Provisionnement paresseux (QF-16) : un utilisateur interne n'existe dans l'application qu'après
- * sa première connexion. Il faut pour cela un endpoint qui **résolve l'utilisateur courant** -
- * `GET /utilisateurs` se contente de lire l'annuaire et ne provisionne personne. C'est l'appel que
- * fait la cloche des notifications à l'ouverture de l'application.
+ * Lazy provisioning: an internal user only exists in the application after a call that resolves
+ * the current user. `GET /utilisateurs` only reads the directory and provisions nobody, so the
+ * notification bell endpoint is used instead.
  */
 await appel("/alertes/mes-notifications?size=1", juriste);
 await appel("/alertes/mes-notifications?size=1", dj);
@@ -131,8 +115,6 @@ if (dejaLa >= CIBLE) {
   console.log(`La base porte déjà ${dejaLa} dossiers : rien à créer (cible ${CIBLE}).`);
   process.exit(0);
 }
-
-// ---------------------------------------------------------------- le socle
 
 const CLIENTS = [
   "SARL Bâtir Ensemble",
@@ -151,16 +133,15 @@ clients = (await appel("/clients?size=200", juriste))?.content ?? [];
 if (clients.length === 0) throw new Error("Aucun client : la création a échoué.");
 
 /*
- * **Un seul avocat**, et c'est voulu. RG-INT-01 exige qu'un avocat porte un compte applicatif
- * unique, et le realm de développement n'en déclare qu'un : `avocat.test`. Inventer des
- * identifiants Keycloak n'est pas permis - ils viennent de l'annuaire de la banque. Les dossiers
- * seront donc tous confiés au même avocat, ce qui suffit à garnir la base.
+ * A single lawyer on purpose: RG-INT-01 requires one application account per lawyer, and the dev
+ * realm declares only `avocat.test`. Keycloak identifiers come from the bank directory and must not
+ * be invented, so every case is assigned to the same lawyer.
  */
 const AVOCATS = [{ nom: "Me Claire Avocat", compteKeycloak: "avocat.test" }];
 let avocats = (await appel("/intervenants?type=AVOCAT&size=200", juriste))?.content ?? [];
 for (const fiche of AVOCATS) {
   if (avocats.some((avocat) => avocat.nom === fiche.nom)) continue;
-  // La création d'un intervenant est réservée au DJ et à la DJA (#61).
+  // Only DJ and DJA may create a stakeholder.
   await appel("/intervenants", dj, {
     method: "POST",
     body: JSON.stringify({ type: "AVOCAT", ...fiche }),
@@ -175,11 +156,9 @@ if (juristes.length === 0) throw new Error("Aucun juriste dans l'annuaire : conn
 const natures = (await appel("/referentiels/natures-dossier", juriste)) ?? [];
 if (natures.length === 0) throw new Error("Référentiel des natures vide : migrations appliquées ?");
 
-// Les agences viennent du référentiel : aucun code n'est écrit en dur ici.
+// Agencies come from the reference data: no code is hard-coded here.
 const agences = (await appel("/referentiels/agences?size=200&actifSeulement=true", juriste))?.content ?? [];
 if (agences.length === 0) throw new Error("Référentiel des agences vide : la migration V42 a-t-elle tourné ?");
-
-// ---------------------------------------------------------------- les dossiers
 
 const aCreer = CIBLE - dejaLa;
 const types = (await appel("/referentiels/types-client-sensible", juriste)) ?? [];
@@ -190,8 +169,8 @@ for (let index = 0; index < aCreer; index += 1) {
   const agence = agences[index % agences.length];
   const client = clients[index % clients.length];
   const avocat = avocats[index % avocats.length];
-  // Un dossier sur sept est à diligence particulière : assez pour que le circuit DJ/DJA ait de la
-  // matière, assez peu pour que la file d'arbitrage reste lisible.
+  // One case in seven needs special diligence: enough to exercise the DJ/DJA workflow while
+  // keeping the arbitration queue readable.
   const diligence = index % 7 === 0 && types.length > 0;
   const recouvrement = nature.categorie === "RECOUVREMENT";
 
@@ -205,7 +184,7 @@ for (let index = 0; index < aCreer; index += 1) {
       defendeurs: DEFENDEURS[index % DEFENDEURS.length],
     },
     codeAgenceOrigine: agence.code,
-    // Un dossier sur trois est suivi ailleurs qu'à l'agence où il est né.
+    // One case in three is handled by an agency other than its originating one.
     codeAgenceContentieuse: index % 3 === 0 ? agences[(index + 5) % agences.length].code : undefined,
     dossierCreditOrigine: recouvrement ? `CRD-${1000 + index}` : undefined,
     pvTransfert: recouvrement ? `PV-${1000 + index}` : undefined,
@@ -221,10 +200,8 @@ for (let index = 0; index < aCreer; index += 1) {
   const dossier = await appel("/dossiers", juriste, { method: "POST", body: JSON.stringify(corps) });
   crees.push(dossier);
 
-  /*
-   * Deux dossiers sur trois sont ouverts : une base dont toutes les étapes sont au statut
-   * « Ouverture » ne permet de planifier aucune audience, et donne une fausse image du module.
-   */
+  // Two cases in three are opened: no hearing can be scheduled on a step still in the
+  // opening status.
   if (index % 3 !== 2) {
     const fiche = await appel(`/dossiers/${dossier.id}`, juriste);
     const etape = fiche.etapes[0];
@@ -235,14 +212,12 @@ for (let index = 0; index < aCreer; index += 1) {
   }
 }
 
-// ---------------------------------------------------------------- les vérifications
-
 const total = (await appel("/dossiers?size=1", juriste))?.totalElements ?? 0;
 if (total > PLAFOND) {
   throw new Error(`La base porte ${total} dossiers : le plafond demandé est ${PLAFOND}.`);
 }
 
-// Chaque dossier créé doit porter ses parties et son agence : c'est tout l'objet de la reprise.
+// Every created case must carry its parties and a valid agency.
 for (const dossier of crees) {
   const fiche = await appel(`/dossiers/${dossier.id}`, juriste);
   const parties = fiche.parties ?? {};

@@ -7,11 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /**
- * Les quatre états obligatoires de toute vue de données. Le succès passe par une notification
- * (`sonner`), il n'a pas d'état de page.
+ * The four mandatory states of any data view. Success goes through a toast (`sonner`) and has no
+ * page state.
  *
- * Règle de rédaction : un état vide dit ce qui manque **et** propose une sortie ; un état d'erreur
- * dit ce qui s'est passé **et** offre de réessayer. Jamais d'excuse, jamais de « oups ».
+ * Writing rule: an empty state says what is missing **and** offers a way out; an error state says
+ * what happened **and** offers a retry. Never apologise.
  */
 
 export function EtatVide({
@@ -72,7 +72,7 @@ export function EtatErreur({
   );
 }
 
-/** Ossature générique d'une liste en cours de chargement. */
+/** Generic skeleton of a loading list. */
 export function EtatChargement({ lignes = 5, className }: { lignes?: number; className?: string }) {
   const t = useTranslations("commun");
   return (

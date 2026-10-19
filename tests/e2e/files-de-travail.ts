@@ -1,66 +1,48 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Retrouver une ligne dans une file de travail, quelle que soit sa profondeur.
+ * Finds a row in a work queue, whatever page it is on.
  *
- * **Le défaut que cette aide corrige, et qui a frappé quatre parcours le même jour.** Les files de
- * travail de l'application — publications à valider, demandes de suppression, constitutions à
- * signer — sont **FIFO** : la plus ancienne en tête. C'est le comportement voulu, et le bon : on
- * traite d'abord ce qui attend depuis le plus longtemps. Elles sont paginées à dix lignes.
- *
- * Un test qui dépose une pièce puis la cherche « dans la file » la cherchait en réalité **sur la
- * première page**. Comme elle vient d'arriver, elle est la dernière : l'assertion ne tenait que tant
- * que la file comptait moins de dix éléments. Le jour où les files ont franchi ce seuil — les
- * exécutions successives y laissent des éléments jamais traités — quatre parcours sont tombés d'un
- * coup, en expirant au bout de quatre minutes, **sans qu'une seule ligne de code produit n'ait
- * changé**.
- *
- * C'était donc un test qui mesurait son environnement et non le produit. Parcourir les pages rend
- * l'assertion vraie pour ce qu'elle prétend vérifier : « la pièce est bien arrivée dans la file ».
- *
- * On ne règle **pas** ce genre de défaut en augmentant la taille de page : cinquante n'est qu'un
- * seuil plus lointain, et le test retomberait le jour où la file le franchirait à son tour.
+ * Work queues (publications to validate, deletion requests, filings to sign) are FIFO, oldest
+ * first, and paginated by ten. A newly added item is therefore last, so searching only the first
+ * page would make the assertion depend on the queue size. Walking through the pages makes the
+ * assertion check what it claims; increasing the page size would only push the threshold further.
  */
 export async function ligneDansLaFile(
   portee: Page | Locator,
   motif: RegExp | string,
 ): Promise<Locator> {
   /*
-   * `portee` est la page, ou une **région** qui porte sa propre pagination - le journal des
-   * audiences en compte deux sur le même écran. Chercher sur la page entière y trouverait les
-   * lignes de l'autre section, et cliquerait sa pagination à elle.
+   * `portee` is the page, or a region with its own pagination (the hearing log has two on the same
+   * screen). Searching the whole page would match the other section's rows and click its pager.
    */
   const ligne = portee.getByRole("row", { name: typeof motif === "string" ? new RegExp(motif) : motif });
   const suivante = portee.getByRole("button", { name: "Page suivante" });
   const indicateur = portee.getByText(/^Page \d+ sur \d+$/);
 
-  // Borne haute : une file de plus de cinquante pages signale un autre problème, et un échec
-  // explicite vaut mieux qu'une boucle qui expire en silence.
+  // Upper bound: a queue of more than fifty pages signals another problem, and an explicit failure
+  // is better than a loop that times out silently.
   for (let pagesRestantes = 50; pagesRestantes > 0; pagesRestantes--) {
     /*
-     * `count()` répond immédiatement, sans patienter. Or le tableau se repeuple **après** que
-     * l'indicateur de page a changé : interroger le compte aussitôt revient à lire la page pendant
-     * qu'elle se dessine, et à conclure à une absence. On laisse donc à chaque page un délai court
-     * mais réel — court parce qu'on en visitera peut-être plusieurs.
+     * `count()` answers immediately without waiting, but the table is repopulated after the page
+     * indicator changes. Give each page a short but real delay (short because several pages may be
+     * visited).
      */
     try {
       await expect(ligne.first()).toBeVisible({ timeout: 5_000 });
       return ligne.first();
     } catch {
-      // Pas sur cette page : on continue.
+      // Not on this page: keep going.
     }
     if ((await suivante.count()) === 0 || (await suivante.isDisabled())) break;
 
     const position = await indicateur.textContent().catch(() => null);
     await suivante.click();
     /*
-     * On attend que l'indicateur ait réellement changé avant de relire : sans cela on relirait la
-     * page précédente, et le parcours n'avancerait pas.
-     *
-     * L'indicateur peut aussi **disparaître** : une file qui se recharge pendant qu'on la parcourt
-     * peut retomber à une seule page, et la pagination n'est alors plus rendue. C'est un cas
-     * normal, mais `not.toHaveText` le compte comme un échec - « element(s) not found ». On lit
-     * donc le texte nous-mêmes, l'absence valant changement.
+     * Wait until the indicator has actually changed before reading again, otherwise the previous
+     * page would be read. The indicator may also disappear (a reloaded queue can fall back to a
+     * single page, which renders no pager); `not.toHaveText` would fail on "element(s) not found",
+     * so the text is read manually and absence counts as a change.
      */
     await expect
       .poll(() => indicateur.textContent().catch(() => null), { timeout: 30_000 })

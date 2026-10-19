@@ -1,27 +1,21 @@
 /**
  * @vitest-environment node
  *
- * Empreintes SHA-256 côté navigateur (backend Q-114).
- *
- * Deux choses sont éprouvées ici, et elles n'ont pas le même poids. Le **calcul** doit donner
- * exactement ce que donnerait `sha256sum` : c'est toute la valeur d'une empreinte que d'être
- * universelle, et une implémentation qui dériverait ne serait vérifiable par personne. Le
- * **groupage**, lui, ne relève que de la lisibilité — mais c'est ce qui décide si quelqu'un compare
- * vraiment, ou fait semblant.
+ * Browser-side SHA-256 fingerprints. The **computation** must match `sha256sum` exactly, otherwise
+ * nobody could verify it. The **grouping** is only for readability, so people actually compare values.
  */
 import { describe, expect, it } from "vitest";
 
 import { empreinteFichier, estUneEmpreinte, grouperEmpreinte } from "@/lib/empreinte";
 
-/** Un `File` minimal, suffisant pour `arrayBuffer()`. */
+/** A minimal `File`, enough for `arrayBuffer()`. */
 function fichier(contenu: string): File {
   return new File([contenu], "audit.pdf", { type: "application/pdf" });
 }
 
 describe("calcul d'empreinte", () => {
   /**
-   * Le SHA-256 de « abc », connu et vérifiable hors de ce projet. Si cette valeur change, ce n'est
-   * pas le test qui a tort.
+   * The well-known SHA-256 of "abc". If this value changes, the test is not the one at fault.
    */
   it("donne le même résultat que n'importe quel outil standard", async () => {
     await expect(empreinteFichier(fichier("abc"))).resolves.toBe(
@@ -29,7 +23,7 @@ describe("calcul d'empreinte", () => {
     );
   });
 
-  /** Le SHA-256 de la chaîne vide : le cas limite qu'on oublie toujours. */
+  /** SHA-256 of the empty string: the edge case always forgotten. */
   it("traite un fichier vide sans broncher", async () => {
     await expect(empreinteFichier(fichier(""))).resolves.toBe(
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -37,8 +31,8 @@ describe("calcul d'empreinte", () => {
   });
 
   /**
-   * Effet d'avalanche : **un seul caractère** change, et l'empreinte n'a plus rien de commun. C'est
-   * la propriété qui interdit le « presque pareil » — et donc la retouche discrète d'une archive.
+   * Avalanche effect: changing **a single character** yields an unrelated fingerprint, which rules
+   * out silently altering an archive.
    */
   it("change entièrement pour un seul caractère modifié", async () => {
     const [avant, apres] = await Promise.all([
@@ -48,7 +42,7 @@ describe("calcul d'empreinte", () => {
 
     expect(avant).not.toBe(apres);
     const communs = [...avant].filter((caractere, index) => caractere === apres[index]).length;
-    // Sur 64 positions, le hasard en fait coïncider quelques-unes ; rien qui ressemble à une parenté.
+    // Out of 64 positions a few match by chance; nothing resembling a relation.
     expect(communs).toBeLessThan(16);
   });
 
@@ -70,7 +64,7 @@ describe("lecture d'une empreinte", () => {
     ]);
   });
 
-  /** Le groupage ne doit jamais altérer la valeur : c'est une présentation, pas une transformation. */
+  /** Grouping must never alter the value: it is presentation, not transformation. */
   it("ne perd ni n'ajoute aucun caractère", () => {
     const empreinte = "a".repeat(64);
 
@@ -78,7 +72,7 @@ describe("lecture d'une empreinte", () => {
   });
 
   it("reconnaît une empreinte valide et rejette ce qui n'en est pas une", () => {
-    expect(estUneEmpreinte("A".repeat(64))).toBe(true); // la casse ne change rien à la valeur
+    expect(estUneEmpreinte("A".repeat(64))).toBe(true); // case does not change the value
     expect(estUneEmpreinte(" " + "b".repeat(64) + " ")).toBe(true);
     expect(estUneEmpreinte("z".repeat(64))).toBe(false);
     expect(estUneEmpreinte("abc")).toBe(false);

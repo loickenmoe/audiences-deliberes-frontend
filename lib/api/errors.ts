@@ -1,16 +1,14 @@
 /**
- * Normalisation des erreurs de l'API.
+ * API error normalization.
  *
- * Le backend renvoie **systématiquement** `{code, message, details}` — vérifié en conditions réelles
- * le 2026-09-08 (401 `ERR-UNAUTHENTICATED`, 403 `ERR-FORBIDDEN`, `details: null` quand il n'y a rien
- * à préciser) — et depuis le 2026-09-09 un `champ` optionnel, présent uniquement lorsque l'erreur
- * vise un champ précis de la requête (QF-21). Cette forme est stable et fait contrat : elle remplace intégralement la normalisation
- * du projet de référence, qui attendait une structure `{messages: {...}}` sans rapport.
+ * The backend always returns `{code, message, details}` (`details: null` when there is nothing to
+ * add), plus an optional `champ` only when the error targets a specific request field. This shape
+ * is part of the API contract.
  */
 
-/** Codes d'erreur applicatifs du backend (`common/error/ErrorCodes.java`). */
+/** Backend application error codes (`common/error/ErrorCodes.java`). */
 export const CodeErreur = {
-  // Codes numérotés par le contrat d'API (REF-07 §6.1)
+  // Codes numbered by the API contract (REF-07 §6.1)
   METADONNEES_MANQUANTES: "ERR-001",
   REFERENCE_DOSSIER_DUPLIQUEE: "ERR-002",
   DOUBLON_AFFECTATION: "ERR-003",
@@ -19,14 +17,13 @@ export const CodeErreur = {
   FACTURE_EN_DOUBLE: "ERR-006",
   DOCUMENT_NON_CONFORME: "ERR-008",
   ACCES_RESTREINT_PUBLICATION: "ERR-009",
-  // Codes génériques
+  // Generic codes
   REQUETE_INVALIDE: "ERR-VALIDATION",
   NON_AUTHENTIFIE: "ERR-UNAUTHENTICATED",
   DROITS_INSUFFISANTS: "ERR-FORBIDDEN",
   /**
-   * Le compte porte `ROLE_AVOCAT` mais aucun avocat du référentiel ne lui est rattaché (Q-107).
-   * **Ce n'est pas un refus de droits** : c'est un état d'inscription, que l'interface explique au
-   * lieu de l'afficher comme un échec — cf. `estCompteAvocatNonRattache`.
+   * The account has `ROLE_AVOCAT` but no lawyer record is linked to it. Not a permission denial:
+   * an enrolment state the UI explains instead of showing a failure (see `estCompteAvocatNonRattache`).
    */
   AVOCAT_NON_RATTACHE: "ERR-AVOCAT-NON-RATTACHE",
   RESSOURCE_INTROUVABLE: "ERR-NOT-FOUND",
@@ -38,17 +35,13 @@ export const CodeErreur = {
 export type CodeErreur = (typeof CodeErreur)[keyof typeof CodeErreur];
 
 /**
- * `ERR-007` n'existe pas côté backend : au-delà du seuil, une prorogation est **enregistrée avec
- * succès** (201) et porte `alerte: true` dans son corps de réponse (arbitrage backend Q-17).
- * Ne jamais la présenter comme une erreur.
+ * There is no `ERR-007`: beyond the threshold, an extension is saved successfully (201) with
+ * `alerte: true` in its response body. Never present it as an error.
  */
 
 /**
- * Corps d'erreur tel que renvoyé par le backend.
- *
- * `champ` nomme le champ de la requête à corriger, quand le backend le connaît — un doublon de
- * référence, de compte ou de facture. Il est **absent** du JSON pour toutes les erreurs qui ne
- * visent aucun champ (conflit d'état, droits insuffisants, erreur interne).
+ * Error body returned by the backend. `champ` names the request field to fix when known (duplicate
+ * reference, account or invoice); it is absent for errors not tied to a field.
  */
 export interface CorpsErreurApi {
   code: string;
@@ -57,16 +50,13 @@ export interface CorpsErreurApi {
   champ?: string | null;
 }
 
-/** Erreur d'API normalisée, seule forme propagée aux hooks et aux écrans. */
+/** Normalized API error, the only shape propagated to hooks and screens. */
 export class ErreurApi extends Error {
   readonly code: string;
   readonly statut: number | undefined;
   readonly details: string | null;
 
-  /**
-   * Champ de la requête que le backend désigne comme fautif, ou `null`. Distinct de `details`, qui
-   * porte du texte destiné à un humain et non un identifiant exploitable.
-   */
+  /** Request field flagged by the backend, or `null`. Unlike `details`, it is an identifier. */
   readonly champ: string | null;
 
   constructor(params: {
@@ -85,16 +75,15 @@ export class ErreurApi extends Error {
   }
 
   /**
-   * `ERR-003` et `ERR-005` ne sont **pas** des échecs : le backend demande une confirmation
-   * explicite, que l'on rejoue avec `?forcer=true`. L'interface doit ouvrir un dialogue, jamais
-   * afficher une notification d'erreur.
+   * `ERR-003` and `ERR-005` are not failures: the backend asks for explicit confirmation, replayed
+   * with `?forcer=true`. The UI must open a dialog, never show an error notification.
    */
   get demandeConfirmation(): boolean {
     return this.code === CodeErreur.DOUBLON_AFFECTATION || this.code === CodeErreur.DOUBLON_AUDIENCE;
   }
 }
 
-/** Messages par défaut, en français, pour les codes que le backend ne formule pas lui-même. */
+/** Default French messages for codes the backend does not phrase itself. */
 const MESSAGES_PAR_DEFAUT: Record<string, string> = {
   [CodeErreur.METADONNEES_MANQUANTES]: "Des informations obligatoires sont manquantes.",
   [CodeErreur.REFERENCE_DOSSIER_DUPLIQUEE]: "Cette référence de dossier est déjà utilisée.",
@@ -125,9 +114,8 @@ function estCorpsErreurApi(valeur: unknown): valeur is CorpsErreurApi {
 }
 
 /**
- * Convertit n'importe quelle défaillance (réponse d'erreur, coupure réseau, exception) en
- * `ErreurApi`. Le message du backend est **préféré** au message par défaut : il est déjà rédigé en
- * français et porte souvent une précision métier utile.
+ * Converts any failure (error response, network outage, exception) into an `ErreurApi`. The backend
+ * message is preferred over the default one: it often carries useful business detail.
  */
 export function normaliserErreur(erreur: unknown): ErreurApi {
   const candidat = erreur as {
@@ -147,14 +135,14 @@ export function normaliserErreur(erreur: unknown): ErreurApi {
     });
   }
 
-  // Réponse d'erreur sans corps exploitable : on retombe sur le code HTTP.
+  // Error response without a usable body: fall back on the HTTP status.
   const statut = candidat?.response?.status;
   if (typeof statut === "number") {
     const code = codeDepuisStatut(statut);
     return new ErreurApi({ code, message: MESSAGES_PAR_DEFAUT[code]!, statut });
   }
 
-  // Requête partie sans réponse : serveur arrêté, DNS, CORS.
+  // Request sent but no response: server down, DNS, CORS.
   if (candidat?.request) {
     return new ErreurApi({ code: "ERR-NETWORK", message: ERREUR_RESEAU });
   }
@@ -184,25 +172,18 @@ function codeDepuisStatut(statut: number): string {
   }
 }
 
-/** Message prêt à afficher, avec repli si l'erreur n'est pas une `ErreurApi`. */
 /**
- * Vrai lorsque l'échec n'en est pas un : le compte connecté est bien un avocat, mais **aucune fiche
- * du référentiel ne lui est rattachée**.
+ * True when the logged-in account is a lawyer but no directory record is linked to it yet.
  *
- * Un avocat existe pour le métier parce qu'un juriste l'a inscrit au répertoire avec son identifiant
- * de connexion (RG-INT-01, UC-INT-01) — jamais parce qu'il possède un compte. Tant que cette fiche
- * n'existe pas, le portail n'a rien à montrer, et **l'utilisateur n'y peut rien**. Lui afficher
- * « le chargement a échoué » le laisse devant un message technique sans action possible ni
- * interlocuteur.
- *
- * Reconnaître le cas suppose un **code dédié**, pas une lecture du message : `ERR-FORBIDDEN` couvre
- * aussi les vrais refus de droits, et comparer des phrases se briserait à la première reformulation
- * ou traduction.
+ * A lawyer exists for the business once a legal officer registers them with their login
+ * (RG-INT-01, UC-INT-01); until then the user can do nothing. Detected by a dedicated code, since
+ * `ERR-FORBIDDEN` also covers real permission denials and message text may change.
  */
 export function estCompteAvocatNonRattache(erreur: unknown): boolean {
   return erreur instanceof ErreurApi && erreur.code === CodeErreur.AVOCAT_NON_RATTACHE;
 }
 
+/** Display-ready message, with a fallback if the error is not an `ErreurApi`. */
 export function messageErreur(erreur: unknown, repli = "Une erreur est survenue."): string {
   if (erreur instanceof ErreurApi) return erreur.message;
   return normaliserErreur(erreur).message || repli;

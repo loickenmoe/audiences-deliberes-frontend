@@ -16,14 +16,10 @@ import { ErreurApi } from "@/lib/api/errors";
 import type { PageReponse } from "@/lib/api/client";
 
 /**
- * Table de données paginée **côté serveur**.
- *
- * Le backend renvoie `{content, totalPages, totalElements}` : la pagination n'est jamais calculée
- * localement. `manualPagination` le dit explicitement à TanStack Table, faute de quoi elle
- * repaginerait la page déjà paginée — et n'afficherait qu'une fraction des lignes.
- *
- * Les quatre états obligatoires sont intégrés : chargement, erreur, vide, données. Un écran qui
- * consomme cette table n'a donc pas à les réimplémenter — c'est tout l'intérêt.
+ * Server-side paginated data table.
+ * The backend returns `{content, totalPages, totalElements}`; `manualPagination` stops TanStack
+ * Table from re-paginating an already paginated page. The four required states (loading, error,
+ * empty, data) are built in.
  */
 export function TableDonnees<T>({
   colonnes,
@@ -47,14 +43,14 @@ export function TableDonnees<T>({
   erreur?: unknown;
   page: number;
   onChangementPage: (page: number) => void;
-  /** Taille courante ; omise, le sélecteur de taille n'est pas rendu. */
+  /** Current page size; when omitted, the size selector is not rendered. */
   taille?: number;
   onChangementTaille?: (taille: number) => void;
   titreVide?: string;
   descriptionVide?: string;
   actionVide?: ReactNode;
   onReessayer?: () => void;
-  /** Identité stable d'une ligne. À fournir dès que les lignes peuvent être réordonnées. */
+  /** Stable row identity. Provide it whenever rows can be reordered. */
   cleLigne?: (ligne: T, index: number) => string;
   className?: string;
 }) {
@@ -65,7 +61,7 @@ export function TableDonnees<T>({
     data: donnees?.content ?? [],
     columns: colonnes,
     getCoreRowModel: getCoreRowModel(),
-    // La pagination vient du serveur : TanStack ne doit pas repaginer ce qui l'est déjà.
+    // Pagination comes from the server: TanStack must not re-paginate it.
     manualPagination: true,
     pageCount: donnees?.totalPages ?? 0,
     getRowId: cleLigne ? (ligne, index) => cleLigne(ligne, index) : undefined,

@@ -2,10 +2,8 @@ import { apiClient } from "@/lib/api/client";
 import type { SupervisionNotifications } from "@/types/domaine";
 
 /**
- * Supervision des notifications externes (backend D17, Q-120) — DJ et DJA.
- *
- * Ces lignes portent des coordonnées de destinataires et les erreurs renvoyées par les fournisseurs :
- * le backend les réserve à ces deux profils, et l'écran s'aligne.
+ * External notification monitoring, restricted to DJ and DJA: rows carry recipient contact details
+ * and provider error messages, so the backend reserves them to these two profiles.
  */
 export const notificationService = {
   superviser: async (dateDebut: string, dateFin: string): Promise<SupervisionNotifications> => {
@@ -15,7 +13,7 @@ export const notificationService = {
     return data;
   },
 
-  /** Remet en file un envoi abandonné, une fois corrigée la cause de son échec. */
+  /** Re-queues an abandoned delivery once the cause of its failure has been fixed. */
   relancer: async (id: number): Promise<void> => {
     await apiClient.post(`/notifications/${id}/relancer`);
   },

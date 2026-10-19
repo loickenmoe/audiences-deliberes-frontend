@@ -31,16 +31,14 @@ import type {
 } from "@/types/enums";
 
 /**
- * Formes de données du backend, relevées dans les DTO Java (paquets `web.dto` du backend) et recoupées avec
- * `contracts/openapi.json`.
+ * Backend data shapes, taken from the Java DTOs and checked against `contracts/openapi.json`.
  *
- * On les déclare à la main plutôt que d'utiliser directement `api.generated.ts` : les types générés
- * décrivent des chemins et des réponses HTTP, pas des entités du domaine, et leur navigation
- * (`paths["/api/v1/clients"]["get"]["responses"][200]…`) rendrait chaque signature illisible.
- * `api.generated.ts` reste la référence de vérification, ces alias sont l'usage courant.
+ * Declared by hand rather than using `api.generated.ts` directly: generated types describe HTTP paths
+ * and responses, not domain entities, and navigating them would make every signature unreadable.
+ * `api.generated.ts` remains the verification reference.
  */
 
-// ─────────────────────────────── Référentiels ───────────────────────────────
+// Reference data
 
 export interface NatureDossier {
   id: number;
@@ -50,14 +48,8 @@ export interface NatureDossier {
 }
 
 /**
- * Une agence de la banque (métier, 2026-10-03, observation 2).
- *
- * Le code d'agence d'un dossier était du texte libre : sur les 341 dossiers de recette, un seul
- * était renseigné, et il ne désignait aucune agence. Le référentiel ferme la saisie.
- *
- * `id` est l'identifiant technique, `code` celui que la banque emploie - c'est `code` que le
- * dossier porte. Deux agences peuvent partager un nom (deux « MBALLA II ») : la **ville** les
- * oriente, l'**adresse** les tranche.
+ * A bank branch. `id` is the technical id, `code` the one the bank uses and the one a case file
+ * carries. Two branches may share a name: the city narrows them down, the address settles it.
  */
 export interface Agence {
   id: number;
@@ -69,7 +61,7 @@ export interface Agence {
   actif: boolean;
 }
 
-/** Création et modification d'une agence (DJ/DJA). Le code ne se modifie pas après création. */
+/** Branch creation and update (DJ/DJA). The code cannot change after creation. */
 export interface AgenceEcriture {
   code: string;
   nom: string;
@@ -85,7 +77,7 @@ export interface TypeClientSensible {
   libelle: string;
 }
 
-/** `keycloakId` n'est délibérément pas exposé par le backend (#66). */
+/** `keycloakId` is deliberately not exposed by the backend. */
 export interface Utilisateur {
   id: number;
   nom: string | null;
@@ -95,7 +87,7 @@ export interface Utilisateur {
   actif: boolean;
 }
 
-// ─────────────────────────────── Clients ───────────────────────────────
+// Clients
 
 export interface Client {
   id: number;
@@ -114,8 +106,8 @@ export interface CreerClient {
 }
 
 /**
- * `PUT /clients/{id}` — la référence n'y figure pas : elle est l'identifiant du client et reste
- * figée (décision du 2026-09-22). Un champ facultatif vidé part en `null` et devient absent.
+ * `PUT /clients/{id}`: the reference is absent, as it is the client identifier and stays fixed. A
+ * cleared optional field is sent as `null`.
  */
 export interface ModifierClient {
   nom: string;
@@ -124,9 +116,8 @@ export interface ModifierClient {
 }
 
 /**
- * Vue consolidée d'un client (#11, US 8.6). Les dossiers sont **regroupés par catégorie** et la vue
- * est **indépendante de l'affectation du juriste** : elle montre tout ce que la banque porte contre
- * ce client, pas seulement ce que l'utilisateur suit.
+ * Consolidated client view (US 8.6). Case files are grouped by category and the view is independent
+ * of the legal officer's assignment: it shows everything the bank holds against this client.
  */
 export interface VueClientDossiers {
   clientId: number;
@@ -135,7 +126,7 @@ export interface VueClientDossiers {
   exploitationLitiges: Dossier[];
 }
 
-// ─────────────────────────────── Dossiers ───────────────────────────────
+// Case files
 
 export interface EtapeProcedure {
   id: number;
@@ -145,8 +136,8 @@ export interface EtapeProcedure {
 }
 
 /**
- * ⚠ `documents` est **vide par construction** (Q-67 backend) : ne jamais le consommer, passer par
- * `GET /dossiers/{id}/documents`. Il n'est pas déclaré ici, pour qu'on ne puisse pas s'y tromper.
+ * The backend `documents` field is always empty: use `GET /dossiers/{id}/documents` instead. It is
+ * deliberately not declared here.
  */
 export interface Dossier {
   id: number;
@@ -156,7 +147,7 @@ export interface Dossier {
   juridictionSaisie: string;
   clientId: number;
   clientNom: string | null;
-  /** Plusieurs de chaque depuis le 2026-10-05 (observations 1 et 3). Jamais nul à la lecture. */
+  /** Several of each. Never null when read. */
   parties: { demandeurs: string[]; defendeurs: string[] } | null;
   risqueEncouru: number;
   recoursExerces: string | null;
@@ -174,14 +165,14 @@ export interface Dossier {
   seuilOrigine: SeuilOrigine | null;
   sensibiliteStatut: StatutValidation | null;
   sensibiliteMotifRejet: string | null;
-  /** Motif du retrait de la diligence particulière. Distinct du motif de rejet d'une proposition. */
+  /** Reason for removing the special diligence; distinct from a proposal rejection reason. */
   sensibiliteMotifRetrait: string | null;
   etapes: EtapeProcedure[];
   juristesAffectes: number[];
   avocatsAffectes: number[];
   /**
-   * Renseigné par `GET /dossiers/{id}` seulement, du plus récent au plus ancien. Les listes le
-   * renvoient vide : ne jamais s'y fier ailleurs que sur la fiche.
+   * Only filled by `GET /dossiers/{id}`, newest first. Lists return it empty: only rely on it on the
+   * detail page.
    */
   historique?: HistoriqueAction[];
   createdAt: string;
@@ -189,19 +180,15 @@ export interface Dossier {
 }
 
 /**
- * Entrée de l'historique d'un dossier.
- *
- * ⚠ `action` est une **phrase en français rédigée par le backend** (« Changement de statut de
- * l'étape INSTANCE »), pas un code : elle ne peut pas être traduite côté client. Signalé à
- * l'utilisateur (QF-24). `details` est un objet libre dont la forme dépend de l'action.
+ * Case file history entry. `action` is a French sentence written by the backend, not a code, so it
+ * cannot be translated client-side. `details` is a free object whose shape depends on the action.
  */
 export interface HistoriqueAction {
   id: number;
   utilisateurId: number | null;
   /**
-   * Nature typée de l'action (backend Q-111). C'est elle qui fait foi et sur laquelle portent les
-   * filtres ; `action` n'en est que la formulation lisible, et ce qui variait autrefois dans la
-   * phrase — nom de l'étape, sens d'une décision, clé de configuration — se trouve dans `details`.
+   * Typed action kind: the authoritative value, used by filters. `action` is only its readable
+   * wording; variable parts (stage name, decision, configuration key) are in `details`.
    */
   code: string;
   action: string;
@@ -210,16 +197,12 @@ export interface HistoriqueAction {
 }
 
 /**
- * Une page d'audit (backend Q-112).
+ * An audit page: a regular page plus `actionsDisponibles`, the action kinds actually present, which
+ * feed a closed-list filter. That list ignores current filters, so picking one does not hide the
+ * others.
  *
- * Même forme qu'une page, plus `actionsDisponibles` : les natures réellement présentes, qui
- * alimentent un filtre à **liste fermée**. Depuis le typage des actions (Q-111) elle porte des codes
- * et non des phrases, si bien qu'une clé de configuration ne produit plus une entrée par paramètre.
- * Cette liste est indépendante des filtres en cours, sinon en choisir une ferait disparaître les
- * autres et l'on ne pourrait plus changer d'avis.
- *
- * ⚠ **L'audit ne couvre que les modifications** (RG-DOS-06). Aucune consultation n'est tracée, à
- * l'exception de celle de cet écran : l'absence de ligne ne prouve donc pas l'absence d'action.
+ * The audit only covers changes (RG-DOS-06). No read access is logged except for this screen: a
+ * missing row does not prove no action happened.
  */
 export interface PageAudit {
   content: HistoriqueAction[];
@@ -229,11 +212,9 @@ export interface PageAudit {
 }
 
 /**
- * Une entrée du filtre par nature d'action : le **code** part au serveur, le **libellé** s'affiche.
- *
- * Le libellé est dérivé de l'énumération côté backend plutôt que lu sur la ligne — les entrées
- * reprises par la migration V18 portent encore leur ancienne phrase, et une même nature se serait
- * alors présentée plusieurs fois dans la liste.
+ * An entry of the action kind filter: the code is sent to the server, the label is displayed. The
+ * label is derived from the backend enum rather than read from the row, since migrated rows still
+ * carry their old wording.
  */
 export interface OptionActionAudit {
   code: string;
@@ -241,22 +222,17 @@ export interface OptionActionAudit {
 }
 
 /**
- * Une archive d'audit produite et scellée (backend Q-113).
+ * A produced and sealed audit archive.
  *
- * `empreinte` est le **SHA-256 du fichier déposé**. C'est lui qui permet de démontrer, des années
- * plus tard, que le fichier produit est celui qui a été scellé — et donc de distinguer une archive
- * d'une simple copie, qu'on peut rééditer en trois minutes.
- *
- * La clé de stockage n'est **pas** exposée : elle ne servirait qu'à contourner l'endpoint de
- * téléchargement, seul endroit où la récupération est tracée.
+ * `empreinte` is the SHA-256 of the stored file: it proves later that a file is the sealed one, not
+ * a copy. The storage key is not exposed: it would only bypass the download endpoint, the only place
+ * where retrieval is logged.
  */
 export interface ArchiveAudit {
   id: number;
   /**
-   * Référence lisible, `AUD-2026-0042` (backend Q-114). Elle **désigne** l'archive, là où
-   * l'empreinte la **prouve** : on l'écrit dans un courrier, on la dicte au téléphone, et c'est par
-   * elle qu'on retrouve l'empreinte. C'est aussi la seule chose identifiant l'archive que le fichier
-   * puisse porter — tout ce qui décrit son contenu changerait ses octets en y étant écrit.
+   * Readable reference, e.g. `AUD-2026-0042`. It designates the archive while the fingerprint proves
+   * it, and it is the only identifier the file itself can carry without changing its bytes.
    */
   reference: string;
   utilisateurId: number | null;
@@ -270,18 +246,13 @@ export interface ArchiveAudit {
   tailleOctets: number;
 }
 
-/**
- * Résultat d'une vérification d'empreinte (backend Q-114).
- *
- * `reconnue` à faux n'est **pas une erreur** : c'est une réponse, et souvent celle qu'on redoutait —
- * le document qu'on vous a remis ne correspond à aucune archive.
- */
+/** Fingerprint check result. `reconnue` false is not an error: the document matches no archive. */
 export interface VerificationArchive {
   reconnue: boolean;
   archive: ArchiveAudit | null;
 }
 
-/** Demande de dérogation de seuil et son arbitrage (#6, #7). */
+/** Threshold waiver request and its decision. */
 export interface AuditSeuil {
   id: number;
   dossierId: number;
@@ -294,7 +265,7 @@ export interface AuditSeuil {
   dateAction: string;
 }
 
-/** `PUT /dossiers/{id}/affectation` **remplace** les deux listes : il n'ajoute pas. */
+/** `PUT /dossiers/{id}/affectation` replaces both lists; it does not append. */
 export interface ModifierAffectation {
   juristesAffectes: number[];
   avocatsAffectes: number[];
@@ -307,13 +278,13 @@ export interface DemandeDerogation {
 
 export interface ValiderDerogation {
   statut: Exclude<StatutValidation, "EN_ATTENTE">;
-  /** Obligatoire en cas de rejet. */
+  /** Required on rejection. */
   motif?: string;
 }
 
 /**
- * Validation de la sensibilité par le DJ/DJA (#8). Le seuil et le type peuvent être **ajustés** au
- * moment de valider ; `typeClientSensibleAjuste` est un code, validé contre le référentiel (Q-73).
+ * Sensitivity validation by the DJ/DJA. Threshold and type may be adjusted when validating;
+ * `typeClientSensibleAjuste` is a code checked against the reference data.
  */
 export interface ValiderSensibilite {
   statut: Exclude<StatutValidation, "EN_ATTENTE">;
@@ -323,12 +294,8 @@ export interface ValiderSensibilite {
 }
 
 /**
- * Proposition de diligence particulière sur un dossier **déjà ouvert** (métier, 2026-10-03,
- * observation 5).
- *
- * Le seuil et le type sont exigés comme à la création : c'est la proposition que le DJ arbitrera.
- * Le `motif`, lui, n'existe pas à la création - là, la diligence est annoncée dès l'ouverture. Ici,
- * le dossier vivait sans elle, et ce qui a changé doit être dit.
+ * Special diligence proposal on an already open case file. Threshold and type are required as at
+ * creation; the `motif` explains what changed since the file lived without it.
  */
 export interface ProposerDiligence {
   seuilMontant: number;
@@ -337,11 +304,9 @@ export interface ProposerDiligence {
 }
 
 /**
- * Pose ou retrait **direct** par le DJ ou la DJA, sans proposition (métier, 2026-10-06).
- *
- * `estSensible` à vrai exige seuil et type ; à faux, c'est un retrait et le `motif` devient
- * obligatoire - le dossier sort du circuit de double validation des frais, l'audit demandera
- * pourquoi.
+ * Direct setting or removal by the DJ or the DJA, without proposal. `estSensible` true requires
+ * threshold and type; false is a removal and requires a `motif` (the file leaves the double fee
+ * validation workflow).
  */
 export interface ModifierDiligence {
   estSensible: boolean;
@@ -350,12 +315,11 @@ export interface ModifierDiligence {
   motif?: string;
 }
 
-/** Demande de suppression créée quand un juriste auteur supprime une pièce (#40, réponse 202). */
+/** Deletion request created when an authoring legal officer deletes a document (202 response). */
 export type StatutSuppression = "EN_ATTENTE" | "APPROUVEE" | "REJETEE";
 
 /**
- * Demande de suppression (#40 en 202, #41, #63). Depuis Q-79, elle nomme ce qu'elle vise — fichier,
- * type, dossier — y compris quand le document a déjà été supprimé.
+ * Deletion request. Names its target (file, type, case file) even once the document is deleted.
  */
 export interface DemandeSuppression {
   id: number;
@@ -371,11 +335,11 @@ export interface DemandeSuppression {
   motifRejet: string | null;
   dateDemande: string;
   dateDecision: string | null;
-  /** Relance automatique aux DJ/DJA toutes les 72 h tant que la demande attend. */
+  /** Automatic reminder to the DJ/DJA every 72 h while the request is pending. */
   dateDerniereRelance: string | null;
 }
 
-/** Rapport journalier GED (#42) : zéros et liste vide un jour sans activité, jamais d'erreur. */
+/** Daily DMS report: zeros and an empty list on a day without activity, never an error. */
 export interface RapportJournalier {
   date: string;
   dossiersManipules: number;
@@ -384,18 +348,18 @@ export interface RapportJournalier {
   planificationActes: { dossierId: number; reference: string; datePlanifiee: string }[];
 }
 
-/** Issue d'une suppression : immédiate (DJ/DJA, 200) ou soumise à décision (juriste, 202). */
+/** Deletion outcome: immediate (DJ/DJA, 200) or pending decision (legal officer, 202). */
 export type ResultatSuppression =
   | { immediate: true; document: DocumentDossier }
   | { immediate: false; demande: DemandeSuppression };
 
 /**
- * L'état du partage d'une pièce avec l'avocat du dossier (QF-64, backend Q-139). `PROPOSE` : un
- * juriste l'a proposé sur un dossier sensible, et rien n'est visible avant le DJ ou la DJA.
+ * Sharing state of a document with the case file's lawyer. `PROPOSE`: proposed on a sensitive case
+ * file; nothing is visible until the DJ or the DJA decides.
  */
 export type StatutPartageAvocat = "NON" | "PROPOSE" | "PARTAGE";
 
-/** Une pièce dans la file des partages à valider du DJ et de la DJA (QF-64). */
+/** A document in the DJ/DJA queue of shares to approve. */
 export interface PartageAvocat {
   documentId: number;
   dossierId: number;
@@ -407,7 +371,7 @@ export interface PartageAvocat {
   partageLe: string | null;
 }
 
-/** Document rattaché à un dossier (#43). */
+/** Document attached to a case file. */
 export interface DocumentDossier {
   id: number;
   dossierId: number;
@@ -419,50 +383,46 @@ export interface DocumentDossier {
   dateChargement: string;
   estSupprime: boolean;
   urlTelechargement: string | null;
-  /** Partagé avec l'avocat du dossier, proposé, ou réservé aux profils internes (QF-64). */
+  /** Shared with the case file's lawyer, proposed, or restricted to internal profiles. */
   partageAvocat: StatutPartageAvocat;
 }
 
 /**
- * Création d'un dossier (#1, FR-DOS-01).
- *
- * Trois pièges du contrat, vérifiés dans `DossierService` du backend :
- * · `nature` est le **libellé** du référentiel, pas son code ni son identifiant — le backend le
- *   résout par `findByLibelleIgnoreCase` ;
- * · `categorie` est **déduite** de la nature (RG-DOS-02). L'envoyer n'est utile à rien et, si elle
- *   diverge, provoque un 400. Le formulaire la dérive côté client pour piloter ses champs, sans la
- *   transmettre ;
- * · `typeClientSensible` attend le **code** (`VIP`, `ENTREPRISE`, `PARTICULIER`), pas le libellé.
+ * Case file creation (FR-DOS-01). Contract pitfalls (see backend `DossierService`):
+ * - `nature` is the reference data label, not its code or id (resolved by `findByLibelleIgnoreCase`);
+ * - `categorie` is derived from the nature (RG-DOS-02); sending a diverging one causes a 400, so the
+ *   form derives it client-side without sending it;
+ * - `typeClientSensible` expects the code (`VIP`, `ENTREPRISE`, `PARTICULIER`), not the label.
  */
-/** La référence n'y figure pas : le serveur l'attribue (2026-09-29). */
+/** No reference: the server assigns it. */
 export interface CreerDossier {
   nature: string;
   juridictionSaisie: string;
   clientId: number;
-  /** Obligatoires à la création : au moins un demandeur et un défendeur. */
+  /** Required at creation: at least one claimant and one defendant. */
   parties: { demandeurs: string[]; defendeurs: string[] };
   risqueEncouru: number;
   recoursExerces?: string;
   motifRenvoi?: string;
   codeAgenceOrigine?: string;
   codeAgenceContentieuse?: string;
-  /** Exigés ensemble pour un dossier `RECOUVREMENT` (Q-11, en ET et non en OU). */
+  /** Both required for a `RECOUVREMENT` case file. */
   dossierCreditOrigine?: string;
   pvTransfert?: string;
-  /** Exigés ensemble pour un dossier `EXPLOITATION_LITIGES`. */
+  /** Both required for an `EXPLOITATION_LITIGES` case file. */
   incidentCompteReference?: string;
   elementsJustificatifs?: string;
   champAlarme?: string;
-  /** `seuilMontant` et `typeClientSensible` deviennent obligatoires quand ceci est vrai. */
+  /** `seuilMontant` and `typeClientSensible` become required when this is true. */
   estSensible?: boolean;
   seuilMontant?: number;
   typeClientSensible?: string;
-  /** Tous deux non vides : un dossier sans juriste ou sans avocat est refusé. */
+  /** Both non-empty: a case file without a legal officer or a lawyer is rejected. */
   juristesAffectes: number[];
   avocatsAffectes: number[];
 }
 
-/** Filtres de `GET /dossiers` (#2). `mesDossiers` se résout sur l'utilisateur authentifié. */
+/** `GET /dossiers` filters. `mesDossiers` resolves to the authenticated user. */
 export interface FiltresDossiers {
   nature?: string;
   categorie?: CategorieDossier;
@@ -470,14 +430,14 @@ export interface FiltresDossiers {
   reference?: string;
   clientId?: number;
   mesDossiers?: boolean;
-  /** Q-101 — `false` filtre les dossiers **non** sensibles ; `undefined` ne filtre pas. */
+  /** `false` filters non-sensitive case files; `undefined` does not filter. */
   estSensible?: boolean;
-  /** Q-101 — `EN_ATTENTE` est la file des sensibilités à valider du DJ et de la DJA. */
+  /** `EN_ATTENTE` is the DJ/DJA queue of sensitivities to validate. */
   sensibiliteStatut?: StatutValidation;
-  /** Les deux critères d'étape portent sur une **même** étape : « un appel en cours ». */
+  /** Both stage criteria apply to the same stage (e.g. "an appeal in progress"). */
   typeEtape?: TypeEtape;
   statutEtape?: StatutCycleVie;
-  /** La période porte sur les **audiences** : « les dossiers ayant eu une audience entre… ». */
+  /** The period applies to hearings: case files that had a hearing in that range. */
   dateDebut?: string;
   dateFin?: string;
   tri?: TriDossiers;
@@ -485,39 +445,37 @@ export interface FiltresDossiers {
   size?: number;
 }
 
-// ─────────────────────────────── Audiences et alarmes ───────────────────────────────
+// Hearings and alarms
 
-/** Audience d'une étape (#13, #14, #56). `datePlanifiee` et `dateTenue` sont des dates seules. */
+/** Stage hearing. `datePlanifiee` and `dateTenue` are date-only values. */
 export interface Audience {
   id: number;
   dossierId: number;
   etapeId: number;
   datePlanifiee: string;
-  /** Posée par le backend à la **date planifiée** de l'audience, quel que soit le jour de saisie (QF-32). */
+  /** Set by the backend to the hearing's planned date, whatever the entry date. */
   dateTenue: string | null;
   /**
-   * Là où l'audience se tient — distincte de `juridictionSaisie` du dossier, qui est celle de la
-   * saisine. Une audience d'appel ne siège pas devant le tribunal qui a jugé. Héritée du dossier à
-   * la planification faute d'indication contraire.
+   * Where the hearing takes place, distinct from the case file's `juridictionSaisie` (an appeal is not
+   * heard by the court that ruled). Inherited from the case file when scheduling unless specified.
    */
   juridiction: string | null;
   compteRendu: string | null;
   statut: StatutAudience;
   createdAt: string;
-  /** Posés à l'annulation (QF-30, Q-76 backend) : motif obligatoire, horodatage sans fuseau. */
+  /** Set on cancellation: reason required, timestamp without time zone. */
   motifAnnulation: string | null;
   dateAnnulation: string | null;
   /**
-   * Ce que le juriste veut dire à l'avocat constitué (QF-64). **Distincte du compte rendu**, qui
-   * reste interne : il peut juger la stratégie, voire le travail de l'avocat lui-même (RG-INT-07).
+   * Note from the legal officer to the appointed lawyer. Distinct from the hearing report, which stays
+   * internal as it may assess strategy or the lawyer's own work (RG-INT-07).
    */
   noteAvocat: string | null;
 }
 
 /**
- * Alarme d'une étape (#16, #17, #57). `dateEcheance` est un horodatage sans fuseau.
- * Reprogrammer clôt l'alarme (`TRAITEE`) et en crée une nouvelle qui la cite dans
- * `alarmePrecedenteId` : c'est une chaîne, pas une modification.
+ * Stage alarm. `dateEcheance` is a timestamp without time zone. Rescheduling closes the alarm
+ * (`TRAITEE`) and creates a new one referencing it in `alarmePrecedenteId`: a chain, not an update.
  */
 export interface Alarme {
   id: number;
@@ -532,7 +490,7 @@ export interface Alarme {
   createdAt: string;
 }
 
-/** Ligne du calendrier (#15). Les affectations sont des identifiants, résolus en noms à l'affichage. */
+/** Calendar row. Assignments are ids, resolved to names on display. */
 export interface EntreeCalendrier {
   audienceId: number;
   dossierId: number;
@@ -549,31 +507,31 @@ export interface EntreeCalendrier {
 
 export interface PlanifierAudience {
   etapeId: number;
-  /** `YYYY-MM-DD`, non antérieure à l'ouverture du dossier (RG-AUD-08). */
+  /** `YYYY-MM-DD`, not earlier than the case file opening (RG-AUD-08). */
   datePlanifiee: string;
-  /** Facultative : vide, elle reprend la juridiction du dossier — le cas du premier degré. */
+  /** Optional: when empty, the case file's court is used (first-instance case). */
   juridiction?: string;
 }
 
 export interface CreerAlarme {
   etapeId: number;
   objet: string;
-  /** `YYYY-MM-DDTHH:mm`, strictement future. */
+  /** `YYYY-MM-DDTHH:mm`, strictly in the future. */
   dateEcheance: string;
 }
 
 export interface ReprogrammerAlarme {
-  /** Facultatif : vide, l'objet de l'alarme précédente est repris. */
+  /** Optional: when empty, the previous alarm's subject is reused. */
   objet?: string;
   dateEcheance: string;
 }
 
-// ─────────────────────────────── Délibérés ───────────────────────────────
+// Deliberations
 
 /**
- * Délibéré (#58, cycle Q-78). Il naît à la mise en délibéré, **sans résultat** : `dateDeliberee` est
- * alors la date annoncée, que chaque prorogation remplace. `resultat` et `statutExpedition` ne
- * sont posés qu'une fois la décision rendue (`etat` = `VIDE`).
+ * Deliberation. Created when the case is reserved for judgment, without a result: `dateDeliberee`
+ * is then the announced date, replaced by each extension. `resultat` and `statutExpedition` are set
+ * only once the decision is delivered (`etat` = `VIDE`).
  */
 export interface Delibere {
   id: number;
@@ -583,7 +541,7 @@ export interface Delibere {
   etat: EtatDelibere;
   resultat: ResultatDelibere | null;
   statutExpedition: StatutExpedition | null;
-  /** Horodatage sans fuseau ; seulement pour un résultat défavorable ou mixte. */
+  /** Timestamp without time zone; only for an unfavourable or mixed result. */
   dateEcheanceRecours: string | null;
   nombreProrogations: number;
   dateRabattement: string | null;
@@ -591,7 +549,7 @@ export interface Delibere {
   createdAt: string;
 }
 
-/** Prorogation (#19, historique 🆕 Q-78). `alerte` : au-delà du seuil — un avertissement, pas une erreur. */
+/** Extension. `alerte`: beyond the threshold, a warning rather than an error. */
 export interface Prorogation {
   id: number;
   delibereId: number;
@@ -602,7 +560,7 @@ export interface Prorogation {
   createdAt: string;
 }
 
-/** Suivi du délai de recours (#21), en lecture seule. */
+/** Appeal deadline tracking, read-only. */
 export interface Recours {
   delibereId: number;
   dateEcheanceRecours: string | null;
@@ -611,7 +569,7 @@ export interface Recours {
   cloture: boolean;
 }
 
-/** #18 — sans `resultat` : mise en délibéré ; avec : délibéré déjà rendu, vidé d'un même geste. */
+/** Without `resultat`: reserved for judgment; with it: an already delivered decision. */
 export interface EnregistrerDelibere {
   etapeId: number;
   dateDeliberee: string;
@@ -619,14 +577,14 @@ export interface EnregistrerDelibere {
   dateEcheanceRecours?: string;
 }
 
-/** 🆕 Q-78 — la décision est rendue. Échéance exigée pour un résultat défavorable ou mixte. */
+/** The decision is delivered. A deadline is required for an unfavourable or mixed result. */
 export interface ViderDelibere {
   resultat: ResultatDelibere;
   dateEcheanceRecours?: string;
 }
 
 export interface ProrogerDelibere {
-  /** `YYYY-MM-DD`, strictement future (US 3.2). */
+  /** `YYYY-MM-DD`, strictly in the future (US 3.2). */
   date: string;
   motif?: string;
 }
@@ -636,7 +594,7 @@ export interface RabattreDelibere {
   motif: string;
 }
 
-// ─────────────────────────────── Intervenants ───────────────────────────────
+// External parties
 
 export interface Intervenant {
   id: number;
@@ -650,13 +608,12 @@ export interface Intervenant {
 }
 
 /**
- * Invariants portés par le backend (#61, RG-INT-01/02) :
- * · un `AVOCAT` exige un `compteKeycloak` **unique** — 400 s'il manque, 409 s'il est déjà pris ;
- * · un `AUTRE_PRESTATAIRE` refuse tout compte applicatif.
+ * Backend invariants (RG-INT-01/02):
+ * - an `AVOCAT` requires a unique `compteKeycloak` (400 if missing, 409 if taken);
+ * - an `AUTRE_PRESTATAIRE` cannot have an application account.
  *
- * `notification` vaut pour les deux depuis Q-119 : c'est le consentement du prestataire aux canaux
- * externes (SMS, WhatsApp, courriel personnel). Absent, il vaut `true` pour un avocat et `false`
- * pour un autre prestataire.
+ * `notification` is the provider's consent to external channels (SMS, WhatsApp, personal email).
+ * When absent it defaults to `true` for a lawyer and `false` for another provider.
  */
 export interface CreerIntervenant {
   type: TypeIntervenant;
@@ -668,9 +625,8 @@ export interface CreerIntervenant {
 }
 
 /**
- * `PUT /intervenants/{id}` (Q-117) — ni le type ni l'identifiant de connexion n'y figurent : ils sont
- * figés, l'identité se gérant dans Keycloak. Le consentement aux notifications externes, lui, se
- * corrige pour les deux types (Q-119).
+ * `PUT /intervenants/{id}`: type and login are fixed (identity is managed in Keycloak). Consent to
+ * external notifications can be changed for both types.
  */
 export interface ModifierIntervenant {
   nom: string;
@@ -679,9 +635,9 @@ export interface ModifierIntervenant {
   notification: boolean | null;
 }
 
-// ─────────────────────────────── Frais d'avocats ───────────────────────────────
+// Lawyer fees
 
-/** Une décision du circuit (Q-82 backend) : qui, à quelle étape, quoi, pourquoi, quand. */
+/** A workflow decision: who, at which step, what, why, when. */
 export interface ValidationFrais {
   etape: EtapeValidationFrais;
   decision: DecisionValidationFrais;
@@ -692,26 +648,21 @@ export interface ValidationFrais {
 }
 
 /**
- * Demande de frais (#23 à #28 et son détail, Q-82 backend). Elle se lit sans autre appel : dossier
- * et avocat nommés, décisions du circuit dans l'ordre. `validationConjointeRequise` applique la
- * règle RG-INT-03 (dossier sensible **ou** montant > `seuilApplicable`) — pour une demande qui n'a
- * pas encore atteint l'opportunité, c'est ce qui l'attend.
+ * Fee request, readable without further calls: case file and lawyer named, workflow decisions in
+ * order. `validationConjointeRequise` applies RG-INT-03 (sensitive case file or amount above
+ * `seuilApplicable`).
  *
- * **Deux listes, et c'est voulu.** `piecesJustificatives` est le tableau brut du dictionnaire des
- * données : il peut contenir d'anciens libellés, saisis avant que le téléversement n'existe, qui ne
- * désignent aucun fichier. `piecesTelechargeables` ne porte que les pièces **réellement stockées**,
- * avec le nom d'origine et une URL signée de courte durée — renseignée sur le **détail** seulement,
- * jamais sur la liste, comme l'URL d'un document de la GED.
- *
- * L'écran doit préférer la seconde : c'est sur les documents que porte le contrôle de conformité,
- * pas sur leurs noms.
+ * `piecesJustificatives` is the raw list and may contain legacy labels designating no file.
+ * `piecesTelechargeables` only holds actually stored documents, with original name and a short-lived
+ * signed URL, filled on the detail only. The screen should prefer the latter: compliance checks
+ * concern the documents, not their names.
  */
-/** Une pièce justificative stockée, telle que le détail d'une demande de frais la rend. */
+/** A stored supporting document, as returned by the fee request detail. */
 export interface PieceTelechargeable {
-  /** Chemin de stockage ; sert de clé stable, jamais montré à l'utilisateur. */
+  /** Storage path; a stable key, never shown to the user. */
   cle: string;
   nomFichier: string;
-  /** URL signée, de courte durée : à utiliser tout de suite, pas à conserver. */
+  /** Short-lived signed URL: use immediately, do not keep. */
   urlTelechargement: string;
 }
 
@@ -723,7 +674,7 @@ export interface DemandeFrais {
   avocatNom: string;
   montant: number;
   piecesJustificatives: string[];
-  /** Vide sur la liste ; renseignée sur le détail, pour les pièces réellement stockées. */
+  /** Empty on the list; filled on the detail, for actually stored documents. */
   piecesTelechargeables: PieceTelechargeable[];
   statutCircuit: StatutCircuitFrais;
   motifRejet: string | null;
@@ -737,9 +688,9 @@ export interface DemandeFrais {
   updatedAt: string | null;
 }
 
-// ─────────────────────────────── Publications ───────────────────────────────
+// Publications
 
-/** Commentaire d'un juriste (#33) : destiné au DJ et à la DJA, jamais à l'avocat (RG-INT-07). */
+/** Legal officer comment: for the DJ and the DJA, never for the lawyer (RG-INT-07). */
 export interface CommentairePublication {
   id: number;
   publicationId: number;
@@ -749,7 +700,7 @@ export interface CommentairePublication {
   createdAt: string;
 }
 
-/** Correspondance unique du DJ/DJA à l'avocat (#34). */
+/** Single correspondence from the DJ/DJA to the lawyer. */
 export interface CorrespondanceAvocat {
   id: number;
   publicationId: number;
@@ -760,14 +711,13 @@ export interface CorrespondanceAvocat {
 }
 
 /**
- * Publication d'un avocat (#32, #59) : compte rendu d'audience (`contenu`, `audienceDate`) ou autre
- * publication (`typeDocument`, `nomFichier`). Depuis Q-86 backend, elle est nommée ;
- * `urlTelechargement` (10 minutes) et `commentaires` n'existent que sur le détail.
+ * Lawyer publication: hearing report (`contenu`, `audienceDate`) or other publication
+ * (`typeDocument`, `nomFichier`). `urlTelechargement` (10 minutes) and `commentaires` only exist on
+ * the detail.
  *
- * `correspondance` fait exception depuis QF-58 : la liste `GET /portail/mes-publications` la porte,
- * parce que c'est le seul écran où l'avocat peut lire ce que le DJ/DJA lui a transmis. `commentaires`,
- * lui, reste nul pour l'avocat en toute circonstance : la délibération entre le juriste et le DJ/DJA
- * ne lui est jamais adressée (US 5.5, RG-INT-07).
+ * `correspondance` is also returned by `GET /portail/mes-publications`, the only screen where the
+ * lawyer reads what the DJ/DJA sent. `commentaires` is always null for the lawyer: the discussion
+ * between legal officer and DJ/DJA is never addressed to them (US 5.5, RG-INT-07).
  */
 export interface Publication {
   id: number;
@@ -791,25 +741,22 @@ export interface Publication {
   correspondance: CorrespondanceAvocat | null;
 }
 
-// ─────────────────────────────── Constitutions et répertoire ───────────────────────────────
+// Engagements and directory
 
-/** Demande de constitution d'un prestataire (#35, #36, #60), nommée depuis Q-86 backend. */
+/** Provider engagement request. */
 /**
- * Le contenu d'une lettre de constitution (backend Q-115 B2).
+ * Content of an engagement letter, read by two roles: `modifiable` tells which use remains open
+ * rather than letting the screen infer it from a status.
  *
- * **Le juriste rédige, le SH consulte.** C'est le même document lu par deux rôles : `modifiable` dit
- * lequel des deux usages reste ouvert, plutôt que de laisser l'écran le déduire d'un statut.
- *
- * `numero` est **nul tant que la lettre est un brouillon** : il est attribué à la signature, pour ne
- * pas brûler un numéro sur une demande sans suite — la série ne repart jamais à un, et les trous y
- * resteraient.
+ * `numero` is null while the letter is a draft: it is assigned on signature so that no number is
+ * burnt on an abandoned request (the series never restarts, gaps would remain).
  */
 export interface LettreConstitution {
   id: number;
   demandeId: number;
   numero: number | null;
   numeroPropose: number | null;
-  /** `First Bank/DAJR/DR/CM/ABN/18` — l'écran le découpe sur « / », le serveur le stocke d'un bloc. */
+  /** `First Bank/DAJR/DR/CM/ABN/18`: the screen splits it on "/", the server stores it as one string. */
   suffixeNumero: string;
   lieu: string;
   destinataireNom: string | null;
@@ -819,28 +766,23 @@ export interface LettreConstitution {
   objet: string;
   corps: string;
   signataire: string;
-  /** Faux dès que la lettre est signée : une pièce versée au dossier ne se retouche pas. */
+  /** False once the letter is signed: a document filed in the case file is never altered. */
   modifiable: boolean;
   dateGeneration: string | null;
   dateModification: string | null;
   /**
-   * Qui a écrit la dernière version (N8, métier du 2026-10-06).
-   *
-   * Q-115 B2 réservait la plume au juriste ; le SH peut désormais corriger avant de signer. La
-   * séparation des plumes cède, et c'est la traçabilité qui la remplace : le juriste doit voir que
-   * sa lettre a bougé, et par qui. Nul tant que personne n'a rédigé - le brouillon naît avec la
-   * demande.
+   * Who wrote the latest version. The SH may correct before signing, so traceability shows the
+   * requester that the letter changed and by whom. Null until someone writes (the draft is created
+   * with the request).
    */
   redigeParNom: string | null;
-  /** Le code du profil du rédacteur - `JURISTE`, `SH` - pour que l'écran le nomme lui-même. */
+  /** Writer's profile code (`JURISTE`, `SH`), so the screen names it itself. */
   redigeParProfil: string | null;
 }
 
 /**
- * L'état de ma signature enregistrée (N8).
- *
- * Ne porte **pas l'image** : l'écran a besoin de savoir s'il propose un dépôt ou un remplacement.
- * L'image a son propre appel, pour qu'elle ne voyage pas à chaque chargement.
+ * State of my stored signature. Does not carry the image: the screen only needs to know whether to
+ * offer an upload or a replacement; the image has its own call.
  */
 export interface Signature {
   deposee: boolean;
@@ -857,7 +799,7 @@ export interface DemandeConstitution {
   statut: StatutConstitution;
   valideParId: number | null;
   motifRejet: string | null;
-  /** Lettre générée à la signature du SH, déposée dans la GED du dossier. */
+  /** Letter generated on SH signature, filed in the case file's DMS. */
   lettreDocumentId: number | null;
   dateDemande: string;
   dateDecision: string | null;
@@ -867,24 +809,18 @@ export interface DemandeConstitution {
   demandeurNom: string | null;
   valideParNom: string | null;
   /**
-   * Vrai si **celui qui lit** peut écrire sur la lettre : son demandeur, ou le SH (Q-126).
-   *
-   * Calculé par le serveur, jamais déduit ici. L'écran connaît les rôles de qui regarde, pas
-   * l'identifiant interne du demandeur - et `ROLE_JURISTE` étant composite (Q-81), un droit lu
-   * sur le rôle vaudrait aussi pour le DJ et la DJA, ce qui est exactement ce que la règle ferme.
+   * True if the current reader may edit the letter: its requester, or the SH. Computed by the server,
+   * never inferred here: the screen does not know the requester's internal id, and the composite
+   * `ROLE_JURISTE` would wrongly grant the DJ and the DJA.
    */
   redactionPossible: boolean;
 }
 
 /**
- * Demande d'explication adressée par la direction à un avocat, et sa réponse (N7 temps 2).
+ * Explanation request sent by management to a lawyer, and its answer.
  *
- * `enAttente` est **calculé par le serveur** à partir de la date de réponse, jamais stocké : une
- * troisième donnée pourrait dire le contraire des deux autres, et c'est toujours elle qu'on
- * croirait.
- *
- * `dossierId` est facultatif : la demande porte sur une **conduite** - des audiences manquées à
- * travers plusieurs dossiers - et non sur une affaire. Renseigné, il situe l'échange.
+ * `enAttente` is computed by the server from the answer date, never stored. `dossierId` is optional:
+ * the request concerns conduct (e.g. missed hearings across several case files), not a single case.
  */
 export interface DemandeExplication {
   id: number;
@@ -901,15 +837,11 @@ export interface DemandeExplication {
 }
 
 /**
- * L'activité d'une personne sur une période (observation 14, N6).
+ * A person's activity over a period.
  *
- * `delaiMoyenSaisieCompteRendu` est **nul** quand elle n'a saisi aucun compte rendu : zéro se
- * lirait comme une saisie le jour même, c'est-à-dire comme la meilleure performance possible, et
- * l'absence de mesure n'est pas une mesure excellente.
- *
- * `fraisTraites` additionne les deux contrôles - conformité et opportunité - parce qu'ils sont deux
- * gestes distincts sur la même demande, et n'en montrer qu'un rendrait invisible la moitié du
- * travail.
+ * `delaiMoyenSaisieCompteRendu` is null when no report was entered: zero would read as same-day
+ * entry. `fraisTraites` adds both checks (compliance and appropriateness), two distinct actions on
+ * the same request.
  */
 export interface ActiviteNominative {
   utilisateurId: number;
@@ -925,10 +857,8 @@ export interface ActiviteNominative {
 }
 
 /**
- * Une nature d'action et son décompte, dans la fiche d'activité d'une personne (Q-133).
- *
- * `code` est une valeur de `TypeActionHistorique` ; son libellé se lit dans `historique.actions`,
- * parce que l'application est bilingue et que le serveur n'a qu'un libellé français (QF-24).
+ * An action kind and its count in a person's activity sheet. `code` is a `TypeActionHistorique`
+ * value; its label is read from `historique.actions`, since the server only has a French label.
  */
 export interface LigneActivite {
   code: string;
@@ -936,15 +866,9 @@ export interface LigneActivite {
 }
 
 /**
- * La fiche d'activité d'une personne sur une période (Q-133).
- *
- * **Pourquoi elle existe à côté de [[RapportNominatif]].** Le tableau de la direction compare des
- * personnes sur six colonnes choisies ; cette fiche doit refléter **fidèlement** ce qu'une personne
- * a fait - décision du métier du 2026-10-09, qui a renversé l'arbitrage précédent. Une Assistante
- * ou un supérieur hiérarchique n'ouvre pas de dossiers : six colonnes les montreraient vides.
- *
- * Seules les natures **réellement accomplies** figurent dans `lignes` : une fiche n'est pas
- * l'inventaire de ce qu'on n'a pas fait.
+ * A person's activity sheet over a period. Unlike [[RapportNominatif]], which compares people on six
+ * fixed columns, this sheet faithfully reflects what one person did. Only action kinds actually
+ * performed appear in `lignes`.
  */
 export interface RapportActivite {
   utilisateurId: number;
@@ -957,11 +881,9 @@ export interface RapportActivite {
 }
 
 /**
- * Une action derrière un décompte de la fiche (Q-133) : ce qui rend le décompte cliquable.
- *
- * `dossierId` est nul pour une action hors dossier - une modification de configuration, une
- * correction du référentiel. La ligne s'affiche quand même, sans lien : la masquer ferait
- * disparaître de l'activité réelle, et le décompte ne tomberait plus sur le nombre de lignes.
+ * An action behind an activity sheet count, making the count clickable. `dossierId` is null for an
+ * action outside any case file (configuration change, reference data fix); the row is still shown,
+ * without a link, so the count matches the number of rows.
  */
 export interface ActionDetaillee {
   id: number;
@@ -972,13 +894,7 @@ export interface ActionDetaillee {
   referenceDossier: string | null;
 }
 
-/**
- * Les blocs du tableau de bord que l'on peut ouvrir (Q-137).
- *
- * Un par bloc affiché, et aucun de plus : le taux de succès du recouvrement a quitté l'écran le
- * 2026-10-06 au profit des trois décomptes qu'il résumait, et un indicateur qui ne s'affiche plus
- * ne se détaille pas.
- */
+/** Dashboard blocks that can be drilled into: one per displayed block. */
 export type IndicateurTableauDeBord =
   | "DOSSIERS_ACTIFS"
   | "AFFAIRES_VIDEES"
@@ -991,15 +907,11 @@ export type IndicateurTableauDeBord =
   | "PROVISIONS_REPRISES";
 
 /**
- * Une ligne derrière un bloc du tableau de bord (Q-137).
+ * A row behind a dashboard block. A single shape for all nine indicators, although the counted
+ * objects differ; the originating block already says what is being viewed.
  *
- * **Une seule forme pour les neuf indicateurs**, bien que les objets comptés soient de natures
- * différentes - des dossiers, des audiences, des demandes de frais, des délibérés, des alertes, des
- * adjudications. Neuf formes auraient donné neuf tableaux, chacun avec ses colonnes et ses défauts ;
- * le bloc d'où l'on vient dit déjà ce qu'on regarde.
- *
- * `dossierId` est nul pour un objet qui n'en dépend pas - une alerte hors dossier. La ligne reste
- * affichée sans lien, sans quoi le nombre de lignes ne tomberait plus sur le nombre affiché.
+ * `dossierId` is null for an object not tied to a case file; the row is still shown without a link,
+ * so the row count matches the displayed figure.
  */
 export interface DetailIndicateur {
   id: number;
@@ -1012,11 +924,8 @@ export interface DetailIndicateur {
 }
 
 /**
- * Un avocat et ses dépôts sur la période (Q-136).
- *
- * `avocatId` est nul si son inscription au répertoire a été retirée depuis : ses dépôts restent
- * comptés - les masquer ferait disparaître de l'activité réelle - et l'écran ouvre alors sa fiche par
- * son compte, faute d'inscription à désigner.
+ * A lawyer and their filings over the period. `avocatId` is null if their directory entry was
+ * removed since: their filings still count, and the screen opens their sheet by account instead.
  */
 export interface ActiviteAvocat {
   utilisateurId: number;
@@ -1029,13 +938,9 @@ export interface ActiviteAvocat {
 }
 
 /**
- * L'activité des avocats sur une période (Q-136), pendant de [[RapportNominatif]].
- *
- * **Pourquoi un rapport à part.** Le tableau nominatif compte six natures de production interne -
- * ouvrir un dossier, enregistrer un compte rendu, contrôler des frais - dont un avocat n'accomplit
- * aucune : il **dépose**, c'est le juriste qui enregistre. L'y faire figurer n'aurait affiché qu'une
- * ligne de zéros. Deux populations, deux jeux d'indicateurs, une même règle : ni note, ni classement
- * par volume, les lignes suivant l'ordre des noms.
+ * Lawyers' activity over a period, counterpart of [[RapportNominatif]]. Lawyers file while legal
+ * officers record, so they get their own indicators. Same rule: no score, no ranking by volume;
+ * rows follow name order.
  */
 export interface RapportAvocats {
   dateDebut: string;
@@ -1044,11 +949,8 @@ export interface RapportAvocats {
 }
 
 /**
- * Le rapport d'activité par personne (observation 14, N6).
- *
- * **Des indicateurs, pas une note.** L'application compte ; le responsable apprécie. Ni note, ni
- * classement, ni total global : les lignes suivent l'ordre des **noms**, parce qu'un tri par volume
- * ferait du rapport un palmarès où le premier passerait pour le meilleur.
+ * Activity report per person. Indicators, not a score: no ranking and no grand total; rows follow
+ * name order so the report does not read as a league table.
  */
 export interface RapportNominatif {
   dateDebut: string;
@@ -1057,15 +959,11 @@ export interface RapportNominatif {
 }
 
 /**
- * Avocat du répertoire (#37), trié par charge croissante.
+ * Directory lawyer, sorted by increasing workload.
  *
- * `indicateurCharge` : dossiers actifs. `deliberesFavorables` / `deliberesTotal` : ce que l'écran
- * montre depuis le 2026-10-07 - « 3 sur 4 » dit ce que « 75 % » résumait, **et sur combien
- * d'affaires**. Un taux de 100 % sur un délibéré unique ne vaut pas le même jugement qu'un taux de
- * 70 % sur trente, et c'est pourtant le premier qui paraissait le meilleur.
- *
- * `indicateurPerformance` reste dans le contrat - la même requête le produit - mais n'est plus
- * affiché : « le métier veut les chiffres, pas les pourcentages » (2026-10-06).
+ * `indicateurCharge`: active case files. `deliberesFavorables` / `deliberesTotal`: displayed as
+ * "3 out of 4", which shows the sample size a percentage hides. `indicateurPerformance` remains in
+ * the contract but is no longer displayed.
  */
 export interface AvocatRepertoire {
   id: number;
@@ -1078,9 +976,9 @@ export interface AvocatRepertoire {
   indicateurPerformance: number;
 }
 
-// ─────────────────────────────── Décisions définitives et jurisprudence ───────────────────────────────
+// Final decisions and case law
 
-/** Adjudication (#51) : décision définitive favorable à la Banque, sur une étape clôturée (RG-DEF-01/02). */
+/** Adjudication: final decision in the Bank's favour, on a closed stage (RG-DEF-01/02). */
 export interface Adjudication {
   id: number;
   dossierId: number;
@@ -1096,7 +994,7 @@ export interface Adjudication {
   updatedAt: string | null;
 }
 
-/** Condamnation pécuniaire (#52, #53) : seul son statut de paiement évolue (RG-DEF-03/04). */
+/** Monetary judgment: only its payment status changes (RG-DEF-03/04). */
 export interface Condamnation {
   id: number;
   dossierId: number;
@@ -1109,26 +1007,26 @@ export interface Condamnation {
   updatedAt: string | null;
 }
 
-/** Décisions d'un dossier (Q-88 backend), chaque liste de la plus récente à la plus ancienne. */
+/** A case file's decisions, each list newest first. */
 export interface DecisionsDossier {
   adjudications: Adjudication[];
   condamnations: Condamnation[];
 }
 
 export interface CreerAdjudication {
-  /** Étape `CLOTURE` du dossier (400 sinon, RG-DEF-01). */
+  /** Case file stage must be `CLOTURE` (400 otherwise, RG-DEF-01). */
   etapeId: number;
   beneficiaire: string;
   statutComptabilisation: string;
   repriseProvision: boolean;
   restitutionSoulte: boolean;
   mutation: boolean;
-  /** ≥ 0 (400 sinon). */
+  /** >= 0 (400 otherwise). */
   reliquat: number;
   dateDecision: string;
 }
 
-/** Aucune précondition d'étape (Q-59) ; le statut de paiement commence toujours `EN_ATTENTE` (QF-40). */
+/** No stage precondition; payment status always starts as `EN_ATTENTE`. */
 export interface CreerCondamnation {
   etapeId?: number;
   sens: SensCondamnation;
@@ -1136,7 +1034,7 @@ export interface CreerCondamnation {
   dateDecision: string;
 }
 
-/** Jurisprudence (#54, #55) ; `urlTelechargement` pré-signée, valable 10 minutes. */
+/** Case law; `urlTelechargement` is pre-signed and valid for 10 minutes. */
 export interface Jurisprudence {
   id: number;
   dossierId: number | null;
@@ -1149,7 +1047,7 @@ export interface Jurisprudence {
   createdAt: string;
 }
 
-/** Indexation obligatoire (RG-DEF-05) ; fichier PDF de 10 Mo au plus ; dossier facultatif. */
+/** Indexing required (RG-DEF-05); PDF file of at most 10 MB; case file optional. */
 export interface ArchiverJurisprudence {
   dossierId?: number;
   typeArchive: TypeArchiveJurisprudence;
@@ -1159,14 +1057,14 @@ export interface ArchiverJurisprudence {
   dateDecision: string;
 }
 
-// ─────────────────────────────── Alertes et configurations ───────────────────────────────
+// Alerts and configuration
 
 /**
- * Notification destinée à un utilisateur (#45, #46). Le backend l'enregistre **avant** de tenter
- * la diffusion temps réel : une alerte n'est jamais perdue, seul le push peut manquer.
+ * Notification for a user. The backend stores it before attempting real-time delivery: an alert is
+ * never lost, only the push may be missed.
  *
- * `declencheur` est le texte métier, parfois préfixé d'un marqueur technique anti-doublon du type
- * `[delibereId:12] ` — l'affichage le retire (`lib/alertes.ts`).
+ * `declencheur` is the business text, sometimes prefixed with a technical de-duplication marker such
+ * as `[delibereId:12] `, stripped on display (`lib/alertes.ts`).
  */
 export interface Alerte {
   id: number;
@@ -1181,9 +1079,8 @@ export interface Alerte {
 }
 
 /**
- * Paramètre système (#47, #48). Les quatre derniers champs décrivent la **règle de saisie** de la
- * clé (backend Q-91) : le formulaire d'administration s'y conforme au lieu de redéclarer les
- * bornes, et le backend refuse de toute façon une valeur hors règle.
+ * System setting. The last four fields describe the key's input rule: the admin form follows it
+ * instead of redeclaring bounds, and the backend rejects out-of-rule values anyway.
  */
 export interface ConfigurationSysteme {
   cle: string;
@@ -1192,8 +1089,8 @@ export interface ConfigurationSysteme {
   modifiablePar: string;
   dateModification: string | null;
   /**
-   * Auteur de la dernière modification (backend Q-112). Nul tant que le paramètre n'a jamais
-   * été modifié, ou si le compte de l'auteur a été supprimé depuis.
+   * Author of the last change. Null if the setting was never changed or the author's account was
+   * deleted since.
    */
   dernierAuteurId: number | null;
   typeValeur: TypeValeurConfiguration | null;
@@ -1201,19 +1098,16 @@ export interface ConfigurationSysteme {
   valeurMaximale: number | null;
   valeursPossibles: string[];
   /**
-   * Une liste peut être entièrement décochée (backend Q-118) : réglages de notification, où
-   * « aucun canal » ou « aucun événement » est un choix, et non un oubli.
+   * A list may be fully unchecked (notification settings, where "no channel" or "no event" is a
+   * deliberate choice).
    */
   listeVideAutorisee: boolean;
 }
 
-/** Une ligne du tableau de supervision des notifications externes (backend D17). */
+/** A row of the external notification supervision table. */
 /**
- * Une audience d'une journée donnée, avec ce qui en a été rapporté (backend, écran 44).
- *
- * Les deux comptes rendus sont rendus côte à côte : celui du juriste, saisi sur l'audience, et
- * celui de l'avocat, déposé en publication **et validé**. C'est leur écart qui renseigne sur ce
- * qui reste à faire.
+ * A hearing on a given day with what was reported. The legal officer's report and the lawyer's
+ * validated report are shown side by side; the gap shows what remains to be done.
  */
 export interface AudienceDuJour {
   audienceId: number;
@@ -1222,24 +1116,21 @@ export interface AudienceDuJour {
   juridiction: string | null;
   etape: TypeEtape | null;
   statut: StatutAudience;
-  /** Identifiants des juristes affectés au dossier ; l'écran les nomme. */
+  /** Ids of the legal officers assigned to the case file; the screen names them. */
   juristesAffectes: number[];
   compteRenduJuriste: string | null;
   compteRenduAvocat: string | null;
   avocatDuCompteRendu: number | null;
   /**
-   * Adresse signée de la pièce accompagnant le compte rendu de l'avocat — plumitif, note
-   * d'audience —, ou `null` s'il n'en a pas joint. Le compte rendu du juriste est un texte : il
-   * n'a jamais de pièce.
+   * Signed URL of the document attached to the lawyer's report (court record, hearing note), or
+   * `null` if none. The legal officer's report is text only.
    */
   urlPieceJointeAvocat: string | null;
 }
 
 /**
- * Une audience passée dont le compte rendu du juriste manque encore.
- *
- * Le statut « tenue » n'étant posé qu'à la saisie, une audience passée restée « planifiée » est
- * exactement une audience sans compte rendu : aucune donnée supplémentaire n'est nécessaire.
+ * A past hearing whose legal officer report is still missing. "Held" is only set when the report is
+ * entered, so a past hearing still "planned" is exactly a hearing without a report.
  */
 export interface CompteRenduAttendu {
   audienceId: number;
@@ -1250,27 +1141,27 @@ export interface CompteRenduAttendu {
   datePlanifiee: string;
   joursDeRetard: number;
   juristesAffectes: number[];
-  /** L'avocat a rapporté : reste à consigner côté banque. */
+  /** The lawyer has reported: the bank side still has to record it. */
   compteRenduAvocatDepose: boolean;
 }
 
 export interface LigneCanalNotification {
   canal: string;
-  /** En file, pas encore remises au moteur. */
+  /** Queued, not yet handed to the engine. */
   enAttente: number;
-  /** Remises au moteur, sans confirmation encore reçue. */
+  /** Handed to the engine, no confirmation received yet. */
   remises: number;
-  /** Confirmées par un accusé du moteur. */
+  /** Confirmed by an engine acknowledgement. */
   confirmees: number;
-  /** Abandonnées : tentatives épuisées, périmées, ou échec définitif du moteur. */
+  /** Abandoned: attempts exhausted, expired, or final engine failure. */
   echecs: number;
-  /** Remises, mais restées sans aucun accusé au-delà du délai (backend Q-120). */
+  /** Handed over but without any acknowledgement past the deadline. */
   sansRetour: number;
-  /** Canal retenu pour un destinataire sans coordonnée utilisable (D14). */
+  /** Channel selected for a recipient without usable contact details. */
   nonJoignables: number;
 }
 
-/** Un envoi à examiner : abandonné, sans retour, ou destinataire injoignable. */
+/** A send to review: abandoned, no feedback, or unreachable recipient. */
 export interface EnvoiNotificationEnDefaut {
   id: number;
   eventId: string;
@@ -1278,7 +1169,7 @@ export interface EnvoiNotificationEnDefaut {
   canal: string;
   statut: string;
   destinataire: string | null;
-  /** Destinataire réel quand la redirection hors production l'a remplacé (backend D10). */
+  /** Actual recipient when the non-production redirection replaced it. */
   destinataireOrigine: string | null;
   derniereErreur: string | null;
   tentatives: number;
@@ -1290,28 +1181,25 @@ export interface SupervisionNotifications {
   dateFin: string;
   canaux: LigneCanalNotification[];
   derniersEchecs: EnvoiNotificationEnDefaut[];
-  /** Interrupteur du backend : à false, rien ne part et tout reste journalisé. */
+  /** Backend switch: when false, nothing is sent and everything is still logged. */
   engineActif: boolean;
   /**
-   * Le moteur publie-t-il ses accusés ? Sinon (backend Q-121), « remise » est le dernier état connu
-   * d'un envoi réussi, et la colonne des confirmations reste vide sans rien signaler.
+   * Does the engine publish acknowledgements? If not, "handed over" is the last known state of a
+   * successful send, and the confirmations column stays empty without flagging anything.
    */
   suiviAccusesActif: boolean;
 }
 
 /**
- * Supervision du canal applicatif sur une fenêtre (backend Q-109, NF-ALR-02).
+ * Supervision of the in-app channel over a window (NF-ALR-02).
  *
- * **Deux taux, et les confondre serait la première erreur.** `tauxDelivrance` répond à l'exigence
- * NF-ALR-02 — le canal a-t-il fait son travail ? Seuls les échecs comptent contre nous : une alerte
- * remise plus tard, parce que son destinataire n'était pas connecté, a bien été délivrée, le canal
- * applicatif comprenant la liste des notifications. `tauxDiffusionTempsReel` mesure tout autre
- * chose : à quel point les gens sont connectés quand on les alerte. Un chiffre bas sur le second
- * n'est pas un défaut ; sur le premier, si.
+ * Two distinct rates. `tauxDelivrance` answers NF-ALR-02 (did the channel do its job?): only failures
+ * count, since an alert delivered later to an offline recipient is still delivered through the
+ * notification list. `tauxDiffusionTempsReel` measures how often people are online when alerted; a
+ * low value there is not a defect.
  *
- * `observees` est le dénominateur réel — les alertes antérieures à la migration V16 n'ont pas
- * d'issue enregistrée et sont exclues. `nonTraitees` ne participe à aucun taux : une alerte
- * délivrée que personne n'a ouverte relève d'un autre problème.
+ * `observees` is the real denominator (alerts older than migration V16 have no recorded outcome).
+ * `nonTraitees` is not part of any rate.
  */
 export interface StatistiquesDiffusion {
   dateDebut: string;
@@ -1326,21 +1214,15 @@ export interface StatistiquesDiffusion {
   seuilRespecte: boolean;
 }
 
-// ─────────────────────────────── Reporting ───────────────────────────────
+// Reporting
 
 /**
- * Tableau de bord exécutif (#50, écran 39). Neuf indicateurs **temps réel, tous dossiers
- * confondus** : le backend ne les restreint ni à une période ni au portefeuille de l'appelant.
+ * Executive dashboard. Nine real-time indicators across all case files, not restricted to a period
+ * or to the caller's portfolio.
  *
- * `tauxSuccesRecouvrement` est un **ratio de 0 à 1**, pas un pourcentage. Le tableau de bord ne
- * l'affiche **plus** depuis le 2026-10-06 - la Direction veut des nombres - mais l'API le renvoie
- * toujours : la même requête sert à compter les trois résultats, et le rapport périodique s'en sert.
- *
- * **Gagnés, perdus et mixtes sont trois nombres distincts** (métier, 2026-10-03, observation 12).
- * Le backend les possédait et n'exposait que le taux : la Direction lisait un pourcentage sans
- * savoir sur combien d'affaires il portait. « Perdus » n'est pas « total moins gagnés » - un
- * délibéré mixte n'est ni l'un ni l'autre, et le déduire aurait compté les affaires partiellement
- * gagnées comme des pertes.
+ * `tauxSuccesRecouvrement` is a 0-1 ratio, no longer displayed but still returned (used by the
+ * periodic report). Won, lost and mixed are three distinct counts: "lost" is not "total minus won",
+ * since a mixed deliberation is neither.
  */
 export interface TableauDeBord {
   nbDossiersActifs: number;
@@ -1352,20 +1234,17 @@ export interface TableauDeBord {
   nbLitigesPerdus: number;
   nbLitigesMixtes: number;
   /**
-   * Les **affaires vidées** : les dossiers dont plus aucune étape n'est en cours (métier,
-   * 2026-10-06). Complément exact de `nbDossiersActifs` - les deux s'additionnent pour faire les
-   * dossiers qui portent au moins une étape.
+   * Closed cases: case files with no stage in progress. Exact complement of `nbDossiersActifs`; both
+   * add up to the case files with at least one stage.
    */
   nbAffairesVidees: number;
   provisionsReprises: number;
 }
 
 /**
- * Rapport d'activité sur une période (#49, écran 40). `type` n'est qu'une **étiquette** : ce sont
- * `dateDebut` et `dateFin` qui bornent le calcul (backend Q-63).
- *
- * Le backend répond **204 quand les quatre compteurs sont nuls** : c'est un état vide, pas une
- * erreur — le service le rend comme `null`.
+ * Activity report over a period. `type` is only a label; `dateDebut` and `dateFin` bound the
+ * computation. The backend returns 204 when all four counters are zero: an empty state, returned as
+ * `null` by the service.
  */
 export interface Rapport {
   type: TypeRapport;
@@ -1376,9 +1255,8 @@ export interface Rapport {
   nbDemandesFraisDeposees: number;
   nbDeliberesEnregistres: number;
   /**
-   * Toujours renvoyé par l'API, **plus affiché ni exporté** depuis le 2026-10-06 : « le métier veut
-   * les chiffres, le montant, pas les pourcentages ». Les trois décomptes ci-dessous disent ce qu'il
-   * résumait, et le disent sans calcul.
+   * Still returned by the API but no longer displayed or exported: the three counts below convey it
+   * without computation.
    */
   tauxSuccesRecouvrement: number;
   nbLitigesGagnes: number;
@@ -1387,37 +1265,31 @@ export interface Rapport {
   provisionsReprises: number;
 }
 
-// ─────────────────────────────── Portail Avocat ───────────────────────────────
+// Lawyer portal
 
 /**
- * Dépôt d'une demande de frais par l'avocat (#23, écran 30, US 4.1).
- *
- * `piecesJustificatives` porte les **chemins de stockage** renvoyés par
- * `portailAvocatService.deposerPieceJustificative` (QF-26 corrigée par le backend Q-97) — c'est ce
- * que le dictionnaire des données prévoit : « chemins ou références des pièces ». Les fichiers sont
- * donc bien téléversés, en deux temps.
+ * Fee request filed by the lawyer (US 4.1). `piecesJustificatives` holds the storage paths returned
+ * by `portailAvocatService.deposerPieceJustificative`: files are uploaded first, in two steps.
  */
 export interface DeposerFrais {
   dossierId: number;
-  /** > 0 (400 sinon). */
+  /** > 0 (400 otherwise). */
   montant: number;
-  /** Au moins une pièce (400 sinon) : les clés renvoyées par le téléversement. */
+  /** At least one document (400 otherwise): keys returned by the upload. */
   piecesJustificatives: string[];
-  /** Unique — un doublon revient en 409 `ERR-006` sur ce champ. */
+  /** Unique: a duplicate returns 409 `ERR-006` on this field. */
   referenceFacture: string;
 }
 
 /**
- * Dépôt d'un compte rendu d'audience (#29, écran 33, US 5.1). L'audience doit appartenir au
- * dossier, sans quoi le backend répond 404.
- *
- * Le **récit** est obligatoire ; la pièce qui l'étaye est facultative (backend Q-98) et se passe
- * à part, en multipart.
+ * Hearing report filed by the lawyer (US 5.1). The hearing must belong to the case file, otherwise
+ * the backend returns 404. The narrative is required; the supporting document is optional and sent
+ * separately as multipart.
  */
 export interface DeposerCompteRendu {
   dossierId: number;
   audienceId: number;
   contenu: string;
-  /** Identifiant du seul lecteur autorisé ; omis, la publication suit les droits ordinaires. */
+  /** Id of the only authorized reader; when omitted, the publication follows the usual permissions. */
   restrictionAcces?: number;
 }

@@ -5,23 +5,18 @@ import { useId } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Une option, réduite à ce dont le composant a besoin. */
+/** An option, reduced to what the component needs. */
 export interface OptionCase {
   id: number;
   libelle: string;
 }
 
 /**
- * Choix multiple par cases à cocher (2026-09-22).
- *
- * **Pour une liste courte, qu'on veut voir d'un coup d'œil** : les juristes d'un dossier. Chaque
- * personne se coche ou se décoche d'un clic, sans touche à maintenir. C'est ce qui manquait à la liste
- * native à sélection multiple qu'il remplace : il fallait y tenir Ctrl (ou Cmd), un clic sans Ctrl
- * effaçait toute la sélection sans rien signaler, et la zone ne montrait que deux lignes. Pour une
- * liste longue et qui grandit — les avocats —, c'est {@link SelecteurCherchable} qui convient.
- *
- * Le groupe porte son intitulé (`fieldset` / `legend`) : un lecteur d'écran annonce « Juristes
- * affectés » avant chaque case. Le nombre de cases cochées est annoncé à chaque changement.
+ * Multiple choice with checkboxes, for a short list meant to be seen at a glance (e.g. the lawyers
+ * of a case): each person is toggled with a single click, no modifier key needed. For long, growing
+ * lists, use {@link SelecteurCherchable}.
+ * The group is a `fieldset`/`legend` so screen readers announce its label; the number of checked
+ * boxes is announced on each change.
  */
 export function CasesACocher({
   label,
@@ -53,7 +48,7 @@ export function CasesACocher({
 
   return (
     <fieldset className={cn("flex min-w-0 flex-col gap-1.5", className)} aria-describedby={erreur ? idErreur : undefined}>
-      {/* Premier enfant du fieldset : c'est à cette condition qu'il nomme le groupe. */}
+      {/* Must be the first child of the fieldset to name the group. */}
       <legend className="mb-1.5 text-[length:var(--taille-sm)] font-medium">
         {label}
         {obligatoire ? (

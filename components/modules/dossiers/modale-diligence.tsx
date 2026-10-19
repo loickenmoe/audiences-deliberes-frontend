@@ -18,29 +18,19 @@ import type { Dossier } from "@/types/domaine";
 const CHAMPS = ["seuilMontant", "typeClientSensible", "motif"] as const;
 
 /**
- * Trois gestes possibles sur la diligence particulière d'un dossier **déjà ouvert**.
- *
- * - `proposer` : le juriste demande, le DJ ou la DJA arbitrera ;
- * - `poser` : le DJ ou la DJA décide sans passer par une proposition ;
- * - `retirer` : le DJ ou la DJA lève une diligence validée.
+ * Three possible actions on the special due diligence of an already opened case:
+ * - `proposer`: the lawyer requests it, the DJ or DJA will arbitrate;
+ * - `poser`: the DJ or DJA decides without a proposal;
+ * - `retirer`: the DJ or DJA removes a validated due diligence.
  */
 export type IntentionDiligence = "proposer" | "poser" | "retirer";
 
 /**
- * Révision de la diligence particulière après l'ouverture (métier, 2026-10-03, observation 5 ;
- * les deux sens arrêtés le 2026-10-06).
- *
- * **Ce que cette modale débloque.** La diligence ne se posait qu'à la création : un dossier ouvert
- * comme ordinaire le restait définitivement, alors qu'une affaire se révèle sensible en cours de
- * route - une contrepartie change de nature, un montant se découvre.
- *
- * **Une seule modale pour trois gestes**, parce que les champs sont les mêmes et que l'intention
- * seule change ce qui est exigé : seuil et type pour poser, motif pour proposer et pour retirer. En
- * faire trois composants aurait triplé le même formulaire.
- *
- * **Le motif n'est pas une formalité.** Proposer demande d'expliquer ce qui a changé depuis
- * l'ouverture ; retirer fait sortir le dossier du circuit de double validation des frais, et
- * l'audit demandera pourquoi.
+ * Special due diligence review after opening, since a case can turn out sensitive along the way.
+ * One modal for three actions, because the fields are the same and only the intent changes what is
+ * required: threshold and type to set it, reason to propose or remove it.
+ * The reason matters: proposing must explain what changed since opening; removing takes the case
+ * out of the double validation of fees, which the audit will question.
  */
 export function ModaleDiligence({
   dossier,
@@ -54,9 +44,8 @@ export function ModaleDiligence({
   onFermeture: () => void;
 }) {
   /*
-   * Identifiants propres à l'instance : un `<dialog>` fermé reste dans le DOM, et la modale de
-   * dérogation porte déjà un champ `motif`. Sans préfixe, le libellé désignait **son** champ -
-   * invisible, donc impossible à remplir, et le défaut ne se voyait qu'à l'usage.
+   * Per-instance ids: a closed `<dialog>` stays in the DOM, and the derogation modal already has a
+   * `motif` field; without a prefix the label would point to that hidden field.
    */
   const p = useId();
   const t = useTranslations("fiche");
@@ -79,7 +68,7 @@ export function ModaleDiligence({
           motif: z.string().max(255).optional(),
         })
         .superRefine((valeurs, contexte) => {
-          // Le retrait n'a pas besoin de seuil ni de type : il les efface.
+          // Removal needs no threshold or type: it clears them.
           if (!retrait) {
             if (valeurs.seuilMontant === "" || valeurs.seuilMontant === undefined) {
               contexte.addIssue({ code: "custom", path: ["seuilMontant"], message: tm("champObligatoire") });
@@ -93,9 +82,8 @@ export function ModaleDiligence({
             }
           }
           /*
-           * Le motif est exigé pour proposer et pour retirer, mais pas pour poser : le DJ qui pose
-           * la diligence est lui-même la décision, il n'a personne à convaincre. Le backend applique
-           * la même règle, et c'est lui qui tranche.
+           * A reason is required to propose and to remove, not to set: the DJ setting due diligence
+           * is the decision itself. The backend applies the same rule and has the final say.
            */
           if (intention !== "poser" && !valeurs.motif?.trim()) {
             contexte.addIssue({ code: "custom", path: ["motif"], message: tm("champObligatoire") });
@@ -115,8 +103,8 @@ export function ModaleDiligence({
     defaultValues: { seuilMontant: "", typeClientSensible: "", motif: "" },
   });
 
-  // Chaque ouverture repart à vide : la modale sert trois intentions, et un reste de saisie
-  // précédente serait lu comme une proposition de l'application.
+  // Each opening starts empty: the modal serves three intents, and leftover input would read as a
+  // suggestion from the application.
   useEffect(() => {
     if (ouvert) reset({ seuilMontant: "", typeClientSensible: "", motif: "" });
   }, [ouvert, reset]);
@@ -215,7 +203,7 @@ export function ModaleDiligence({
               >
                 <option value="">{td("choisirType")}</option>
                 {(types.data ?? []).map((type) => (
-                  // Un code, validé contre le référentiel côté backend (Q-73).
+                  // A code, validated against the reference list on the backend.
                   <option key={type.id} value={type.code}>
                     {type.libelle}
                   </option>

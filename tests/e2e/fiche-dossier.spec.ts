@@ -5,10 +5,8 @@ import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Parcours de la fiche dossier (écrans 07, 08, 15, 16, 18) **contre le backend réel**.
- *
- * Chaque test crée son propre dossier par l'interface : la création redirige désormais vers la
- * fiche, ce qui vérifie au passage la levée de QF-22.
+ * Case page flows (screens 07, 08, 15, 16, 18) against the real backend. Each test creates its own
+ * case through the UI; creation redirects to the case page.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -30,17 +28,17 @@ async function pageConnectee(browser: Browser, identifiant: string) {
 }
 
 
-/** Crée un dossier par l'interface et renvoie l'URL de sa fiche. */
+/** Creates a case through the UI and returns its page URL. */
 async function creerDossier(page: Page, { sensible = false } = {}) {
   await page.goto("/dossiers/nouveau");
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE);
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // Mandatory: at least one party on each side.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Mandatory: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-FICHE");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-FICHE");
@@ -53,7 +51,7 @@ async function creerDossier(page: Page, { sensible = false } = {}) {
   }
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  // The reference is assigned by the system: read it from the case page.
   return { url: page.url(), reference: await referenceDuDossier(page) };
 }
 
@@ -83,14 +81,14 @@ test("seules les transitions permises sont proposées, et elles s'appliquent", a
   await page.getByRole("tab", { name: "Étapes" }).click();
   const choix = page.getByLabel("Faire passer à", { exact: true });
 
-  // Depuis OUVERTURE, le backend n'accepte que EN_COURS : c'est la seule option offerte.
+  // From OUVERTURE, the backend only accepts EN_COURS: the only option offered.
   await expect(choix.locator("option")).toHaveText(["Choisissez un statut", "En cours"]);
 
   await choix.selectOption("EN_COURS");
   await page.getByRole("button", { name: "Appliquer" }).click();
   await expect(page.getByText("Statut de l’étape mis à jour.")).toBeVisible();
 
-  // L'étape est passée EN_COURS : la seule suite possible est désormais EN_DELIBERE.
+  // The step is EN_COURS: the only next state is EN_DELIBERE.
   await expect(choix.locator("option")).toHaveText(["Choisissez un statut", "En délibéré"]);
 });
 
@@ -102,21 +100,20 @@ test("positionner au pourvoi en cassation annonce puis crée l'appel", async ({ 
   await page.getByLabel("Choisissez une étape", { exact: true }).selectOption("RECOURS_2");
   await page.getByRole("button", { name: "Positionner" }).click();
 
-  // L'effet de bord du backend est annoncé avant confirmation, pas découvert après.
+  // The backend side effect is announced before confirmation.
   const dialogue = page.getByRole("dialog");
   await expect(dialogue).toContainText("Appel");
   await dialogue.getByRole("button", { name: "Confirmer" }).click();
 
   await expect(page.getByRole("heading", { name: "Appel" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Pourvoi en cassation" })).toBeVisible();
-  // Le pourvoi CCJA reste à ouvrir : les deux cassations sont concurrentes, pas successives.
+  // The CCJA appeal is still available: the two cassations are concurrent, not successive.
   await expect(page.getByText("Toutes les étapes existent déjà.")).toHaveCount(0);
 });
 
 /**
- * Les deux cassations coexistent (observation métier du 2026-09-25). Ce parcours vérifie ce que
- * seul l'écran peut montrer : que le pourvoi CCJA s'ouvre **sans** faire naître une étape Cour
- * Suprême, et que le dossier porte ensuite les deux.
+ * Both cassations coexist: the CCJA appeal opens without creating a Supreme Court step, and the
+ * case then holds both.
  */
 test("un dossier peut être porté devant la Cour Suprême et devant la CCJA", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -126,7 +123,7 @@ test("un dossier peut être porté devant la Cour Suprême et devant la CCJA", a
   await page.getByLabel("Choisissez une étape", { exact: true }).selectOption("RECOURS_2_CCJA");
   await page.getByRole("button", { name: "Positionner" }).click();
 
-  // L'appel est annoncé, la Cour Suprême ne l'est pas : elle n'est pas un antécédent du pourvoi CCJA.
+  // The appeal is listed, the Supreme Court is not: it does not precede the CCJA appeal.
   const dialogue = page.getByRole("dialog");
   await expect(dialogue).toContainText("Appel");
   await expect(dialogue).not.toContainText("Pourvoi en cassation");
@@ -135,7 +132,7 @@ test("un dossier peut être porté devant la Cour Suprême et devant la CCJA", a
   await expect(page.getByRole("heading", { name: "Pourvoi CCJA" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Pourvoi en cassation", exact: true })).toHaveCount(0);
 
-  // Le pourvoi national s'ouvre ensuite, à côté : le dossier est devant les deux juridictions.
+  // The national appeal then opens alongside: the case is before both courts.
   await page.getByLabel("Choisissez une étape", { exact: true }).selectOption("RECOURS_2");
   await page.getByRole("button", { name: "Positionner" }).click();
   const second = page.getByRole("dialog");
@@ -146,7 +143,7 @@ test("un dossier peut être porté devant la Cour Suprême et devant la CCJA", a
   await expect(page.getByRole("heading", { name: "Pourvoi CCJA" })).toBeVisible();
   await expect(page.getByText("Toutes les étapes existent déjà.")).toBeVisible();
 
-  // La liste des dossiers montre les deux cassations : n'en afficher qu'une en cacherait la moitié.
+  // The case list shows both cassations.
   await page.goto("/dossiers");
   await page.getByLabel("Référence", { exact: true }).fill(reference);
   const ligne = page.getByRole("row", { name: new RegExp(reference) });
@@ -159,7 +156,7 @@ test("conserver une affectation demande confirmation (ERR-003), puis l'enregistr
   await creerDossier(page);
 
   await page.getByRole("button", { name: "Modifier l’affectation" }).click();
-  // Valider sans rien changer conserve les personnes déjà affectées : le backend répond ERR-003.
+  // Validating without changes keeps the assigned people: the backend answers ERR-003.
   await page.getByRole("dialog").getByRole("button", { name: "Enregistrer" }).click();
 
   const confirmation = page.getByRole("dialog", { name: "Confirmer l’affectation" });
@@ -178,13 +175,9 @@ test("l'historique retrace les actions sur le dossier", async ({ page }) => {
 });
 
 /**
- * L'onglet Documents lit l'endpoint dédié `GET /dossiers/{id}/documents`, et non le champ
- * `documents` de la fiche, qui reste vide par construction (Q-67).
- *
- * **Il ne peut plus être vide sur un dossier neuf.** Les pièces sont obligatoires à la création
- * depuis le 2026-09-29 : un dossier de recouvrement naît avec son dossier de crédit et son PV de
- * transfert. Ce test vérifiait l'état vide, prémisse que cette règle a supprimée ; il vérifie
- * désormais que l'onglet présente bien les deux pièces déposées à la création.
+ * The Documents tab reads the dedicated `GET /dossiers/{id}/documents` endpoint, not the case's
+ * `documents` field, which is always empty. A new debt-recovery case holds the credit file and the
+ * transfer report filed at creation.
  */
 test("l'onglet documents lit la liste dédiée et porte les pièces de la création", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -201,9 +194,9 @@ test("sensibilité validée, dérogation demandée, puis arbitrée par le DJ", a
   const juriste = await pageConnectee(browser, "juriste.test");
   const { url } = await creerDossier(juriste, { sensible: true });
 
-  // Le juriste ne peut pas statuer sur sa propre proposition.
+  // The legal officer cannot decide on his own proposal.
   await expect(juriste.getByRole("button", { name: "Statuer sur la diligence particulière" })).toHaveCount(0);
-  // Et la dérogation n'est pas encore recevable : la sensibilité n'est pas validée.
+  // And the exemption is not admissible yet: sensitivity is not validated.
   await expect(juriste.getByRole("button", { name: "Demander une dérogation" })).toHaveCount(0);
 
   const dj = await pageConnectee(browser, "dj.test");
@@ -215,7 +208,7 @@ test("sensibilité validée, dérogation demandée, puis arbitrée par le DJ", a
   await juriste.reload();
   await expect(juriste.getByRole("button", { name: "Demander une dérogation" })).toBeVisible();
 
-  // La demande de dérogation part chez le DJ…
+  // The exemption request goes to the DJ...
   await juriste.getByRole("button", { name: "Demander une dérogation" }).click();
   const demande = juriste.getByRole("dialog", { name: "Demander une dérogation de seuil" });
   await demande.getByLabel("Nouveau seuil (FCFA)", { exact: true }).fill("80000000");
@@ -223,13 +216,13 @@ test("sensibilité validée, dérogation demandée, puis arbitrée par le DJ", a
   await demande.getByRole("button", { name: "Enregistrer" }).click();
   await expect(juriste.getByText("Demande de dérogation envoyée.")).toBeVisible();
 
-  // …qui peut désormais l'arbitrer : c'est exactement ce que QF-23 empêchait.
+  // ...who can now decide on it.
   await dj.reload();
   await expect(dj.getByRole("heading", { name: "Dérogations de seuil en attente" })).toBeVisible();
   await dj.getByRole("button", { name: "Arbitrer" }).click();
   await dj.getByRole("dialog", { name: "Arbitrer la dérogation de seuil" }).getByRole("button", { name: "Valider" }).click();
   await expect(dj.getByText("Dérogation arbitrée.")).toBeVisible();
-  // La file est vide : la carte disparaît.
+  // The queue is empty: the card disappears.
   await expect(dj.getByRole("heading", { name: "Dérogations de seuil en attente" })).toHaveCount(0);
 
   await juriste.context().close();
@@ -263,18 +256,16 @@ test("la fiche est traduite", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   const { url } = await creerDossier(page);
 
-  // Changer de langue réécrit la page en place : attendre le résultat plutôt que de naviguer
-  // aussitôt, ce qui partait avant que le choix soit enregistré.
+  // Switching language rewrites the page in place: wait for the result before navigating.
   await page.getByRole("button", { name: "en", exact: true }).click();
   await expect(page.getByRole("tab", { name: "Summary" })).toBeVisible();
 
-  // Et le choix survit à un rechargement : il est porté par un cookie, pas par l'état de la page.
+  // The choice survives a reload: it is stored in a cookie, not in page state.
   await page.goto(url);
   await expect(page.getByRole("tab", { name: "Summary" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Stages" })).toBeVisible();
 
-  // L'historique est rédigé en français par le serveur : la fiche le dit au lieu de le cacher.
   await page.getByRole("tab", { name: "History" }).click();
-  // QF-24 close par Q-112 : l'avertissement a disparu, parce que les libelles sont traduits.
+  // The history labels are translated, so no "written in French" warning is shown.
   await expect(page.getByText(/written by the server, in French/)).toHaveCount(0);
 });

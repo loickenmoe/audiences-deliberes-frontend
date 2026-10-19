@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 35 — constitutions de prestataires (SH, juristes). */
+/** Screen 35 - service provider appointments (SH, legal officers). */
 export default async function PageConstitutions() {
   const session = await exigerCapacite("consulterConstitutions");
   return <FileConstitutions roles={session.roles} />;

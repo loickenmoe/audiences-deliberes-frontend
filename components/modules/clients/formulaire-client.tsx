@@ -15,15 +15,10 @@ import { useCreerClient, useModifierClient } from "@/hooks/useClients";
 import type { Client } from "@/types/domaine";
 
 /**
- * Création d'un client, ou correction d'un client existant quand `client` est fourni.
- *
- * Le schéma **reprend les contraintes Bean Validation du backend** (`CreerClientRequest`,
- * `ModifierClientRequest`) : le nom est obligatoire, avec les mêmes longueurs maximales. Valider en
- * amont évite un aller-retour pour une faute que le formulaire pouvait voir ; le backend reste
- * l'arbitre.
- *
- * Un seul formulaire pour les deux usages, et non deux : ses règles de validation ne doivent pas
- * pouvoir diverger entre la création et la correction d'un même client.
+ * Creates a client, or edits an existing one when `client` is provided.
+ * The schema mirrors the backend Bean Validation constraints (`CreerClientRequest`,
+ * `ModifierClientRequest`); the backend remains the authority. A single form for both uses so the
+ * validation rules cannot diverge.
  */
 const CHAMPS = ["nom", "email", "telephone"] as const;
 
@@ -34,7 +29,7 @@ export function FormulaireClient({
 }: {
   ouvert: boolean;
   onFermeture: () => void;
-  /** Le client à corriger. Absent : le formulaire crée un nouveau client. */
+  /** The client to edit. When absent, the form creates a new client. */
   client?: Client;
 }) {
   const t = useTranslations("clients");
@@ -65,8 +60,8 @@ export function FormulaireClient({
     formState: { errors },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    // `values` et non `defaultValues` : le client peut arriver après le premier rendu, et le
-    // formulaire doit alors se remplir de ses valeurs courantes.
+    // `values` rather than `defaultValues`: the client may arrive after the first render, and the
+    // form must then fill with its current values.
     values: valeursInitiales,
   });
 
@@ -79,7 +74,7 @@ export function FormulaireClient({
   const soumettre = handleSubmit(async (valeurs) => {
     try {
       if (edition) {
-        // Un champ vidé part en `null` : le backend l'enregistre comme absent.
+        // An emptied field is sent as `null`: the backend stores it as absent.
         await modifier.mutateAsync({
           nom: valeurs.nom,
           email: valeurs.email || null,
@@ -91,7 +86,7 @@ export function FormulaireClient({
           email: valeurs.email || undefined,
           telephone: valeurs.telephone || undefined,
         });
-        // La référence est attribuée par le serveur : l'annoncer est la seule façon de la connaître.
+        // The reference is assigned by the server: announcing it is the only way to know it.
         toast.success(t("clientCree", { reference: cree.reference }));
       }
       fermer();
@@ -130,9 +125,8 @@ export function FormulaireClient({
         ) : null}
 
         {/*
-          La référence est l'identifiant du client : attribuée à la création (2026-09-29), figée
-          ensuite. Elle reste montrée en correction — savoir lequel on modifie en dépend — mais
-          n'est plus un champ : rien ne la saisit, rien ne l'envoie.
+          The reference is the client identifier: assigned at creation and fixed afterwards. It is
+          still shown when editing but is not an input field and is never sent.
         */}
         {edition ? (
           <div className="flex flex-col gap-1.5">

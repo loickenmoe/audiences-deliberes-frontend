@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import type { Publication } from "@/types/domaine";
 import { cleStatutPublication } from "@/lib/publications";
 
-/** Message d'une vue vide — celui d'UC-INT-10 (alt. 1-a) pour la file à valider. */
+/** Empty-view message, from UC-INT-10 (alt. 1-a), for the approval queue. */
 const VIDE: Record<CleVuePublications, string> = {
   aValider: "videAValider",
   validees: "videValidees",
@@ -24,10 +24,9 @@ const VIDE: Record<CleVuePublications, string> = {
 };
 
 /**
- * Écran 31 — publications des avocats. L'Assistante ouvre sur celles à valider, dans l'ordre
- * d'arrivée ; les juristes, le DJ et la DJA ne voient que les publications validées, les seules
- * qu'ils peuvent lire (US 5.4). La liste ne montre que les métadonnées : une restriction d'accès
- * s'applique à l'ouverture, pas ici.
+ * Screen 31 - lawyers' publications. The Assistant opens on those awaiting validation, in order of
+ * arrival; legal officers, the DJ and the DJA see only validated publications, the only ones they can
+ * read (US 5.4). The list shows metadata only: access restrictions apply when opening, not here.
  */
 export function FilePublications({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("publications");

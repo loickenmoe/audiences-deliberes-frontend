@@ -1,15 +1,13 @@
 /**
- * Vérification du backend réel — à rejouer à chaque jalon avant de passer au suivant.
+ * Smoke test against the real backend.
  *
- * Ne teste pas le backend pour lui-même : vérifie les **hypothèses sur lesquelles le code frontend
- * est bâti**. Chaque contrôle correspond à une décision de conception qui deviendrait fausse si le
- * backend changeait — forme des erreurs, forme de la pagination, forme du claim `roles`, périmètre
- * réel du profil avocat.
+ * It checks the assumptions the frontend code is built on rather than the backend itself: error
+ * shape, pagination shape, `roles` claim shape, actual scope of the lawyer profile.
  *
- *   node scripts/smoke-backend.mjs        (backend + Keycloak démarrés)
+ *   node scripts/smoke-backend.mjs        (backend + Keycloak running)
  *
- * Le secret du client Keycloak est lu dans KEYCLOAK_CLIENT_SECRET, sinon dans l'export de realm du
- * dépôt backend. Il n'est jamais affiché.
+ * The Keycloak client secret is read from KEYCLOAK_CLIENT_SECRET, otherwise from the backend
+ * repository's realm export. It is never printed.
  */
 import { readFile } from "node:fs/promises";
 
@@ -65,7 +63,7 @@ function claims(accessToken) {
 
 console.log("\nVérification du backend réel\n" + "─".repeat(60));
 
-// 1 — Disponibilité
+// 1 - Availability
 console.log("\nDisponibilité");
 let sante;
 try {
@@ -76,7 +74,7 @@ try {
 }
 verifier("l'API répond et se déclare UP", sante?.status === "UP", sante);
 
-// 2 — Forme des erreurs, socle de lib/api/errors.ts
+// 2 - Error shape, relied on by lib/api/errors.ts
 console.log("\nForme des erreurs (lib/api/errors.ts)");
 const nonAuth = await fetch(`${API}/dossiers`);
 const corpsNonAuth = await nonAuth.json();
@@ -90,7 +88,7 @@ verifier(
 );
 verifier("code ERR-UNAUTHENTICATED", corpsNonAuth.code === "ERR-UNAUTHENTICATED", corpsNonAuth.code);
 
-// 3 — Authentification
+// 3 - Authentication
 console.log("\nAuthentification (QF-05)");
 const secret = await lireSecret();
 verifier("secret du client disponible", Boolean(secret));
@@ -114,7 +112,7 @@ verifier("client confidentiel : le secret est obligatoire", sansSecret.status ==
 const juriste = await jetonPour("juriste.test", secret);
 verifier("jeton obtenu pour juriste.test", Boolean(juriste?.access_token));
 
-// 4 — Durées de vie, socle de la stratégie de rafraîchissement (RF-02)
+// 4 - Token lifetimes, basis of the refresh strategy (RF-02)
 console.log("\nDurées de vie des jetons (RF-02)");
 console.log(
   `     access_token ${juriste.expires_in}s · refresh_token ${juriste.refresh_expires_in}s`,
@@ -125,7 +123,7 @@ verifier(
   { access: juriste.expires_in, refresh: juriste.refresh_expires_in },
 );
 
-// 5 — Claim des rôles, socle du RBAC
+// 5 - Roles claim, basis of RBAC
 console.log("\nClaim des rôles (types/enums.ts, lib/rbac.ts)");
 const cj = claims(juriste.access_token);
 verifier("claim `roles` est un tableau", Array.isArray(cj.roles), cj.roles);
@@ -137,7 +135,7 @@ verifier(
 verifier("un juriste porte 3 rôles simultanés", cj.roles?.length === 3, cj.roles);
 verifier("aucun identifiant numérique d'utilisateur dans le jeton (QF-02)", !("utilisateurId" in cj));
 
-// 6 — Pagination, socle de PageReponse<T>
+// 6 - Pagination, basis of PageReponse<T>
 console.log("\nForme de la pagination (lib/api/client.ts)");
 const entetes = { Authorization: `Bearer ${juriste.access_token}` };
 const page = await (await fetch(`${API}/dossiers?page=0&size=5`, { headers: entetes })).json();
@@ -149,14 +147,14 @@ verifier(
   page,
 );
 
-// 7 — Référentiels du formulaire de création de dossier
+// 7 - Reference data for the case creation form
 console.log("\nRéférentiels (écran 06)");
 const natures = await (await fetch(`${API}/referentiels/natures-dossier`, { headers: entetes })).json();
 verifier("taxonomie des natures de dossier peuplée", natures.length > 0, natures.length);
 const types = await (await fetch(`${API}/referentiels/types-client-sensible`, { headers: entetes })).json();
 verifier("types de client sensible peuplés", types.length > 0, types.length);
 
-// 8 — Provisionnement paresseux (QF-16)
+// 8 - Lazy user provisioning
 console.log("\nProvisionnement des utilisateurs (QF-16)");
 await fetch(`${API}/alertes/mes-notifications`, { headers: entetes });
 const utilisateurs = await (await fetch(`${API}/utilisateurs`, { headers: entetes })).json();
@@ -166,7 +164,7 @@ verifier(
   utilisateurs,
 );
 
-// 9 — Périmètre du profil avocat (QF-01)
+// 9 - Lawyer profile scope
 console.log("\nPérimètre du profil avocat (QF-01)");
 const avocat = await jetonPour("avocat.test", secret);
 const ca = claims(avocat.access_token);

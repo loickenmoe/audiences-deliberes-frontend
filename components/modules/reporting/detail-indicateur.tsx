@@ -15,12 +15,11 @@ import type { DetailIndicateur, IndicateurTableauDeBord } from "@/types/domaine"
 import type { CategorieDossier } from "@/types/enums";
 
 /**
- * L'onglet de la fiche dossier où chaque indicateur se regarde.
+ * The case file tab where each indicator is viewed.
  *
- * Absent de cette carte, l'indicateur ouvre la **synthèse** du dossier - mieux vaut arriver sur le
- * bon dossier que ne pas pouvoir cliquer. Les onglets nommés ici sont ceux que `fiche-dossier.tsx`
- * déclare, et un test unitaire le vérifie : promettre un onglet qui n'existe pas retomberait
- * silencieusement sur la synthèse, et la promesse serait fausse sans que rien ne le dise.
+ * An indicator absent from this map opens the case file summary. The tabs named here are those
+ * declared in `fiche-dossier.tsx`, checked by a unit test: an unknown tab would silently fall back
+ * to the summary.
  */
 const ONGLET_PAR_INDICATEUR: Partial<Record<IndicateurTableauDeBord, string>> = {
   AUDIENCES_PLANIFIEES: "audiences",
@@ -32,11 +31,8 @@ const ONGLET_PAR_INDICATEUR: Partial<Record<IndicateurTableauDeBord, string>> = 
 };
 
 /**
- * Où mène une ligne du détail.
- *
- * **Les frais font exception** : la ligne est une demande de frais, qui a son propre écran. Y mener
- * vaut mieux que d'ouvrir le dossier, où il faudrait la retrouver - et la fiche dossier n'a pas
- * d'onglet Frais.
+ * Where a detail row leads. Expenses are the exception: the row is an expense request, which has its
+ * own screen (the case file has no Expenses tab).
  */
 function lienDeLaLigne(
   indicateur: IndicateurTableauDeBord,
@@ -49,19 +45,11 @@ function lienDeLaLigne(
 }
 
 /**
- * Le détail d'un bloc du tableau de bord (Q-137).
+ * Detail of a dashboard block: the list of what it counts, each row leading to its record.
  *
- * **Ce que le métier a demandé** le 2026-10-13 : qu'un clic sur un bloc ouvre la liste de ce qu'il
- * compte, et que chaque ligne mène à sa fiche. Même geste que sur la fiche d'activité, mécanique
- * différente : là tout venait de l'historique des actions, ici chaque indicateur a sa source.
- *
- * **Le total affiché est celui du serveur, jamais une somme des lignes montrées.** La liste est
- * paginée : additionner ce qu'on voit donnerait un chiffre plus petit dès la deuxième page, et ce
- * chiffre contredirait le bloc d'où l'on vient.
- *
- * **Deux précisions s'affichent quand elles s'appliquent**, parce qu'elles expliquent un écart que
- * la Direction remarquerait autrement : les trois indicateurs de litiges ne portent que sur le
- * recouvrement, et les prorogations comptent une ligne par alerte envoyée.
+ * The total shown is the server's, never a sum of the displayed rows: the list is paginated, and a
+ * sum of visible rows would contradict the block's figure.
+ * Explanatory notes are shown when they apply, to explain otherwise surprising differences.
  */
 export function DetailIndicateurModale({
   indicateur,
@@ -69,10 +57,10 @@ export function DetailIndicateurModale({
   categorie,
   onFermeture,
 }: {
-  /** `null` ferme la modale. Le composant reste monté : son état de page se réinitialise à l'ouverture. */
+  /** `null` closes the modal. The component stays mounted: its page state is reset on opening. */
   indicateur: IndicateurTableauDeBord | null;
   libelle: string;
-  /** Le périmètre du bloc d'où l'on vient (Q-138). Absent = les deux catégories. */
+  /** The scope of the originating block. Absent = both categories. */
   categorie?: CategorieDossier;
   onFermeture: () => void;
 }) {
@@ -80,8 +68,8 @@ export function DetailIndicateurModale({
   const [page, setPage] = useState(0);
 
   const detail = useQuery({
-    // Le périmètre fait partie de la clé : sans lui, rouvrir un bloc après avoir changé de
-    // catégorie montrerait la liste de la précédente.
+    // The scope is part of the key: without it, reopening a block after changing category would show
+    // the previous category's list.
     queryKey: ["detail-indicateur", indicateur, categorie ?? "TOUTES", page],
     queryFn: () => reportingService.detailTableauDeBord(indicateur!, page, categorie),
     enabled: indicateur !== null,
@@ -93,11 +81,8 @@ export function DetailIndicateurModale({
   const avecDate = lignes.some((ligne) => ligne.date !== null);
 
   /*
-   * **La phrase sur le recouvrement a disparu avec Q-138**, et c'est le signe que le problème est
-   * réglé à la source : les trois indicateurs de litiges ne sont plus figés sur une catégorie, ils
-   * suivent le périmètre choisi en tête d'écran. Ce qu'une note expliquait, le sélecteur le dit.
-   *
-   * Celle sur les alertes reste : elle ne parle pas de périmètre mais de ce qu'une ligne représente.
+   * The three litigation indicators follow the scope selected at the top of the screen, so they need
+   * no note. The alerts note remains: it explains what a row represents (one row per alert sent).
    */
   const restriction = indicateur === "PROROGATIONS_ALERTE" ? t("uneLigneParAlerte") : undefined;
 
@@ -155,9 +140,8 @@ export function DetailIndicateurModale({
                       ) : null}
                       <td className="py-2">
                         {/*
-                          Trois états, et chacun dit autre chose : une ligne hors dossier n'a rien à
-                          ouvrir, un dossier supprimé depuis a existé, et le cas courant mène à la
-                          fiche - sur l'onglet qui correspond à l'indicateur.
+                          Three states: a row without a case file has nothing to open, a since-deleted case file did
+                          exist, and the usual case leads to the case file on the tab matching the indicator.
                         */}
                         {lien === null ? (
                           <span className="text-texte-tertiaire">{t("sansDossier")}</span>

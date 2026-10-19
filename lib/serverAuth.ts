@@ -8,12 +8,10 @@ import { sessionInutilisable } from "@/lib/rotation-jeton";
 import { type Capacite, peut } from "@/lib/rbac";
 
 /**
- * Garde d'authentification des composants serveur.
+ * Authentication guard for server components.
  *
- * Une session dont la rotation a échoué est traitée comme absente : mieux vaut une reconnexion
- * franche qu'une interface qui se heurte à des 401 sur chaque appel. Les **deux** causes comptent —
- * jeton rejeté ou service injoignable : dans les deux cas la session n'est plus exploitable. Ce qui
- * les sépare n'est pas la conduite à tenir ici, mais ce qu'on **dit** à l'utilisateur.
+ * A session whose rotation failed (rejected token or unreachable service) is treated as absent,
+ * rather than letting every call hit a 401. The two causes only differ in what the user is told.
  */
 export async function exigerSession(redirection = "/login"): Promise<Session> {
   const session = await auth();
@@ -26,8 +24,8 @@ export async function exigerSession(redirection = "/login"): Promise<Session> {
 }
 
 /**
- * Garde d'autorisation. Le backend refuse de toute façon l'appel — cette garde évite d'afficher un
- * écran que l'utilisateur ne pourrait pas utiliser.
+ * Authorization guard. The backend rejects the call anyway; this avoids showing a screen the user
+ * could not use.
  */
 export async function exigerCapacite(capacite: Capacite, redirection = "/unauthorized") {
   const session = await exigerSession();

@@ -7,11 +7,9 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Barre de filtres. Les contrôles sont fournis par l'écran appelant ; ce composant apporte la mise
- * en forme, le repère d'accessibilité et la remise à zéro.
- *
- * Le bouton d'effacement n'apparaît que si au moins un filtre est actif : un bouton toujours visible
- * mais souvent inopérant devient du bruit.
+ * Filter bar. The calling screen provides the controls; this component adds layout, the
+ * accessibility landmark and the reset button, which only appears when at least one filter is
+ * active.
  */
 export function BarreFiltres({
   children,

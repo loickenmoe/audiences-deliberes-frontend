@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 31 — publications des avocats (Assistante, juristes, DJ, DJA). */
+/** Screen 31 - lawyers' publications (assistant, legal officers, DJ, DJA). */
 export default async function PagePublications() {
   const session = await exigerCapacite("consulterPublications");
   return <FilePublications roles={session.roles} />;

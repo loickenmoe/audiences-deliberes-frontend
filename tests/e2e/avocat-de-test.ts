@@ -1,19 +1,10 @@
 import { loadEnvConfig } from "@next/env";
 
 /**
- * L'avocat du référentiel **rattaché au compte `avocat.test`** — lu, jamais supposé.
+ * The reference-data lawyer linked to the `avocat.test` account, read rather than assumed.
  *
- * <b>Le défaut que ce module corrige.</b> Les parcours codaient le nom « Me Claire Avocat » en dur
- * dans leurs sélecteurs, parce que c'est celui que la préparation donne à la fiche qu'elle crée.
- * Or la préparation ne crée cette fiche que si **aucune** n'est rattachée à `avocat.test` : le jour
- * où un DJ en a inscrit une sous un autre nom — ce qui est son métier —, neuf parcours ont échoué
- * d'un coup, sans qu'aucune ligne de l'application soit en cause.
- *
- * Ce que le socle garantit est qu'**un** avocat est rattaché au compte de test, pas son nom. C'est
- * donc cela qu'il faut lire. Le nom appartient aux données, et les données changent.
- *
- * Le résultat est mis en cache pour la durée du processus : chaque parcours le demande, et le
- * référentiel ne change pas d'un test à l'autre.
+ * The setup only guarantees that one lawyer is linked to the test account, not its name, which
+ * belongs to the data and may be changed by a DJ. The result is cached for the process lifetime.
  */
 
 let cache: Promise<AvocatDeTest> | null = null;
@@ -59,7 +50,7 @@ async function lire(): Promise<AvocatDeTest> {
   return { id: rattache.id, nom: rattache.nom };
 }
 
-/** L'avocat rattaché à `avocat.test`, tel qu'il est **aujourd'hui** dans le référentiel. */
+/** The lawyer currently linked to `avocat.test` in the reference data. */
 export function avocatDeTest(): Promise<AvocatDeTest> {
   cache ??= lire();
   return cache;

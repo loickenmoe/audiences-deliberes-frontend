@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 28 — file des demandes de frais (Assistante, DJA, DJ ; l'avocat n'y voit que les siennes). */
+/** Screen 28 - expense request queue (assistant, DJA, DJ; the lawyer only sees their own). */
 export default async function PageFrais() {
   const session = await exigerCapacite("consulterFrais");
   return <FileFrais roles={session.roles} />;

@@ -13,15 +13,11 @@ import { useIntervenants } from "@/hooks/useIntervenants";
 import { messageErreur } from "@/lib/api/errors";
 
 /**
- * UC-INT-05 — depuis la fiche, le juriste sollicite la constitution d'un prestataire (avocat ou
- * autre) ; la demande attend la seconde signature du supérieur hiérarchique (RG-INT-08). Affecter un
- * avocat au dossier et le constituer sont deux démarches distinctes (Q-28 backend).
- *
- * **Enregistrer enchaîne sur la rédaction** (QF-60). La demande créée est annoncée par
- * `onSollicitee`, pour que l'appelant ouvre la lettre sans transition. Le backend était fait pour
- * cela depuis le début : la lettre **naît avec la demande**, sans numéro, « pour que le juriste
- * puisse la rédiger aussitôt ». Seul l'écran ne l'offrait pas - il fallait quitter le dossier,
- * trouver la file des constitutions et y retrouver sa demande.
+ * UC-INT-05 - from the case page, the lawyer requests the representation of a service provider
+ * (counsel or other); the request awaits the line manager's second signature (RG-INT-08). Assigning
+ * a counsel to the case and appointing them are two separate procedures.
+ * Saving chains into letter drafting: the created request is passed to `onSollicitee` so the caller
+ * opens the letter directly (the backend creates the letter with the request, without a number).
  */
 export function ModaleConstitution({
   dossierId,
@@ -32,7 +28,7 @@ export function ModaleConstitution({
   dossierId: number;
   ouvert: boolean;
   onFermeture: () => void;
-  /** La demande enregistrée, pour enchaîner sur la rédaction de sa lettre (QF-60). */
+  /** The saved request, used to chain into drafting its letter. */
   onSollicitee?: (demandeId: number) => void;
 }) {
   const t = useTranslations("constitutions");
@@ -68,8 +64,8 @@ export function ModaleConstitution({
       });
       toast.success(t("sollicitee"));
       onFermeture();
-      // L'enregistrement est acquis : la rédaction peut s'ouvrir, et son échec ne le remettrait pas
-      // en cause. C'est pourquoi l'enchaînement vient **après** `onFermeture`, hors du `try`.
+      // The save is done: drafting can open, and its failure would not undo it. That is why the
+      // chaining comes **after** `onFermeture`, outside the `try`.
       onSollicitee?.(demande.id);
     } catch (e) {
       setErreurs({ general: messageErreur(e) });

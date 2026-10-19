@@ -17,23 +17,12 @@ import { peut } from "@/lib/rbac";
 import type { Agence } from "@/types/domaine";
 
 /**
- * Le référentiel des agences (métier, 2026-10-03, observation 2).
- *
- * **Pourquoi cet écran existe.** Les deux codes d'agence d'un dossier étaient du texte libre, sans
- * vérification : sur les 341 dossiers de recette, un seul était renseigné - `5466546546` - et il ne
- * désignait aucune agence. Les 82 agences sont désormais un référentiel, et c'est ici qu'il se
- * tient.
- *
- * **Lu par tous, tenu par la direction.** La liste se consulte avec la consultation simple, parce
- * qu'elle explique ce que la saisie propose. Créer, corriger et fermer restent au DJ et à la DJA :
- * un code engage les dossiers qui le portent.
- *
- * **On ferme, on ne supprime pas - et on rouvre.** Un dossier ouvert sous une agence fermée reste
- * un dossier valide, et son code doit continuer de désigner quelque chose - l'audit pose des
- * questions des années après. Une agence fermée quitte les listes de saisie, rien de plus. Les
- * agences fermées restent donc affichées ici, et seulement ici, avec de quoi les **rouvrir**
- * (métier, 2026-10-06) : une fermeture peut être une erreur de manipulation, et une agence peut
- * réouvrir. Dans les deux cas elle garde son code - sans quoi il faudrait en inventer un autre.
+ * Branch reference list.
+ * Readable with basic consultation rights; creating, editing and closing are reserved to the DJ and
+ * DJA, since a code is used by cases.
+ * Branches are closed, never deleted, and can be reopened: cases opened under a closed branch
+ * remain valid and keep its code. A closed branch only leaves the input pickers; it is still listed
+ * here.
  */
 export function ListeAgences({ roles }: { roles: readonly string[] }) {
   const t = useTranslations("agences");
@@ -44,8 +33,8 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
   const [aFermer, setAFermer] = useState<Agence | null>(null);
 
   /*
-   * `actifSeulement: false` : c'est l'écran d'administration, le seul qui doive voir les agences
-   * fermées. Les masquer laisserait croire qu'elles ont disparu, alors que des dossiers les citent.
+   * `actifSeulement: false`: this admin screen is the only one that must see closed branches, which
+   * cases still reference.
    */
   const requete = useAgences({ recherche, actifSeulement: false, page, size: 25 });
   const { desactiver, reactiver } = useEcritureAgence();
@@ -62,9 +51,7 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
   }
 
   /*
-   * Rouvrir ne demande pas de confirmation, contrairement à fermer : le geste est bénin - l'agence
-   * redevient proposable - et immédiatement défaisable par la fermeture. Demander deux fois pour
-   * une action sans conséquence apprend à confirmer sans lire.
+   * Reopening needs no confirmation, unlike closing: it is harmless and can be undone immediately.
    */
   async function rouvrirLAgence(agence: Agence) {
     try {
@@ -103,8 +90,8 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
             value={recherche}
             onChange={(evenement) => {
               setRecherche(evenement.target.value);
-              // Revenir à la première page : la page 3 d'une recherche large n'existe plus après
-              // qu'on a tapé trois lettres, et la liste serait vide sans raison visible.
+              // Go back to the first page: page 3 of a broad search no longer exists after typing a
+              // few letters, and the list would be empty for no visible reason.
               setPage(0);
             }}
           />
@@ -220,7 +207,7 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
         <FormulaireAgence ouvert={creationOuverte} onFermeture={() => setCreationOuverte(false)} />
       ) : null}
 
-      {/* La clé remonte le formulaire à chaque agence : ses valeurs de départ sont les siennes. */}
+      {/* The key remounts the form for each branch so its initial values are that branch's. */}
       {enEdition ? (
         <FormulaireAgence
           key={enEdition.id}

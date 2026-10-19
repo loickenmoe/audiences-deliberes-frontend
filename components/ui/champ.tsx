@@ -13,17 +13,14 @@ const BASE =
   "w-full rounded border bg-surface px-3 text-[length:var(--taille-base)] outline-none disabled:bg-surface-attenuee disabled:text-texte-tertiaire";
 
 /**
- * Enveloppe d'un champ : étiquette, contrôle, message d'erreur.
+ * Field wrapper: label, control, error message.
  *
- * L'aide et l'erreur sont reliées au contrôle par `aria-describedby`, et l'erreur signalée par
- * `aria-invalid` — la bordure rouge seule ne suffirait pas. L'astérisque des champs obligatoires est
- * doublée d'un `required` sur le contrôle, seul porteur d'information pour un lecteur d'écran.
+ * Help and error text are linked to the control via `aria-describedby`, and the error is flagged with
+ * `aria-invalid` (a red border alone is not enough). The required asterisk is doubled by `required` on
+ * the control, the only information a screen reader gets.
  *
- * **Le rattachement se fait ici, et non chez l'appelant.** Les deux paragraphes portaient déjà leur
- * identifiant, mais rien ne les reliait : ils existaient pour qui voit l'écran et disparaissaient
- * pour qui l'écoute, sur les 128 champs de l'application. Le défaut a été découvert en posant les
- * textes d'aide de N5 ; le laisser à la charge de chaque formulaire l'aurait reproduit ailleurs.
- * Un `aria-describedby` déjà posé par l'appelant est **conservé**, le nôtre s'y ajoutant.
+ * The linking is done here rather than by each caller so no form can forget it. An
+ * `aria-describedby` already set by the caller is **kept**, ours is appended.
  */
 export function Champ({
   id,
@@ -45,10 +42,9 @@ export function Champ({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {/*
-        L'astérisque est **hors du `<label>`** : à l'intérieur, elle entrerait dans le texte du
-        libellé, qui vaudrait « Nom* » — l'étiquette accessible cesserait de correspondre au mot que
-        l'utilisateur lit et que les tests interrogent. Elle reste décorative : l'information
-        « obligatoire » est portée par `required` sur le contrôle.
+        The asterisk is **outside the `<label>`**: inside, it would become part of the label text
+        ("Name*") and the accessible label would no longer match the word users read and tests
+        query. It stays decorative: "required" is carried by `required` on the control.
       */}
       <div className="flex items-center gap-0.5">
         <label htmlFor={id} className="text-[length:var(--taille-sm)] font-medium">
@@ -79,11 +75,10 @@ export function Champ({
 }
 
 /**
- * Rattache au contrôle les paragraphes qui le décrivent.
+ * Links the describing paragraphs to the control.
  *
- * <p>`cloneElement` plutôt qu'une propriété à passer : l'appelant écrit `<Champ><Input …/></Champ>`
- * et n'a pas à connaître les identifiants que `Champ` fabrique. Un enfant qui n'est pas un élément
- * - une chaîne, un fragment - est rendu tel quel : il n'y a alors rien à décrire.
+ * `cloneElement` rather than a prop: callers write `<Champ><Input …/></Champ>` without knowing the
+ * ids `Champ` generates. A child that is not an element (string, fragment) is rendered as is.
  */
 function relier(enfant: ReactNode, identifiants: (string | null)[]): ReactNode {
   const liste = identifiants.filter((valeur): valeur is string => valeur !== null);
@@ -91,7 +86,7 @@ function relier(enfant: ReactNode, identifiants: (string | null)[]): ReactNode {
     return enfant;
   }
   const element = enfant as ReactElement<{ "aria-describedby"?: string }>;
-  // Celui que l'appelant a posé lui-même est conservé : le nôtre s'y ajoute.
+  // An id set by the caller is kept; ours is appended.
   const existant = element.props["aria-describedby"];
   return cloneElement(element, {
     "aria-describedby": [existant, ...liste].filter(Boolean).join(" "),

@@ -4,26 +4,24 @@ import { getEnv } from "@/lib/env";
 import { normaliserErreur } from "@/lib/api/errors";
 
 /**
- * Client HTTP unique de l'application.
+ * Single HTTP client of the application.
  *
- * Jalon F1 : transport et normalisation des erreurs.
- * Jalon F2 : l'injection du jeton Keycloak se branchera via {@link definirFournisseurDeJeton}, sans
- * toucher au reste du fichier. Deux chemins coexisteront — `auth()` côté serveur, la session côté
- * navigateur — d'où l'indirection par fonction plutôt qu'une lecture directe de la session ici.
+ * The Keycloak token is injected through {@link definirFournisseurDeJeton}: the server side uses
+ * `auth()` and the browser uses the session, hence a provider function rather than a direct read.
  */
 
 type FournisseurDeJeton = () => Promise<string | null>;
 
 let fournisseurDeJeton: FournisseurDeJeton = async () => null;
 
-/** Branché au jalon F2. Permet aussi aux tests d'injecter un jeton déterministe. */
+/** Also lets tests inject a deterministic token. */
 export function definirFournisseurDeJeton(fournisseur: FournisseurDeJeton): void {
   fournisseurDeJeton = fournisseur;
 }
 
 /**
- * Jeton courant, pour les transports qui ne passent **pas** par axios — le canal temps réel STOMP
- * porte son `Authorization` sur la trame `CONNECT`, pas sur une requête HTTP (F14).
+ * Current token, for transports that do not go through axios: the STOMP real-time channel carries
+ * its `Authorization` on the `CONNECT` frame, not on an HTTP request.
  */
 export async function obtenirJeton(): Promise<string | null> {
   return fournisseurDeJeton();
@@ -37,9 +35,8 @@ export const apiClient: AxiosInstance = axios.create({
 });
 
 /**
- * `baseURL` est résolue à chaque requête, pas à la création du module : la validation
- * d'environnement doit pouvoir échouer au premier appel réel plutôt qu'à l'import, ce qui
- * rendrait les tests unitaires dépendants d'une configuration complète.
+ * `baseURL` is resolved per request, not at module creation: environment validation must fail on
+ * the first real call rather than at import, so unit tests do not need a full configuration.
  */
 apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   config.baseURL ??= getEnv().NEXT_PUBLIC_API_URL;
@@ -53,10 +50,8 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 });
 
 /**
- * Toute défaillance ressort en {@link ErreurApi}. Aucune redirection n'est déclenchée ici : le
- * projet de référence renvoyait vers `/login` depuis l'intercepteur, ce qui rend les erreurs
- * intestables et court-circuite la gestion d'état des écrans. La décision de rediriger appartient
- * aux gardes de route (F2).
+ * Every failure surfaces as an {@link ErreurApi}. No redirect here: redirecting from the
+ * interceptor makes errors untestable and bypasses screen state; route guards decide redirects.
  */
 apiClient.interceptors.response.use(
   (reponse) => reponse,
@@ -64,11 +59,9 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Une requête demandée en binaire (`responseType: "blob"`, pour un export PDF ou Excel) reçoit
- * **aussi** ses erreurs en binaire : un `Blob` dans un navigateur, un tampon ou un texte sous Node.
- * `normaliserErreur` étant synchrone, il ne pouvait pas le lire, et retombait sur le message
- * générique du statut — le message du backend était perdu. On le relit ici, une fois pour tous les
- * téléchargements de l'application.
+ * A binary request (`responseType: "blob"`, for PDF or Excel exports) also receives its errors as
+ * binary (a `Blob` in the browser, a buffer or string under Node). `normaliserErreur` is synchronous
+ * and cannot read it, so the body is parsed here to keep the backend message.
  */
 async function relireCorpsBinaire(erreur: unknown): Promise<unknown> {
   const reponse = (erreur as { response?: { data?: unknown } } | null)?.response;
@@ -83,13 +76,13 @@ async function relireCorpsBinaire(erreur: unknown): Promise<unknown> {
     try {
       reponse.data = JSON.parse(texte);
     } catch {
-      // Pas du JSON (page d'erreur d'un proxy, par exemple) : le statut suffira à qualifier l'erreur.
+      // Not JSON (e.g. a proxy error page): the status is enough to qualify the error.
     }
   }
   return erreur;
 }
 
-/** Enveloppe de pagination du backend — `{content, totalPages, totalElements}`, sans écho de page. */
+/** Backend pagination envelope: `{content, totalPages, totalElements}`, without the page number. */
 export interface PageReponse<T> {
   content: T[];
   totalPages: number;

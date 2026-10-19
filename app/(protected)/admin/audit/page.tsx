@@ -9,16 +9,12 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 43 — audit des actions historisées (backend Q-112). DJ et DJA.
+ * Screen 43 - audit of recorded actions. DJ and DJA only.
  *
- * **Pourquoi un écran à part, et pas un bloc sur la Configuration.** Ce sont deux tâches
- * différentes : administrer — lire un réglage, le changer — et enquêter — remonter le temps, croiser
- * auteur, période et nature. Le journal de Q-110 vivait sous les paramètres faute de mieux ; il
- * déménage ici, où il n'est plus qu'un cas particulier (périmètre « hors dossier »).
- *
- * La garde est `consulterAudit`, **distincte** d'`administrerConfigurations` : lire l'activité
- * nommée d'un collègue n'est pas écrire un seuil, et un assouplissement futur de l'une ne doit pas
- * déplacer l'autre.
+ * Separate from Configuration because investigating (going back in time, crossing author, period
+ * and nature) is a different task from administering settings. The guard is `consulterAudit`,
+ * **distinct** from `administrerConfigurations`: reading a colleague's named activity is not
+ * writing a threshold, and relaxing one must not move the other.
  */
 export default async function PageAudit() {
   await exigerCapacite("consulterAudit");

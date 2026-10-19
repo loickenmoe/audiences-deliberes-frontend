@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  *
- * Sous Node, comme `audiences.test.ts` : on vérifie ici ce qui part sur le fil — chemins, verbes et
- * corps — pour chaque étape du cycle d'un délibéré (Q-78).
+ * Checks what goes over the wire (paths, verbs and bodies) for each step of a deliberation's
+ * lifecycle.
  */
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";

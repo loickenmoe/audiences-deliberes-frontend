@@ -12,42 +12,29 @@ import type {
 import type { CategorieDossier, FormatRapport, TypeRapport } from "@/types/enums";
 
 /**
- * Qui l'on regarde, pour la fiche d'activité (Q-133, étendu aux avocats en Q-135).
- *
- * **Rien du tout signifie « moi »** : c'est le serveur qui sait qui je suis, et l'écran n'a donc pas
- * à transporter son propre identifiant. Un collègue se désigne par son **compte**, un avocat par son
- * **inscription au répertoire** - la direction le connaît par là, et l'identifiant d'utilisateur n'y
- * figure pas. Les deux ensemble sont refusés par le serveur : servir l'un en ignorant l'autre
- * laisserait croire qu'on a lu l'activité demandée.
+ * Whose activity sheet is requested. **Nothing means "me"**: the server knows the caller, so the
+ * screen never sends its own identifier. A colleague is designated by account, a lawyer by directory
+ * entry. The server rejects both together, since serving one would misrepresent what was read.
  */
 export type CibleActivite = { utilisateurId: number } | { avocatId: number };
 
-/** Bornes d'un rapport. `type` n'est qu'une étiquette de période (backend Q-63). */
+/** Report bounds. `type` is only a period label. */
 export interface PeriodeRapport {
   type: TypeRapport;
   dateDebut: string;
   dateFin: string;
-  /** Périmètre de catégories (Q-138). Absent = les deux. */
+  /** Category scope. Absent = both. */
   categorie?: CategorieDossier;
 }
 
 /**
- * Reporting (#49, #50).
- *
- * Deux profils distincts par conception : le tableau de bord est réservé au DJ (US 8.5), le rapport
- * au juriste (US 8.4). Le DJ portant aussi `ROLE_JURISTE` depuis Q-81, il atteint les deux — c'est
- * ce qui rend le parcours de pilotage P9 jouable et ce qui ferme QF-04.
+ * Reporting (#49, #50). The dashboard is reserved to the DJ (US 8.5), the report to the legal officer
+ * (US 8.4); the DJ also holds `ROLE_JURISTE`, so it reaches both.
  */
 export const reportingService = {
   /**
-   * #50 — indicateurs temps réel, recadrables par catégorie depuis Q-138.
-   *
-   * **`categorie` absent signifie les deux catégories**, et c'est le défaut de l'écran. Six des neuf
-   * indicateurs portaient déjà sur tout, trois sur le recouvrement seul : un dossier d'exploitation
-   * jugé ne faisait bouger aucun compteur de résultat. Le périmètre unique ferme cet écart.
-   *
-   * L'invariant que le serveur garantit, et sur lequel l'écran peut s'appuyer :
-   * **Recouvrement + Litiges d'exploitation = Toutes catégories**, pour les neuf.
+   * #50 - real-time indicators, optionally scoped by category (absent = both, the screen default).
+   * Server invariant for all nine: **Recovery + Operating disputes = All categories**.
    */
   tableauDeBord: async (categorie?: CategorieDossier): Promise<TableauDeBord> => {
     const { data } = await apiClient.get<TableauDeBord>("/tableau-de-bord", {
@@ -57,8 +44,8 @@ export const reportingService = {
   },
 
   /**
-   * #49 en JSON. **`null` quand le backend répond 204** : aucune activité sur la période. C'est un
-   * état vide, pas une erreur — le distinguer ici évite que chaque écran réinterprète un statut.
+   * #49 as JSON. **`null` when the backend answers 204** (no activity in the period): an empty
+   * state, not an error, handled here so screens do not reinterpret the status.
    */
   genererRapport: async (periode: PeriodeRapport): Promise<Rapport | null> => {
     const reponse = await apiClient.get<Rapport | "">("/rapports", {
@@ -68,10 +55,8 @@ export const reportingService = {
   },
 
   /**
-   * L'activité de chacun sur une période (observation 14, N6) — DJ et DJA seuls.
-   *
-   * **`null` quand le backend répond 204**, comme le rapport périodique : une période sans activité
-   * est un état vide, et une page de zéros laisserait croire que personne n'a rien fait.
+   * Activity of each user over a period - DJ and DJA only. **`null` on 204**: a page of zeros would
+   * suggest nobody did anything.
    */
   rapportNominatif: async (dateDebut: string, dateFin: string): Promise<RapportNominatif | null> => {
     const reponse = await apiClient.get<RapportNominatif | "">("/rapports/nominatif", {
@@ -81,15 +66,8 @@ export const reportingService = {
   },
 
   /**
-   * Le détail d'un bloc du tableau de bord (Q-137) — DJ et DJA.
-   *
-   * **Ce que le serveur garantit, et qui vaut d'être dit** : la liste rend exactement ce que le bloc
-   * compte, prédicat pour prédicat. Le total de la page est donc celui du bloc - l'écran n'a pas à
-   * recompter, et surtout il ne doit pas : sommer les lignes d'une page donnerait un chiffre plus
-   * petit dès la deuxième.
-   *
-   * Paginé, parce qu'un bloc peut valoir trois cents : une modale qui charge tout met plus de temps
-   * à s'ouvrir que l'utilisateur n'en met à renoncer.
+   * Detail of a dashboard block - DJ and DJA. The list returns exactly what the block counts, so the
+   * page total is the block total: never sum the rows of a page. Paginated because a block can be large.
    */
   detailTableauDeBord: async (
     indicateur: IndicateurTableauDeBord,
@@ -97,20 +75,15 @@ export const reportingService = {
     categorie?: CategorieDossier,
   ): Promise<PageReponse<DetailIndicateur>> => {
     const { data } = await apiClient.get<PageReponse<DetailIndicateur>>("/tableau-de-bord/details", {
-      // Le même périmètre que le bloc d'où l'on vient : un détail scopé autrement que le nombre
-      // qu'il détaille ferait douter des deux.
+      // Same scope as the originating block, so the detail matches the number it explains.
       params: { indicateur, page, size: 20, categorie },
     });
     return data;
   },
 
   /**
-   * L'activité des avocats sur une période (Q-136) — DJ et DJA.
-   *
-   * Le pendant du rapport nominatif, pour l'autre population. Les deux ne tiennent pas dans un même
-   * tableau : un avocat n'accomplit aucune des six natures de production interne que l'autre compte.
-   *
-   * **`null` sur 204**, comme les autres : aucun dépôt sur la période.
+   * Lawyers' activity over a period - DJ and DJA. Separate from the per-user report because lawyers
+   * perform none of the internal production types it counts. **`null` on 204**.
    */
   rapportAvocats: async (dateDebut: string, dateFin: string): Promise<RapportAvocats | null> => {
     const reponse = await apiClient.get<RapportAvocats | "">("/rapports/nominatif/avocats", {
@@ -120,14 +93,8 @@ export const reportingService = {
   },
 
   /**
-   * La fiche d'activité d'une personne (Q-133) — **chacun sur lui-même**, le DJ et la DJA sur
-   * quiconque.
-   *
-   * `utilisateurId` absent signifie « moi » : c'est le serveur qui sait qui je suis, et l'écran n'a
-   * donc pas à transporter son propre identifiant. Renseigné, il n'est servi qu'à la direction - le
-   * serveur refuse, l'écran ne le propose simplement pas aux autres.
-   *
-   * **`null` sur 204** : la personne n'a rien fait sur la période. Un état vide, pas une erreur.
+   * Activity sheet of one person - **everyone on themselves**, the DJ and DJA on anyone. No target
+   * means "me"; a target is only served to management. **`null` on 204**: an empty state, not an error.
    */
   rapportActivite: async (
     dateDebut: string,
@@ -141,12 +108,9 @@ export const reportingService = {
   },
 
   /**
-   * La même fiche en document : « chaque utilisateur doit être capable de télécharger ses propres
-   * rapports » (métier, 2026-10-09).
-   *
-   * Le nom du fichier vient du **serveur**, dans l'en-tête `Content-Disposition`, que CORS n'expose
-   * pas en lecture — l'appelant le reconstruit donc avec `nomFichierActivite`, à partir des mêmes
-   * éléments. Les deux doivent rester d'accord, et un test unitaire s'en assure.
+   * The same sheet as a document, so each user can download their own reports. The file name comes
+   * from `Content-Disposition`, which CORS does not expose, so the caller rebuilds it with
+   * `nomFichierActivite`; a unit test keeps both in sync.
    */
   exporterActivite: async (
     dateDebut: string,
@@ -164,13 +128,7 @@ export const reportingService = {
     return data instanceof Blob ? data : new Blob([data as BlobPart]);
   },
 
-  /**
-   * Les actions derrière un décompte (Q-133) : « cliquer sur un élément doit renvoyer aux détails de
-   * la dite tâche ».
-   *
-   * Paginé, parce qu'un décompte peut valoir cent : une modale qui charge cent lignes d'un coup met
-   * plus de temps à s'ouvrir que l'utilisateur n'en met à renoncer.
-   */
+  /** Actions behind a count, paginated because a count can be large. */
   detailsActivite: async (
     code: string,
     dateDebut: string,
@@ -185,11 +143,8 @@ export const reportingService = {
   },
 
   /**
-   * #49 en PDF, Excel ou CSV — le document lui-même, en binaire. **`null` sur 204**, comme la
-   * version JSON : il n'y a pas de fichier à télécharger pour une période sans activité.
-   *
-   * En réponse binaire, une erreur arrive elle aussi en binaire : c'est l'intercepteur du client
-   * HTTP qui la relit, pour que le message du backend atteigne l'utilisateur.
+   * #49 as PDF, Excel or CSV. **`null` on 204**: no file for a period without activity. Errors also
+   * arrive as binary; the HTTP client interceptor decodes them so the backend message reaches the user.
    */
   exporterRapport: async (
     periode: PeriodeRapport,
@@ -200,8 +155,7 @@ export const reportingService = {
       responseType: "blob",
     });
     if (reponse.status === 204) return null;
-    // Un navigateur rend un `Blob` ; sous Node, axios rend un tampon. Normaliser ici évite que
-    // l'appelant dépende de l'environnement.
+    // Browsers return a `Blob`, Node returns a buffer: normalise so callers are environment-agnostic.
     const data = reponse.data;
     if (!data) return null;
     return data instanceof Blob ? data : new Blob([data as BlobPart]);

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CLES } from "@/hooks/const";
 import { notificationService } from "@/services/notificationService";
 
-/** Supervision des notifications externes sur une fenêtre (D17). */
+/** Monitoring of external notifications over a time window. */
 export function useSupervisionNotifications(dateDebut: string, dateFin: string, actif = true) {
   return useQuery({
     queryKey: [CLES.notifications, "supervision", dateDebut, dateFin],
@@ -15,8 +15,8 @@ export function useSupervisionNotifications(dateDebut: string, dateFin: string, 
 }
 
 /**
- * Relance d'un envoi abandonné. La supervision est invalidée après coup : la ligne relancée quitte
- * la liste des envois à examiner, et son canal recompte ses états.
+ * Retries an abandoned delivery. Monitoring is invalidated afterwards: the retried row leaves the
+ * list of deliveries to review and its channel recounts its states.
  */
 export function useRelancerNotification() {
   const client = useQueryClient();

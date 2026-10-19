@@ -6,17 +6,9 @@ import type { Dossier } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
 
 /**
- * Les décisions d'un dossier suivent l'état de ses étapes (QF-66, demandé le 2026-10-15).
- *
- * **Le défaut.** Sur un dossier tout juste créé, à l'étape Ouverture, l'onglet Décisions proposait
- * « Suivre une condamnation » et « Archiver à la jurisprudence ». La condamnation n'avait aucune
- * règle ; la jurisprudence en avait une côté serveur, mais l'écran laissait remplir tout le
- * formulaire avant de refuser.
- *
- * **Les deux règles, désormais tenues à l'écran comme au serveur.**
- * - La condamnation, comme l'adjudication (RG-DEF-01) : une étape **clôturée**, obligatoire.
- * - La jurisprudence : le dossier **clos**, plus aucune étape ouverte - une décision n'y entre
- *   qu'une fois définitive.
+ * A case file's decisions follow the state of its steps, enforced on screen as on the server:
+ * - A sentence, like an award (RG-DEF-01), requires a **closed** step.
+ * - Case law requires a **closed** case file with no open step: a decision enters it only once final.
  */
 vi.mock("@/hooks/useDecisions", () => ({
   useDecisionsDossier: () => ({ data: { adjudications: [], condamnations: [] }, isLoading: false, error: null }),
@@ -45,7 +37,7 @@ const suivre = () => screen.getByRole("button", { name: "Suivre une condamnation
 const archiver = () => screen.getByRole("button", { name: "Archiver à la jurisprudence" });
 
 describe("un dossier tout juste ouvert", () => {
-  /** Le cas signalé : rien n'a été jugé, rien ne se suit ni ne s'archive. */
+  /** Nothing has been judged yet: nothing can be tracked or archived. */
   it("ne permet ni de suivre une condamnation, ni d'archiver, et dit pourquoi", () => {
     rendre(<OngletDecisions dossier={dossier("OUVERTURE")} roles={JURISTE} />);
 
@@ -65,15 +57,15 @@ describe("un dossier dont l'étape est clôturée", () => {
     expect(screen.queryByText(/Une condamnation se suit une fois l’étape clôturée/)).not.toBeInTheDocument();
   });
 
-  /** Une étape archivée est fermée aussi : elle ne rouvre pas le dossier. */
+  /** An archived step is closed too: it does not reopen the case file. */
   it("compte une étape archivée comme fermée pour la jurisprudence", () => {
     rendre(<OngletDecisions dossier={dossier("CLOTURE", "ARCHIVE")} roles={JURISTE} />);
     expect(archiver()).toBeEnabled();
   });
 
   /**
-   * La condamnation de l'instance clôturée se suit pendant que l'appel court ; mais la décision
-   * n'est pas définitive, et n'entre pas dans la base jurisprudentielle.
+   * The sentence of the closed instance can be tracked while the appeal runs, but the decision is
+   * not final and does not enter the case law base.
    */
   it("instance clôturée, appel en cours : la condamnation oui, la jurisprudence non", () => {
     rendre(<OngletDecisions dossier={dossier("CLOTURE", "EN_COURS")} roles={JURISTE} />);
@@ -84,7 +76,7 @@ describe("un dossier dont l'étape est clôturée", () => {
 });
 
 describe("la modale de condamnation", () => {
-  /** Elle ne propose que les étapes clôturées, et l'étape y est obligatoire. */
+  /** Only closed steps are offered, and the step is mandatory. */
   it("n'offre que les étapes clôturées, et exige d'en choisir une", () => {
     rendre(<OngletDecisions dossier={dossier("CLOTURE", "EN_COURS")} roles={JURISTE} />);
     fireEvent.click(suivre());
@@ -92,7 +84,7 @@ describe("la modale de condamnation", () => {
 
     const etape = within(modale).getByLabelText(/Étape clôturée/);
     const options = within(etape).getAllByRole("option").map((o) => o.textContent);
-    expect(options).toHaveLength(2); // l'invite, et la seule étape clôturée
+    expect(options).toHaveLength(2); // the placeholder and the only closed step
     expect(options.join(" ")).not.toMatch(/Appel/);
 
     fireEvent.click(within(modale).getByRole("button", { name: "Enregistrer" }));

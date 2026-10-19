@@ -15,7 +15,7 @@ export function useDecisionsDossier(dossierId: number) {
   });
 }
 
-/** Une décision s'ajoute à la liste du dossier et à son historique. */
+/** A decision is added both to the case's decision list and to its history. */
 function useRechargerDossier(dossierId: number) {
   const client = useQueryClient();
   return () => {
@@ -53,7 +53,7 @@ export function useJurisprudences(filtres: FiltresJurisprudence) {
   return useQuery({
     queryKey: [CLES.jurisprudences, filtres],
     queryFn: () => decisionService.rechercherJurisprudences(filtres),
-    // Garder la liste affichée pendant la recherche suivante.
+    // Keep the current list displayed while the next search runs.
     placeholderData: (precedent) => precedent,
   });
 }

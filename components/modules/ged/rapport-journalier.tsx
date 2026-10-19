@@ -14,9 +14,9 @@ import { aujourdhui } from "@/lib/calendrier";
 import { formaterDate } from "@/lib/utils";
 
 /**
- * Écran 37 — rapport journalier GED (UC-GED-04, FR-GED-04) : dossiers manipulés, pièces ajoutées,
- * affaires nouvelles et audiences planifiées d'une journée. Un jour sans activité n'est pas une
- * erreur : le backend rend des zéros, l'écran le dit en clair.
+ * Screen 37 - daily DMS report (UC-GED-04, FR-GED-04): case files handled, documents added, new
+ * cases and hearings scheduled on a given day. A day without activity is not an error: the backend
+ * returns zeros and the screen says so.
  */
 export function RapportJournalierGed() {
   const t = useTranslations("rapportJournalier");

@@ -18,16 +18,10 @@ import { peut } from "@/lib/rbac";
 import type { DemandeExplication } from "@/types/domaine";
 
 /**
- * Les demandes d'explication (N7 temps 2, observation 8).
- *
- * **Un seul écran pour deux publics.** La direction y voit les demandes qu'elle a écrites, l'avocat
- * celles qui lui sont adressées - et c'est le **serveur** qui décide lesquelles, sur l'identité de
- * qui appelle. L'écran n'envoie aucun paramètre de périmètre : il suffirait à un avocat pour
- * demander la liste entière.
- *
- * **Ce que l'écran montre avant tout, c'est l'attente.** Une demande sans réponse est ce sur quoi
- * quelqu'un doit agir - l'avocat pour répondre, la direction pour insister. Le reste est de
- * l'historique.
+ * Explanation requests, for two audiences: management sees the requests it wrote, a lawyer those
+ * addressed to them. The server decides which, from the caller's identity; the screen sends no scope
+ * parameter, otherwise a lawyer could request the whole list.
+ * Pending (unanswered) requests come first: they are what someone has to act on.
  */
 export function FileExplications({ roles }: { roles: string[] }) {
   const t = useTranslations("explications");
@@ -79,11 +73,7 @@ export function FileExplications({ roles }: { roles: string[] }) {
             <StatutChip ton={row.original.enAttente ? "attention" : "succes"}>
               {row.original.enAttente ? t("enAttente") : t("repondue")}
             </StatutChip>
-            {/*
-              La réponse est ce que la direction attendait : elle s'affiche en entier, sous le
-              statut. La cacher derrière un clic obligerait à ouvrir chaque ligne pour savoir ce
-              qui a été dit.
-            */}
+            {/* The answer is shown in full under the status, so no row has to be opened to read it. */}
             {row.original.reponse ? (
               <span className="max-w-prose text-[length:var(--taille-xs)] text-texte-secondaire">
                 {row.original.reponse}
@@ -118,10 +108,7 @@ export function FileExplications({ roles }: { roles: string[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/*
-        Le filtre ne sert qu'à la direction : l'avocat voit les siennes, répondues ou non, et
-        c'est l'historique de ce qu'on lui a demandé.
-      */}
+      {/* Management only: a lawyer sees all of their requests, answered or not, as their history. */}
       {peut(roles, "demanderExplication") ? (
         <div className="flex gap-2">
           <Button
@@ -172,7 +159,7 @@ export function FileExplications({ roles }: { roles: string[] }) {
         }
       >
         <div className="flex flex-col gap-3">
-          {/* Ce qu'on lui reproche, sous les yeux : on ne répond pas de mémoire. */}
+          {/* The request is shown above the answer, so the lawyer does not answer from memory. */}
           <p className="max-w-prose rounded border border-bordure bg-surface-attenuee p-3 text-[length:var(--taille-sm)]">
             {aRepondre?.contenu}
           </p>
