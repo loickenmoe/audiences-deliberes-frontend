@@ -1,6 +1,6 @@
 {
   "name": "audiences-deliberes-frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Frontend de la plateforme Audiences et Délibérés — Direction Juridique, Afriland First Bank Cameroun",
   "scripts": {
