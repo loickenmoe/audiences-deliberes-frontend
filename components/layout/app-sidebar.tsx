@@ -70,10 +70,6 @@ export function AppSidebar({ roles }: { roles: readonly string[] }) {
           );
         })}
       </ul>
-
-      <p className="hidden border-t border-bordure px-5 py-4 text-[length:var(--taille-xs)] text-texte-tertiaire lg:block">
-        {t("modulesAVenir")}
-      </p>
     </nav>
   );
 }
