@@ -5,7 +5,7 @@ import type { Role } from "@/types/enums";
  *
  * This table is derived from the backend `@PreAuthorize` rules. The backend remains the authority
  * (unauthorized calls fail with `ERR-FORBIDDEN`); this is UX, not security: hiding is not securing.
- * Any divergence from a `@PreAuthorize` is a bug (reference: `API_INTEGRATION_STATUS.md`).
+ * Any divergence from a `@PreAuthorize` is a bug.
  */
 
 /**

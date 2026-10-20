@@ -137,7 +137,7 @@ manifeste par des 403 que l'interface doit savoir présenter.
 
 **Mise en œuvre** :
 - `lib/rbac.ts` — table unique `{ route | action → rôles requis }`, dérivée mécaniquement des
-  `@PreAuthorize` relevés dans `API_INTEGRATION_STATUS.md`.
+  `@PreAuthorize` du backend (Contrat d'API V1.1 (`Doc/`)).
 - Garde de route : `(protected)/layout.tsx` vérifie la session ; chaque page sensible appelle
   `authorize(session, [...])`.
 - Navigation : `navigation.ts` filtre les entrées par `roles`.
@@ -198,7 +198,7 @@ Implémenté au jalon F3. Source unique : `app/globals.css`. **Les ratios annonc
 |---|---|
 | Fichiers vectoriels officiels (`images/Park_Logo_Afriland_First_Bank/`) | **Vérifiée** — quatre couleurs, deux lockups |
 | Signature « The Pact with Success », symbole en poignée de main | **Vérifiée** (site du groupe) |
-| Capture de **GFA**, application Afriland en production (`images/login_page_template.png`) | **Vérifiée** — conventions d'interface réelles |
+| Capture de **GFA**, application Afriland en production (capture de référence, retirée du dépôt) | **Vérifiée** — conventions d'interface réelles |
 | Tout le reste | **Recommandation**, documentée et mesurée |
 
 Aucune charte graphique officielle n'est publiée par la banque.

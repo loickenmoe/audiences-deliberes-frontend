@@ -3,25 +3,25 @@
 Interface web de la plateforme de digitalisation des audiences et délibérés de la **Direction
 Juridique d'Afriland First Bank Cameroun**.
 
-Mémoire de fin d'études KFOKAM-48 — KENMOE MBEUKEM Loïc Luc. Encadreur DSI : DEUMO DEUMO Léonce.
+Projet de fin de formation KFOKAM-48 — KENMOE MBEUKEM Loïc Luc. Encadreur opérationel Chef de departement du Dev Mr. DEUMO DEUMO Léonce.
 
 ---
 
 ## Avant de coder : lire le contexte
 
-Ce dépôt tient six fichiers de contexte à sa racine. **Lire `FRONTEND_WORKING_MEMORY.md` en premier**
-— il donne l'état courant, les décisions actées, les conventions et les questions ouvertes. Les
-autres ne s'ouvrent que si le sujet l'exige.
+Ce dépôt tient quatre fichiers de contexte à sa racine. **Lire `FRONTEND_ARCHITECTURE.md` en
+premier** ; les autres ne s'ouvrent que si le sujet l'exige.
 
 | Fichier | Contenu |
 |---|---|
-| `GUIDE_UTILISATEUR.md` | **Pour les utilisateurs**, pas pour les développeurs : se connecter, chaque métier écran par écran, questions fréquentes |
-| `FRONTEND_WORKING_MEMORY.md` | **Point d'entrée développeur.** État courant, décisions, conventions, contraintes |
-| `FRONTEND_ARCHITECTURE.md` | Pile, arborescence, authentification, droits, couche API, design system |
-| `SCREEN_MAP.md` | Les 42 écrans : routes, rôles, endpoints, règles métier |
-| `API_INTEGRATION_STATUS.md` | Les 67 endpoints du backend et leur état de consommation |
-| `DEVELOPMENT_ROADMAP.md` | Les 18 jalons, F0 → F17 |
-| `DECISIONS_AND_OPEN_QUESTIONS.md` | Arbitrages datés, questions ouvertes, risques |
+| `FRONTEND_ARCHITECTURE.md` | **Point d'entrée développeur.** Pile, arborescence, authentification, droits, couche API, design system |
+| `SCREEN_MAP.md` | Les écrans : routes, rôles, endpoints, règles métier |
+| `DECISIONS_AND_OPEN_QUESTIONS.md` | Arbitrages, questions ouvertes, risques |
+| `PISTES_AMELIORATION.md` | Dette connue et améliorations proposées |
+
+Le contrat de l'API est `contracts/openapi.json` ; la documentation fonctionnelle de référence (V1.1)
+est dans le dossier `Doc/` du dépôt backend. Le guide d'utilisation, le guide de déploiement et les
+fiches de test sont livrés à part, dans le dossier des testeurs.
 
 La source de vérité métier reste le dépôt backend, **en lecture seule** sauf décision explicite.
 

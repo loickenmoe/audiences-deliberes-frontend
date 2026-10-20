@@ -15,9 +15,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "api:types": "openapi-typescript contracts/openapi.json -o types/api.generated.ts",
-    "api:fetch": "node scripts/fetch-openapi.mjs",
-    "garnir": "node scripts/garnir-base.mjs",
-    "smoke": "node scripts/smoke-backend.mjs"
+    "api:fetch": "node scripts/fetch-openapi.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

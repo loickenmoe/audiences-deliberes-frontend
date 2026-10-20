@@ -26,7 +26,7 @@ absent, champ non exposé, filtre indisponible, rôle incohérent, contrat incom
    recommandation.
 4. **Attendre l'arbitrage** avant d'implémenter un contournement.
 5. Consigner le point dans ce fichier sous une référence `QF-xx`, et le refléter dans
-   `API_INTEGRATION_STATUS.md` et `SCREEN_MAP.md`.
+   `SCREEN_MAP.md`.
 
 **Ne jamais inventer un endpoint, un champ ou une règle métier pour combler un trou.** Ne jamais
 masquer une fonctionnalité pour éviter d'exposer une lacune. Les lacunes déjà relevées lors de
@@ -1523,7 +1523,7 @@ recherche sert le plus. Ne le traiter qu'en choix unique aurait vidé la correct
 | Recherche `?nom=Me` / `?nom=IntrouvableXYZ` | 3 et **0** — le fragment cherche au milieu du nom |
 | Historique | fiche plafonnée à **10** entrées, endpoint dédié pour la suite |
 | Suite de bout en bout | **138 sur 138** |
-| `npm run smoke` | **17 sur 17** |
+| `npm run smoke` (script retiré depuis) | **17 sur 17** |
 
 **Deux tests de bout en bout gardent l'exigence**, et ils ne se contentent pas de compter dix lignes :
 le premier relève une référence en page 1, passe en page 2 et vérifie qu'elle en montre une **autre**

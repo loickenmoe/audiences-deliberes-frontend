@@ -9,8 +9,8 @@ import { referentielService } from "@/services/referentielService";
 
 /**
  * Service layer checks against a mocked backend: the **shape of the requests we send** (verb, path,
- * parameters) and the translation of error responses. `npm run smoke` checks the opposite: that the
- * real backend behaves as assumed. Payloads reproduce responses **actually observed** locally.
+ * parameters) and the translation of error responses. Payloads reproduce responses **actually
+ * observed** locally; the Playwright journeys check the real backend.
  */
 const BASE = "http://localhost:8080/api/v1";
 
