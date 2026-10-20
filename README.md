@@ -1,110 +1,119 @@
-# Audiences et Délibérés — Frontend
+# Audiences et Délibérés - Frontend
 
-Interface web de la plateforme de digitalisation des audiences et délibérés de la **Direction
-Juridique d'Afriland First Bank Cameroun**.
+Web interface of the hearings and deliberations platform of the **Legal Department of Afriland
+First Bank Cameroon**.
 
-Projet de fin de formation KFOKAM-48 — KENMOE MBEUKEM Loïc Luc. Encadreur opérationel Chef de departement du Dev Mr. DEUMO DEUMO Léonce.
+KFOKAM-48 end-of-training project - KENMOE MBEUKEM Loïc Luc. Operational supervisor: Mr. DEUMO
+DEUMO Léonce, Head of the Development Department.
 
 ---
 
-## Avant de coder : lire le contexte
+## Before coding: read the context
 
-Ce dépôt tient quatre fichiers de contexte à sa racine. **Lire `FRONTEND_ARCHITECTURE.md` en
-premier** ; les autres ne s'ouvrent que si le sujet l'exige.
+The `design-notes/` folder holds four context files, in French. **Read
+`design-notes/FRONTEND_ARCHITECTURE.md` first**; open the others only when the topic requires it.
 
-| Fichier | Contenu |
+| File | Content |
 |---|---|
-| `FRONTEND_ARCHITECTURE.md` | **Point d'entrée développeur.** Pile, arborescence, authentification, droits, couche API, design system |
-| `SCREEN_MAP.md` | Les écrans : routes, rôles, endpoints, règles métier |
-| `DECISIONS_AND_OPEN_QUESTIONS.md` | Arbitrages, questions ouvertes, risques |
-| `PISTES_AMELIORATION.md` | Dette connue et améliorations proposées |
+| `design-notes/FRONTEND_ARCHITECTURE.md` | **Developer entry point.** Stack, folder layout, authentication, permissions, API layer, design system |
+| `design-notes/SCREEN_MAP.md` | The screens: routes, roles, endpoints, business rules |
+| `design-notes/DECISIONS_AND_OPEN_QUESTIONS.md` | Decisions, open questions, risks |
+| `design-notes/PISTES_AMELIORATION.md` | Known technical debt and suggested improvements |
 
-Le contrat de l'API est `contracts/openapi.json` ; la documentation fonctionnelle de référence (V1.1)
-est dans le dossier `Doc/` du dépôt backend. Le guide d'utilisation, le guide de déploiement et les
-fiches de test sont livrés à part, dans le dossier des testeurs.
+The API contract is `contracts/openapi.json`; the reference functional documentation (V1.1) is in
+the `Doc/` folder of the backend repository. The user guide, the deployment guide and the test
+sheets are delivered separately, in the testers' folder.
 
-La source de vérité métier reste le dépôt backend, **en lecture seule** sauf décision explicite.
+The backend repository remains the source of truth for business rules.
 
-## Pile technique
+## Tech stack
 
-Next.js 15 (App Router) · React 19 · TypeScript strict · Tailwind v4 · shadcn/ui ·
-TanStack Query · Zod · Vitest + Testing Library + MSW · Playwright.
+Next.js 15 (App Router) · React 19 · TypeScript strict · Tailwind v4 · TanStack Query · Zod ·
+react-hook-form · NextAuth (Keycloak) · next-intl (French / English) · Vitest + Testing Library ·
+Playwright.
 
-## Démarrer
+## Getting started
 
-### 1. Le socle backend
+### 1. The backend
 
-Le frontend ne fonctionne pas seul. Depuis le dépôt `audiences-deliberes-backend` :
+The frontend does not run on its own. From the `audiences-deliberes-backend` repository:
 
 ```bash
-docker-compose up postgres keycloak minio -d   # PostgreSQL 5433, Keycloak 8081, MinIO 9000/9001
-./mvnw spring-boot:run                          # API sur 8080
+docker compose up postgres keycloak minio -d   # PostgreSQL 5433, Keycloak 8081, MinIO 9000/9001
+./mvnw spring-boot:run                          # API on 8080
 ```
 
-Vérification : `curl http://localhost:8080/actuator/health` doit répondre `{"status":"UP"}`.
+Check: `curl http://localhost:8080/actuator/health` must answer `{"status":"UP"}`.
 
-### 2. Le frontend
+### 2. The frontend
 
 ```bash
-cp env.template .env.local     # puis renseigner les variables
+cp env.template .env.local     # then fill in the variables
 npm install
 npm run dev                    # http://localhost:3000
 ```
 
+`AUTH_SECRET` and `KEYCLOAK_CLIENT_SECRET` are empty in `env.template` and must be filled in; see
+the comments in that file.
+
 ## Scripts
 
-| Commande | Rôle |
+| Command | Purpose |
 |---|---|
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Construction de production |
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
 | `npm run lint` | ESLint |
-| `npm run typecheck` | Vérification TypeScript sans émission |
-| `npm run test` | Tests unitaires et d'intégration (Vitest) |
-| `npm run test:e2e` | Parcours de bout en bout (Playwright) |
+| `npm run typecheck` | TypeScript check without emitting |
+| `npm run test` | Unit and integration tests (Vitest) |
+| `npm run test:e2e` | End-to-end journeys (Playwright, with the installed Chrome; both servers must run) |
 | `npm run format` | Prettier |
-| `npm run api:fetch` | Récupère le contrat d'API du backend dans `contracts/openapi.json` |
-| `npm run api:types` | Régénère `types/api.generated.ts` depuis ce contrat |
+| `npm run api:fetch` | Fetches the backend's API contract into `contracts/openapi.json` |
+| `npm run api:types` | Regenerates `types/api.generated.ts` from that contract |
 
-### Contrat d'API
+### API contract
 
-Les types TypeScript sont **générés** depuis l'OpenAPI du backend et **figés** dans
-`contracts/openapi.json`. La spécification n'est jamais récupérée à l'exécution : `/v3/api-docs` est
-aujourd'hui accessible sans authentification côté backend et doit être fermé avant la mise en
-production. Après une évolution du backend :
+TypeScript types are **generated** from the backend's OpenAPI and **frozen** in
+`contracts/openapi.json`. The specification is never fetched at run time: `/v3/api-docs` is
+currently reachable without authentication on the backend and must be closed before production.
+After a backend change:
 
 ```bash
 npm run api:fetch && npm run api:types
 ```
 
-Toute rupture de contrat ressort alors en erreur de compilation, et non en anomalie de recette.
+Any contract break then shows up as a compilation error, not as an acceptance-test defect.
 
-## Comptes de test
+## Test accounts
 
-Realm `audiences-realm`, mot de passe `Password1!` pour tous :
+Realm `audiences-realm`, password `Password1!` for all:
 
-| Compte | Rôles |
+| Account | Roles |
 |---|---|
 | `juriste.test` | `ROLE_JURISTE`, `ROLE_SAISIE`, `ROLE_CONSULTATION` |
 | `dj.test` | `ROLE_DJ`, `ROLE_SAISIE`, `ROLE_CONSULTATION` |
 | `dja.test` | `ROLE_DJA`, `ROLE_SAISIE`, `ROLE_CONSULTATION` |
 | `assistante.test` | `ROLE_ASSISTANTE`, `ROLE_SAISIE`, `ROLE_CONSULTATION` |
 | `sh.test` | `ROLE_SH`, `ROLE_SAISIE`, `ROLE_CONSULTATION` |
-| `avocat.test` | `ROLE_AVOCAT` **seul** — périmètre volontairement étroit (cf. QF-01) |
+| `avocat.test` | `ROLE_AVOCAT` **only** - a deliberately narrow scope |
 
-> Le client Keycloak `audiences-api` est **confidentiel** : le `client_secret` est obligatoire pour
-> obtenir un jeton. Il reste côté serveur Next.js et n'est jamais exposé au navigateur.
+> The Keycloak client `audiences-api` is **confidential**: the `client_secret` is required to
+> obtain a token. It stays on the Next.js server side and is never exposed to the browser.
 
-## Sécurité
+## Security
 
-**Aucun secret ne doit être versionné.** `.env*` est ignoré par git, à l'exception d'`env.template`
-qui ne contient que des valeurs locales sans secret. Le dépôt backend a connu une fuite
-d'identifiants réels par ce biais — ne pas la reproduire.
+**No secret may be versioned.** `.env*` is ignored by git, except `env.template`, which only holds
+local values without secrets. The backend repository once leaked real credentials this way - do
+not repeat it.
 
 ## Conventions
 
-- Interface, libellés, messages et commentaires en **français**.
-- `services/` (miroir des endpoints) → `hooks/` (TanStack Query) → `components/modules/`.
-- Commits : Conventional Commits avec scope, `feat(dossiers): …`.
-- **Un jalon à la fois**, validé manuellement avant de passer au suivant. Les tests automatisés qui
-  passent ne valent pas recette.
-- À partir du socle : **un écran, une branche**.
+- User interface in **French and English**: every visible label exists in `messages/fr.json` and
+  `messages/en.json`.
+- Code comments in **English**, kept short and useful; requirement identifiers (`RG-`, `US`, `UC-`,
+  `FR-`) are kept for traceability.
+- `services/` (one file per API resource) → `hooks/` (TanStack Query) → `components/modules/`.
+- Permissions are capabilities in `lib/rbac.ts`; the backend remains the only authority.
+- Commits: Conventional Commits with a scope, e.g. `feat(dossiers): …`.
+- Every change passes `npm run typecheck`, `npm run lint`, `npm test` and the Playwright journeys
+  before delivery.

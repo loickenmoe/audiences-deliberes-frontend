@@ -8,7 +8,7 @@ import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Business journeys P1 to P9 from `FUNCTIONAL_MAP.md`, played end to end in the UI. They check the
+ * Business journeys P1 to P9 from the backend's `design-notes/FUNCTIONAL_MAP.md`, played end to end in the UI. They check the
  * hand-over between profiles and screens (continuity of a case), not isolated screens.
  *
  * | Journey | Where it is played |
