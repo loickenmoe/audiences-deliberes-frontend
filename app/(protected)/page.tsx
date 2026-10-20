@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
 import { FilesDuJour } from "@/components/modules/accueil/files-du-jour";
-import { StatutChip } from "@/components/global";
 import { profilPrincipal } from "@/lib/rbac";
 import { exigerSession } from "@/lib/serverAuth";
 
@@ -38,21 +37,6 @@ export default async function PageAccueil() {
       </header>
 
       <FilesDuJour roles={session.roles} />
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-[length:var(--taille-lg)] font-semibold">{t("rolesTitre")}</h2>
-        <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
-          {t("rolesDescription")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {session.roles.map((role) => (
-            <StatutChip key={role} ton={role === profil ? "info" : "neutre"}>
-              {tr(role)}
-            </StatutChip>
-          ))}
-        </div>
-      </section>
-
     </div>
   );
 }

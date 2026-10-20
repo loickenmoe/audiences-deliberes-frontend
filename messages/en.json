@@ -68,8 +68,6 @@
     "bonjour": "Hello {prenom}",
     "bonjourSansPrenom": "Hello",
     "sessionActive": "Your session is active.",
-    "rolesTitre": "Roles on your account",
-    "rolesDescription": "An account carries several roles at once: its business profile plus the cross-cutting roles.",
     "filesTitre": "What awaits you",
     "filesDescription": "The queues you are responsible for, right now.",
     "filesDescriptionSansProfil": "Your account has no business profile; only your notifications are shown.",

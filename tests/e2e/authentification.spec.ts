@@ -109,19 +109,18 @@ test("un compte inexistant reçoit exactement le même message", async ({ page }
   await expect(alerte).toHaveText("Identifiant ou mot de passe incorrect.");
 });
 
-test("un juriste se connecte et voit son profil et ses rôles réels", async ({ page }) => {
+test("un juriste se connecte et voit son profil", async ({ page }) => {
   await seConnecter(page, COMPTES.juriste.identifiant);
 
   await expect(page.getByRole("heading", { name: /Bonjour/ })).toBeVisible();
   await expect(page.getByText(`Bonjour ${COMPTES.juriste.prenom}`)).toBeVisible();
 
-  /**
-   * The three roles actually held by this account, composite `ROLE_SAISIE` included, shown with
-   * their translated label, never the technical code.
-   */
-  for (const libelle of ["Juriste", "Saisie", "Consultation"]) {
-    // "Juriste" also appears in the overline: both occurrences are legitimate.
-    await expect(page.getByRole("main").getByText(libelle, { exact: true }).first()).toBeVisible();
+  // The business profile is shown above the greeting with its translated label; the technical
+  // cross-cutting roles are not displayed.
+  const accueil = page.getByRole("main");
+  await expect(accueil.getByText(COMPTES.juriste.profil, { exact: true })).toBeVisible();
+  for (const technique of ["Saisie", "Consultation"]) {
+    await expect(accueil.getByText(technique, { exact: true })).toHaveCount(0);
   }
 });
 
