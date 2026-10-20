@@ -56,14 +56,14 @@ export function DetailIndicateurModale({
   libelle,
   categorie,
   onFermeture,
-}: {
+}: Readonly<{
   /** `null` closes the modal. The component stays mounted: its page state is reset on opening. */
   indicateur: IndicateurTableauDeBord | null;
   libelle: string;
   /** The scope of the originating block. Absent = both categories. */
   categorie?: CategorieDossier;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("detailIndicateur");
   const [page, setPage] = useState(0);
 
@@ -77,8 +77,6 @@ export function DetailIndicateurModale({
 
   const lignes = detail.data?.content ?? [];
   const pages = detail.data?.totalPages ?? 0;
-  const avecMontant = lignes.some((ligne) => ligne.montant !== null);
-  const avecDate = lignes.some((ligne) => ligne.date !== null);
 
   /*
    * The three litigation indicators follow the scope selected at the top of the screen, so they need
@@ -100,97 +98,152 @@ export function DetailIndicateurModale({
       }
       className="max-w-3xl"
     >
-      {detail.isLoading ? (
-        <EtatChargement lignes={4} />
-      ) : detail.error ? (
-        <EtatErreur message={messageErreur(detail.error)} />
-      ) : lignes.length === 0 ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("vide")}</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[length:var(--taille-sm)]">
-              <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
-                <tr>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t("colonneIntitule")}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t("colonnePrecision")}</th>
+      <ContenuDetail
+        indicateur={indicateur}
+        enChargement={detail.isLoading}
+        erreur={detail.error}
+        lignes={lignes}
+        page={page}
+        pages={pages}
+        onPage={setPage}
+      />
+    </Dialog>
+  );
+}
+
+/** The modal body: loading, error, empty, or the paginated rows. */
+function ContenuDetail({
+  indicateur,
+  enChargement,
+  erreur,
+  lignes,
+  page,
+  pages,
+  onPage,
+}: Readonly<{
+  indicateur: IndicateurTableauDeBord | null;
+  enChargement: boolean;
+  erreur: unknown;
+  lignes: readonly DetailIndicateur[];
+  page: number;
+  pages: number;
+  onPage: (miseAJour: (courante: number) => number) => void;
+}>) {
+  const t = useTranslations("detailIndicateur");
+
+  if (enChargement) return <EtatChargement lignes={4} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (lignes.length === 0) {
+    return <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("vide")}</p>;
+  }
+  const avecMontant = lignes.some((ligne) => ligne.montant !== null);
+  const avecDate = lignes.some((ligne) => ligne.date !== null);
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-[length:var(--taille-sm)]">
+          <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
+            <tr>
+              <th scope="col" className="py-2 pr-4 font-medium">
+                {t("colonneIntitule")}
+              </th>
+              <th scope="col" className="py-2 pr-4 font-medium">
+                {t("colonnePrecision")}
+              </th>
+              {avecDate ? (
+                <th scope="col" className="py-2 pr-4 font-medium">
+                  {t("colonneDate")}
+                </th>
+              ) : null}
+              {avecMontant ? (
+                <th scope="col" className="py-2 pr-4 font-medium">
+                  {t("colonneMontant")}
+                </th>
+              ) : null}
+              <th scope="col" className="py-2 font-medium">
+                {t("colonneDossier")}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-bordure">
+            {lignes.map((ligne) => {
+              const lien = indicateur === null ? null : lienDeLaLigne(indicateur, ligne);
+              return (
+                <tr key={ligne.id}>
+                  <td className="py-2 pr-4 font-medium">{ligne.intitule ?? "—"}</td>
+                  <td className="py-2 pr-4">{ligne.precision ?? "—"}</td>
                   {avecDate ? (
-                    <th scope="col" className="py-2 pr-4 font-medium">{t("colonneDate")}</th>
+                    <td className="py-2 pr-4 whitespace-nowrap">{ligne.date ?? "—"}</td>
                   ) : null}
                   {avecMontant ? (
-                    <th scope="col" className="py-2 pr-4 font-medium">{t("colonneMontant")}</th>
+                    <td className="py-2 pr-4" data-nombres>
+                      {ligne.montant === null ? "—" : <MontantFcfa valeur={ligne.montant} />}
+                    </td>
                   ) : null}
-                  <th scope="col" className="py-2 font-medium">{t("colonneDossier")}</th>
+                  <td className="py-2">
+                    <CelluleDossier indicateur={indicateur} ligne={ligne} lien={lien} />
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-bordure">
-                {lignes.map((ligne) => {
-                  const lien = indicateur === null ? null : lienDeLaLigne(indicateur, ligne);
-                  return (
-                    <tr key={ligne.id}>
-                      <td className="py-2 pr-4 font-medium">{ligne.intitule ?? "—"}</td>
-                      <td className="py-2 pr-4">{ligne.precision ?? "—"}</td>
-                      {avecDate ? (
-                        <td className="py-2 pr-4 whitespace-nowrap">{ligne.date ?? "—"}</td>
-                      ) : null}
-                      {avecMontant ? (
-                        <td className="py-2 pr-4" data-nombres>
-                          {ligne.montant === null ? "—" : <MontantFcfa valeur={ligne.montant} />}
-                        </td>
-                      ) : null}
-                      <td className="py-2">
-                        {/*
-                          Three states: a row without a case file has nothing to open, a since-deleted case file did
-                          exist, and the usual case leads to the case file on the tab matching the indicator.
-                        */}
-                        {lien === null ? (
-                          <span className="text-texte-tertiaire">{t("sansDossier")}</span>
-                        ) : ligne.referenceDossier === null && indicateur !== "FRAIS_EN_ATTENTE" ? (
-                          <span className="text-texte-tertiaire">{t("dossierSupprime")}</span>
-                        ) : (
-                          <Link
-                            href={lien}
-                            className="text-lien underline hover:no-underline"
-                            aria-label={
-                              indicateur === "FRAIS_EN_ATTENTE"
-                                ? t("ouvrirFrais")
-                                : t("ouvrirDossier", { reference: ligne.referenceDossier ?? "" })
-                            }
-                          >
-                            {ligne.referenceDossier ?? t("ouvrirFrais")}
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-          {pages > 1 ? (
-            <div className="flex items-center justify-between gap-3">
-              <Button
-                variante="secondaire"
-                onClick={() => setPage((courante) => Math.max(0, courante - 1))}
-                disabled={page === 0}
-              >
-                {t("pagePrecedente")}
-              </Button>
-              <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
-                {t("positionPage", { page: page + 1, total: pages })}
-              </span>
-              <Button
-                variante="secondaire"
-                onClick={() => setPage((courante) => courante + 1)}
-                disabled={page + 1 >= pages}
-              >
-                {t("pageSuivante")}
-              </Button>
-            </div>
-          ) : null}
+      {pages > 1 ? (
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variante="secondaire"
+            onClick={() => onPage((courante) => Math.max(0, courante - 1))}
+            disabled={page === 0}
+          >
+            {t("pagePrecedente")}
+          </Button>
+          <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
+            {t("positionPage", { page: page + 1, total: pages })}
+          </span>
+          <Button
+            variante="secondaire"
+            onClick={() => onPage((courante) => courante + 1)}
+            disabled={page + 1 >= pages}
+          >
+            {t("pageSuivante")}
+          </Button>
         </div>
-      )}
-    </Dialog>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Three states: a row without a case file has nothing to open, a since-deleted case file did
+ * exist, and the usual case leads to the case file on the tab matching the indicator.
+ */
+function CelluleDossier({
+  indicateur,
+  ligne,
+  lien,
+}: Readonly<{
+  indicateur: IndicateurTableauDeBord | null;
+  ligne: DetailIndicateur;
+  lien: string | null;
+}>) {
+  const t = useTranslations("detailIndicateur");
+  const frais = indicateur === "FRAIS_EN_ATTENTE";
+
+  if (lien === null) return <span className="text-texte-tertiaire">{t("sansDossier")}</span>;
+  if (ligne.referenceDossier === null && !frais) {
+    return <span className="text-texte-tertiaire">{t("dossierSupprime")}</span>;
+  }
+  return (
+    <Link
+      href={lien}
+      className="text-lien underline hover:no-underline"
+      aria-label={
+        frais ? t("ouvrirFrais") : t("ouvrirDossier", { reference: ligne.referenceDossier ?? "" })
+      }
+    >
+      {ligne.referenceDossier ?? t("ouvrirFrais")}
+    </Link>
   );
 }

@@ -21,7 +21,7 @@ export function SelecteurAgence({
   id,
   obligatoire = false,
   className,
-}: {
+}: Readonly<{
   /** The selected branch **code**, as stored on the case, or empty. */
   valeur: string | null | undefined;
   onChangement: (code: string | undefined) => void;
@@ -29,7 +29,7 @@ export function SelecteurAgence({
   id?: string;
   obligatoire?: boolean;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const [recherche, setRecherche] = useState("");
   const agences = useAgences({ recherche, actifSeulement: true });

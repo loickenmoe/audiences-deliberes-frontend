@@ -26,12 +26,12 @@ export function ApercuFichier({
   onFermeture,
   nomFichier,
   obtenir,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   nomFichier: string;
   obtenir: () => Promise<Blob>;
-}) {
+}>) {
   const t = useTranslations("documents");
   const tc = useTranslations("commun");
   const [etat, setEtat] = useState<Etat>({ phase: "chargement" });

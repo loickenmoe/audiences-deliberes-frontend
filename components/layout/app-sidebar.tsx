@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
  * Below `lg` it becomes a **horizontal strip** scrolling in its own container (a fixed-width sidebar
  * overflowed the screen on mobile): every entry stays reachable, with no toggle menu or extra JavaScript.
  */
-export function AppSidebar({ roles }: { roles: readonly string[] }) {
+export function AppSidebar({ roles }: Readonly<{ roles: readonly string[] }>) {
   const chemin = usePathname();
   const t = useTranslations("navigation");
   const entrees = NAVIGATION.filter((e) => e.livre && peut(roles, e.capacite));

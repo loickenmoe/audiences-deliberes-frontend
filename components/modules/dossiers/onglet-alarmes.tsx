@@ -28,7 +28,7 @@ import type { Alarme, Dossier } from "@/types/domaine";
  * due date is marked "overdue": the backend never closes it on its own. "Mark as handled" closes it
  * without replacing it.
  */
-export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletAlarmes({ dossier, roles }: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("audiences");
   const tdom = useTranslations("domaine");
   const requete = useAlarmesDossier(dossier.id);
@@ -44,8 +44,8 @@ export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: rea
     try {
       await traiter.mutateAsync(traitement.id);
       toast.success(t("alarmeTraitee"));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setTraitement(null);
     }
@@ -96,12 +96,12 @@ export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: rea
                     <td className="px-4 py-2">
                       <span className="flex flex-col gap-0.5">
                         <span className={active ? "font-medium" : undefined}>{alarme.objet}</span>
-                        {alarme.alarmePrecedenteId !== null ? (
+                        {alarme.alarmePrecedenteId === null ? null : (
                           <span className="inline-flex items-center gap-1 text-[length:var(--taille-xs)] text-texte-tertiaire">
                             <CornerDownRight size={12} aria-hidden />
                             {t("reprise")}
                           </span>
-                        ) : null}
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-2">{libelleEtape(alarme.etapeId)}</td>
@@ -116,7 +116,7 @@ export function OngletAlarmes({ dossier, roles }: { dossier: Dossier; roles: rea
                         {echue ? <StatutChip ton="attention">{t("echue")}</StatutChip> : null}
                       </span>
                     </td>
-                    <td className="px-4 py-2">{alarme.createdBy !== null ? nomUtilisateur(alarme.createdBy) : "—"}</td>
+                    <td className="px-4 py-2">{alarme.createdBy === null ? "—" : nomUtilisateur(alarme.createdBy)}</td>
                     <td className="px-4 py-2 text-right">
                       {peutGerer && active ? (
                         <span className="inline-flex flex-wrap justify-end gap-2">
@@ -183,12 +183,12 @@ function ModaleCreation({
   etapes,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -228,8 +228,8 @@ function ModaleCreation({
       });
       toast.success(t("alarmeCreee"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -287,11 +287,11 @@ function ModaleReprogrammation({
   dossierId,
   alarme,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   alarme: Alarme | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const reprogrammer = useReprogrammerAlarme(dossierId);
@@ -320,8 +320,8 @@ function ModaleReprogrammation({
       });
       toast.success(t("alarmeReprogrammee"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 

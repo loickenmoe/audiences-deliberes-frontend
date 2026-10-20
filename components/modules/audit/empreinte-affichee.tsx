@@ -10,7 +10,7 @@ import { grouperEmpreinte } from "@/lib/empreinte";
  * A SHA-256 fingerprint displayed for reading and comparison: grouped in blocks of eight characters
  * so it can be compared, with a copy button to avoid retyping errors.
  */
-export function EmpreinteAffichee({ empreinte }: { empreinte: string }) {
+export function EmpreinteAffichee({ empreinte }: Readonly<{ empreinte: string }>) {
   const t = useTranslations("audit");
   const [copiee, setCopiee] = useState(false);
 

@@ -140,7 +140,7 @@ export function EspaceAvocat() {
  * display glitch. The sender's name and date are shown so the lawyer knows whom they answer.
  * `whitespace-pre-wrap` keeps the message's line breaks as written.
  */
-function Correspondance({ publication }: { publication: Publication }) {
+function Correspondance({ publication }: Readonly<{ publication: Publication }>) {
   const t = useTranslations("portail");
 
   if (!publication.correspondance) {
@@ -171,11 +171,11 @@ function Constitutions({
   demandes,
   chargement,
   erreur,
-}: {
+}: Readonly<{
   demandes: DemandeConstitution[] | undefined;
   chargement: boolean;
   erreur: unknown;
-}) {
+}>) {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
 

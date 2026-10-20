@@ -12,12 +12,13 @@ import { useGenererRapport } from "@/hooks/useReporting";
 import { messageErreur } from "@/lib/api/errors";
 import { telechargerBlob } from "@/lib/documents";
 import { nomFichierRapport, periodeParDefaut, periodeValide } from "@/lib/rapports";
-import { CategorieDossier } from "@/types/enums";
 import { reportingService, type PeriodeRapport } from "@/services/reportingService";
-import { FormatRapport, TypeRapport } from "@/types/enums";
+import { CategorieDossier, FormatRapport, TypeRapport } from "@/types/enums";
 import type { Rapport } from "@/types/domaine";
 
-const FORMATS_BINAIRES = FormatRapport.filter((format) => format !== "JSON") as ("PDF" | "EXCEL" | "CSV")[];
+const FORMATS_BINAIRES = FormatRapport.filter((format) => format !== "JSON") as (
+  "PDF" | "EXCEL" | "CSV"
+)[];
 
 /**
  * Screen 40 - activity report (FR-REP-01, US 8.4).
@@ -77,8 +78,8 @@ export function FormulaireRapport() {
       }
       telechargerBlob(contenu, nomFichierRapport(periode, format));
       toast.success(t("exportReussi", { format }));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setExportEnCours(false);
     }
@@ -87,7 +88,9 @@ export function FormulaireRapport() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
@@ -96,7 +99,9 @@ export function FormulaireRapport() {
           <Select
             id="rapport-type"
             value={periode.type}
-            onChange={(evenement) => changerType(evenement.target.value as (typeof TypeRapport)[number])}
+            onChange={(evenement) =>
+              changerType(evenement.target.value as (typeof TypeRapport)[number])
+            }
           >
             {TypeRapport.map((valeur) => (
               <option key={valeur} value={valeur}>
@@ -173,46 +178,73 @@ export function FormulaireRapport() {
 
       {generer.error ? <EtatErreur message={messageErreur(generer.error)} /> : null}
 
-      {!affiche ? (
-        <p className="text-texte-secondaire">{t("avantGeneration")}</p>
-      ) : rapport === null ? (
-        <EtatVide titre={t("vide")} description={t("videTexte")} />
+      {affiche ? (
+        <ResultatRapport rapport={rapport} />
       ) : (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-[length:var(--taille-lg)] font-semibold">
-            {td(`TypeRapport.${rapport.type}` as never)} ·{" "}
-            <span className="font-normal text-texte-secondaire">
-              {t("resultatPour", { debut: rapport.dateDebut, fin: rapport.dateFin })}
-            </span>
-          </h2>
-
-          <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Ligne libelle={t("nbNouveauxDossiers")} valeur={<span data-nombres>{rapport.nbNouveauxDossiers}</span>} />
-            <Ligne libelle={t("nbAudiencesTenues")} valeur={<span data-nombres>{rapport.nbAudiencesTenues}</span>} />
-            <Ligne
-              libelle={t("nbDemandesFraisDeposees")}
-              valeur={<span data-nombres>{rapport.nbDemandesFraisDeposees}</span>}
-            />
-            <Ligne
-              libelle={t("nbDeliberesEnregistres")}
-              valeur={<span data-nombres>{rapport.nbDeliberesEnregistres}</span>}
-            />
-            {/*
-              Counts, not a percentage. "Lost" is not the complement of "won": a mixed deliberation is
-              neither, and has its own line.
-            */}
-            <Ligne libelle={t("nbLitigesGagnes")} valeur={<span data-nombres>{rapport.nbLitigesGagnes}</span>} />
-            <Ligne libelle={t("nbLitigesPerdus")} valeur={<span data-nombres>{rapport.nbLitigesPerdus}</span>} />
-            <Ligne libelle={t("nbLitigesMixtes")} valeur={<span data-nombres>{rapport.nbLitigesMixtes}</span>} />
-            <Ligne libelle={t("provisionsReprises")} valeur={<MontantFcfa valeur={rapport.provisionsReprises} />} />
-          </dl>
-        </section>
+        <p className="text-texte-secondaire">{t("avantGeneration")}</p>
       )}
     </div>
   );
 }
 
-function Ligne({ libelle, valeur }: { libelle: string; valeur: React.ReactNode }) {
+/** The compiled indicators; `null` is the 204 of a period without activity. */
+function ResultatRapport({ rapport }: Readonly<{ rapport: Rapport | null }>) {
+  const t = useTranslations("rapports");
+  const td = useTranslations("domaine");
+
+  if (rapport === null) return <EtatVide titre={t("vide")} description={t("videTexte")} />;
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-[length:var(--taille-lg)] font-semibold">
+        {td(`TypeRapport.${rapport.type}` as never)} ·{" "}
+        <span className="font-normal text-texte-secondaire">
+          {t("resultatPour", { debut: rapport.dateDebut, fin: rapport.dateFin })}
+        </span>
+      </h2>
+
+      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Ligne
+          libelle={t("nbNouveauxDossiers")}
+          valeur={<span data-nombres>{rapport.nbNouveauxDossiers}</span>}
+        />
+        <Ligne
+          libelle={t("nbAudiencesTenues")}
+          valeur={<span data-nombres>{rapport.nbAudiencesTenues}</span>}
+        />
+        <Ligne
+          libelle={t("nbDemandesFraisDeposees")}
+          valeur={<span data-nombres>{rapport.nbDemandesFraisDeposees}</span>}
+        />
+        <Ligne
+          libelle={t("nbDeliberesEnregistres")}
+          valeur={<span data-nombres>{rapport.nbDeliberesEnregistres}</span>}
+        />
+        {/*
+              Counts, not a percentage. "Lost" is not the complement of "won": a mixed deliberation is
+              neither, and has its own line.
+            */}
+        <Ligne
+          libelle={t("nbLitigesGagnes")}
+          valeur={<span data-nombres>{rapport.nbLitigesGagnes}</span>}
+        />
+        <Ligne
+          libelle={t("nbLitigesPerdus")}
+          valeur={<span data-nombres>{rapport.nbLitigesPerdus}</span>}
+        />
+        <Ligne
+          libelle={t("nbLitigesMixtes")}
+          valeur={<span data-nombres>{rapport.nbLitigesMixtes}</span>}
+        />
+        <Ligne
+          libelle={t("provisionsReprises")}
+          valeur={<MontantFcfa valeur={rapport.provisionsReprises} />}
+        />
+      </dl>
+    </section>
+  );
+}
+
+function Ligne({ libelle, valeur }: Readonly<{ libelle: string; valeur: React.ReactNode }>) {
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-bordure bg-surface p-4">
       <dt className="text-[length:var(--taille-sm)] text-texte-secondaire">{libelle}</dt>

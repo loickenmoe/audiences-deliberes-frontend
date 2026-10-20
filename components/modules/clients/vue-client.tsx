@@ -21,7 +21,7 @@ import type { Dossier } from "@/types/domaine";
  * the lawyer's assignment: it shows the bank's total exposure to this client, including cases the
  * user does not follow.
  */
-export function VueClient({ clientId, roles }: { clientId: number; roles: readonly string[] }) {
+export function VueClient({ clientId, roles }: Readonly<{ clientId: number; roles: readonly string[] }>) {
   const t = useTranslations("clients");
   const tc = useTranslations("commun");
   const client = useClient(clientId);
@@ -117,7 +117,7 @@ export function VueClient({ clientId, roles }: { clientId: number; roles: readon
   );
 }
 
-function LigneDossier({ dossier }: { dossier: Dossier }) {
+function LigneDossier({ dossier }: Readonly<{ dossier: Dossier }>) {
   const t = useTranslations("clients");
   // At most one of three steps: show the current one, i.e. the last opened.
   const etapeCourante = dossier.etapes.at(-1);

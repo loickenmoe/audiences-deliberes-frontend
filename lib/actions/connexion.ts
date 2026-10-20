@@ -32,9 +32,9 @@ export async function connexion(
      * the state returned by this action is lost.
      */
     await signIn("credentials", { identifiant, motDePasse, redirect: false });
-  } catch (erreur) {
-    if (erreur instanceof AuthError) {
-      const code = (erreur as AuthError & { code?: string }).code;
+  } catch (error_) {
+    if (error_ instanceof AuthError) {
+      const code = (error_ as AuthError & { code?: string }).code;
       /**
        * Every rejection gets the same key (unknown, disabled or pending account): distinguishing
        * them would reveal which usernames exist.
@@ -43,7 +43,7 @@ export async function connexion(
         cleErreur: code === "service_indisponible" ? "serviceIndisponible" : "identifiantsRefuses",
       };
     }
-    throw erreur;
+    throw error_;
   }
 
   /*

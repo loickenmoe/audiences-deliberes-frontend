@@ -35,7 +35,7 @@ export function SelecteurCherchable({
   id,
   obligatoire = false,
   className,
-}: {
+}: Readonly<{
   /** Selected id, or the list of ids in `multiple` mode. */
   valeur: number | null | readonly number[];
   onChangement: (valeur: number | null | number[]) => void;
@@ -49,7 +49,7 @@ export function SelecteurCherchable({
   id?: string;
   obligatoire?: boolean;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const idAuto = useId();
   const idChamp = id ?? idAuto;

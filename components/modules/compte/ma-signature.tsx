@@ -71,8 +71,8 @@ export function MaSignature() {
     try {
       await deposer.mutateAsync(fichier);
       toast.success(t("deposee"));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 
@@ -81,8 +81,8 @@ export function MaSignature() {
       await retirer.mutateAsync();
       toast.success(t("retiree"));
       setRetraitOuvert(false);
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 

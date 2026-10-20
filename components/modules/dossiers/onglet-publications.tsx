@@ -18,7 +18,7 @@ import { cleStatutPublication, TON_STATUT_PUBLICATION } from "@/lib/publications
  * counsel's hearing report before validation, but not other publications. The screen requests
  * everything and displays what it gets, each row showing its status.
  */
-export function OngletPublications({ dossierId }: { dossierId: number }) {
+export function OngletPublications({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("publications");
   const td = useTranslations("domaine");
   const libelle = useLibellePublication();

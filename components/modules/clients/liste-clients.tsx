@@ -16,7 +16,7 @@ import type { Client } from "@/types/domaine";
 
 const DEFAUTS = { nom: "", reference: "" };
 
-export function ListeClients({ roles }: { roles: readonly string[] }) {
+export function ListeClients({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("clients");
   const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
     useFiltresUrl(DEFAUTS);

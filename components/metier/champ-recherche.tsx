@@ -21,7 +21,7 @@ export function ChampRecherche({
   onChangement,
   className,
   delai = DELAI_RECHERCHE,
-}: {
+}: Readonly<{
   id: string;
   label: string;
   placeholder?: string;
@@ -32,7 +32,7 @@ export function ChampRecherche({
   className?: string;
   /** Configurable for tests; 300 ms everywhere else. */
   delai?: number;
-}) {
+}>) {
   const [saisie, setSaisie] = useState(valeur);
 
   /*

@@ -19,11 +19,11 @@ export function ListeJurisprudences({
   jurisprudences,
   avecDossier,
   rafraichir,
-}: {
+}: Readonly<{
   jurisprudences: Jurisprudence[];
   avecDossier: boolean;
   rafraichir: () => Promise<Jurisprudence[]>;
-}) {
+}>) {
   const t = useTranslations("jurisprudence");
   const td = useTranslations("domaine");
   const [apercu, setApercu] = useState<Jurisprudence | null>(null);
@@ -72,10 +72,10 @@ export function ListeJurisprudences({
                 </td>
                 {avecDossier ? (
                   <td className="px-4 py-2">
-                    {j.dossierId !== null ? (
-                      <Link href={`/dossiers/${j.dossierId}`} className="underline underline-offset-4">{t("voirDossier")}</Link>
-                    ) : (
+                    {j.dossierId === null ? (
                       "—"
+                    ) : (
+                      <Link href={`/dossiers/${j.dossierId}`} className="underline underline-offset-4">{t("voirDossier")}</Link>
                     )}
                   </td>
                 ) : null}

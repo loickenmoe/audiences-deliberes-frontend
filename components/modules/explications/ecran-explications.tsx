@@ -14,7 +14,7 @@ import { peut } from "@/lib/rbac";
  * Only the writing button depends on the profile: both sides share the same list component so
  * they never count the same thing differently.
  */
-export function EcranExplications({ roles }: { roles: string[] }) {
+export function EcranExplications({ roles }: Readonly<{ roles: string[] }>) {
   const t = useTranslations("explications");
   const [ouvert, setOuvert] = useState(false);
 

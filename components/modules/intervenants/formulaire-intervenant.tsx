@@ -38,12 +38,12 @@ export function FormulaireIntervenant({
   ouvert,
   onFermeture,
   intervenant,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   /** The third party to edit. When absent, the form creates a new one. */
   intervenant?: Intervenant;
-}) {
+}>) {
   const t = useTranslations("intervenants");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -129,11 +129,11 @@ export function FormulaireIntervenant({
         notification: valeurs.notification,
       });
       fermer();
-    } catch (erreur) {
+    } catch (error_) {
       // The only possible conflict on `POST /intervenants` is an account already linked to a lawyer
       // (IntervenantService, RG-INT-01): report it on the field, not in a banner.
-      if (!appliquerErreurApi(erreur, setError, CHAMPS, CONFLIT_SUR_COMPTE)) {
-        setError("root", { message: messageErreur(erreur) });
+      if (!appliquerErreurApi(error_, setError, CHAMPS, CONFLIT_SUR_COMPTE)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

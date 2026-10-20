@@ -25,7 +25,7 @@ import { TypeIntervenant } from "@/types/enums";
  * The list is not paginated by the backend (RF-05): everything is displayed, without artificial
  * client-side pagination.
  */
-export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
+export function ListeIntervenants({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("intervenants");
   const td = useTranslations("domaine");
   const [type, setType] = useState<TypeIntervenant | "">("");

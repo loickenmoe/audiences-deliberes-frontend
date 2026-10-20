@@ -26,11 +26,11 @@ export function ModaleSensibilite({
   dossier,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossier: Dossier;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const td = useTranslations("dossiers");
   const tc = useTranslations("commun");
@@ -49,7 +49,11 @@ export function ModaleSensibilite({
         })
         .superRefine((valeurs, contexte) => {
           if (valeurs.statut === "REJETEE" && !valeurs.motifRejet?.trim()) {
-            contexte.addIssue({ code: "custom", path: ["motifRejet"], message: tm("champObligatoire") });
+            contexte.addIssue({
+              code: "custom",
+              path: ["motifRejet"],
+              message: tm("champObligatoire"),
+            });
           }
         }),
     [tm],
@@ -64,12 +68,22 @@ export function ModaleSensibilite({
     formState: { errors },
   } = useForm<z.input<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { statut: "VALIDEE", motifRejet: "", seuilMontantAjuste: "", typeClientSensibleAjuste: "" },
+    defaultValues: {
+      statut: "VALIDEE",
+      motifRejet: "",
+      seuilMontantAjuste: "",
+      typeClientSensibleAjuste: "",
+    },
   });
 
   useEffect(() => {
     if (ouvert) {
-      reset({ statut: "VALIDEE", motifRejet: "", seuilMontantAjuste: "", typeClientSensibleAjuste: "" });
+      reset({
+        statut: "VALIDEE",
+        motifRejet: "",
+        seuilMontantAjuste: "",
+        typeClientSensibleAjuste: "",
+      });
     }
   }, [ouvert, reset]);
 
@@ -92,9 +106,9 @@ export function ModaleSensibilite({
             },
       );
       onFermeture();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });
@@ -131,7 +145,9 @@ export function ModaleSensibilite({
         ) : null}
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[length:var(--taille-sm)] font-medium">{t("decision")}</legend>
+          <legend className="mb-1 text-[length:var(--taille-sm)] font-medium">
+            {t("decision")}
+          </legend>
           <label className="flex items-center gap-2 text-[length:var(--taille-sm)]">
             <input type="radio" value="VALIDEE" {...register("statut")} />
             {t("valider")}
@@ -143,9 +159,19 @@ export function ModaleSensibilite({
         </fieldset>
 
         {rejet ? (
-          <Champ id="motifRejet" label={t("motifRejet")} obligatoire erreur={errors.motifRejet?.message}>
-            <Textarea id="motifRejet"
-  placeholder={t("phMotifRejetDiligence")} rows={3} enErreur={!!errors.motifRejet} {...register("motifRejet")} />
+          <Champ
+            id="motifRejet"
+            label={t("motifRejet")}
+            obligatoire
+            erreur={errors.motifRejet?.message}
+          >
+            <Textarea
+              id="motifRejet"
+              placeholder={t("phMotifRejetDiligence")}
+              rows={3}
+              enErreur={!!errors.motifRejet}
+              {...register("motifRejet")}
+            />
           </Champ>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -160,7 +186,9 @@ export function ModaleSensibilite({
                 type="number"
                 min={0}
                 step="1000"
-                placeholder={dossier.seuilMontant !== null ? String(dossier.seuilMontant) : undefined}
+                placeholder={
+                  dossier.seuilMontant === null ? undefined : String(dossier.seuilMontant)
+                }
                 enErreur={!!errors.seuilMontantAjuste}
                 {...register("seuilMontantAjuste")}
               />

@@ -32,6 +32,7 @@ import { useDossier } from "@/hooks/useDossiers";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
+import type { Dossier } from "@/types/domaine";
 import type { StatutValidation } from "@/types/enums";
 
 const ONGLETS = [
@@ -66,6 +67,65 @@ const TON_SENSIBILITE: Record<StatutValidation, TonStatut> = {
 };
 
 /**
+ * Header actions offered on this case to this profile. The backend enforces both the role and the
+ * case state; the screen only offers what it would accept.
+ */
+function actionsPermises(roles: readonly string[], dossier: Dossier) {
+  const sensible = !!dossier.estSensible;
+  const statut = sensible ? dossier.sensibiliteStatut : null;
+  const arbitre = peut(roles, "arbitrerDossier");
+  return {
+    peutAffecter: peut(roles, "modifierAffectation"),
+    peutDemanderDerogation: peut(roles, "demanderDerogationSeuil") && statut === "VALIDEE",
+    peutStatuer: arbitre && statut === "EN_ATTENTE",
+    // Arbitrating a derogation is only accepted on an already validated sensitivity.
+    peutArbitrerDerogation: arbitre && statut === "VALIDEE",
+    /*
+     * Due diligence can be revised after opening: the lawyer proposes it on a case not already
+     * under due diligence; the DJ and DJA set it directly in that case, and remove a validated one.
+     * The three conditions are exclusive: a case pending arbitration only offers arbitration.
+     */
+    peutProposerDiligence: peut(roles, "proposerDiligence") && !sensible,
+    peutPoserDiligence: arbitre && !sensible,
+    peutRetirerDiligence: arbitre && statut === "VALIDEE",
+    // UC-INT-05: the lawyer requests a service provider's representation from the case.
+    peutSolliciter: peut(roles, "solliciterConstitution"),
+  };
+}
+
+/** The content of the selected tab. */
+function ContenuOnglet({
+  onglet,
+  dossier,
+  roles,
+}: Readonly<{ onglet: Onglet; dossier: Dossier; roles: readonly string[] }>) {
+  switch (onglet) {
+    case "synthese":
+      return <OngletSynthese dossier={dossier} />;
+    case "etapes":
+      return <OngletEtapes dossier={dossier} roles={roles} />;
+    case "audiences":
+      return <OngletAudiences dossier={dossier} roles={roles} />;
+    case "deliberes":
+      return <OngletDeliberes dossier={dossier} roles={roles} />;
+    case "alarmes":
+      return <OngletAlarmes dossier={dossier} roles={roles} />;
+    case "decisions":
+      return <OngletDecisions dossier={dossier} roles={roles} />;
+    case "historique":
+      return <OngletHistorique dossierId={dossier.id} />;
+    case "documents":
+      return (
+        <OngletDocuments dossierId={dossier.id} roles={roles} sensible={!!dossier.estSensible} />
+      );
+    case "publications":
+      return peut(roles, "consulterPublications") ? (
+        <OngletPublications dossierId={dossier.id} />
+      ) : null;
+  }
+}
+
+/**
  * Screen 07 - case page.
  * Header actions depend on both the profile and the case state, because the backend enforces both:
  * a threshold derogation is only accepted on an already validated sensitive case, and sensitivity
@@ -76,19 +136,23 @@ export function FicheDossier({
   dossierId,
   roles,
   ongletInitial,
-}: {
+}: Readonly<{
   dossierId: number;
   roles: readonly string[];
   ongletInitial?: string;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const td = useTranslations("dossiers");
   const tdom = useTranslations("domaine");
   const requete = useDossier(dossierId);
   const [onglet, setOnglet] = useState<Onglet>(
-    (ONGLETS as readonly string[]).includes(ongletInitial ?? "") ? (ongletInitial as Onglet) : "synthese",
+    (ONGLETS as readonly string[]).includes(ongletInitial ?? "")
+      ? (ongletInitial as Onglet)
+      : "synthese",
   );
-  const [modale, setModale] = useState<"affectation" | "derogation" | "sensibilite" | "constitution" | null>(null);
+  const [modale, setModale] = useState<
+    "affectation" | "derogation" | "sensibilite" | "constitution" | null
+  >(null);
   /*
    * Due diligence review carries its intent rather than a boolean: three actions share the same
    * modal and the intent decides what is required.
@@ -118,28 +182,20 @@ export function FicheDossier({
 
   const dossier = requete.data;
   const statutSensibilite = dossier.estSensible ? dossier.sensibiliteStatut : null;
-
-  const peutAffecter = peut(roles, "modifierAffectation");
-  const peutDemanderDerogation =
-    peut(roles, "demanderDerogationSeuil") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
-  const peutStatuer =
-    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "EN_ATTENTE";
-  // Arbitrating a derogation is only accepted on an already validated sensitivity.
-  const peutArbitrerDerogation =
-    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
-  /*
-   * Due diligence can be revised after opening: the lawyer proposes it on a case not already under
-   * due diligence; the DJ and DJA set it directly in that case, and remove a validated one. The
-   * three conditions are exclusive: a case pending arbitration only offers arbitration.
-   */
-  const peutProposerDiligence = peut(roles, "proposerDiligence") && !dossier.estSensible;
-  const peutPoserDiligence = peut(roles, "arbitrerDossier") && !dossier.estSensible;
-  const peutRetirerDiligence =
-    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
-  // UC-INT-05: the lawyer requests a service provider's representation from the case.
-  const peutSolliciter = peut(roles, "solliciterConstitution");
+  const {
+    peutAffecter,
+    peutDemanderDerogation,
+    peutStatuer,
+    peutArbitrerDerogation,
+    peutProposerDiligence,
+    peutPoserDiligence,
+    peutRetirerDiligence,
+    peutSolliciter,
+  } = actionsPermises(roles, dossier);
   // The SH cannot read publications (`GET /publications` refuses): no tab for them.
-  const onglets = ONGLETS.filter((cle) => cle !== "publications" || peut(roles, "consulterPublications"));
+  const onglets = ONGLETS.filter(
+    (cle) => cle !== "publications" || peut(roles, "consulterPublications"),
+  );
 
   // Keyboard navigation for the WAI-ARIA tabs pattern: arrows, Home, End.
   function surToucheOnglet(evenement: KeyboardEvent<HTMLButtonElement>) {
@@ -237,7 +293,11 @@ export function FicheDossier({
       {peutArbitrerDerogation ? <DerogationsEnAttente dossierId={dossier.id} /> : null}
 
       <div className="flex flex-col gap-5">
-        <div role="tablist" aria-label={t("ongletsLibelle")} className="flex gap-1 border-b border-bordure">
+        <div
+          role="tablist"
+          aria-label={t("ongletsLibelle")}
+          className="flex gap-1 border-b border-bordure"
+        >
           {onglets.map((cle) => {
             const actif = cle === onglet;
             return (
@@ -269,19 +329,7 @@ export function FicheDossier({
         </div>
 
         <div role="tabpanel" id={`panneau-${onglet}`} aria-labelledby={`onglet-${onglet}`}>
-          {onglet === "synthese" ? <OngletSynthese dossier={dossier} /> : null}
-          {onglet === "etapes" ? <OngletEtapes dossier={dossier} roles={roles} /> : null}
-          {onglet === "audiences" ? <OngletAudiences dossier={dossier} roles={roles} /> : null}
-          {onglet === "deliberes" ? <OngletDeliberes dossier={dossier} roles={roles} /> : null}
-          {onglet === "alarmes" ? <OngletAlarmes dossier={dossier} roles={roles} /> : null}
-          {onglet === "decisions" ? <OngletDecisions dossier={dossier} roles={roles} /> : null}
-          {onglet === "historique" ? <OngletHistorique dossierId={dossier.id} /> : null}
-          {onglet === "documents" ? (
-            <OngletDocuments dossierId={dossier.id} roles={roles} sensible={!!dossier.estSensible} />
-          ) : null}
-          {onglet === "publications" && peut(roles, "consulterPublications") ? (
-            <OngletPublications dossierId={dossier.id} />
-          ) : null}
+          <ContenuOnglet onglet={onglet} dossier={dossier} roles={roles} />
         </div>
       </div>
 

@@ -86,80 +86,108 @@ export function ActiviteDesAvocats() {
 
       {generer.error ? <EtatErreur message={messageErreur(generer.error)} /> : null}
 
-      {!affiche ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("avantGeneration")}</p>
-      ) : rapport === null ? (
-        <EtatVide titre={t("vide")} description={t("videTexte")} />
+      {affiche ? (
+        <ResultatAvocats rapport={rapport} onOuvrir={setOuvert} />
       ) : (
-        <div className="overflow-x-auto rounded border border-bordure bg-surface">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <caption className="sr-only">
-              {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
-            </caption>
-            <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneAvocat")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneComptesRendus")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneFrais")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneAutresDepots")}</th>
-                <th scope="col" className="px-4 py-2 font-medium" title={t("explicationsAide")}>
-                  {t("colonneExplications")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {rapport.lignes.map((ligne) => (
-                <tr key={ligne.utilisateurId}>
-                  <td className="px-4 py-2 font-medium">
-                    {/*
-                      The name opens their full activity sheet. The lawyer is designated by their directory record
-                      when they have one, otherwise by their account if the record was removed: their submissions
-                      remain counted and must stay viewable.
-                    */}
-                    <button
-                      type="button"
-                      className="text-left text-lien underline hover:no-underline"
-                      onClick={() =>
-                        setOuvert({
-                          cible:
-                            ligne.avocatId === null
-                              ? { utilisateurId: ligne.utilisateurId }
-                              : { avocatId: ligne.avocatId },
-                          nom: ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId }),
-                        })
-                      }
-                    >
-                      {ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId })}
-                    </button>
-                    {ligne.avocatId === null ? (
-                      <span className="block text-[length:var(--taille-xs)] font-normal text-texte-tertiaire">
-                        {t("horsRepertoire")}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-2" data-nombres>{ligne.comptesRendusDeposes}</td>
-                  <td className="px-4 py-2" data-nombres>{ligne.demandesFraisDeposees}</td>
-                  <td className="px-4 py-2" data-nombres>{ligne.autresPublicationsDeposees}</td>
-                  <td className="px-4 py-2" data-nombres>{ligne.explicationsFournies}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("avantGeneration")}
+        </p>
       )}
 
-      {ouvert !== null ? (
+      {ouvert === null ? null : (
         <div className="flex flex-col gap-2">
           <Button variante="discrete" className="self-start" onClick={() => setOuvert(null)}>
             {t("fermerFiche")}
           </Button>
-          <FicheActivite
-            key={ouvert.nom}
-            cible={ouvert.cible}
-            nomAffiche={ouvert.nom}
-          />
+          <FicheActivite key={ouvert.nom} cible={ouvert.cible} nomAffiche={ouvert.nom} />
         </div>
-      ) : null}
+      )}
     </section>
+  );
+}
+
+/** The displayed table, one row per lawyer; a name opens that lawyer's sheet. */
+function ResultatAvocats({
+  rapport,
+  onOuvrir,
+}: Readonly<{
+  rapport: RapportAvocats | null;
+  onOuvrir: (ouvert: { cible: CibleActivite; nom: string }) => void;
+}>) {
+  const t = useTranslations("avocatsActivite");
+
+  if (rapport === null) return <EtatVide titre={t("vide")} description={t("videTexte")} />;
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <caption className="sr-only">
+          {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
+        </caption>
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneAvocat")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneComptesRendus")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneFrais")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneAutresDepots")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium" title={t("explicationsAide")}>
+              {t("colonneExplications")}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {rapport.lignes.map((ligne) => (
+            <tr key={ligne.utilisateurId}>
+              <td className="px-4 py-2 font-medium">
+                {/*
+                      The name opens their full activity sheet. The lawyer is designated by their directory record
+                      when they have one, otherwise by their account if the record was removed: their submissions
+                      remain counted and must stay viewable.
+                    */}
+                <button
+                  type="button"
+                  className="text-left text-lien underline hover:no-underline"
+                  onClick={() =>
+                    onOuvrir({
+                      cible:
+                        ligne.avocatId === null
+                          ? { utilisateurId: ligne.utilisateurId }
+                          : { avocatId: ligne.avocatId },
+                      nom: ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId }),
+                    })
+                  }
+                >
+                  {ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId })}
+                </button>
+                {ligne.avocatId === null ? (
+                  <span className="block text-[length:var(--taille-xs)] font-normal text-texte-tertiaire">
+                    {t("horsRepertoire")}
+                  </span>
+                ) : null}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.comptesRendusDeposes}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.demandesFraisDeposees}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.autresPublicationsDeposees}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.explicationsFournies}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

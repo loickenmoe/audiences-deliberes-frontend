@@ -55,7 +55,10 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
  */
 apiClient.interceptors.response.use(
   (reponse) => reponse,
-  async (erreur) => Promise.reject(normaliserErreur(await relireCorpsBinaire(erreur))),
+  async (erreur) => {
+    await relireCorpsBinaire(erreur);
+    throw normaliserErreur(erreur);
+  },
 );
 
 /**
@@ -63,9 +66,9 @@ apiClient.interceptors.response.use(
  * binary (a `Blob` in the browser, a buffer or string under Node). `normaliserErreur` is synchronous
  * and cannot read it, so the body is parsed here to keep the backend message.
  */
-async function relireCorpsBinaire(erreur: unknown): Promise<unknown> {
+async function relireCorpsBinaire(erreur: unknown): Promise<void> {
   const reponse = (erreur as { response?: { data?: unknown } } | null)?.response;
-  if (!reponse) return erreur;
+  if (!reponse) return;
   const donnees = reponse.data;
   let texte: string | null = null;
   if (typeof Blob !== "undefined" && donnees instanceof Blob) texte = await donnees.text();
@@ -79,7 +82,6 @@ async function relireCorpsBinaire(erreur: unknown): Promise<unknown> {
       // Not JSON (e.g. a proxy error page): the status is enough to qualify the error.
     }
   }
-  return erreur;
 }
 
 /** Backend pagination envelope: `{content, totalPages, totalElements}`, without the page number. */

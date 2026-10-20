@@ -26,7 +26,7 @@ export function Dialog({
   children,
   pied,
   className,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   titre: string;
@@ -34,7 +34,7 @@ export function Dialog({
   children?: ReactNode;
   pied?: ReactNode;
   className?: string;
-}) {
+}>) {
   const reference = useRef<HTMLDialogElement>(null);
   const t = useTranslations("commun");
   const idTitre = useId();

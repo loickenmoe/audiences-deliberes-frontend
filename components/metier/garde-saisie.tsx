@@ -16,7 +16,7 @@ import { DialogueConfirmation } from "@/components/metier/dialogue-confirmation"
  * No draft is persisted: storing sensitive case data in the browser on a possibly shared
  * workstation is not acceptable.
  */
-export function GardeSaisie({ actif }: { actif: boolean }) {
+export function GardeSaisie({ actif }: Readonly<{ actif: boolean }>) {
   const t = useTranslations("metier");
   const router = useRouter();
   const [cible, setCible] = useState<string | null>(null);

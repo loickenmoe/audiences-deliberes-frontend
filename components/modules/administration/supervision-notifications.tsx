@@ -164,7 +164,7 @@ export function SupervisionNotifications() {
   );
 }
 
-function LigneCanal({ ligne }: { ligne: LigneCanalNotification }) {
+function LigneCanal({ ligne }: Readonly<{ ligne: LigneCanalNotification }>) {
   const t = useTranslations("supervisionNotifications");
   const taux = tauxAboutissement(ligne);
   return (

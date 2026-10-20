@@ -26,7 +26,7 @@ function valeurLisible(valeur: unknown): string {
  * Paginated: RG-DOS-06 logs every action, so a long-running case can reach hundreds of entries. The
  * case page response only carries the ten most recent; this tab reads the dedicated endpoint.
  */
-export function OngletHistorique({ dossierId }: { dossierId: number }) {
+export function OngletHistorique({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("fiche");
   const { nomUtilisateur } = useLibelles();
   const { libelleAction, libelleDetail } = useLibellesHistorique();
@@ -54,7 +54,7 @@ export function OngletHistorique({ dossierId }: { dossierId: number }) {
               <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
                 <DateHeureValeur valeur={entree.dateAction} />
                 {" · "}
-                {entree.utilisateurId !== null ? nomUtilisateur(entree.utilisateurId) : t("historiqueSysteme")}
+                {entree.utilisateurId === null ? t("historiqueSysteme") : nomUtilisateur(entree.utilisateurId)}
               </span>
             </div>
 

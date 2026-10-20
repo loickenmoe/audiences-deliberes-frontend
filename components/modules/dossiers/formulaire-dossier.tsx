@@ -11,20 +11,31 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { CasesACocher, GardeSaisie, SelecteurAgence, SelecteurCherchable } from "@/components/metier";
+import {
+  CasesACocher,
+  GardeSaisie,
+  SelecteurAgence,
+  SelecteurCherchable,
+} from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
 import { useClients } from "@/hooks/useClients";
 import { useCreerDossier } from "@/hooks/useDossiers";
 import { useIntervenants } from "@/hooks/useIntervenants";
-import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
+import {
+  useNaturesDossier,
+  useTypesClientSensible,
+  useUtilisateurs,
+} from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { ListeParties } from "@/components/modules/dossiers/liste-parties";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
 import { piecesDeCategorie, type TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
+import type { CreerDossier } from "@/types/domaine";
+import type { CategorieDossier } from "@/types/enums";
 
 /**
  * Screen 06 - case creation (US 1.1, FR-DOS-01).
@@ -49,6 +60,118 @@ const CHAMPS = [
   "juristesAffectes",
   "avocatsAffectes",
 ] as const;
+
+function schemaDossier(obligatoire: string) {
+  return z
+    .object({
+      nature: z.string().min(1, obligatoire),
+      juridictionSaisie: z.string().trim().min(1, obligatoire).max(100),
+      clientId: z.coerce.number().int().positive(obligatoire),
+      // At least one of each, several allowed.
+      demandeurs: z
+        .array(z.object({ nom: z.string().trim().min(1, obligatoire).max(255) }))
+        .min(1, obligatoire),
+      defendeurs: z
+        .array(z.object({ nom: z.string().trim().min(1, obligatoire).max(255) }))
+        .min(1, obligatoire),
+      risqueEncouru: z.coerce.number().min(0, obligatoire),
+      recoursExerces: z.string().optional(),
+      motifRenvoi: z.string().max(255).optional(),
+      // Required: the code comes from the branch reference list and is no longer typed in. The
+      // litigation branch code stays optional, since a case is not always transferred.
+      codeAgenceOrigine: z.string().min(1, obligatoire).max(20),
+      codeAgenceContentieuse: z.string().max(20).optional(),
+      dossierCreditOrigine: z.string().max(50).optional(),
+      pvTransfert: z.string().max(255).optional(),
+      incidentCompteReference: z.string().max(50).optional(),
+      elementsJustificatifs: z.string().optional(),
+      estSensible: z.boolean().optional(),
+      seuilMontant: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
+      typeClientSensible: z.string().optional(),
+      juristesAffectes: z.array(z.coerce.number()).min(1, obligatoire),
+      avocatsAffectes: z.array(z.coerce.number()).min(1, obligatoire),
+    })
+    .superRefine((valeurs, contexte) => {
+      /*
+       * Conditional references are not required: the attached files are. That check is done on
+       * the files at save time, outside this schema, since files are not form fields.
+       */
+
+      // A sensitive case is a proposal: it only makes sense with the two elements the DJ will
+      // arbitrate.
+      if (!valeurs.estSensible) return;
+      if (valeurs.seuilMontant === "" || valeurs.seuilMontant === undefined) {
+        contexte.addIssue({ code: "custom", path: ["seuilMontant"], message: obligatoire });
+      }
+      if (!valeurs.typeClientSensible) {
+        contexte.addIssue({ code: "custom", path: ["typeClientSensible"], message: obligatoire });
+      }
+    });
+}
+
+type ValeursDossier = z.input<ReturnType<typeof schemaDossier>>;
+
+/** Keeps a value only for the category it belongs to; empty text is not sent. */
+function siCategorie(
+  valeur: string | undefined,
+  attendue: CategorieDossier,
+  categorie?: CategorieDossier,
+) {
+  return categorie === attendue ? valeur || undefined : undefined;
+}
+
+/** The creation request, built from the form values. */
+function corpsCreation(valeurs: ValeursDossier, categorie?: CategorieDossier): CreerDossier {
+  return {
+    nature: valeurs.nature,
+    juridictionSaisie: valeurs.juridictionSaisie,
+    clientId: Number(valeurs.clientId),
+    parties: {
+      demandeurs: valeurs.demandeurs.map((partie) => partie.nom.trim()),
+      defendeurs: valeurs.defendeurs.map((partie) => partie.nom.trim()),
+    },
+    risqueEncouru: Number(valeurs.risqueEncouru),
+    recoursExerces: valeurs.recoursExerces || undefined,
+    motifRenvoi: valeurs.motifRenvoi || undefined,
+    codeAgenceOrigine: valeurs.codeAgenceOrigine,
+    codeAgenceContentieuse: valeurs.codeAgenceContentieuse || undefined,
+    // Only send the documents of the relevant category: the others are meaningless here and would
+    // be stored for nothing.
+    dossierCreditOrigine: siCategorie(valeurs.dossierCreditOrigine, "RECOUVREMENT", categorie),
+    pvTransfert: siCategorie(valeurs.pvTransfert, "RECOUVREMENT", categorie),
+    incidentCompteReference: siCategorie(
+      valeurs.incidentCompteReference,
+      "EXPLOITATION_LITIGES",
+      categorie,
+    ),
+    elementsJustificatifs: siCategorie(
+      valeurs.elementsJustificatifs,
+      "EXPLOITATION_LITIGES",
+      categorie,
+    ),
+    estSensible: valeurs.estSensible ?? false,
+    seuilMontant: valeurs.estSensible ? Number(valeurs.seuilMontant) : undefined,
+    typeClientSensible: valeurs.estSensible ? valeurs.typeClientSensible || undefined : undefined,
+    juristesAffectes: valeurs.juristesAffectes.map(Number),
+    avocatsAffectes: valeurs.avocatsAffectes.map(Number),
+  };
+}
+
+/** Files every document it can and returns the names of those that failed. */
+async function deposerLesPieces(
+  dossierId: number,
+  pieces: readonly PieceAJoindre[],
+): Promise<string[]> {
+  const echecs: string[] = [];
+  for (const piece of pieces) {
+    try {
+      await gedService.deposer(dossierId, piece.type, piece.fichier);
+    } catch {
+      echecs.push(piece.fichier.name);
+    }
+  }
+  return echecs;
+}
 
 export function FormulaireDossier({
   courrielUtilisateur = null,
@@ -85,62 +208,9 @@ export function FormulaireDossier({
   // If volume became an issue, a server-side search field would be needed, not a bigger load.
   const clients = useClients({ page: 0, size: 200 });
 
-  const schema = useMemo(
-    () =>
-      z
-        .object({
-          nature: z.string().min(1, tm("champObligatoire")),
-          juridictionSaisie: z.string().trim().min(1, tm("champObligatoire")).max(100),
-          clientId: z.coerce.number().int().positive(tm("champObligatoire")),
-          // At least one of each, several allowed.
-          demandeurs: z
-            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
-            .min(1, tm("champObligatoire")),
-          defendeurs: z
-            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
-            .min(1, tm("champObligatoire")),
-          risqueEncouru: z.coerce.number().min(0, tm("champObligatoire")),
-          recoursExerces: z.string().optional(),
-          motifRenvoi: z.string().max(255).optional(),
-          // Required: the code comes from the branch reference list and is no longer typed in. The
-          // litigation branch code stays optional, since a case is not always transferred.
-          codeAgenceOrigine: z.string().min(1, tm("champObligatoire")).max(20),
-          codeAgenceContentieuse: z.string().max(20).optional(),
-          dossierCreditOrigine: z.string().max(50).optional(),
-          pvTransfert: z.string().max(255).optional(),
-          incidentCompteReference: z.string().max(50).optional(),
-          elementsJustificatifs: z.string().optional(),
-          estSensible: z.boolean().optional(),
-          seuilMontant: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
-          typeClientSensible: z.string().optional(),
-          juristesAffectes: z.array(z.coerce.number()).min(1, tm("champObligatoire")),
-          avocatsAffectes: z.array(z.coerce.number()).min(1, tm("champObligatoire")),
-        })
-        .superRefine((valeurs, contexte) => {
-          /*
-           * Conditional references are not required: the attached files are. That check is done on
-           * the files at save time, outside this schema, since files are not form fields.
-           */
-
-          // A sensitive case is a proposal: it only makes sense with the two elements the DJ will
-          // arbitrate.
-          if (valeurs.estSensible) {
-            if (valeurs.seuilMontant === "" || valeurs.seuilMontant === undefined) {
-              contexte.addIssue({ code: "custom", path: ["seuilMontant"], message: tm("champObligatoire") });
-            }
-            if (!valeurs.typeClientSensible) {
-              contexte.addIssue({
-                code: "custom",
-                path: ["typeClientSensible"],
-                message: tm("champObligatoire"),
-              });
-            }
-          }
-        }),
-    // The schema does not depend on the nature reference data: conditional references are not
-    // required, and the category no longer drives any validation here.
-    [tm],
-  );
+  // The schema does not depend on the nature reference data: conditional references are not
+  // required, and the category no longer drives any validation here.
+  const schema = useMemo(() => schemaDossier(tm("champObligatoire")), [tm]);
 
   const {
     register,
@@ -181,7 +251,9 @@ export function FormulaireDossier({
   useEffect(() => {
     if (preselectionFaite.current || !courrielUtilisateur || !juristes.data) return;
     preselectionFaite.current = true;
-    const moi = juristes.data.find((u) => u.email?.toLowerCase() === courrielUtilisateur.toLowerCase());
+    const moi = juristes.data.find(
+      (u) => u.email?.toLowerCase() === courrielUtilisateur.toLowerCase(),
+    );
     if (moi && getValues("juristesAffectes").length === 0) setValue("juristesAffectes", [moi.id]);
   }, [courrielUtilisateur, juristes.data, getValues, setValue]);
 
@@ -206,34 +278,7 @@ export function FormulaireDossier({
     }
 
     try {
-      const cree = await creer.mutateAsync({
-        nature: valeurs.nature,
-        juridictionSaisie: valeurs.juridictionSaisie,
-        clientId: Number(valeurs.clientId),
-        parties: {
-          demandeurs: valeurs.demandeurs.map((partie) => partie.nom.trim()),
-          defendeurs: valeurs.defendeurs.map((partie) => partie.nom.trim()),
-        },
-        risqueEncouru: Number(valeurs.risqueEncouru),
-        recoursExerces: valeurs.recoursExerces || undefined,
-        motifRenvoi: valeurs.motifRenvoi || undefined,
-        codeAgenceOrigine: valeurs.codeAgenceOrigine,
-        codeAgenceContentieuse: valeurs.codeAgenceContentieuse || undefined,
-        // Only send the documents of the relevant category: the others are meaningless here and
-        // would be stored for nothing.
-        dossierCreditOrigine:
-          categorie === "RECOUVREMENT" ? valeurs.dossierCreditOrigine || undefined : undefined,
-        pvTransfert: categorie === "RECOUVREMENT" ? valeurs.pvTransfert || undefined : undefined,
-        incidentCompteReference:
-          categorie === "EXPLOITATION_LITIGES" ? valeurs.incidentCompteReference || undefined : undefined,
-        elementsJustificatifs:
-          categorie === "EXPLOITATION_LITIGES" ? valeurs.elementsJustificatifs || undefined : undefined,
-        estSensible: valeurs.estSensible ?? false,
-        seuilMontant: valeurs.estSensible ? Number(valeurs.seuilMontant) : undefined,
-        typeClientSensible: valeurs.estSensible ? valeurs.typeClientSensible || undefined : undefined,
-        juristesAffectes: valeurs.juristesAffectes.map(Number),
-        avocatsAffectes: valeurs.avocatsAffectes.map(Number),
-      });
+      const cree = await creer.mutateAsync(corpsCreation(valeurs, categorie));
       /*
        * Second step: documents are uploaded to the DMS once the case exists (the upload needs its
        * id). At this point the case exists: an upload failure must neither cancel it nor invite
@@ -241,18 +286,9 @@ export function FormulaireDossier({
        * Upload everything possible, then open the case on its documents, naming those to upload
        * again.
        */
-      const echecs: string[] = [];
-      if (pieces.length > 0) {
-        setEnvoiPieces(true);
-        for (const piece of pieces) {
-          try {
-            await gedService.deposer(cree.id, piece.type, piece.fichier);
-          } catch {
-            echecs.push(piece.fichier.name);
-          }
-        }
-        setEnvoiPieces(false);
-      }
+      setEnvoiPieces(pieces.length > 0);
+      const echecs = await deposerLesPieces(cree.id, pieces);
+      setEnvoiPieces(false);
 
       if (echecs.length > 0) {
         // No expiry: the user must be able to read the list of documents to upload again.
@@ -267,11 +303,11 @@ export function FormulaireDossier({
       toast.success(t("dossierCree", { reference: cree.reference }));
       // The created case opens directly: it is what the user will look at next.
       routeur.push(`/dossiers/${cree.id}`);
-    } catch (erreur) {
+    } catch (error_) {
       // The backend names the faulty field itself, so the error lands in the right place without a
       // mapping table.
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });
@@ -289,7 +325,6 @@ export function FormulaireDossier({
   if (echec) {
     return <EtatErreur message={messageErreur(echec)} />;
   }
-
 
   /**
    * Reference field of an expected document, rendered by the documents block at the start of its
@@ -405,12 +440,7 @@ export function FormulaireDossier({
               The reference is not entered: the server assigns it (DOS-2026-0001) and the
               confirmation shows it on creation.
             */}
-            <Champ
-              id="nature"
-              label={t("champNature")}
-              obligatoire
-              erreur={errors.nature?.message}
-            >
+            <Champ id="nature" label={t("champNature")} obligatoire erreur={errors.nature?.message}>
               <Select id="nature" enErreur={!!errors.nature} {...register("nature")}>
                 <option value="">{t("choisirNature")}</option>
                 {(natures.data ?? []).map((nature) => (
@@ -436,7 +466,12 @@ export function FormulaireDossier({
               />
             </Champ>
 
-            <Champ id="clientId" label={t("champClient")} obligatoire erreur={errors.clientId?.message}>
+            <Champ
+              id="clientId"
+              label={t("champClient")}
+              obligatoire
+              erreur={errors.clientId?.message}
+            >
               <Select id="clientId" enErreur={!!errors.clientId} {...register("clientId")}>
                 <option value="">{t("choisirClient")}</option>
                 {(clients.data?.content ?? []).map((client) => (
@@ -574,7 +609,9 @@ export function FormulaireDossier({
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
-                {categorie === "RECOUVREMENT" ? t("aidePiecesRecouvrement") : t("aidePiecesLitiges")}
+                {categorie === "RECOUVREMENT"
+                  ? t("aidePiecesRecouvrement")
+                  : t("aidePiecesLitiges")}
               </p>
 
               {/*
@@ -639,12 +676,17 @@ export function FormulaireDossier({
                       multiple
                       valeur={(field.value ?? []).map(Number)}
                       onChangement={(valeur) => field.onChange(valeur as number[])}
-                      options={(avocats.data?.content ?? []).map((avocat) => ({ id: avocat.id, libelle: avocat.nom }))}
+                      options={(avocats.data?.content ?? []).map((avocat) => ({
+                        id: avocat.id,
+                        libelle: avocat.nom,
+                      }))}
                       onRecherche={setRechercheAvocat}
                       chargement={avocats.isLoading}
                     />
                     {errors.avocatsAffectes?.message ? (
-                      <p className="text-[length:var(--taille-xs)] text-danger">{errors.avocatsAffectes.message}</p>
+                      <p className="text-[length:var(--taille-xs)] text-danger">
+                        {errors.avocatsAffectes.message}
+                      </p>
                     ) : null}
                   </div>
                 )}

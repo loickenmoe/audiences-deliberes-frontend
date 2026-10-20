@@ -67,6 +67,7 @@ export function nomFichierActivite(
           .replace(/\p{M}+/gu, "")
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
+          .replace(/^-/, "")
+          .replace(/-$/, "");
   return `activite-${qui}-${dateDebut}_${dateFin}.${EXTENSION_RAPPORT[format]}`;
 }

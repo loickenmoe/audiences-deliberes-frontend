@@ -19,9 +19,22 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     // Playwright runs tests/e2e; Vitest must not pick them up.
     include: ["tests/unit/**/*.test.{ts,tsx}"],
+    // Same scope as `sonar.sources`; lcov is the report SonarQube reads.
     coverage: {
-      reporter: ["text", "html"],
-      include: ["lib/**", "types/**", "components/**"],
+      provider: "v8",
+      reporter: ["text-summary", "html", "lcov"],
+      include: [
+        "app/**",
+        "components/**",
+        "hooks/**",
+        "i18n/**",
+        "lib/**",
+        "providers/**",
+        "services/**",
+        "types/**",
+        "middleware.ts",
+      ],
+      exclude: ["**/*.d.ts", "types/api.generated.ts"],
     },
   },
 });

@@ -20,7 +20,7 @@ export function Pagination({
   taille,
   onChangementTaille,
   className,
-}: {
+}: Readonly<{
   /** Zero-based page index, as in the backend. */
   page: number;
   totalPages: number;
@@ -30,7 +30,7 @@ export function Pagination({
   taille?: number;
   onChangementTaille?: (taille: number) => void;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const premiere = page <= 0;
   const derniere = page >= totalPages - 1;

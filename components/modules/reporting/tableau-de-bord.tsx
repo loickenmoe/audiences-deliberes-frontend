@@ -36,7 +36,7 @@ import { CategorieDossier } from "@/types/enums";
  * mixed deliberation is neither won nor lost. The periodic report (screen 40) keeps its rate.
  * Restricted to the DJ and the DJA.
  */
-export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
+export function TableauDeBordExecutif({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("tableauDeBord");
   const tCategorie = useTranslations("domaine.CategorieDossier");
   /*
@@ -199,7 +199,7 @@ export function TableauDeBordExecutif({ roles }: { roles: readonly string[] }) {
 }
 
 /** Counters are integers: displaying them with `data-nombres` aligns the columns. */
-function Nombre({ valeur }: { valeur: number }) {
+function Nombre({ valeur }: Readonly<{ valeur: number }>) {
   return <span data-nombres>{valeur}</span>;
 }
 
@@ -211,7 +211,7 @@ function Indicateur({
   alerte = false,
   indicateur,
   onDetail,
-}: {
+}: Readonly<{
   icone: ReactNode;
   libelle: string;
   aide: string;
@@ -221,7 +221,7 @@ function Indicateur({
   /** When set, the block opens the detail of what it counts. */
   indicateur?: IndicateurTableauDeBord;
   onDetail?: (choix: { indicateur: IndicateurTableauDeBord; libelle: string }) => void;
-}) {
+}>) {
   const tDetail = useTranslations("detailIndicateur");
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-bordure bg-surface p-4">

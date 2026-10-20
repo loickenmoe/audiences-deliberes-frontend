@@ -27,7 +27,7 @@ import { TypeEtape, type StatutCycleVie } from "@/types/enums";
  * · the backend's two silent side effects (automatic opening of the next step on an appeal,
  *   creation of intermediate steps on a direct positioning) are **announced before** confirmation.
  */
-export function OngletEtapes({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletEtapes({ dossier, roles }: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("fiche");
   const tdom = useTranslations("domaine");
   const peutGerer = peut(roles, "gererEtapes");
@@ -39,9 +39,9 @@ export function OngletEtapes({ dossier, roles }: { dossier: Dossier; roles: read
 
   return (
     <div className="flex flex-col gap-5">
-      {!peutGerer ? (
+      {peutGerer ? null : (
         <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("lectureSeuleEtapes")}</p>
-      ) : null}
+      )}
 
       {etapes.length === 0 ? (
         <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("etapesAucune")}</p>
@@ -66,7 +66,7 @@ export function OngletEtapes({ dossier, roles }: { dossier: Dossier; roles: read
   );
 }
 
-function ChangementStatut({ dossierId, etape }: { dossierId: number; etape: EtapeProcedure }) {
+function ChangementStatut({ dossierId, etape }: Readonly<{ dossierId: number; etape: EtapeProcedure }>) {
   const t = useTranslations("fiche");
   const tdom = useTranslations("domaine");
   const modifier = useModifierStatutEtape(dossierId);
@@ -151,10 +151,10 @@ function ChangementStatut({ dossierId, etape }: { dossierId: number; etape: Etap
 function Positionnement({
   dossierId,
   existantes,
-}: {
+}: Readonly<{
   dossierId: number;
   existantes: readonly TypeEtape[];
-}) {
+}>) {
   const t = useTranslations("fiche");
   const tdom = useTranslations("domaine");
   const creer = useCreerEtape(dossierId);

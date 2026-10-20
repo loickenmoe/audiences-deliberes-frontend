@@ -20,11 +20,11 @@ export function StatutChip({
   ton = "neutre",
   children,
   className,
-}: {
+}: Readonly<{
   ton?: TonStatut;
   children: React.ReactNode;
   className?: string;
-}) {
+}>) {
   return (
     <span
       className={cn(

@@ -22,7 +22,7 @@ import {
 } from "@/hooks/useDecisions";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
-import type { Condamnation, Dossier, EtapeProcedure } from "@/types/domaine";
+import type { Adjudication, Condamnation, Dossier, EtapeProcedure } from "@/types/domaine";
 import { SensCondamnation, StatutPaiementCondamnation } from "@/types/enums";
 
 const TON_PAIEMENT: Record<StatutPaiementCondamnation, TonStatut> = {
@@ -35,11 +35,13 @@ const TON_PAIEMENT: Record<StatutPaiementCondamnation, TonStatut> = {
  * Screen 14 - final decisions of the case (UC-DEF-01 to 03): awards, monetary judgments and
  * archived decisions.
  */
-export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletDecisions({
+  dossier,
+  roles,
+}: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("decisions");
   const td = useTranslations("domaine");
   const requete = useDecisionsDossier(dossier.id);
-  const archives = useJurisprudences({ dossierId: dossier.id });
   const peutGerer = peut(roles, "gererDecisions");
   const [modale, setModale] = useState<"adjudication" | "condamnation" | "archivage" | null>(null);
   const etapes = dossier.etapes ?? [];
@@ -50,7 +52,8 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
    * all appeals exhausted. The screen reflects it instead of failing on submit.
    */
   const dossierClos =
-    etapes.length > 0 && etapes.every((e) => e.statutCycleVie === "CLOTURE" || e.statutCycleVie === "ARCHIVE");
+    etapes.length > 0 &&
+    etapes.every((e) => e.statutCycleVie === "CLOTURE" || e.statutCycleVie === "ARCHIVE");
 
   const libelleEtape = (etapeId: number | null) => {
     const etape = etapes.find((e) => e.id === etapeId);
@@ -66,59 +69,39 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
     <div className="flex flex-col gap-6">
       <section aria-labelledby="decisions-adjudications" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="decisions-adjudications" className="font-semibold">{t("adjudications")}</h2>
+          <h2 id="decisions-adjudications" className="font-semibold">
+            {t("adjudications")}
+          </h2>
           {peutGerer ? (
-            <Button variante="secondaire" onClick={() => setModale("adjudication")} disabled={etapesCloturees.length === 0}>
+            <Button
+              variante="secondaire"
+              onClick={() => setModale("adjudication")}
+              disabled={etapesCloturees.length === 0}
+            >
               <Gavel size={15} aria-hidden />
               {t("enregistrerAdjudication")}
             </Button>
           ) : null}
         </div>
         {peutGerer && etapesCloturees.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("sansEtapeCloturee")}</p>
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("sansEtapeCloturee")}
+          </p>
         ) : null}
-        {adjudications.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneAdjudication")}</p>
-        ) : (
-          <div className="overflow-x-auto rounded border border-bordure bg-surface">
-            <table className="w-full text-left text-[length:var(--taille-sm)]">
-              <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneBeneficiaire")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneEtape")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneDate")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneSuivi")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneReliquat")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-bordure">
-                {adjudications.map((a) => (
-                  <tr key={a.id}>
-                    <td className="px-4 py-2 font-medium">{a.beneficiaire}</td>
-                    <td className="px-4 py-2">{libelleEtape(a.etapeId)}</td>
-                    <td className="px-4 py-2"><DateValeur valeur={a.dateDecision} /></td>
-                    <td className="px-4 py-2">
-                      <ul className="flex flex-col gap-0.5 text-[length:var(--taille-xs)]">
-                        {a.statutComptabilisation ? <li>{t("comptabilisation", { statut: a.statutComptabilisation })}</li> : null}
-                        {a.repriseProvision ? <li>{t("repriseProvision")}</li> : null}
-                        {a.restitutionSoulte ? <li>{t("restitutionSoulte")}</li> : null}
-                        {a.mutation ? <li>{t("mutation")}</li> : null}
-                      </ul>
-                    </td>
-                    <td className="px-4 py-2"><MontantFcfa valeur={a.reliquat} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <TableauAdjudications adjudications={adjudications} libelleEtape={libelleEtape} />
       </section>
 
       <section aria-labelledby="decisions-condamnations" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="decisions-condamnations" className="font-semibold">{t("condamnations")}</h2>
+          <h2 id="decisions-condamnations" className="font-semibold">
+            {t("condamnations")}
+          </h2>
           {peutGerer ? (
-            <Button variante="secondaire" onClick={() => setModale("condamnation")} disabled={etapesCloturees.length === 0}>
+            <Button
+              variante="secondaire"
+              onClick={() => setModale("condamnation")}
+              disabled={etapesCloturees.length === 0}
+            >
               <Scale size={15} aria-hidden />
               {t("suivreCondamnation")}
             </Button>
@@ -126,20 +109,34 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
         </div>
         {/* The award rule, and the same explanation when it blocks. */}
         {peutGerer && etapesCloturees.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("sansEtapeClotureeCondamnation")}</p>
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("sansEtapeClotureeCondamnation")}
+          </p>
         ) : null}
         {condamnations.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneCondamnation")}</p>
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("aucuneCondamnation")}
+          </p>
         ) : (
           <div className="overflow-x-auto rounded border border-bordure bg-surface">
             <table className="w-full text-left text-[length:var(--taille-sm)]">
               <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
                 <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneNature")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneSens")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneDate")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneEtape")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneStatut")}</th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneNature")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneSens")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneDate")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneEtape")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneStatut")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-bordure">
@@ -160,30 +157,26 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
 
       <section aria-labelledby="decisions-archivees" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="decisions-archivees" className="font-semibold">{t("archivees")}</h2>
+          <h2 id="decisions-archivees" className="font-semibold">
+            {t("archivees")}
+          </h2>
           {peutGerer ? (
-            <Button variante="secondaire" onClick={() => setModale("archivage")} disabled={!dossierClos}>
+            <Button
+              variante="secondaire"
+              onClick={() => setModale("archivage")}
+              disabled={!dossierClos}
+            >
               <Archive size={15} aria-hidden />
               {t("archiver")}
             </Button>
           ) : null}
         </div>
         {peutGerer && !dossierClos ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("dossierNonClos")}</p>
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("dossierNonClos")}
+          </p>
         ) : null}
-        {archives.isLoading ? (
-          <EtatChargement lignes={2} />
-        ) : archives.error ? (
-          <EtatErreur message={messageErreur(archives.error)} />
-        ) : (archives.data?.content ?? []).length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneArchivee")}</p>
-        ) : (
-          <ListeJurisprudences
-            jurisprudences={archives.data?.content ?? []}
-            avecDossier={false}
-            rafraichir={async () => (await archives.refetch()).data?.content ?? []}
-          />
-        )}
+        <DecisionsArchivees dossierId={dossier.id} />
       </section>
 
       {peutGerer ? (
@@ -200,10 +193,103 @@ export function OngletDecisions({ dossier, roles }: { dossier: Dossier; roles: r
             ouvert={modale === "condamnation"}
             onFermeture={() => setModale(null)}
           />
-          <ModaleArchivage dossierId={dossier.id} ouvert={modale === "archivage"} onFermeture={() => setModale(null)} />
+          <ModaleArchivage
+            dossierId={dossier.id}
+            ouvert={modale === "archivage"}
+            onFermeture={() => setModale(null)}
+          />
         </>
       ) : null}
     </div>
+  );
+}
+
+function TableauAdjudications({
+  adjudications,
+  libelleEtape,
+}: Readonly<{
+  adjudications: readonly Adjudication[];
+  libelleEtape: (etapeId: number | null) => string;
+}>) {
+  const t = useTranslations("decisions");
+
+  if (adjudications.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+        {t("aucuneAdjudication")}
+      </p>
+    );
+  }
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneBeneficiaire")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneEtape")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDate")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneSuivi")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneReliquat")}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {adjudications.map((a) => (
+            <tr key={a.id}>
+              <td className="px-4 py-2 font-medium">{a.beneficiaire}</td>
+              <td className="px-4 py-2">{libelleEtape(a.etapeId)}</td>
+              <td className="px-4 py-2">
+                <DateValeur valeur={a.dateDecision} />
+              </td>
+              <td className="px-4 py-2">
+                <ul className="flex flex-col gap-0.5 text-[length:var(--taille-xs)]">
+                  {a.statutComptabilisation ? (
+                    <li>{t("comptabilisation", { statut: a.statutComptabilisation })}</li>
+                  ) : null}
+                  {a.repriseProvision ? <li>{t("repriseProvision")}</li> : null}
+                  {a.restitutionSoulte ? <li>{t("restitutionSoulte")}</li> : null}
+                  {a.mutation ? <li>{t("mutation")}</li> : null}
+                </ul>
+              </td>
+              <td className="px-4 py-2">
+                <MontantFcfa valeur={a.reliquat} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Decisions of this case already filed as case law. */
+function DecisionsArchivees({ dossierId }: Readonly<{ dossierId: number }>) {
+  const t = useTranslations("decisions");
+  const archives = useJurisprudences({ dossierId });
+  const jurisprudences = archives.data?.content ?? [];
+
+  if (archives.isLoading) return <EtatChargement lignes={2} />;
+  if (archives.error) return <EtatErreur message={messageErreur(archives.error)} />;
+  if (jurisprudences.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneArchivee")}</p>
+    );
+  }
+  return (
+    <ListeJurisprudences
+      jurisprudences={jurisprudences}
+      avecDossier={false}
+      rafraichir={async () => (await archives.refetch()).data?.content ?? []}
+    />
   );
 }
 
@@ -213,12 +299,12 @@ function LigneCondamnation({
   dossierId,
   peutGerer,
   libelleEtape,
-}: {
+}: Readonly<{
   condamnation: Condamnation;
   dossierId: number;
   peutGerer: boolean;
   libelleEtape: string;
-}) {
+}>) {
   const t = useTranslations("decisions");
   const td = useTranslations("domaine");
   const modifier = useModifierStatutCondamnation(dossierId);
@@ -239,7 +325,9 @@ function LigneCondamnation({
     <tr>
       <td className="px-4 py-2 font-medium">{condamnation.naturePaiement}</td>
       <td className="px-4 py-2">{td(`SensCondamnation.${condamnation.sens}` as never)}</td>
-      <td className="px-4 py-2"><DateValeur valeur={condamnation.dateDecision} /></td>
+      <td className="px-4 py-2">
+        <DateValeur valeur={condamnation.dateDecision} />
+      </td>
       <td className="px-4 py-2">{libelleEtape}</td>
       <td className="px-4 py-2">
         {peutGerer ? (
@@ -280,18 +368,25 @@ function aujourdhui() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** The remaining amount is required and cannot be negative; `undefined` when valid. */
+function erreurReliquat(saisie: string, obligatoire: string, negatif: string): string | undefined {
+  const montant = Number(saisie);
+  if (saisie.trim() === "" || Number.isNaN(montant)) return obligatoire;
+  return montant < 0 ? negatif : undefined;
+}
+
 /** UC-DEF-01: beneficiary and financial follow-up, on a closed step (RG-DEF-01/02). */
 function ModaleAdjudication({
   dossierId,
   etapes,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   etapes: EtapeProcedure[];
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("decisions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -328,7 +423,7 @@ function ModaleAdjudication({
       etapeId: etapeId ? undefined : obligatoire,
       beneficiaire: beneficiaire.trim() ? undefined : obligatoire,
       comptabilisation: comptabilisation.trim() ? undefined : obligatoire,
-      reliquat: reliquat.trim() === "" || Number.isNaN(montant) ? obligatoire : montant < 0 ? t("reliquatNegatif") : undefined,
+      reliquat: erreurReliquat(reliquat, obligatoire, t("reliquatNegatif")),
       dateDecision: dateDecision ? undefined : obligatoire,
     };
     setErreurs(suivantes);
@@ -359,51 +454,119 @@ function ModaleAdjudication({
       description={t("adjudicationAide")}
       pied={
         <>
-          <Button variante="secondaire" onClick={onFermeture} disabled={creer.isPending}>{tc("annuler")}</Button>
-          <Button onClick={() => void soumettre()} disabled={creer.isPending}>{tc("enregistrer")}</Button>
+          <Button variante="secondaire" onClick={onFermeture} disabled={creer.isPending}>
+            {tc("annuler")}
+          </Button>
+          <Button onClick={() => void soumettre()} disabled={creer.isPending}>
+            {tc("enregistrer")}
+          </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
         <Champ id="adjudication-etape" label={t("champEtape")} obligatoire erreur={erreurs.etapeId}>
-          <Select id="adjudication-etape" value={etapeId} onChange={(e) => setEtapeId(e.target.value)}>
+          <Select
+            id="adjudication-etape"
+            value={etapeId}
+            onChange={(e) => setEtapeId(e.target.value)}
+          >
             <option value="">{t("choisirEtape")}</option>
             {etapes.map((e) => (
-              <option key={e.id} value={e.id}>{td(`TypeEtape.${e.type}` as never)}</option>
+              <option key={e.id} value={e.id}>
+                {td(`TypeEtape.${e.type}` as never)}
+              </option>
             ))}
           </Select>
         </Champ>
-        <Champ id="adjudication-beneficiaire" label={t("champBeneficiaire")} obligatoire erreur={erreurs.beneficiaire}>
-          <Input id="adjudication-beneficiaire"
-  placeholder={t("phBeneficiaire")} maxLength={100} value={beneficiaire} onChange={(e) => setBeneficiaire(e.target.value)} />
+        <Champ
+          id="adjudication-beneficiaire"
+          label={t("champBeneficiaire")}
+          obligatoire
+          erreur={erreurs.beneficiaire}
+        >
+          <Input
+            id="adjudication-beneficiaire"
+            placeholder={t("phBeneficiaire")}
+            maxLength={100}
+            value={beneficiaire}
+            onChange={(e) => setBeneficiaire(e.target.value)}
+          />
         </Champ>
-        <Champ id="adjudication-comptabilisation" label={t("champComptabilisation")} obligatoire erreur={erreurs.comptabilisation}>
-          <Input id="adjudication-comptabilisation"
-  placeholder={t("phComptabilisation")} maxLength={30} value={comptabilisation} onChange={(e) => setComptabilisation(e.target.value)} />
+        <Champ
+          id="adjudication-comptabilisation"
+          label={t("champComptabilisation")}
+          obligatoire
+          erreur={erreurs.comptabilisation}
+        >
+          <Input
+            id="adjudication-comptabilisation"
+            placeholder={t("phComptabilisation")}
+            maxLength={30}
+            value={comptabilisation}
+            onChange={(e) => setComptabilisation(e.target.value)}
+          />
         </Champ>
         <fieldset className="flex flex-col gap-2 text-[length:var(--taille-sm)]">
           <legend className="mb-1 font-medium">{t("suiviFinancier")}</legend>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={repriseProvision} onChange={(e) => setRepriseProvision(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={repriseProvision}
+              onChange={(e) => setRepriseProvision(e.target.checked)}
+            />
             {t("repriseProvision")}
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={restitutionSoulte} onChange={(e) => setRestitutionSoulte(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={restitutionSoulte}
+              onChange={(e) => setRestitutionSoulte(e.target.checked)}
+            />
             {t("restitutionSoulte")}
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={mutation} onChange={(e) => setMutation(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={mutation}
+              onChange={(e) => setMutation(e.target.checked)}
+            />
             {t("mutation")}
           </label>
         </fieldset>
-        <Champ id="adjudication-reliquat" label={t("champReliquat")} obligatoire erreur={erreurs.reliquat}>
-          <Input id="adjudication-reliquat"
-  placeholder={t("phReliquat")} type="number" min={0} step="1" value={reliquat} onChange={(e) => setReliquat(e.target.value)} />
+        <Champ
+          id="adjudication-reliquat"
+          label={t("champReliquat")}
+          obligatoire
+          erreur={erreurs.reliquat}
+        >
+          <Input
+            id="adjudication-reliquat"
+            placeholder={t("phReliquat")}
+            type="number"
+            min={0}
+            step="1"
+            value={reliquat}
+            onChange={(e) => setReliquat(e.target.value)}
+          />
         </Champ>
-        <Champ id="adjudication-date" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
-          <Input id="adjudication-date" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />
+        <Champ
+          id="adjudication-date"
+          label={t("champDate")}
+          obligatoire
+          erreur={erreurs.dateDecision}
+        >
+          <Input
+            id="adjudication-date"
+            type="date"
+            value={dateDecision}
+            onChange={(e) => setDateDecision(e.target.value)}
+          />
         </Champ>
-        {erreurs.general ? <p role="alert" className="text-[length:var(--taille-sm)] text-danger">{erreurs.general}</p> : null}
+        {erreurs.general ? (
+          <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
+            {erreurs.general}
+          </p>
+        ) : null}
       </div>
     </Dialog>
   );
@@ -415,12 +578,12 @@ function ModaleCondamnation({
   etapes,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   etapes: EtapeProcedure[];
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("decisions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -475,8 +638,12 @@ function ModaleCondamnation({
       description={t("condamnationAide")}
       pied={
         <>
-          <Button variante="secondaire" onClick={onFermeture} disabled={creer.isPending}>{tc("annuler")}</Button>
-          <Button onClick={() => void soumettre()} disabled={creer.isPending}>{tc("enregistrer")}</Button>
+          <Button variante="secondaire" onClick={onFermeture} disabled={creer.isPending}>
+            {tc("annuler")}
+          </Button>
+          <Button onClick={() => void soumettre()} disabled={creer.isPending}>
+            {tc("enregistrer")}
+          </Button>
         </>
       }
     >
@@ -485,26 +652,59 @@ function ModaleCondamnation({
           <Select id="condamnation-sens" value={sens} onChange={(e) => setSens(e.target.value)}>
             <option value="">{t("choisirSens")}</option>
             {SensCondamnation.map((valeur) => (
-              <option key={valeur} value={valeur}>{td(`SensCondamnation.${valeur}` as never)}</option>
+              <option key={valeur} value={valeur}>
+                {td(`SensCondamnation.${valeur}` as never)}
+              </option>
             ))}
           </Select>
         </Champ>
-        <Champ id="condamnation-nature" label={t("champNature")} obligatoire erreur={erreurs.nature}>
-          <Input id="condamnation-nature"
-  placeholder={t("phNatureCondamnation")} maxLength={50} value={nature} onChange={(e) => setNature(e.target.value)} />
+        <Champ
+          id="condamnation-nature"
+          label={t("champNature")}
+          obligatoire
+          erreur={erreurs.nature}
+        >
+          <Input
+            id="condamnation-nature"
+            placeholder={t("phNatureCondamnation")}
+            maxLength={50}
+            value={nature}
+            onChange={(e) => setNature(e.target.value)}
+          />
         </Champ>
-        <Champ id="condamnation-date" label={t("champDate")} obligatoire erreur={erreurs.dateDecision}>
-          <Input id="condamnation-date" type="date" value={dateDecision} onChange={(e) => setDateDecision(e.target.value)} />
+        <Champ
+          id="condamnation-date"
+          label={t("champDate")}
+          obligatoire
+          erreur={erreurs.dateDecision}
+        >
+          <Input
+            id="condamnation-date"
+            type="date"
+            value={dateDecision}
+            onChange={(e) => setDateDecision(e.target.value)}
+          />
         </Champ>
         <Champ id="condamnation-etape" label={t("champEtape")} obligatoire erreur={erreurs.etapeId}>
-          <Select id="condamnation-etape" value={etapeId} enErreur={!!erreurs.etapeId} onChange={(e) => setEtapeId(e.target.value)}>
+          <Select
+            id="condamnation-etape"
+            value={etapeId}
+            enErreur={!!erreurs.etapeId}
+            onChange={(e) => setEtapeId(e.target.value)}
+          >
             <option value="">{t("choisirEtape")}</option>
             {etapes.map((e) => (
-              <option key={e.id} value={e.id}>{td(`TypeEtape.${e.type}` as never)}</option>
+              <option key={e.id} value={e.id}>
+                {td(`TypeEtape.${e.type}` as never)}
+              </option>
             ))}
           </Select>
         </Champ>
-        {erreurs.general ? <p role="alert" className="text-[length:var(--taille-sm)] text-danger">{erreurs.general}</p> : null}
+        {erreurs.general ? (
+          <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
+            {erreurs.general}
+          </p>
+        ) : null}
       </div>
     </Dialog>
   );

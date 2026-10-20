@@ -30,7 +30,7 @@ function BoutonSoumettre() {
  * is not kept anywhere.
  * The action returns a message key, never text: the component translates it in the active language.
  */
-export function FormulaireConnexion({ messageInitial }: { messageInitial?: string | null }) {
+export function FormulaireConnexion({ messageInitial }: Readonly<{ messageInitial?: string | null }>) {
   const [etat, action] = useActionState(connexion, ETAT_INITIAL);
   const [motDePasseVisible, setMotDePasseVisible] = useState(false);
   const t = useTranslations("connexion");

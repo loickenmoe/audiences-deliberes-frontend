@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * A card marks a distinct object: do not wrap every block in one, or it flattens the hierarchy it
  * is meant to create.
  */
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
       className={cn(
@@ -21,11 +21,11 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   );
 }
 
-export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function CardHeader({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return <div className={cn("flex flex-col gap-1 border-b border-bordure p-5", className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+export function CardTitle({ className, ...props }: Readonly<HTMLAttributes<HTMLHeadingElement>>) {
   return (
     <h2
       className={cn("text-[length:var(--taille-xl)] font-semibold tracking-tight", className)}
@@ -34,7 +34,7 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEle
   );
 }
 
-export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
+export function CardDescription({ className, ...props }: Readonly<HTMLAttributes<HTMLParagraphElement>>) {
   return (
     <p
       className={cn("text-[length:var(--taille-sm)] text-texte-secondaire", className)}
@@ -43,6 +43,6 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
   );
 }
 
-export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function CardContent({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return <div className={cn("p-5", className)} {...props} />;
 }

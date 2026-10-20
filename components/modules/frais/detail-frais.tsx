@@ -38,7 +38,7 @@ const EN_COURS: readonly StatutCircuitFrais[] = ["DEPOSEE", "CONFORMITE", "OPPOR
  * (sensitive case or amount above threshold). The workflow lists every decision (who, when, reason),
  * so the DJ can see the DJA's prior approval. Only the action due to the current profile is offered.
  */
-export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: readonly string[] }) {
+export function DetailFrais({ demandeId, roles }: Readonly<{ demandeId: number; roles: readonly string[] }>) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
   const tdoc = useTranslations("documents");
@@ -203,7 +203,7 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
 }
 
 /** Workflow steps in order, each with its decision if one was made. */
-function Circuit({ demande }: { demande: DemandeFrais }) {
+function Circuit({ demande }: Readonly<{ demande: DemandeFrais }>) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
   const conjointe =
@@ -294,7 +294,7 @@ function messageSucces(action: EtapeDecision, statut: StatutCircuitFrais): strin
   return statut === "VALIDEE" ? "accordEnregistreValidee" : "accordEnregistre";
 }
 
-function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: readonly string[] }) {
+function PanneauActions({ demande, roles }: Readonly<{ demande: DemandeFrais; roles: readonly string[] }>) {
   const t = useTranslations("frais");
   const decider = useDecisionFrais();
   const payer = usePaiementFrais();
@@ -322,8 +322,8 @@ function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: read
         const resultat = await decider.mutateAsync({ etape: choisie, id: demande.id, decision: { accord: true } });
         toast.success(t(messageSucces(choisie, resultat.statutCircuit) as never));
       }
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setConfirmation(null);
     }
@@ -345,12 +345,12 @@ function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: read
           {action === "paiement" ? <Banknote size={15} aria-hidden /> : <Check size={15} aria-hidden />}
           {t(libelles!.accord as never)}
         </Button>
-        {action !== "paiement" ? (
+        {action === "paiement" ? null : (
           <Button variante="secondaire" onClick={() => setRejet(action)}>
             <X size={15} aria-hidden />
             {t(action === "conjointe" ? "refuser" : "rejeter")}
           </Button>
-        ) : null}
+        )}
       </div>
     );
   }
@@ -380,11 +380,11 @@ function ModaleRejet({
   demandeId,
   etape,
   onFermeture,
-}: {
+}: Readonly<{
   demandeId: number;
   etape: EtapeDecision | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("frais");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

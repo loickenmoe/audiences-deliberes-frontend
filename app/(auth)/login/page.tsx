@@ -23,9 +23,9 @@ export async function generateMetadata() {
  */
 export default async function PageConnexion({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<{ motif?: string }>;
-}) {
+}>) {
   const session = await auth();
   if (session?.user && !session.erreur) redirect("/");
 

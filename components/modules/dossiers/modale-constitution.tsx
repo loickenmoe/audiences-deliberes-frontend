@@ -24,13 +24,13 @@ export function ModaleConstitution({
   ouvert,
   onFermeture,
   onSollicitee,
-}: {
+}: Readonly<{
   dossierId: number;
   ouvert: boolean;
   onFermeture: () => void;
   /** The saved request, used to chain into drafting its letter. */
   onSollicitee?: (demandeId: number) => void;
-}) {
+}>) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

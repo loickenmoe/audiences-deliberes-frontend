@@ -58,7 +58,7 @@ export function Button({
   className,
   type = "button",
   ...props
-}: ButtonProps) {
+}: Readonly<ButtonProps>) {
   return (
     <button type={type} className={classesBouton({ variante, taille, className })} {...props} />
   );

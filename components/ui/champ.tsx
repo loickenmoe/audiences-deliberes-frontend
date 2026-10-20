@@ -30,7 +30,7 @@ export function Champ({
   obligatoire,
   children,
   className,
-}: {
+}: Readonly<{
   id: string;
   label: string;
   erreur?: string;
@@ -38,7 +38,7 @@ export function Champ({
   obligatoire?: boolean;
   children: ReactNode;
   className?: string;
-}) {
+}>) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {/*

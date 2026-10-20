@@ -20,7 +20,7 @@ export function DialogueConfirmation({
   libelleConfirmation,
   destructif = false,
   enCours = false,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   onConfirmation: () => void;
@@ -30,7 +30,7 @@ export function DialogueConfirmation({
   /** Switches the action to the destructive variant (deletions and rejections). */
   destructif?: boolean;
   enCours?: boolean;
-}) {
+}>) {
   const t = useTranslations("metier");
   const tc = useTranslations("commun");
 

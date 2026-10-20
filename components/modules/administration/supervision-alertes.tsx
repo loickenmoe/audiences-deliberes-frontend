@@ -137,13 +137,13 @@ function Taux({
   valeur,
   etat,
   mention,
-}: {
+}: Readonly<{
   libelle: string;
   aide: string;
   valeur: number;
   etat: "conforme" | "alerte" | "neutre";
   mention: string;
-}) {
+}>) {
   return (
     <div className="flex flex-col gap-1 rounded border border-bordure bg-surface-attenuee p-4">
       <p className="text-[length:var(--taille-sm)] font-medium">{libelle}</p>
@@ -165,11 +165,11 @@ function Compte({
   libelle,
   valeur,
   accentue = false,
-}: {
+}: Readonly<{
   libelle: string;
   valeur: number;
   accentue?: boolean;
-}) {
+}>) {
   return (
     <div className="flex flex-col">
       <dt className="text-[length:var(--taille-xs)] uppercase tracking-wide text-texte-tertiaire">

@@ -27,7 +27,7 @@ export function CasesACocher({
   erreur,
   chargement = false,
   className,
-}: {
+}: Readonly<{
   label: string;
   options: readonly OptionCase[];
   valeur: readonly number[];
@@ -36,7 +36,7 @@ export function CasesACocher({
   erreur?: string;
   chargement?: boolean;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const tc = useTranslations("commun");
   const id = useId();

@@ -23,10 +23,10 @@ import { messageErreur } from "@/lib/api/errors";
 export function ModaleDemandeExplication({
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("explications");
   const tc = useTranslations("commun");
   const { demander } = useEcritureExplication();

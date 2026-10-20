@@ -36,7 +36,7 @@ export function TableDonnees<T>({
   onReessayer,
   cleLigne,
   className,
-}: {
+}: Readonly<{
   colonnes: ColumnDef<T, unknown>[];
   donnees: PageReponse<T> | undefined;
   chargement?: boolean;
@@ -53,7 +53,7 @@ export function TableDonnees<T>({
   /** Stable row identity. Provide it whenever rows can be reordered. */
   cleLigne?: (ligne: T, index: number) => string;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const tc = useTranslations("commun");
 

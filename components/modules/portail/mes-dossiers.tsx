@@ -33,17 +33,17 @@ export function MesDossiers() {
       <div className="max-w-md">
         <SelecteurDossier id="dossier-espace" obligatoire={false} valeur={dossierId} onChangement={setDossierId} />
       </div>
-      {dossierId !== null ? (
+      {dossierId === null ? null : (
         <div className="flex flex-col gap-6">
           <AudiencesDuDossier dossierId={dossierId} />
           <PiecesDuDossier dossierId={dossierId} />
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
 
-function AudiencesDuDossier({ dossierId }: { dossierId: number }) {
+function AudiencesDuDossier({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
   const requete = useAudiencesDeMonDossier(dossierId);
@@ -90,7 +90,7 @@ function AudiencesDuDossier({ dossierId }: { dossierId: number }) {
   );
 }
 
-function PiecesDuDossier({ dossierId }: { dossierId: number }) {
+function PiecesDuDossier({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("portail");
   const tdoc = useTranslations("documents");
   const tf = useTranslations("fiche");

@@ -77,8 +77,8 @@ export function FormulaireFrais() {
     try {
       const piece = await portailAvocatService.deposerPieceJustificative(fichier);
       setPieces((precedentes) => [...precedentes, piece]);
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setEnvoiPiece(false);
     }

@@ -20,10 +20,10 @@ export async function generateMetadata() {
 export default async function PageDossier({
   params,
   searchParams,
-}: {
+}: Readonly<{
   params: Promise<{ id: string }>;
   searchParams: Promise<{ onglet?: string }>;
-}) {
+}>) {
   const session = await exigerCapacite("consulterDossiers");
 
   const { id } = await params;

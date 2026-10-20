@@ -24,11 +24,11 @@ export function ModaleLettre({
   demandeId,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   demandeId: number | null;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
   const requete = useLettreConstitution(ouvert ? demandeId : null);

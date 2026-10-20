@@ -77,7 +77,7 @@ export function ConsultationAudit() {
         id: "utilisateurId",
         header: t("colonneAuteur"),
         cell: ({ row }: { row: { original: HistoriqueAction } }) =>
-          row.original.utilisateurId !== null ? nomUtilisateur(row.original.utilisateurId) : "—",
+          row.original.utilisateurId === null ? "—" : nomUtilisateur(row.original.utilisateurId),
       },
       {
         id: "action",

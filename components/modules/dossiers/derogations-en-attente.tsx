@@ -22,7 +22,7 @@ import type { AuditSeuil } from "@/types/domaine";
  * Only shown on a sensitive case that is already validated: before that, the only pending item is
  * the initial proposal, decided through sensitivity validation.
  */
-export function DerogationsEnAttente({ dossierId }: { dossierId: number }) {
+export function DerogationsEnAttente({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("fiche");
   const requete = useDerogations(dossierId, "EN_ATTENTE");
   const { nomUtilisateur } = useLibelles();
@@ -58,7 +58,7 @@ export function DerogationsEnAttente({ dossierId }: { dossierId: number }) {
                 <div className="flex flex-col gap-0.5">
                   <dt className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("demandeePar")}</dt>
                   <dd>
-                    {demande.utilisateurId !== null ? nomUtilisateur(demande.utilisateurId) : "—"}
+                    {demande.utilisateurId === null ? "—" : nomUtilisateur(demande.utilisateurId)}
                     {" · "}
                     <DateHeureValeur valeur={demande.dateAction} />
                   </dd>
@@ -85,11 +85,11 @@ function ModaleArbitrage({
   dossierId,
   demande,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   demande: AuditSeuil | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -134,9 +134,9 @@ function ModaleArbitrage({
         decision: { statut: valeurs.statut, motif: valeurs.motif?.trim() || undefined },
       });
       onFermeture();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

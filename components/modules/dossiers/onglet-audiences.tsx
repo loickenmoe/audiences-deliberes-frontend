@@ -32,7 +32,11 @@ import { formaterDate } from "@/lib/utils";
 import type { Audience, Dossier, PlanifierAudience } from "@/types/domaine";
 import type { StatutAudience } from "@/types/enums";
 
-const TON: Record<StatutAudience, TonStatut> = { PLANIFIEE: "info", TENUE: "succes", ANNULEE: "neutre" };
+const TON: Record<StatutAudience, TonStatut> = {
+  PLANIFIEE: "info",
+  TENUE: "succes",
+  ANNULEE: "neutre",
+};
 
 /**
  * Screen 09 - case hearings, most recent first (backend order).
@@ -43,7 +47,10 @@ const TON: Record<StatutAudience, TonStatut> = { PLANIFIEE: "info", TENUE: "succ
  * A scheduled hearing can be **cancelled** with a required reason: it then leaves the calendar and
  * its reminders. A court adjournment = cancel, then schedule the new date.
  */
-export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletAudiences({
+  dossier,
+  roles,
+}: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("audiences");
   const tdom = useTranslations("domaine");
   const requete = useAudiencesDossier(dossier.id);
@@ -92,7 +99,9 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
             {t("planifier")}
           </Button>
           {etapesEnCours.length === 0 ? (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneEtapeEnCours")}</p>
+            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+              {t("aucuneEtapeEnCours")}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -104,11 +113,21 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
           <table className="w-full text-left text-[length:var(--taille-sm)]">
             <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
               <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDate")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneEtape")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneStatut")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneTenue")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneCompteRendu")}</th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneDate")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneEtape")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneStatut")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneTenue")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneCompteRendu")}
+                </th>
                 <th scope="col" className="px-4 py-2 font-medium">
                   <span className="sr-only">{t("colonneActions")}</span>
                 </th>
@@ -118,9 +137,14 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
               {audiences.map((audience) => {
                 // Accepted on the same day: "not after today", as in the backend.
                 const compteRenduPossible =
-                  peutGerer && audience.statut === "PLANIFIEE" && audience.datePlanifiee <= aujourdhui();
+                  peutGerer &&
+                  audience.statut === "PLANIFIEE" &&
+                  audience.datePlanifiee <= aujourdhui();
                 return (
-                  <tr key={audience.id} className={audience.statut === "ANNULEE" ? "text-texte-tertiaire" : undefined}>
+                  <tr
+                    key={audience.id}
+                    className={audience.statut === "ANNULEE" ? "text-texte-tertiaire" : undefined}
+                  >
                     <td className="px-4 py-2 font-medium">
                       <DateValeur valeur={audience.datePlanifiee} />
                     </td>
@@ -143,22 +167,12 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     </td>
                     <td className="max-w-md px-4 py-2">
                       <div className="flex flex-col gap-1">
-                        {audience.compteRendu ? (
-                          <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
-                            {audience.compteRendu}
-                          </p>
-                        ) : audience.statut === "ANNULEE" && audience.motifAnnulation ? (
-                          <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
-                            {t("motifAnnulation", { motif: audience.motifAnnulation })}
-                          </p>
-                        ) : compteRenduPossible ? (
-                          <Button variante="secondaire" taille="sm" onClick={() => setCompteRendu(audience)}>
-                            <FileText size={14} aria-hidden />
-                            {t("saisirCompteRendu")}
-                          </Button>
-                        ) : !compteRenduAvocatParAudience.has(audience.id) ? (
-                          "—"
-                        ) : null}
+                        <CompteRenduInterne
+                          audience={audience}
+                          saisiePossible={compteRenduPossible}
+                          compteRenduAvocat={compteRenduAvocatParAudience.has(audience.id)}
+                          onSaisie={() => setCompteRendu(audience)}
+                        />
 
                         {/*
                           The note to the counsel, kept **separate** from the internal report:
@@ -186,27 +200,31 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     </td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex justify-end gap-1">
-                      {peutEcrireNote && audience.statut !== "ANNULEE" ? (
-                        <Button
-                          variante="secondaire"
-                          taille="sm"
-                          onClick={() => setNote(audience)}
-                          aria-label={t("ecrireNoteAria", { date: formaterDate(audience.datePlanifiee, langue) })}
-                          title={t("ecrireNote")}
-                        >
-                          <MessageSquareText size={14} aria-hidden />
-                        </Button>
-                      ) : null}
-                      {peutGerer && audience.statut === "PLANIFIEE" ? (
-                        <Button
-                          variante="secondaire"
-                          taille="sm"
-                          onClick={() => setAnnulation(audience)}
-                          aria-label={t("annulerAria", { date: formaterDate(audience.datePlanifiee, langue) })}
-                        >
-                          {t("annulerAudience")}
-                        </Button>
-                      ) : null}
+                        {peutEcrireNote && audience.statut !== "ANNULEE" ? (
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setNote(audience)}
+                            aria-label={t("ecrireNoteAria", {
+                              date: formaterDate(audience.datePlanifiee, langue),
+                            })}
+                            title={t("ecrireNote")}
+                          >
+                            <MessageSquareText size={14} aria-hidden />
+                          </Button>
+                        ) : null}
+                        {peutGerer && audience.statut === "PLANIFIEE" ? (
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setAnnulation(audience)}
+                            aria-label={t("annulerAria", {
+                              date: formaterDate(audience.datePlanifiee, langue),
+                            })}
+                          >
+                            {t("annulerAudience")}
+                          </Button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -223,19 +241,76 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
             dossierId={dossier.id}
             ouvertureDossier={dossier.createdAt.slice(0, 10)}
             juridictionDuDossier={dossier.juridictionSaisie}
-            etapes={etapesEnCours.map((etape) => ({ id: etape.id, libelle: libelleEtape(etape.id) }))}
+            etapes={etapesEnCours.map((etape) => ({
+              id: etape.id,
+              libelle: libelleEtape(etape.id),
+            }))}
             ouvert={planification}
             onFermeture={() => setPlanification(false)}
           />
-          <ModaleCompteRendu dossierId={dossier.id} audience={compteRendu} onFermeture={() => setCompteRendu(null)} />
-          <ModaleAnnulation dossierId={dossier.id} audience={annulation} onFermeture={() => setAnnulation(null)} />
+          <ModaleCompteRendu
+            dossierId={dossier.id}
+            audience={compteRendu}
+            onFermeture={() => setCompteRendu(null)}
+          />
+          <ModaleAnnulation
+            dossierId={dossier.id}
+            audience={annulation}
+            onFermeture={() => setAnnulation(null)}
+          />
         </>
       ) : null}
       {peutEcrireNote ? (
-        <ModaleNoteAvocat dossierId={dossier.id} audience={note} onFermeture={() => setNote(null)} />
+        <ModaleNoteAvocat
+          dossierId={dossier.id}
+          audience={note}
+          onFermeture={() => setNote(null)}
+        />
       ) : null}
     </div>
   );
+}
+
+/**
+ * The internal report of a hearing, or what replaces it: the cancellation reason, the action to
+ * write it once the hearing day has come, or a dash. Nothing when the counsel's report stands in.
+ */
+function CompteRenduInterne({
+  audience,
+  saisiePossible,
+  compteRenduAvocat,
+  onSaisie,
+}: Readonly<{
+  audience: Audience;
+  saisiePossible: boolean;
+  compteRenduAvocat: boolean;
+  onSaisie: () => void;
+}>) {
+  const t = useTranslations("audiences");
+
+  if (audience.compteRendu) {
+    return (
+      <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
+        {audience.compteRendu}
+      </p>
+    );
+  }
+  if (audience.statut === "ANNULEE" && audience.motifAnnulation) {
+    return (
+      <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
+        {t("motifAnnulation", { motif: audience.motifAnnulation })}
+      </p>
+    );
+  }
+  if (saisiePossible) {
+    return (
+      <Button variante="secondaire" taille="sm" onClick={onSaisie}>
+        <FileText size={14} aria-hidden />
+        {t("saisirCompteRendu")}
+      </Button>
+    );
+  }
+  return compteRenduAvocat ? null : "—";
 }
 
 function ModalePlanification({
@@ -245,7 +320,7 @@ function ModalePlanification({
   etapes,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   /** Case opening date, `YYYY-MM-DD`: lower bound of the hearing date (RG-AUD-08). */
   ouvertureDossier: string;
@@ -254,7 +329,7 @@ function ModalePlanification({
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -289,7 +364,9 @@ function ModalePlanification({
     reset,
     setError,
     formState: { errors },
-  } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({ resolver: zodResolver(schema) });
+  } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({
+    resolver: zodResolver(schema),
+  });
 
   // Reset on opening only. Depending on the step list (an array recreated on every parent render)
   // would clear the input on every case reload.
@@ -306,14 +383,14 @@ function ModalePlanification({
       toast.success(t("audiencePlanifiee"));
       setConfirmation(null);
       onFermeture();
-    } catch (erreur) {
+    } catch (error_) {
       // ERR-005: a duplicate is not a failure but a confirmation request (RG-AUD-06).
-      if (erreur instanceof ErreurApi && erreur.demandeConfirmation) {
+      if (error_ instanceof ErreurApi && error_.demandeConfirmation) {
         setConfirmation(audience);
         return;
       }
       setConfirmation(null);
-      setError("root", { message: messageErreur(erreur) });
+      setError("root", { message: messageErreur(error_) });
     }
   }
 
@@ -339,11 +416,19 @@ function ModalePlanification({
       >
         <form onSubmit={soumettre} className="flex flex-col gap-4">
           {errors.root ? (
-            <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+            <p
+              role="alert"
+              className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+            >
               {errors.root.message}
             </p>
           ) : null}
-          <Champ id="audience-etape" label={t("champEtape")} obligatoire erreur={errors.etapeId?.message}>
+          <Champ
+            id="audience-etape"
+            label={t("champEtape")}
+            obligatoire
+            erreur={errors.etapeId?.message}
+          >
             <Select id="audience-etape" enErreur={!!errors.etapeId} {...register("etapeId")}>
               {etapes.map((etape) => (
                 <option key={etape.id} value={etape.id}>
@@ -366,7 +451,12 @@ function ModalePlanification({
               {...register("juridiction")}
             />
           </Champ>
-          <Champ id="audience-date" label={t("champDate")} obligatoire erreur={errors.datePlanifiee?.message}>
+          <Champ
+            id="audience-date"
+            label={t("champDate")}
+            obligatoire
+            erreur={errors.datePlanifiee?.message}
+          >
             <Input
               id="audience-date"
               type="date"
@@ -396,24 +486,30 @@ function ModaleCompteRendu({
   dossierId,
   audience,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   audience: Audience | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const enregistrer = useEnregistrerCompteRendu(dossierId);
 
-  const schema = useMemo(() => z.object({ compteRendu: z.string().trim().min(1, tm("champObligatoire")) }), [tm]);
+  const schema = useMemo(
+    () => z.object({ compteRendu: z.string().trim().min(1, tm("champObligatoire")) }),
+    [tm],
+  );
   const {
     register,
     handleSubmit,
     reset,
     setError,
     formState: { errors },
-  } = useForm<z.input<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { compteRendu: "" } });
+  } = useForm<z.input<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { compteRendu: "" },
+  });
 
   useEffect(() => {
     if (audience) reset({ compteRendu: "" });
@@ -425,8 +521,8 @@ function ModaleCompteRendu({
       await enregistrer.mutateAsync({ audienceId: audience.id, compteRendu: compteRendu.trim() });
       toast.success(t("compteRenduEnregistre"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -449,7 +545,10 @@ function ModaleCompteRendu({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         {errors.root ? (
-          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+          <p
+            role="alert"
+            className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+          >
             {errors.root.message}
           </p>
         ) : null}
@@ -458,9 +557,19 @@ function ModaleCompteRendu({
             <DateValeur valeur={audience.datePlanifiee} />
           </p>
         ) : null}
-        <Champ id="compte-rendu" label={t("champCompteRendu")} obligatoire erreur={errors.compteRendu?.message}>
-          <Textarea id="compte-rendu"
-  placeholder={t("phCompteRendu")} rows={6} enErreur={!!errors.compteRendu} {...register("compteRendu")} />
+        <Champ
+          id="compte-rendu"
+          label={t("champCompteRendu")}
+          obligatoire
+          erreur={errors.compteRendu?.message}
+        >
+          <Textarea
+            id="compte-rendu"
+            placeholder={t("phCompteRendu")}
+            rows={6}
+            enErreur={!!errors.compteRendu}
+            {...register("compteRendu")}
+          />
         </Champ>
       </form>
     </Dialog>
@@ -472,11 +581,11 @@ function ModaleAnnulation({
   dossierId,
   audience,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   audience: Audience | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -492,7 +601,10 @@ function ModaleAnnulation({
     reset,
     setError,
     formState: { errors },
-  } = useForm<z.input<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { motif: "" } });
+  } = useForm<z.input<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { motif: "" },
+  });
 
   useEffect(() => {
     if (audience) reset({ motif: "" });
@@ -504,8 +616,8 @@ function ModaleAnnulation({
       await annuler.mutateAsync({ audienceId: audience.id, motif: motif.trim() });
       toast.success(t("audienceAnnulee"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -528,7 +640,10 @@ function ModaleAnnulation({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         {errors.root ? (
-          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+          <p
+            role="alert"
+            className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+          >
             {errors.root.message}
           </p>
         ) : null}
@@ -537,9 +652,20 @@ function ModaleAnnulation({
             <DateValeur valeur={audience.datePlanifiee} />
           </p>
         ) : null}
-        <Champ id="annulation-motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="annulation-motif"
-  placeholder={t("phAnnulationMotif")} rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
+        <Champ
+          id="annulation-motif"
+          label={t("champMotif")}
+          obligatoire
+          erreur={errors.motif?.message}
+        >
+          <Textarea
+            id="annulation-motif"
+            placeholder={t("phAnnulationMotif")}
+            rows={4}
+            maxLength={1000}
+            enErreur={!!errors.motif}
+            {...register("motif")}
+          />
         </Champ>
       </form>
     </Dialog>
@@ -558,11 +684,11 @@ function ModaleNoteAvocat({
   dossierId,
   audience,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   audience: Audience | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const modifier = useModifierNoteAvocat(dossierId);
@@ -609,7 +735,10 @@ function ModaleNoteAvocat({
     >
       <div className="flex flex-col gap-4">
         {erreur ? (
-          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+          <p
+            role="alert"
+            className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+          >
             {erreur}
           </p>
         ) : null}

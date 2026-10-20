@@ -9,12 +9,12 @@ export async function UserNav({
   prenom,
   email,
   roles,
-}: {
+}: Readonly<{
   nom?: string | null;
   prenom?: string | null;
   email?: string | null;
   roles: readonly string[];
-}) {
+}>) {
   const t = await getTranslations("connexion");
   const tc = await getTranslations("commun");
   const tr = await getTranslations("roles");

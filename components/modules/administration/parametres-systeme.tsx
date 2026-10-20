@@ -28,7 +28,7 @@ import type { ConfigurationSysteme } from "@/types/domaine";
  * Values are saved one by one, never in bulk: each takes effect immediately, and a bulk save would
  * hide which one failed.
  */
-export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
+export function ParametresSysteme({ modifiable }: Readonly<{ modifiable: boolean }>) {
   const t = useTranslations("configurations");
   const requete = useConfigurations();
 
@@ -55,11 +55,11 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
       <header className="flex flex-col gap-1">
         <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
-        {!modifiable ? (
+        {modifiable ? null : (
           <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">
             {t("lectureSeule")}
           </p>
-        ) : null}
+        )}
       </header>
 
       {parametres.length === 0 ? (
@@ -82,10 +82,10 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
 function LigneParametre({
   configuration,
   modifiable,
-}: {
+}: Readonly<{
   configuration: ConfigurationSysteme;
   modifiable: boolean;
-}) {
+}>) {
   const t = useTranslations("configurations");
   const tr = useTranslations("referentiels");
   const td = useTranslations("domaine");
@@ -196,12 +196,12 @@ function LigneParametre({
           */}
           <span>
             {configuration.dateModification
-              ? configuration.dernierAuteurId !== null
-                ? t("modifieeParAuteur", {
+              ? configuration.dernierAuteurId === null
+                ? t("modifiee", { date: new Date(configuration.dateModification).toLocaleDateString() })
+                : t("modifieeParAuteur", {
                     date: new Date(configuration.dateModification).toLocaleDateString(),
                     auteur: nomUtilisateur(configuration.dernierAuteurId),
                   })
-                : t("modifiee", { date: new Date(configuration.dateModification).toLocaleDateString() })
               : t("jamaisModifiee")}
           </span>
         </p>

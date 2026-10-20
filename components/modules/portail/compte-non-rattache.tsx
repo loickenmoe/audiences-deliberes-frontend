@@ -12,7 +12,7 @@ import { EtatVide } from "@/components/global";
  * they have an account, and the lawyer cannot fix this themselves. The screen states what is missing,
  * that it is not their fault, and whom to contact - like the publication access restriction (ERR-009).
  */
-export function CompteAvocatNonRattache({ titre }: { titre?: string }) {
+export function CompteAvocatNonRattache({ titre }: Readonly<{ titre?: string }>) {
   const t = useTranslations("portail");
 
   return (

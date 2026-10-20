@@ -28,7 +28,7 @@ const VIDE: Record<CleVuePublications, string> = {
  * arrival; legal officers, the DJ and the DJA see only validated publications, the only ones they can
  * read (US 5.4). The list shows metadata only: access restrictions apply when opening, not here.
  */
-export function FilePublications({ roles }: { roles: readonly string[] }) {
+export function FilePublications({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("publications");
   const td = useTranslations("domaine");
   const libelle = useLibellePublication();

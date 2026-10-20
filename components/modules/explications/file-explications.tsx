@@ -23,7 +23,7 @@ import type { DemandeExplication } from "@/types/domaine";
  * parameter, otherwise a lawyer could request the whole list.
  * Pending (unanswered) requests come first: they are what someone has to act on.
  */
-export function FileExplications({ roles }: { roles: string[] }) {
+export function FileExplications({ roles }: Readonly<{ roles: string[] }>) {
   const t = useTranslations("explications");
   const tc = useTranslations("commun");
   const { page, definirPage } = useFiltresUrl({});

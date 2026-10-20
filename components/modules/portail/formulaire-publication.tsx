@@ -285,11 +285,11 @@ function BoutonRelire({
   fichier,
   onOuverture,
   libelle,
-}: {
+}: Readonly<{
   fichier: File | null;
   onOuverture: () => void;
   libelle: string;
-}) {
+}>) {
   if (!fichier) return null;
   return (
     <Button

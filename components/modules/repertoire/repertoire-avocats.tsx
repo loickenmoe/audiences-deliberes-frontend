@@ -19,7 +19,7 @@ const DEFAUTS = { nom: "" };
  * whom to entrust a case file to. Load counts active case files; performance is the share of
  * favorable deliberations on their case files (0% until one is delivered).
  */
-export function RepertoireAvocats({ roles }: { roles: string[] }) {
+export function RepertoireAvocats({ roles }: Readonly<{ roles: string[] }>) {
   const t = useTranslations("repertoire");
   const { filtres, definirFiltre } = useFiltresUrl(DEFAUTS);
   const requete = useRepertoire(filtres.nom);
@@ -118,7 +118,7 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
         The detail opens below the table rather than in a modal: it has a period picker and downloads.
         `key` forces a remount when the lawyer changes, otherwise the previous period and report would remain.
       */}
-      {avocatOuvert !== null ? (
+      {avocatOuvert === null ? null : (
         <div className="flex flex-col gap-2">
           <Button variante="discrete" className="self-start" onClick={() => setAvocatOuvert(null)}>
             {t("fermerActivite")}
@@ -129,7 +129,7 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
             nomAffiche={avocatOuvert.nom}
           />
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

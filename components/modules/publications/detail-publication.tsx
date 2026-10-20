@@ -39,7 +39,7 @@ const MOTIF_MAX = 255;
  * An access restriction naming another legal officer returns 403 `ERR-009`: shown as restricted
  * access, not as a failure. An unvalidated publication returns 404 to anyone but the Assistant.
  */
-export function DetailPublication({ publicationId, roles }: { publicationId: number; roles: readonly string[] }) {
+export function DetailPublication({ publicationId, roles }: Readonly<{ publicationId: number; roles: readonly string[] }>) {
   const t = useTranslations("publications");
   const td = useTranslations("domaine");
   const libelle = useLibellePublication();
@@ -184,7 +184,7 @@ function Retour() {
  * Hearing report: acknowledge receipt only (amended RG-INT-06). It is readable by the whole Legal
  * Department from submission; it is contested through a correspondence, and the server refuses a rejection.
  */
-function PanneauValidation({ publication }: { publication: Publication }) {
+function PanneauValidation({ publication }: Readonly<{ publication: Publication }>) {
   const t = useTranslations("publications");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -295,7 +295,7 @@ function PanneauValidation({ publication }: { publication: Publication }) {
  * UC-INT-08: legal officers' comments, read by all internal profiles; the comment form for a legal
  * officer; the single correspondence for the DJ and the DJA.
  */
-function PanneauEchanges({ publication, roles }: { publication: Publication; roles: readonly string[] }) {
+function PanneauEchanges({ publication, roles }: Readonly<{ publication: Publication; roles: readonly string[] }>) {
   const t = useTranslations("publications");
   const tm = useTranslations("metier");
   const commenter = useCommenterPublication();

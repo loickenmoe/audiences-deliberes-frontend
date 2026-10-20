@@ -29,11 +29,19 @@ import { messageErreur } from "@/lib/api/errors";
 import { aujourdhui, demain } from "@/lib/calendrier";
 import { peut } from "@/lib/rbac";
 import { formaterDate } from "@/lib/utils";
-import type { Delibere, Dossier } from "@/types/domaine";
+import type { Delibere, Dossier, Prorogation, Recours } from "@/types/domaine";
 import { ResultatDelibere, type EtatDelibere } from "@/types/enums";
 
-const TON_ETAT: Record<EtatDelibere, TonStatut> = { EN_ATTENTE: "attention", VIDE: "info", RABATTU: "neutre" };
-const TON_RESULTAT: Record<ResultatDelibere, TonStatut> = { FAVORABLE: "succes", DEFAVORABLE: "danger", MIXTE: "attention" };
+const TON_ETAT: Record<EtatDelibere, TonStatut> = {
+  EN_ATTENTE: "attention",
+  VIDE: "info",
+  RABATTU: "neutre",
+};
+const TON_RESULTAT: Record<ResultatDelibere, TonStatut> = {
+  FAVORABLE: "succes",
+  DEFAVORABLE: "danger",
+  MIXTE: "attention",
+};
 
 type Action = "vider" | "proroger" | "rabattre";
 
@@ -46,7 +54,10 @@ type Action = "vider" | "proroger" | "rabattre";
  * **closed**. Then come the certified copy and the appeal deadline.
  * The screen only offers the actions valid in each state; the backend remains the authority.
  */
-export function OngletDeliberes({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletDeliberes({
+  dossier,
+  roles,
+}: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("deliberes");
   const tdom = useTranslations("domaine");
   const requete = useDeliberesDossier(dossier.id);
@@ -68,11 +79,15 @@ export function OngletDeliberes({ dossier, roles }: { dossier: Dossier; roles: r
 
   // At most one pending deliberation per step: a step that already has one cannot be put under
   // advisement again; it is extended, reopened, or the decision is recorded.
-  const etapesEnAttente = new Set(deliberes.filter((d) => d.etat === "EN_ATTENTE").map((d) => d.etapeId));
+  const etapesEnAttente = new Set(
+    deliberes.filter((d) => d.etat === "EN_ATTENTE").map((d) => d.etapeId),
+  );
   const etapesDisponibles = dossier.etapes
     .filter((etape) => etape.statutCycleVie === "EN_DELIBERE" && !etapesEnAttente.has(etape.id))
     .map((etape) => ({ id: etape.id, libelle: libelleEtape(etape.id) }));
-  const aucuneEtapeEnDelibere = !dossier.etapes.some((etape) => etape.statutCycleVie === "EN_DELIBERE");
+  const aucuneEtapeEnDelibere = !dossier.etapes.some(
+    (etape) => etape.statutCycleVie === "EN_DELIBERE",
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -83,7 +98,9 @@ export function OngletDeliberes({ dossier, roles }: { dossier: Dossier; roles: r
             {t("mettreEnDelibere")}
           </Button>
           {aucuneEtapeEnDelibere ? (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneEtapeEnDelibere")}</p>
+            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+              {t("aucuneEtapeEnDelibere")}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -98,7 +115,9 @@ export function OngletDeliberes({ dossier, roles }: { dossier: Dossier; roles: r
               dossierId={dossier.id}
               delibere={delibere}
               libelleEtape={libelleEtape(delibere.etapeId)}
-              actionsPossibles={peutGerer && delibere.etat === "EN_ATTENTE" && etapeEnDelibere(delibere.etapeId)}
+              actionsPossibles={
+                peutGerer && delibere.etat === "EN_ATTENTE" && etapeEnDelibere(delibere.etapeId)
+              }
               peutGerer={peutGerer}
               onAction={(type) => setAction({ type, delibere })}
               onHistorique={() => setHistorique(delibere)}
@@ -145,7 +164,7 @@ function CarteDelibere({
   peutGerer,
   onAction,
   onHistorique,
-}: {
+}: Readonly<{
   dossierId: number;
   delibere: Delibere;
   libelleEtape: string;
@@ -153,38 +172,29 @@ function CarteDelibere({
   peutGerer: boolean;
   onAction: (type: Action) => void;
   onHistorique: () => void;
-}) {
+}>) {
   const t = useTranslations("deliberes");
   const tdom = useTranslations("domaine");
   const langue = useLocale() as Langue;
-  const expedition = useModifierExpedition(dossierId);
 
   const date = formaterDate(delibere.dateDeliberee, langue);
-  const entete =
-    delibere.etat === "EN_ATTENTE"
-      ? t("annonceAu", { date })
-      : delibere.etat === "VIDE"
-        ? t("renduLe", { date })
-        : t("rabattuLe", { date: formaterDate(delibere.dateRabattement, langue) });
-
-  async function basculerExpedition() {
-    const statut = delibere.statutExpedition === "LEVEE" ? "A_LEVER" : "LEVEE";
-    try {
-      await expedition.mutateAsync({ delibereId: delibere.id, statut });
-      toast.success(t("expeditionMiseAJour"));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
-    }
-  }
+  let entete: string;
+  if (delibere.etat === "EN_ATTENTE") entete = t("annonceAu", { date });
+  else if (delibere.etat === "VIDE") entete = t("renduLe", { date });
+  else entete = t("rabattuLe", { date: formaterDate(delibere.dateRabattement, langue) });
 
   return (
     <li className="rounded border border-bordure bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <p className="text-[length:var(--taille-xs)] uppercase tracking-[0.06em] text-texte-tertiaire">{libelleEtape}</p>
+          <p className="text-[length:var(--taille-xs)] uppercase tracking-[0.06em] text-texte-tertiaire">
+            {libelleEtape}
+          </p>
           <p className="font-medium">{entete}</p>
           <span className="flex flex-wrap gap-1">
-            <StatutChip ton={TON_ETAT[delibere.etat]}>{tdom(`EtatDelibere.${delibere.etat}` as never)}</StatutChip>
+            <StatutChip ton={TON_ETAT[delibere.etat]}>
+              {tdom(`EtatDelibere.${delibere.etat}` as never)}
+            </StatutChip>
             {delibere.resultat ? (
               <StatutChip ton={TON_RESULTAT[delibere.resultat]}>
                 {tdom(`ResultatDelibere.${delibere.resultat}` as never)}
@@ -194,13 +204,27 @@ function CarteDelibere({
         </div>
         {actionsPossibles ? (
           <div className="flex flex-wrap gap-2">
-            <Button taille="sm" onClick={() => onAction("vider")} aria-label={t("viderAria", { date })}>
+            <Button
+              taille="sm"
+              onClick={() => onAction("vider")}
+              aria-label={t("viderAria", { date })}
+            >
               {t("vider")}
             </Button>
-            <Button variante="secondaire" taille="sm" onClick={() => onAction("proroger")} aria-label={t("prorogerAria", { date })}>
+            <Button
+              variante="secondaire"
+              taille="sm"
+              onClick={() => onAction("proroger")}
+              aria-label={t("prorogerAria", { date })}
+            >
               {t("proroger")}
             </Button>
-            <Button variante="secondaire" taille="sm" onClick={() => onAction("rabattre")} aria-label={t("rabattreAria", { date })}>
+            <Button
+              variante="secondaire"
+              taille="sm"
+              onClick={() => onAction("rabattre")}
+              aria-label={t("rabattreAria", { date })}
+            >
               {t("rabattre")}
             </Button>
           </div>
@@ -222,49 +246,83 @@ function CarteDelibere({
       ) : null}
 
       {delibere.etat === "RABATTU" && delibere.motifRabattement ? (
-        <p className="mt-2 text-[length:var(--taille-sm)]">{t("motif", { motif: delibere.motifRabattement })}</p>
+        <p className="mt-2 text-[length:var(--taille-sm)]">
+          {t("motif", { motif: delibere.motifRabattement })}
+        </p>
       ) : null}
 
       {delibere.etat === "VIDE" ? (
-        <div className="mt-3 grid gap-4 border-t border-bordure pt-3 sm:grid-cols-2">
-          <div className="flex flex-col items-start gap-1.5">
-            <p className="text-[length:var(--taille-xs)] text-texte-secondaire">{t("expedition")}</p>
-            {delibere.statutExpedition ? (
-              <StatutChip ton={delibere.statutExpedition === "LEVEE" ? "succes" : "attention"}>
-                {tdom(`StatutExpedition.${delibere.statutExpedition}` as never)}
-              </StatutChip>
-            ) : null}
-            {peutGerer ? (
-              <Button variante="secondaire" taille="sm" onClick={() => void basculerExpedition()} disabled={expedition.isPending}>
-                {delibere.statutExpedition === "LEVEE" ? t("remettreALever") : t("marquerLevee")}
-              </Button>
-            ) : null}
-          </div>
-          {delibere.resultat === "FAVORABLE" ? (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucunRecours")}</p>
-          ) : (
-            <PanneauRecours delibere={delibere} peutConsulter={peutGerer} />
-          )}
-        </div>
+        <SuiviDecision dossierId={dossierId} delibere={delibere} peutGerer={peutGerer} />
       ) : null}
     </li>
   );
 }
 
+/** A decided deliberation: the certified copy, then the appeal deadline unless the outcome is favourable. */
+function SuiviDecision({
+  dossierId,
+  delibere,
+  peutGerer,
+}: Readonly<{ dossierId: number; delibere: Delibere; peutGerer: boolean }>) {
+  const t = useTranslations("deliberes");
+  const tdom = useTranslations("domaine");
+  const expedition = useModifierExpedition(dossierId);
+
+  async function basculerExpedition() {
+    const statut = delibere.statutExpedition === "LEVEE" ? "A_LEVER" : "LEVEE";
+    try {
+      await expedition.mutateAsync({ delibereId: delibere.id, statut });
+      toast.success(t("expeditionMiseAJour"));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
+    }
+  }
+
+  return (
+    <div className="mt-3 grid gap-4 border-t border-bordure pt-3 sm:grid-cols-2">
+      <div className="flex flex-col items-start gap-1.5">
+        <p className="text-[length:var(--taille-xs)] text-texte-secondaire">{t("expedition")}</p>
+        {delibere.statutExpedition ? (
+          <StatutChip ton={delibere.statutExpedition === "LEVEE" ? "succes" : "attention"}>
+            {tdom(`StatutExpedition.${delibere.statutExpedition}` as never)}
+          </StatutChip>
+        ) : null}
+        {peutGerer ? (
+          <Button
+            variante="secondaire"
+            taille="sm"
+            onClick={() => void basculerExpedition()}
+            disabled={expedition.isPending}
+          >
+            {delibere.statutExpedition === "LEVEE" ? t("remettreALever") : t("marquerLevee")}
+          </Button>
+        ) : null}
+      </div>
+      {delibere.resultat === "FAVORABLE" ? (
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucunRecours")}</p>
+      ) : (
+        <PanneauRecours delibere={delibere} peutConsulter={peutGerer} />
+      )}
+    </div>
+  );
+}
+
+/** Where the appeal stands; `null` until it is read. */
+function situationRecours(recours: Recours | undefined) {
+  if (!recours) return null;
+  if (recours.recoursExerce) return "recoursExerce";
+  if (recours.cloture) return "recoursCloture";
+  return recours.delaiExpire ? "recoursExpire" : "recoursOuvert";
+}
+
 /** Screen 27 - appeal deadline tracking. Reading it is reserved to the lawyer. */
-function PanneauRecours({ delibere, peutConsulter }: { delibere: Delibere; peutConsulter: boolean }) {
+function PanneauRecours({
+  delibere,
+  peutConsulter,
+}: Readonly<{ delibere: Delibere; peutConsulter: boolean }>) {
   const t = useTranslations("deliberes");
   const requete = useRecours(delibere.id, peutConsulter);
-  const recours = requete.data;
-  const situation = !recours
-    ? null
-    : recours.recoursExerce
-      ? t("recoursExerce")
-      : recours.cloture
-        ? t("recoursCloture")
-        : recours.delaiExpire
-          ? t("recoursExpire")
-          : t("recoursOuvert");
+  const cle = requete.error ? null : situationRecours(requete.data);
 
   return (
     <section aria-label={t("recoursTitre")} className="flex flex-col gap-1">
@@ -276,8 +334,9 @@ function PanneauRecours({ delibere, peutConsulter }: { delibere: Delibere; peutC
         <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
           {messageErreur(requete.error)}
         </p>
-      ) : situation ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{situation}</p>
+      ) : null}
+      {cle ? (
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t(cle)}</p>
       ) : null}
     </section>
   );
@@ -294,19 +353,24 @@ function ChampsResultat({
   champEcheance,
   erreurResultat,
   erreurEcheance,
-}: {
+}: Readonly<{
   prefixe: string;
   resultat: string | undefined;
   champResultat: UseFormRegisterReturn;
   champEcheance: UseFormRegisterReturn;
   erreurResultat?: string;
   erreurEcheance?: string;
-}) {
+}>) {
   const t = useTranslations("deliberes");
   const tdom = useTranslations("domaine");
   return (
     <>
-      <Champ id={`${prefixe}-resultat`} label={t("champResultat")} obligatoire erreur={erreurResultat}>
+      <Champ
+        id={`${prefixe}-resultat`}
+        label={t("champResultat")}
+        obligatoire
+        erreur={erreurResultat}
+      >
         <Select id={`${prefixe}-resultat`} enErreur={!!erreurResultat} {...champResultat}>
           <option value="">{t("choisirResultat")}</option>
           {ResultatDelibere.map((valeur) => (
@@ -317,8 +381,18 @@ function ChampsResultat({
         </Select>
       </Champ>
       {resultat && resultat !== "FAVORABLE" ? (
-        <Champ id={`${prefixe}-echeance`} label={t("champEcheance")} obligatoire erreur={erreurEcheance}>
-          <Input id={`${prefixe}-echeance`} type="datetime-local" enErreur={!!erreurEcheance} {...champEcheance} />
+        <Champ
+          id={`${prefixe}-echeance`}
+          label={t("champEcheance")}
+          obligatoire
+          erreur={erreurEcheance}
+        >
+          <Input
+            id={`${prefixe}-echeance`}
+            type="datetime-local"
+            enErreur={!!erreurEcheance}
+            {...champEcheance}
+          />
           <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("aideEcheance")}</p>
         </Champ>
       ) : null}
@@ -336,7 +410,11 @@ function useSchemaResultat() {
           if (!valeurs.resultat) {
             ctx.addIssue({ code: "custom", path: ["resultat"], message: tm("champObligatoire") });
           } else if (valeurs.resultat !== "FAVORABLE" && !valeurs.dateEcheanceRecours) {
-            ctx.addIssue({ code: "custom", path: ["dateEcheanceRecours"], message: tm("champObligatoire") });
+            ctx.addIssue({
+              code: "custom",
+              path: ["dateEcheanceRecours"],
+              message: tm("champObligatoire"),
+            });
           }
         }),
     [tm],
@@ -351,9 +429,12 @@ function corpsResultat(resultat: string, dateEcheanceRecours: string) {
   return valeur === "FAVORABLE" ? { resultat: valeur } : { resultat: valeur, dateEcheanceRecours };
 }
 
-function BandeauErreur({ message }: { message?: string }) {
+function BandeauErreur({ message }: Readonly<{ message?: string }>) {
   return message ? (
-    <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+    <p
+      role="alert"
+      className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+    >
       {message}
     </p>
   ) : null;
@@ -364,12 +445,12 @@ function ModaleMiseEnDelibere({
   etapes,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("deliberes");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -391,7 +472,11 @@ function ModaleMiseEnDelibere({
           if (!valeurs.resultat) {
             ctx.addIssue({ code: "custom", path: ["resultat"], message: tm("champObligatoire") });
           } else if (valeurs.resultat !== "FAVORABLE" && !valeurs.dateEcheanceRecours) {
-            ctx.addIssue({ code: "custom", path: ["dateEcheanceRecours"], message: tm("champObligatoire") });
+            ctx.addIssue({
+              code: "custom",
+              path: ["dateEcheanceRecours"],
+              message: tm("champObligatoire"),
+            });
           }
         }),
     [tm],
@@ -404,12 +489,20 @@ function ModaleMiseEnDelibere({
     setError,
     control,
     formState: { errors },
-  } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({ resolver: zodResolver(schema) });
+  } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({
+    resolver: zodResolver(schema),
+  });
 
   // Reset on opening only (primitive dependencies, so parent re-renders do not clear the input).
   useEffect(() => {
     if (ouvert) {
-      reset({ etapeId: etapeParDefaut, dateDeliberee: "", dejaRendu: false, resultat: "", dateEcheanceRecours: "" });
+      reset({
+        etapeId: etapeParDefaut,
+        dateDeliberee: "",
+        dejaRendu: false,
+        resultat: "",
+        dateEcheanceRecours: "",
+      });
     }
   }, [ouvert, etapeParDefaut, reset]);
 
@@ -425,8 +518,8 @@ function ModaleMiseEnDelibere({
       });
       toast.success(valeurs.dejaRendu ? t("delibereEnregistre") : t("miseEnDelibereEnregistree"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -449,7 +542,12 @@ function ModaleMiseEnDelibere({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         <BandeauErreur message={errors.root?.message} />
-        <Champ id="delibere-etape" label={t("champEtape")} obligatoire erreur={errors.etapeId?.message}>
+        <Champ
+          id="delibere-etape"
+          label={t("champEtape")}
+          obligatoire
+          erreur={errors.etapeId?.message}
+        >
           <Select id="delibere-etape" enErreur={!!errors.etapeId} {...register("etapeId")}>
             {etapes.map((etape) => (
               <option key={etape.id} value={etape.id}>
@@ -464,7 +562,12 @@ function ModaleMiseEnDelibere({
           obligatoire
           erreur={errors.dateDeliberee?.message}
         >
-          <Input id="delibere-date" type="date" enErreur={!!errors.dateDeliberee} {...register("dateDeliberee")} />
+          <Input
+            id="delibere-date"
+            type="date"
+            enErreur={!!errors.dateDeliberee}
+            {...register("dateDeliberee")}
+          />
         </Champ>
         <label className="flex items-center gap-2 text-[length:var(--taille-sm)]">
           <input type="checkbox" {...register("dejaRendu")} />
@@ -489,11 +592,11 @@ function ModaleVider({
   dossierId,
   delibere,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   delibere: Delibere | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("deliberes");
   const tc = useTranslations("commun");
   const vider = useViderDelibere(dossierId);
@@ -524,8 +627,8 @@ function ModaleVider({
       });
       toast.success(t("delibereVide"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -570,11 +673,11 @@ function ModaleProroger({
   dossierId,
   delibere,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   delibere: Delibere | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("deliberes");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -585,9 +688,12 @@ function ModaleProroger({
     () =>
       z.object({
         // Comparing `YYYY-MM-DD` strings: lexical order is chronological order.
-        date: z.string().min(1, tm("champObligatoire")).refine((date) => date >= demain(), {
-          message: tm("champObligatoire"),
-        }),
+        date: z
+          .string()
+          .min(1, tm("champObligatoire"))
+          .refine((date) => date >= demain(), {
+            message: tm("champObligatoire"),
+          }),
         motif: z.string(),
       }),
     [tm],
@@ -620,8 +726,8 @@ function ModaleProroger({
         toast.success(t("delibereProroge", { date: nouvelleDate }));
       }
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -644,12 +750,27 @@ function ModaleProroger({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         <BandeauErreur message={errors.root?.message} />
-        <Champ id="prorogation-date" label={t("champNouvelleDate")} obligatoire erreur={errors.date?.message}>
-          <Input id="prorogation-date" type="date" min={demain()} enErreur={!!errors.date} {...register("date")} />
+        <Champ
+          id="prorogation-date"
+          label={t("champNouvelleDate")}
+          obligatoire
+          erreur={errors.date?.message}
+        >
+          <Input
+            id="prorogation-date"
+            type="date"
+            min={demain()}
+            enErreur={!!errors.date}
+            {...register("date")}
+          />
         </Champ>
         <Champ id="prorogation-motif" label={t("champMotifFacultatif")}>
-          <Input id="prorogation-motif"
-  placeholder={t("phProrogationMotif")} maxLength={255} {...register("motif")} />
+          <Input
+            id="prorogation-motif"
+            placeholder={t("phProrogationMotif")}
+            maxLength={255}
+            {...register("motif")}
+          />
         </Champ>
       </form>
     </Dialog>
@@ -660,11 +781,11 @@ function ModaleRabattre({
   dossierId,
   delibere,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   delibere: Delibere | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("deliberes");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -697,8 +818,8 @@ function ModaleRabattre({
       await rabattre.mutateAsync({ delibereId: delibere.id, corps: { date, motif: motif.trim() } });
       toast.success(t("delibereRabattu"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -721,12 +842,28 @@ function ModaleRabattre({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         <BandeauErreur message={errors.root?.message} />
-        <Champ id="rabattement-date" label={t("champDateRabattement")} obligatoire erreur={errors.date?.message}>
+        <Champ
+          id="rabattement-date"
+          label={t("champDateRabattement")}
+          obligatoire
+          erreur={errors.date?.message}
+        >
           <Input id="rabattement-date" type="date" enErreur={!!errors.date} {...register("date")} />
         </Champ>
-        <Champ id="rabattement-motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="rabattement-motif"
-  placeholder={t("phRabattementMotif")} rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
+        <Champ
+          id="rabattement-motif"
+          label={t("champMotif")}
+          obligatoire
+          erreur={errors.motif?.message}
+        >
+          <Textarea
+            id="rabattement-motif"
+            placeholder={t("phRabattementMotif")}
+            rows={4}
+            maxLength={1000}
+            enErreur={!!errors.motif}
+            {...register("motif")}
+          />
         </Champ>
       </form>
     </Dialog>
@@ -734,11 +871,13 @@ function ModaleRabattre({
 }
 
 /** Extension history (FR-DEL-04 criterion 2), loaded only when opened. */
-function ModaleProrogations({ delibere, onFermeture }: { delibere: Delibere | null; onFermeture: () => void }) {
+function ModaleProrogations({
+  delibere,
+  onFermeture,
+}: Readonly<{ delibere: Delibere | null; onFermeture: () => void }>) {
   const t = useTranslations("deliberes");
   const tc = useTranslations("commun");
   const requete = useProrogations(delibere?.id ?? null);
-  const prorogations = requete.data ?? [];
 
   return (
     <Dialog
@@ -751,45 +890,72 @@ function ModaleProrogations({ delibere, onFermeture }: { delibere: Delibere | nu
         </Button>
       }
     >
-      {requete.isLoading ? (
-        <EtatChargement lignes={3} />
-      ) : requete.error ? (
-        <EtatErreur message={messageErreur(requete.error)} />
-      ) : prorogations.length === 0 ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucuneProrogation")}</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="py-2 pr-3 font-medium">{t("colonneNumero")}</th>
-                <th scope="col" className="py-2 pr-3 font-medium">{t("colonneDate")}</th>
-                <th scope="col" className="py-2 pr-3 font-medium">{t("colonneMotif")}</th>
-                <th scope="col" className="py-2 font-medium">{t("colonneEnregistree")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {prorogations.map((prorogation) => (
-                <tr key={prorogation.id}>
-                  <td className="py-2 pr-3">
-                    <span className="flex items-center gap-1">
-                      {prorogation.compteur}
-                      {prorogation.alerte ? <StatutChip ton="attention">{t("auDelaDuSeuil")}</StatutChip> : null}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3 font-medium">
-                    <DateValeur valeur={prorogation.date} />
-                  </td>
-                  <td className="py-2 pr-3">{prorogation.motif ?? "—"}</td>
-                  <td className="py-2">
-                    <DateHeureValeur valeur={prorogation.createdAt} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ContenuProrogations
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        prorogations={requete.data ?? []}
+      />
     </Dialog>
+  );
+}
+
+function ContenuProrogations({
+  enChargement,
+  erreur,
+  prorogations,
+}: Readonly<{ enChargement: boolean; erreur: unknown; prorogations: readonly Prorogation[] }>) {
+  const t = useTranslations("deliberes");
+
+  if (enChargement) return <EtatChargement lignes={3} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (prorogations.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">
+        {t("aucuneProrogation")}
+      </p>
+    );
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="py-2 pr-3 font-medium">
+              {t("colonneNumero")}
+            </th>
+            <th scope="col" className="py-2 pr-3 font-medium">
+              {t("colonneDate")}
+            </th>
+            <th scope="col" className="py-2 pr-3 font-medium">
+              {t("colonneMotif")}
+            </th>
+            <th scope="col" className="py-2 font-medium">
+              {t("colonneEnregistree")}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {prorogations.map((prorogation) => (
+            <tr key={prorogation.id}>
+              <td className="py-2 pr-3">
+                <span className="flex items-center gap-1">
+                  {prorogation.compteur}
+                  {prorogation.alerte ? (
+                    <StatutChip ton="attention">{t("auDelaDuSeuil")}</StatutChip>
+                  ) : null}
+                </span>
+              </td>
+              <td className="py-2 pr-3 font-medium">
+                <DateValeur valeur={prorogation.date} />
+              </td>
+              <td className="py-2 pr-3">{prorogation.motif ?? "—"}</td>
+              <td className="py-2">
+                <DateHeureValeur valeur={prorogation.createdAt} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

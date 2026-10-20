@@ -21,7 +21,7 @@ const DEFAUTS = { motCle: "", natureDecision: "", juridiction: "" };
  * partial and case-insensitive; filters live in the URL. Legal officers can also archive a decision
  * not linked to any case file here.
  */
-export function BaseJurisprudentielle({ roles }: { roles: readonly string[] }) {
+export function BaseJurisprudentielle({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("jurisprudence");
   const { filtres, page, definirFiltre, definirPage, effacer, nbFiltresActifs } = useFiltresUrl(DEFAUTS);
   const requete = useJurisprudences({ ...filtres, page });

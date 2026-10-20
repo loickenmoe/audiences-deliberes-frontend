@@ -64,8 +64,8 @@ export function FileSuppressions() {
     try {
       await decider.mutateAsync({ documentId: approbation.documentId });
       toast.success(t("approuvee", { nom: approbation.documentNom }));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setApprobation(null);
     }
@@ -140,7 +140,7 @@ export function FileSuppressions() {
                         {demande.referenceDossier}
                       </Link>
                     </td>
-                    <td className="px-4 py-2">{demande.demandeurId !== null ? nomUtilisateur(demande.demandeurId) : "—"}</td>
+                    <td className="px-4 py-2">{demande.demandeurId === null ? "—" : nomUtilisateur(demande.demandeurId)}</td>
                     <td className="px-4 py-2">
                       <span className="flex flex-col gap-0.5">
                         <DateHeureValeur valeur={demande.dateDemande} />
@@ -156,7 +156,7 @@ export function FileSuppressions() {
                         <StatutChip ton={TON[demande.statut]}>{t(`statut.${demande.statut}` as never)}</StatutChip>
                         {!enAttente && demande.dateDecision ? (
                           <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-                            {demande.valideParId !== null ? `${nomUtilisateur(demande.valideParId)} · ` : ""}
+                            {demande.valideParId === null ? "" : `${nomUtilisateur(demande.valideParId)} · `}
                             <DateHeureValeur valeur={demande.dateDecision} />
                           </span>
                         ) : null}
@@ -239,7 +239,7 @@ export function FileSuppressions() {
 }
 
 /** Rejection with a reason (UC-GED-03 alt. 9-a): the document is kept and the legal officer receives the reason. */
-function ModaleRejet({ demande, onFermeture }: { demande: DemandeSuppression | null; onFermeture: () => void }) {
+function ModaleRejet({ demande, onFermeture }: Readonly<{ demande: DemandeSuppression | null; onFermeture: () => void }>) {
   const t = useTranslations("suppressions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

@@ -26,11 +26,11 @@ export function ModaleArchivage({
   dossierId,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId?: number;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("jurisprudence");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

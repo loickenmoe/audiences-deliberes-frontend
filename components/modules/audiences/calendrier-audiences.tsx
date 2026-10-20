@@ -54,8 +54,8 @@ export function CalendrierAudiences() {
       // File name built here: the Content-Disposition header is not exposed through CORS, and a
       // dated name is more useful than "calendrier.pdf" when archiving several.
       telechargerBlob(contenu, `calendrier-${periode.toLowerCase()}-${dateDebut}.${format === "PDF" ? "pdf" : "xlsx"}`);
-    } catch (erreur) {
-      setErreurExport(messageErreur(erreur));
+    } catch (error_) {
+      setErreurExport(messageErreur(error_));
     } finally {
       setExportEnCours(null);
     }

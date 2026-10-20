@@ -9,7 +9,7 @@ import { useLibelles } from "@/hooks/useLibelles";
 import type { Dossier } from "@/types/domaine";
 
 /** Label / value pair. A missing value is shown as "—" rather than an ambiguous blank. */
-function Donnee({ libelle, children }: { libelle: string; children: ReactNode }) {
+function Donnee({ libelle, children }: Readonly<{ libelle: string; children: ReactNode }>) {
   const vide = children === null || children === undefined || children === "";
   return (
     <div className="flex flex-col gap-0.5">
@@ -19,16 +19,62 @@ function Donnee({ libelle, children }: { libelle: string; children: ReactNode })
   );
 }
 
+/** Due diligence: current state, removal, or none. */
+function Sensibilite({ dossier }: Readonly<{ dossier: Dossier }>) {
+  const t = useTranslations("dossiers");
+  const tf = useTranslations("fiche");
+  const tdom = useTranslations("domaine");
+  const origine = dossier.seuilOrigine
+    ? tdom(`SeuilOrigine.${dossier.seuilOrigine}` as never)
+    : null;
+
+  if (dossier.estSensible) {
+    return (
+      <dl className="grid gap-4 sm:grid-cols-3">
+        <Donnee libelle={tf("statutSensibilite")}>
+          {dossier.sensibiliteStatut
+            ? tdom(`StatutValidation.${dossier.sensibiliteStatut}` as never)
+            : null}
+        </Donnee>
+        <Donnee libelle={tf("seuilApplique")}>
+          <MontantFcfa valeur={dossier.seuilMontant} />
+        </Donnee>
+        <Donnee libelle={tf("origineSeuil")}>{origine}</Donnee>
+        <Donnee libelle={t("champTypeClientSensible")}>{dossier.typeClientSensible}</Donnee>
+        {dossier.sensibiliteStatut === "REJETEE" ? (
+          <Donnee libelle={tf("motifRejet")}>{dossier.sensibiliteMotifRejet}</Donnee>
+        ) : null}
+      </dl>
+    );
+  }
+  /*
+   * A case whose due diligence was **removed** is no longer sensitive: without this case the block
+   * would only say "ordinary case" and the removal reason, required from the DJ, would be shown
+   * nowhere.
+   */
+  if (dossier.sensibiliteMotifRetrait) {
+    return (
+      <dl className="grid gap-4 sm:grid-cols-3">
+        <Donnee libelle={tf("statutSensibilite")}>{tf("sensibiliteMotifRetrait")}</Donnee>
+        <Donnee libelle={tf("diligenceMotifRetrait")}>{dossier.sensibiliteMotifRetrait}</Donnee>
+        <Donnee libelle={tf("origineSeuil")}>{origine}</Donnee>
+      </dl>
+    );
+  }
+  return (
+    <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{tf("nonSensible")}</p>
+  );
+}
+
 /**
  * Summary tab.
  * Assignments come from the backend as bare ids (`juristesAffectes: [3, 7]`): `useLibelles`
  * resolves them to names. A lawyer who never logged in is not in the directory and is shown as
  * `#id`; a blank would suggest no assignment.
  */
-export function OngletSynthese({ dossier }: { dossier: Dossier }) {
+export function OngletSynthese({ dossier }: Readonly<{ dossier: Dossier }>) {
   const t = useTranslations("dossiers");
   const tf = useTranslations("fiche");
-  const tdom = useTranslations("domaine");
   const { nomUtilisateur, nomIntervenant } = useLibelles();
 
   const estRecouvrement = dossier.categorie === "RECOUVREMENT";
@@ -87,7 +133,9 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
               </>
             ) : (
               <>
-                <Donnee libelle={t("champIncidentCompte")}>{dossier.incidentCompteReference}</Donnee>
+                <Donnee libelle={t("champIncidentCompte")}>
+                  {dossier.incidentCompteReference}
+                </Donnee>
                 <Donnee libelle={t("champElementsJustificatifs")}>
                   {dossier.elementsJustificatifs}
                 </Donnee>
@@ -141,40 +189,7 @@ export function OngletSynthese({ dossier }: { dossier: Dossier }) {
           <CardTitle>{t("sectionSensibilite")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {dossier.estSensible ? (
-            <dl className="grid gap-4 sm:grid-cols-3">
-              <Donnee libelle={tf("statutSensibilite")}>
-                {dossier.sensibiliteStatut
-                  ? tdom(`StatutValidation.${dossier.sensibiliteStatut}` as never)
-                  : null}
-              </Donnee>
-              <Donnee libelle={tf("seuilApplique")}>
-                <MontantFcfa valeur={dossier.seuilMontant} />
-              </Donnee>
-              <Donnee libelle={tf("origineSeuil")}>
-                {dossier.seuilOrigine ? tdom(`SeuilOrigine.${dossier.seuilOrigine}` as never) : null}
-              </Donnee>
-              <Donnee libelle={t("champTypeClientSensible")}>{dossier.typeClientSensible}</Donnee>
-              {dossier.sensibiliteStatut === "REJETEE" ? (
-                <Donnee libelle={tf("motifRejet")}>{dossier.sensibiliteMotifRejet}</Donnee>
-              ) : null}
-            </dl>
-          ) : dossier.sensibiliteMotifRetrait ? (
-            /*
-             * A case whose due diligence was **removed** is no longer sensitive: without this case
-             * the block would only say "ordinary case" and the removal reason, required from the
-             * DJ, would be shown nowhere.
-             */
-            <dl className="grid gap-4 sm:grid-cols-3">
-              <Donnee libelle={tf("statutSensibilite")}>{tf("sensibiliteMotifRetrait")}</Donnee>
-              <Donnee libelle={tf("diligenceMotifRetrait")}>{dossier.sensibiliteMotifRetrait}</Donnee>
-              <Donnee libelle={tf("origineSeuil")}>
-                {dossier.seuilOrigine ? tdom(`SeuilOrigine.${dossier.seuilOrigine}` as never) : null}
-              </Donnee>
-            </dl>
-          ) : (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{tf("nonSensible")}</p>
-          )}
+          <Sensibilite dossier={dossier} />
         </CardContent>
       </Card>
     </div>

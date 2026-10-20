@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as renderRtl, type RenderOptions } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import type { ReactElement } from "react";
@@ -21,6 +22,30 @@ export function rendre(
       <NextIntlClientProvider locale={langue} messages={MESSAGES[langue]}>
         {children}
       </NextIntlClientProvider>
+    ),
+    ...options,
+  });
+}
+
+/**
+ * Same as {@link rendre}, for screens that call `useQuery`/`useMutation` themselves (services are
+ * mocked by the test). Each render gets its own client, without retries, so one test's cache or
+ * failed request never leaks into the next.
+ */
+export function rendreAvecRequetes(
+  element: ReactElement,
+  { langue = "fr", ...options }: RenderOptions & { langue?: Langue } = {},
+) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return renderRtl(element, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>
+        <NextIntlClientProvider locale={langue} messages={MESSAGES[langue]}>
+          {children}
+        </NextIntlClientProvider>
+      </QueryClientProvider>
     ),
     ...options,
   });

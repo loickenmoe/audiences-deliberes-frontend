@@ -103,9 +103,9 @@ async function rafraichir(refreshToken: string): Promise<JetonsKeycloak> {
         refresh_token: refreshToken,
       }),
     });
-  } catch (cause) {
+  } catch (error_) {
     // No response (network, service down, DNS): the session is not at fault.
-    throw new EchecRafraichissement(`Keycloak injoignable : ${String(cause)}`, false);
+    throw new EchecRafraichissement(`Keycloak injoignable : ${String(error_)}`, false);
   }
 
   if (!reponse.ok) {
@@ -237,13 +237,13 @@ export const authConfig: NextAuthConfig = {
           roles: rolesDepuisJeton(jetons.access_token),
           erreur: undefined,
         };
-      } catch (echec) {
+      } catch (error_) {
         /**
          * Final failure: flag the session instead of looping on 401s; the shell then redirects to
          * login. The flag qualifies the cause: a rejected token is not a service outage, and the
          * user has different things to do in each case.
          */
-        const indisponible = echec instanceof EchecRafraichissement && !echec.refus;
+        const indisponible = error_ instanceof EchecRafraichissement && !error_.refus;
         return { ...token, erreur: indisponible ? ERREUR_AUTH_INDISPONIBLE : ERREUR_RAFRAICHISSEMENT };
       }
     },

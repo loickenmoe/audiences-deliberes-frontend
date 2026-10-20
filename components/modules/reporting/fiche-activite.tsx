@@ -65,7 +65,18 @@ const ONGLET_PAR_NATURE: Record<string, string> = {
 function lienVers(action: ActionDetaillee, autorise: boolean): string | null {
   if (!autorise || action.dossierId === null) return null;
   const onglet = ONGLET_PAR_NATURE[action.code];
-  return onglet ? `/dossiers/${action.dossierId}?onglet=${onglet}` : `/dossiers/${action.dossierId}`;
+  return onglet
+    ? `/dossiers/${action.dossierId}?onglet=${onglet}`
+    : `/dossiers/${action.dossierId}`;
+}
+
+/**
+ * Field ids must be unique on the screen: the management table can show one's own sheet and a
+ * colleague's at the same time. "moi" when there is no target.
+ */
+function suffixeDe(cible: CibleActivite | undefined): string {
+  if (cible === undefined) return "moi";
+  return "utilisateurId" in cible ? `u${cible.utilisateurId}` : `a${cible.avocatId}`;
 }
 
 /**
@@ -89,11 +100,11 @@ export function FicheActivite({
   cible,
   nomAffiche,
   lienVersDossier = true,
-}: {
+}: Readonly<{
   cible?: CibleActivite;
   nomAffiche?: string;
   lienVersDossier?: boolean;
-}) {
+}>) {
   const t = useTranslations("activite");
   const tNatures = useTranslations("historique.actions");
   const defaut = periodeDe("mois");
@@ -108,15 +119,7 @@ export function FicheActivite({
   const [page, setPage] = useState(0);
 
   const autre = cible !== undefined;
-  /*
-    Field ids must be unique on the screen: the management table can show one's own sheet and a
-    colleague's at the same time. "moi" when there is no target.
-  */
-  const suffixe = cible === undefined
-    ? "moi"
-    : "utilisateurId" in cible
-      ? `u${cible.utilisateurId}`
-      : `a${cible.avocatId}`;
+  const suffixe = suffixeDe(cible);
   const valide = debut <= fin;
 
   const generer = useMutation({
@@ -194,13 +197,9 @@ export function FicheActivite({
         </Button>
 
         {/* Download appears only once the sheet is displayed, to avoid exporting an unseen, possibly empty period. */}
-        {rapport !== null ? (
+        {rapport === null ? null : (
           <>
-            <Champ
-              id={`activite-format-${suffixe}`}
-              label={t("formatExport")}
-              className="w-32"
-            >
+            <Champ id={`activite-format-${suffixe}`} label={t("formatExport")} className="w-32">
               <Select
                 id={`activite-format-${suffixe}`}
                 value={format}
@@ -221,132 +220,201 @@ export function FicheActivite({
               {t("telecharger")}
             </Button>
           </>
-        ) : null}
+        )}
       </div>
 
       {generer.error ? <EtatErreur message={messageErreur(generer.error)} /> : null}
       {telecharger.error ? <EtatErreur message={t("telechargementEchoue")} /> : null}
 
-      {!affiche ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("avantGeneration")}</p>
-      ) : rapport === null ? (
-        <EtatVide titre={t("vide")} description={autre ? t("videTexteAutre") : t("videTexte")} />
+      {affiche ? (
+        <ResultatActivite rapport={rapport} autre={autre} onDetail={ouvrirDetail} />
       ) : (
-        <>
-          <div className="overflow-x-auto rounded border border-bordure bg-surface">
-            <table className="w-full text-left text-[length:var(--taille-sm)]">
-              <caption className="sr-only">
-                {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
-              </caption>
-              <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneNature")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneNombre")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneDetail")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-bordure">
-                {rapport.lignes.map((ligne) => {
-                  const nature = tNatures(ligne.code as never);
-                  return (
-                    <tr key={ligne.code}>
-                      <td className="px-4 py-2 font-medium">{nature}</td>
-                      <td className="px-4 py-2" data-nombres>{ligne.total}</td>
-                      <td className="px-4 py-2">
-                        {/*
-                          The count itself is not the button: a screen reader would announce "4" without saying what it
-                          opens. The button carries the action type and the count.
-                        */}
-                        <button
-                          type="button"
-                          className="text-lien underline hover:no-underline"
-                          onClick={() => ouvrirDetail(ligne.code)}
-                        >
-                          {t("voirDetail", { nombre: ligne.total, nature })}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/*
-            The average delay is outside the table: it is not an action count and must not look summable.
-            Absent (not zero) when no hearing report was entered: zero would read as same-day entry.
-          */}
-          {typeof rapport.delaiMoyenSaisieCompteRendu === "number" ? (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire" title={t("delaiAide")}>
-              {t("delai")} :{" "}
-              <span data-nombres className="font-medium text-texte">
-                {t("delaiJours", { jours: rapport.delaiMoyenSaisieCompteRendu.toFixed(1) })}
-              </span>
-            </p>
-          ) : null}
-        </>
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("avantGeneration")}
+        </p>
       )}
 
       <Dialog
         ouvert={natureOuverte !== null}
         onFermeture={() => setNatureOuverte(null)}
-        titre={natureOuverte === null ? "" : t("detailTitre", { nature: tNatures(natureOuverte as never) })}
+        titre={
+          natureOuverte === null
+            ? ""
+            : t("detailTitre", { nature: tNatures(natureOuverte as never) })
+        }
         description={t("detailDescription", { debut, fin })}
       >
-        {detail.isLoading ? (
-          <EtatChargement lignes={3} />
-        ) : detail.error ? (
-          <EtatErreur message={messageErreur(detail.error)} />
-        ) : (detail.data?.content.length ?? 0) === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("detailVide")}</p>
-        ) : (
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="py-2 pr-4 font-medium">{t("detailColonneDate")}</th>
-                <th scope="col" className="py-2 pr-4 font-medium">{t("detailColonneAction")}</th>
-                <th scope="col" className="py-2 font-medium">{t("detailColonneDossier")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {detail.data?.content.map((action) => {
-                const lien = lienVers(action, lienVersDossier);
-                return (
-                  <tr key={action.id}>
-                    <td className="py-2 pr-4 whitespace-nowrap">{action.dateAction.slice(0, 10)}</td>
-                    <td className="py-2 pr-4">{action.action}</td>
-                    <td className="py-2">
-                      {/*
-                        Three states: an action without a case file (a configuration, a reference data change) has
-                        nothing to open; a since-deleted case file did exist; the usual case leads to the case file.
-                      */}
-                      {action.dossierId === null ? (
-                        <span className="text-texte-tertiaire">{t("detailHorsDossier")}</span>
-                      ) : action.referenceDossier === null ? (
-                        <span className="text-texte-tertiaire">{t("detailDossierSupprime")}</span>
-                      ) : lien === null ? (
-                        /*
-                          The lawyer sees the reference without a link: they have no case file screen. The reference is
-                          how they name their cases with the bank.
-                        */
-                        <span>{action.referenceDossier}</span>
-                      ) : (
-                        <Link
-                          href={lien}
-                          className="text-lien underline hover:no-underline"
-                          aria-label={t("detailOuvrir", { reference: action.referenceDossier })}
-                        >
-                          {action.referenceDossier}
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+        <DetailNature
+          enChargement={detail.isLoading}
+          erreur={detail.error}
+          actions={detail.data?.content ?? []}
+          lienVersDossier={lienVersDossier}
+        />
       </Dialog>
     </section>
+  );
+}
+
+/** The displayed sheet: one row per action type, then the average delay. */
+function ResultatActivite({
+  rapport,
+  autre,
+  onDetail,
+}: Readonly<{
+  rapport: RapportActivite | null;
+  autre: boolean;
+  onDetail: (code: string) => void;
+}>) {
+  const t = useTranslations("activite");
+  const tNatures = useTranslations("historique.actions");
+
+  if (rapport === null) {
+    return (
+      <EtatVide titre={t("vide")} description={autre ? t("videTexteAutre") : t("videTexte")} />
+    );
+  }
+  return (
+    <>
+      <div className="overflow-x-auto rounded border border-bordure bg-surface">
+        <table className="w-full text-left text-[length:var(--taille-sm)]">
+          <caption className="sr-only">
+            {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
+          </caption>
+          <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+            <tr>
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneNature")}
+              </th>
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneNombre")}
+              </th>
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneDetail")}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-bordure">
+            {rapport.lignes.map((ligne) => {
+              const nature = tNatures(ligne.code as never);
+              return (
+                <tr key={ligne.code}>
+                  <td className="px-4 py-2 font-medium">{nature}</td>
+                  <td className="px-4 py-2" data-nombres>
+                    {ligne.total}
+                  </td>
+                  <td className="px-4 py-2">
+                    {/*
+                      The count itself is not the button: a screen reader would announce "4" without saying what it
+                      opens. The button carries the action type and the count.
+                    */}
+                    <button
+                      type="button"
+                      className="text-lien underline hover:no-underline"
+                      onClick={() => onDetail(ligne.code)}
+                    >
+                      {t("voirDetail", { nombre: ligne.total, nature })}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/*
+        The average delay is outside the table: it is not an action count and must not look summable.
+        Absent (not zero) when no hearing report was entered: zero would read as same-day entry.
+      */}
+      {typeof rapport.delaiMoyenSaisieCompteRendu === "number" ? (
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire" title={t("delaiAide")}>
+          {t("delai")} :{" "}
+          <span data-nombres className="font-medium text-texte">
+            {t("delaiJours", { jours: rapport.delaiMoyenSaisieCompteRendu.toFixed(1) })}
+          </span>
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+/** Content of the detail modal: the counted actions of one type. */
+function DetailNature({
+  enChargement,
+  erreur,
+  actions,
+  lienVersDossier,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  actions: readonly ActionDetaillee[];
+  lienVersDossier: boolean;
+}>) {
+  const t = useTranslations("activite");
+
+  if (enChargement) return <EtatChargement lignes={3} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (actions.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("detailVide")}</p>
+    );
+  }
+  return (
+    <table className="w-full text-left text-[length:var(--taille-sm)]">
+      <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
+        <tr>
+          <th scope="col" className="py-2 pr-4 font-medium">
+            {t("detailColonneDate")}
+          </th>
+          <th scope="col" className="py-2 pr-4 font-medium">
+            {t("detailColonneAction")}
+          </th>
+          <th scope="col" className="py-2 font-medium">
+            {t("detailColonneDossier")}
+          </th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-bordure">
+        {actions.map((action) => (
+          <tr key={action.id}>
+            <td className="py-2 pr-4 whitespace-nowrap">{action.dateAction.slice(0, 10)}</td>
+            <td className="py-2 pr-4">{action.action}</td>
+            <td className="py-2">
+              <DossierDeLAction action={action} lien={lienVers(action, lienVersDossier)} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * Three states: an action without a case file (a configuration, a reference data change) has
+ * nothing to open; a since-deleted case file did exist; the usual case leads to the case file.
+ */
+function DossierDeLAction({
+  action,
+  lien,
+}: Readonly<{ action: ActionDetaillee; lien: string | null }>) {
+  const t = useTranslations("activite");
+
+  if (action.dossierId === null) {
+    return <span className="text-texte-tertiaire">{t("detailHorsDossier")}</span>;
+  }
+  if (action.referenceDossier === null) {
+    return <span className="text-texte-tertiaire">{t("detailDossierSupprime")}</span>;
+  }
+  // The lawyer sees the reference without a link: they have no case file screen. The reference is
+  // how they name their cases with the bank.
+  if (lien === null) return <span>{action.referenceDossier}</span>;
+  return (
+    <Link
+      href={lien}
+      className="text-lien underline hover:no-underline"
+      aria-label={t("detailOuvrir", { reference: action.referenceDossier })}
+    >
+      {action.referenceDossier}
+    </Link>
   );
 }

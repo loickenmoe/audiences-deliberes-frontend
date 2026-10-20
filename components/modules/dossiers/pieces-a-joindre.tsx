@@ -33,14 +33,14 @@ export function PiecesAJoindre({
   onChangement,
   reference,
   manquantes,
-}: {
+}: Readonly<{
   categorie: CategorieDossier;
   onChangement: (pieces: PieceAJoindre[]) => void;
   /** Reference field of an expected document, placed at the start of its row. */
   reference?: (type: TypeDocument) => ReactNode;
   /** Expected documents still missing a file, flagged after a save attempt. */
   manquantes?: readonly TypeDocument[];
-}) {
+}>) {
   const t = useTranslations("documents");
   const [attendues, setAttendues] = useState<Partial<Record<TypeDocument, File>>>({});
   const [apercu, setApercu] = useState<File | null>(null);
@@ -61,7 +61,7 @@ export function PiecesAJoindre({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attendues, categorie]);
 
-  function BoutonApercu({ fichier }: { fichier: File | undefined | null }) {
+  function BoutonApercu({ fichier }: Readonly<{ fichier: File | undefined | null }>) {
     if (!fichier) return null;
     return (
       // The accessible name includes the file: both required documents have a "Preview" button, and

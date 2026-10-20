@@ -22,10 +22,10 @@ const MOTIF_MAX = 1000;
 export function ModaleRejetPartage({
   piece,
   onFermeture,
-}: {
+}: Readonly<{
   piece: { documentId: number; nomFichier: string } | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("documents");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

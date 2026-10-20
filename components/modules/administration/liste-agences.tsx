@@ -24,7 +24,7 @@ import type { Agence } from "@/types/domaine";
  * remain valid and keep its code. A closed branch only leaves the input pickers; it is still listed
  * here.
  */
-export function ListeAgences({ roles }: { roles: readonly string[] }) {
+export function ListeAgences({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("agences");
   const [recherche, setRecherche] = useState("");
   const [page, setPage] = useState(0);
@@ -45,8 +45,8 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
       await desactiver.mutateAsync(agence.id);
       toast.success(t("desactivee", { nom: agence.nom }));
       setAFermer(null);
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 
@@ -57,8 +57,8 @@ export function ListeAgences({ roles }: { roles: readonly string[] }) {
     try {
       await reactiver.mutateAsync(agence.id);
       toast.success(t("reactivee", { nom: agence.nom }));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 

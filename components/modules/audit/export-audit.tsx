@@ -27,13 +27,13 @@ export function ExportAudit({
   debut,
   fin,
   onPeriode,
-}: {
+}: Readonly<{
   filtres: FiltresAudit;
   debut: string;
   fin: string;
   /** A shortcut fills the screen's period fields: it does not start an export. */
   onPeriode: (periode: { debut: string; fin: string }) => void;
-}) {
+}>) {
   const t = useTranslations("audit");
   const { nomUtilisateur } = useLibelles();
   const exporter = useExporterAudit();
@@ -73,8 +73,8 @@ export function ExportAudit({
     try {
       const url = await auditService.urlArchive(id);
       window.open(url, "_blank", "noopener,noreferrer");
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 
@@ -156,7 +156,7 @@ export function ExportAudit({
                   <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
                     <DateHeureValeur valeur={archive.dateExport} />
                     {" · "}
-                    {archive.utilisateurId !== null ? nomUtilisateur(archive.utilisateurId) : "—"}
+                    {archive.utilisateurId === null ? "—" : nomUtilisateur(archive.utilisateurId)}
                     {" · "}
                     <PoidsFichier valeur={archive.tailleOctets} />
                   </span>

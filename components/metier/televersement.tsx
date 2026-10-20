@@ -24,7 +24,7 @@ export function Televersement({
   surUneLigne = false,
   onChangement,
   className,
-}: {
+}: Readonly<{
   nom: string;
   /**
    * Accessible name of the file input, which is visually hidden (`sr-only`) and triggered by a
@@ -44,7 +44,7 @@ export function Televersement({
   surUneLigne?: boolean;
   onChangement?: (fichier: File | null) => void;
   className?: string;
-}) {
+}>) {
   // The default formats mirror `FORMATS_GED` (RG-GED-08): any change to that setting must be
   // reflected here, otherwise the screen would reject a file the server accepts.
   const formats = formatsAcceptes ?? ["pdf", "png", "jpg", "txt", "xlsx", "docx", "doc"];

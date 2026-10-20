@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
  * card does not block the others. Since hooks cannot be called conditionally, each queue is a
  * separate component, mounted only when the capability is granted.
  */
-export function FilesDuJour({ roles }: { roles: readonly string[] }) {
+export function FilesDuJour({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("accueil");
   const profil = profilPrincipal(roles);
 
@@ -64,14 +64,14 @@ function Carte({
   compte,
   chargement,
   href,
-}: {
+}: Readonly<{
   icone: LucideIcon;
   titre: string;
   aide: string;
   compte: number | undefined;
   chargement: boolean;
   href: string;
-}) {
+}>) {
   const aTraiter = (compte ?? 0) > 0;
   return (
     <li>
@@ -106,7 +106,7 @@ function Carte({
  * The Assistant checks a request's compliance, the DJA its merits, and the DJ and DJA validate it
  * jointly: each one sees only the step they are responsible for.
  */
-function FileFraisAControler({ roles }: { roles: readonly string[] }) {
+function FileFraisAControler({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("accueil");
   const profil = profilPrincipal(roles);
   const statut = profil === "ROLE_ASSISTANTE" ? "DEPOSEE" : profil === "ROLE_DJA" ? "CONFORMITE" : "OPPORTUNITE";

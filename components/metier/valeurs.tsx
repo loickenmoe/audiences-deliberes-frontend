@@ -10,24 +10,24 @@ import { formaterDate, formaterDateHeure, formaterFcfa, formaterOctets } from "@
  * one place only. `data-nombres` enables tabular figures (see `globals.css`) for comparable amount
  * columns.
  */
-export function MontantFcfa({ valeur }: { valeur: number | null | undefined }) {
+export function MontantFcfa({ valeur }: Readonly<{ valeur: number | null | undefined }>) {
   const langue = useLocale() as Langue;
   return <span data-nombres>{formaterFcfa(valeur, langue)}</span>;
 }
 
-export function DateValeur({ valeur }: { valeur: string | null | undefined }) {
+export function DateValeur({ valeur }: Readonly<{ valeur: string | null | undefined }>) {
   const langue = useLocale() as Langue;
   // `dateTime` holds the raw value: machine-readable and language-independent.
   return <time dateTime={valeur ?? undefined}>{formaterDate(valeur, langue)}</time>;
 }
 
-export function DateHeureValeur({ valeur }: { valeur: string | null | undefined }) {
+export function DateHeureValeur({ valeur }: Readonly<{ valeur: string | null | undefined }>) {
   const langue = useLocale() as Langue;
   return <time dateTime={valeur ?? undefined}>{formaterDateHeure(valeur, langue)}</time>;
 }
 
 /** Ratio between 0 and 1, displayed as a whole percentage. */
-export function Pourcentage({ valeur }: { valeur: number | null | undefined }) {
+export function Pourcentage({ valeur }: Readonly<{ valeur: number | null | undefined }>) {
   const langue = useLocale() as Langue;
   return (
     <span data-nombres>
@@ -36,7 +36,7 @@ export function Pourcentage({ valeur }: { valeur: number | null | undefined }) {
   );
 }
 
-export function PoidsFichier({ valeur }: { valeur: number | null | undefined }) {
+export function PoidsFichier({ valeur }: Readonly<{ valeur: number | null | undefined }>) {
   const langue = useLocale() as Langue;
   return <span data-nombres>{formaterOctets(valeur, langue)}</span>;
 }

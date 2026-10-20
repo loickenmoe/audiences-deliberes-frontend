@@ -21,13 +21,13 @@ export function SelecteurDossier({
   onChangement,
   id = "dossier",
   obligatoire = true,
-}: {
+}: Readonly<{
   valeur: number | null;
   onChangement: (dossierId: number | null) => void;
   id?: string;
   /** False where the choice is only for reading, as in "Mes dossiers": an asterisk would be misleading. */
   obligatoire?: boolean;
-}) {
+}>) {
   const t = useTranslations("portail");
   const [recherche, setRecherche] = useState("");
   const requete = useMesDossiers(recherche || undefined);

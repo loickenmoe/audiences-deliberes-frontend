@@ -29,12 +29,12 @@ export function FormulaireAgence({
   ouvert,
   onFermeture,
   agence,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   /** The branch to edit. When absent, the form creates a new one. */
   agence?: Agence;
-}) {
+}>) {
   const t = useTranslations("agences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -95,9 +95,9 @@ export function FormulaireAgence({
         await creer.mutateAsync(corps);
       }
       fermer();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS, CONFLIT_SUR_CODE)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS, CONFLIT_SUR_CODE)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

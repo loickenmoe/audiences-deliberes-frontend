@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  *
  * The animation is disabled by `prefers-reduced-motion` (see `globals.css`).
  */
-export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Skeleton({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
       aria-hidden

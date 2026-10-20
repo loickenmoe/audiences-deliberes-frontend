@@ -25,11 +25,11 @@ export function ModaleDerogation({
   dossierId,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -63,9 +63,9 @@ export function ModaleDerogation({
     try {
       await demander.mutateAsync({ nouveauSeuil: Number(valeurs.nouveauSeuil), motif: valeurs.motif });
       onFermeture();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

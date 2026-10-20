@@ -41,7 +41,7 @@ const VIDE: Record<CleVueNotifications, string> = {
  * The real-time channel status is shown so the user knows whether the feed is live or refreshed
  * every 30 seconds. Either way the list is complete: the backend stores the alert before pushing it.
  */
-export function FileNotifications({ roles }: { roles: readonly string[] }) {
+export function FileNotifications({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("notifications");
   const td = useTranslations("domaine");
   const { connecte } = useCanalAlertes();

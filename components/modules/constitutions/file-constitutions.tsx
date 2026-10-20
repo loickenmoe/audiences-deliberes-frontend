@@ -39,7 +39,7 @@ async function contenuLettre(documentId: number): Promise<Blob> {
  * representation letter and stores it in the case DMS; a rejection goes back to the lawyer with its
  * reason.
  */
-export function FileConstitutions({ roles }: { roles: readonly string[] }) {
+export function FileConstitutions({ roles }: Readonly<{ roles: readonly string[] }>) {
   const router = useRouter();
   const t = useTranslations("constitutions");
   const td = useTranslations("domaine");
@@ -210,7 +210,7 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
                             </Button>
                           </>
                         ) : null}
-                        {demande.lettreDocumentId !== null ? (
+                        {demande.lettreDocumentId === null ? null : (
                           <Button
                             variante="secondaire"
                             taille="sm"
@@ -220,7 +220,7 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
                             <FileText size={14} aria-hidden />
                             {t("lettre")}
                           </Button>
-                        ) : null}
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -282,7 +282,7 @@ export function FileConstitutions({ roles }: { roles: readonly string[] }) {
 }
 
 /** UC-INT-06 alt. 5-a: the request goes back to the lawyer with the reason; no letter is sent. */
-function ModaleRejet({ demande, onFermeture }: { demande: DemandeConstitution | null; onFermeture: () => void }) {
+function ModaleRejet({ demande, onFermeture }: Readonly<{ demande: DemandeConstitution | null; onFermeture: () => void }>) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

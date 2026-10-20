@@ -24,7 +24,7 @@ export function CycleEtape({
   nbProrogations,
   compact = false,
   className,
-}: {
+}: Readonly<{
   statut: StatutCycleVie;
   /**
    * Shown when provided: as an overline in the expanded view, before the status in compact mode
@@ -35,7 +35,7 @@ export function CycleEtape({
   nbProrogations?: number;
   compact?: boolean;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("domaine");
   const tm = useTranslations("metier");
   const indexCourant = ETATS.indexOf(statut);

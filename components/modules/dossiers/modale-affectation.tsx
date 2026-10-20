@@ -25,11 +25,11 @@ export function ModaleAffectation({
   dossier,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossier: Dossier;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const td = useTranslations("dossiers");
   const tc = useTranslations("commun");

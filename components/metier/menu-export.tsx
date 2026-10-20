@@ -17,14 +17,14 @@ export function MenuExport<T extends string>({
   onExport,
   enCours = false,
   id = "format-export",
-}: {
+}: Readonly<{
   formats: readonly T[];
   valeur: T;
   onChangement: (format: T) => void;
   onExport: () => void;
   enCours?: boolean;
   id?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const td = useTranslations("domaine");
 

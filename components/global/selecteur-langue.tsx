@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * option. The active language is not signalled by colour alone: `aria-current` carries it for
  * assistive technologies.
  */
-export async function SelecteurLangue({ className }: { className?: string }) {
+export async function SelecteurLangue({ className }: Readonly<{ className?: string }>) {
   const active = await getLocale();
   const t = await getTranslations("commun");
 

@@ -32,7 +32,7 @@ export function ListeParties<T extends FieldValues>({
   control,
   register,
   errors,
-}: {
+}: Readonly<{
   /** `demandeurs` or `defendeurs`: the array name in the form. */
   nom: "demandeurs" | "defendeurs";
   label: string;
@@ -46,7 +46,7 @@ export function ListeParties<T extends FieldValues>({
   control: Control<T>;
   register: UseFormRegister<T>;
   errors: FieldErrors<T>;
-}) {
+}>) {
   const t = useTranslations("dossiers");
   const { fields, append, remove } = useFieldArray({ control, name: nom as ArrayPath<T> });
   const erreurs = errors[nom] as { nom?: { message?: string } }[] | undefined;

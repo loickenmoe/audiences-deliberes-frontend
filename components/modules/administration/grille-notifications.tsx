@@ -28,10 +28,10 @@ import type { ConfigurationSysteme } from "@/types/domaine";
 export function GrilleNotifications({
   configurations,
   modifiable,
-}: {
+}: Readonly<{
   configurations: ConfigurationSysteme[];
   modifiable: boolean;
-}) {
+}>) {
   const t = useTranslations("grilleNotifications");
   const sections = SECTIONS_GRILLE.filter((section) =>
     section.colonnes.every(({ cle }) => trouver(configurations, cle)),
@@ -62,11 +62,11 @@ function SectionGrilleNotifications({
   section,
   configurations,
   modifiable,
-}: {
+}: Readonly<{
   section: SectionGrille;
   configurations: ConfigurationSysteme[];
   modifiable: boolean;
-}) {
+}>) {
   const t = useTranslations("grilleNotifications");
   const td = useTranslations("domaine");
   const modifier = useModifierConfiguration();
@@ -93,8 +93,8 @@ function SectionGrilleNotifications({
       for (const { cle, valeur } of modifiees) {
         try {
           await modifier.mutateAsync({ cle, valeur });
-        } catch (erreur) {
-          toast.error(messageErreur(erreur));
+        } catch (error_) {
+          toast.error(messageErreur(error_));
           return;
         }
       }
@@ -120,9 +120,9 @@ function SectionGrilleNotifications({
                   <Th key={cle} className="text-center">
                     <span className="flex flex-col items-center gap-0.5">
                       <span>{libelleCanal(canal)}</span>
-                      {!actif ? (
+                      {actif ? null : (
                         <span className="normal-case tracking-normal text-texte-tertiaire">{t("canalCoupe")}</span>
-                      ) : null}
+                      )}
                     </span>
                   </Th>
                 );

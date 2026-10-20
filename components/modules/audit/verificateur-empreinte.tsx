@@ -34,10 +34,10 @@ export function VerificateurEmpreinte() {
       const calculee = await empreinteFichier(fichier);
       setEmpreinte(calculee);
       setResultat(await auditService.verifier(calculee));
-    } catch (cause) {
+    } catch (error_) {
       setEmpreinte("");
       setErreur(
-        cause instanceof Error && cause.message === "CONTEXTE_NON_SECURISE"
+        error_ instanceof Error && error_.message === "CONTEXTE_NON_SECURISE"
           ? t("verifierContexte")
           : t("verifierEchec"),
       );

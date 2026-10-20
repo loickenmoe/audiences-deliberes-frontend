@@ -19,12 +19,12 @@ export function EtatVide({
   description,
   action,
   className,
-}: {
+}: Readonly<{
   titre: string;
   description?: string;
   action?: ReactNode;
   className?: string;
-}) {
+}>) {
   return (
     <div
       className={cn(
@@ -48,12 +48,12 @@ export function EtatErreur({
   message,
   action,
   className,
-}: {
+}: Readonly<{
   titre?: string;
   message?: string;
   action?: ReactNode;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("erreurs");
   return (
     <div
@@ -73,7 +73,7 @@ export function EtatErreur({
 }
 
 /** Generic skeleton of a loading list. */
-export function EtatChargement({ lignes = 5, className }: { lignes?: number; className?: string }) {
+export function EtatChargement({ lignes = 5, className }: Readonly<{ lignes?: number; className?: string }>) {
   const t = useTranslations("commun");
   return (
     <div className={cn("flex flex-col gap-2", className)} role="status" aria-live="polite">

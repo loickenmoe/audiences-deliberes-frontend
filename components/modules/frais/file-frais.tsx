@@ -30,7 +30,7 @@ const VIDE: Record<CleVueFrais, string> = {
  * then payment for the Assistant, opportunity then joint approval for the DJA, joint approval for
  * the DJ. The view lives in the URL, so a shared link opens the same queue.
  */
-export function FileFrais({ roles }: { roles: readonly string[] }) {
+export function FileFrais({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesFrais(roles), [roles]);

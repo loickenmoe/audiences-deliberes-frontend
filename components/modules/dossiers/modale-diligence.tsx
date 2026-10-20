@@ -37,12 +37,12 @@ export function ModaleDiligence({
   intention,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossier: Dossier;
   intention: IntentionDiligence;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   /*
    * Per-instance ids: a closed `<dialog>` stays in the DOM, and the derogation modal already has a
    * `motif` field; without a prefix the label would point to that hidden field.
@@ -71,7 +71,11 @@ export function ModaleDiligence({
           // Removal needs no threshold or type: it clears them.
           if (!retrait) {
             if (valeurs.seuilMontant === "" || valeurs.seuilMontant === undefined) {
-              contexte.addIssue({ code: "custom", path: ["seuilMontant"], message: tm("champObligatoire") });
+              contexte.addIssue({
+                code: "custom",
+                path: ["seuilMontant"],
+                message: tm("champObligatoire"),
+              });
             }
             if (!valeurs.typeClientSensible) {
               contexte.addIssue({
@@ -128,14 +132,16 @@ export function ModaleDiligence({
         await modifier.mutateAsync({ estSensible: false, motif: valeurs.motif?.trim() });
       }
       onFermeture();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });
 
-  const titre = t(`diligence${intention === "proposer" ? "Proposer" : intention === "poser" ? "Poser" : "Retirer"}Titre`);
+  const titre = t(
+    `diligence${intention === "proposer" ? "Proposer" : intention === "poser" ? "Poser" : "Retirer"}Titre`,
+  );
   const description = t(
     `diligence${intention === "proposer" ? "Proposer" : intention === "poser" ? "Poser" : "Retirer"}Description`,
   );
@@ -220,8 +226,13 @@ export function ModaleDiligence({
           aide={intention === "poser" ? t("diligenceMotifFacultatif") : undefined}
           erreur={errors.motif?.message}
         >
-          <Textarea id={`${p}motif`}
-  placeholder={t("phMotifDiligence")} rows={3} enErreur={!!errors.motif} {...register("motif")} />
+          <Textarea
+            id={`${p}motif`}
+            placeholder={t("phMotifDiligence")}
+            rows={3}
+            enErreur={!!errors.motif}
+            {...register("motif")}
+          />
         </Champ>
       </form>
     </Dialog>

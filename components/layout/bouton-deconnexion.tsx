@@ -19,7 +19,7 @@ import { attendreLecturesEnCours, verrouillerJeton } from "@/lib/cache-jeton";
  * flight**. Together this makes logout deterministic. The wait is ~100 ms; the button is disabled
  * meanwhile so a double click does not send two POSTs.
  */
-export function BoutonDeconnexion({ libelle }: { libelle: string }) {
+export function BoutonDeconnexion({ libelle }: Readonly<{ libelle: string }>) {
   const [enCours, setEnCours] = useState(false);
 
   async function deconnecter(evenement: React.FormEvent<HTMLFormElement>) {

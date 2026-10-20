@@ -26,12 +26,12 @@ export function FormulaireClient({
   ouvert,
   onFermeture,
   client,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   /** The client to edit. When absent, the form creates a new client. */
   client?: Client;
-}) {
+}>) {
   const t = useTranslations("clients");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -90,9 +90,9 @@ export function FormulaireClient({
         toast.success(t("clientCree", { reference: cree.reference }));
       }
       fermer();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

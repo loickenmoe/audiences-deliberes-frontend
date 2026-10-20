@@ -9,7 +9,7 @@ export async function generateMetadata() {
   return { title: t("vueConsolidee") };
 }
 
-export default async function PageClient({ params }: { params: Promise<{ id: string }> }) {
+export default async function PageClient({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await exigerCapacite("consulterReferentiels");
 
   const { id } = await params;

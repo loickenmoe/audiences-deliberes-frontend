@@ -13,7 +13,7 @@ export async function generateMetadata() {
  * Screen 29 - expense request detail and workflow action. Actions are filtered by profile and by
  * step; the backend is what actually refuses them.
  */
-export default async function PageDemandeFrais({ params }: { params: Promise<{ id: string }> }) {
+export default async function PageDemandeFrais({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await exigerCapacite("consulterFrais");
 
   const { id } = await params;

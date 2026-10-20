@@ -15,11 +15,11 @@ export function BarreFiltres({
   children,
   nbFiltresActifs,
   onEffacer,
-}: {
+}: Readonly<{
   children: ReactNode;
   nbFiltresActifs: number;
   onEffacer: () => void;
-}) {
+}>) {
   const t = useTranslations("metier");
 
   return (

@@ -6,7 +6,13 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { BarreFiltres, ChampRecherche, CycleEtape, MontantFcfa, TableDonnees } from "@/components/metier";
+import {
+  BarreFiltres,
+  ChampRecherche,
+  CycleEtape,
+  MontantFcfa,
+  TableDonnees,
+} from "@/components/metier";
 import { classesBouton } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { useDossiers } from "@/hooks/useDossiers";
@@ -37,17 +43,89 @@ const DEFAUTS = {
   tri: "",
 };
 
+/** The reference is the natural entry point to the case page (screen 07). */
+function LienDossier({ dossier }: Readonly<{ dossier: Dossier }>) {
+  return (
+    <Link
+      href={`/dossiers/${dossier.id}`}
+      className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+    >
+      {dossier.reference}
+    </Link>
+  );
+}
+
+/**
+ * The most advanced step (steps arrive sorted by type) **and** the CCJA appeal if any: both
+ * cassation appeals can run concurrently, and showing only one would hide half of the procedure.
+ */
+function EtapesEnCours({ dossier }: Readonly<{ dossier: Dossier }>) {
+  const etapes = dossier.etapes;
+  const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
+  const principale = etapes.filter((etape) => etape.type !== "RECOURS_2_CCJA").at(-1);
+  const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
+  if (aMontrer.length === 0) return "—";
+  return (
+    <div className="flex flex-wrap gap-1">
+      {aMontrer.map((etape) => (
+        <CycleEtape key={etape.id} statut={etape.statutCycleVie} type={etape.type} compact />
+      ))}
+    </div>
+  );
+}
+
+function colonnesDossiers(
+  t: ReturnType<typeof useTranslations<"dossiers">>,
+): ColumnDef<Dossier, unknown>[] {
+  return [
+    {
+      accessorKey: "reference",
+      header: t("colonneReference"),
+      cell: ({ row }) => <LienDossier dossier={row.original} />,
+    },
+    {
+      accessorKey: "clientNom",
+      header: t("colonneClient"),
+      // The backend returns `clientNom`, but leaves it `null` on some projections.
+      cell: ({ row }) => row.original.clientNom ?? `#${row.original.clientId}`,
+    },
+    { accessorKey: "nature", header: t("colonneNature") },
+    {
+      accessorKey: "juridictionSaisie",
+      header: t("colonneJuridiction"),
+    },
+    {
+      accessorKey: "risqueEncouru",
+      header: t("colonneRisque"),
+      cell: ({ row }) => <MontantFcfa valeur={row.original.risqueEncouru} />,
+    },
+    {
+      id: "etape",
+      header: t("colonneEtape"),
+      cell: ({ row }) => <EtapesEnCours dossier={row.original} />,
+    },
+  ];
+}
+
 /**
  * Screen 05 - case search.
  * Filters run on the backend (including `reference` and "my cases"): filtering in the browser would
  * only search the displayed page of a paginated list.
  */
-export function ListeDossiers({ roles }: { roles: readonly string[] }) {
+export function ListeDossiers({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("dossiers");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
-  const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
-    useFiltresUrl(DEFAUTS);
+  const {
+    filtres,
+    page,
+    taille,
+    definirTaille,
+    definirFiltre,
+    definirPage,
+    effacer,
+    nbFiltresActifs,
+  } = useFiltresUrl(DEFAUTS);
   const natures = useNaturesDossier(
     filtres.categorie ? (filtres.categorie as CategorieDossier) : undefined,
   );
@@ -69,63 +147,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
     page,
   });
 
-  const colonnes = useMemo<ColumnDef<Dossier, unknown>[]>(
-    () => [
-      {
-        accessorKey: "reference",
-        header: t("colonneReference"),
-        // The reference is the natural entry point to the case page (screen 07).
-        cell: ({ row }) => (
-          <Link
-            href={`/dossiers/${row.original.id}`}
-            className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-          >
-            {row.original.reference}
-          </Link>
-        ),
-      },
-      {
-        accessorKey: "clientNom",
-        header: t("colonneClient"),
-        // The backend returns `clientNom`, but leaves it `null` on some projections.
-        cell: ({ row }) => row.original.clientNom ?? `#${row.original.clientId}`,
-      },
-      { accessorKey: "nature", header: t("colonneNature") },
-      {
-        accessorKey: "juridictionSaisie",
-        header: t("colonneJuridiction"),
-      },
-      {
-        accessorKey: "risqueEncouru",
-        header: t("colonneRisque"),
-        cell: ({ row }) => <MontantFcfa valeur={row.original.risqueEncouru} />,
-      },
-      {
-        id: "etape",
-        header: t("colonneEtape"),
-        /*
-         * The most advanced step (steps arrive sorted by type) **and** the CCJA appeal if any: both
-         * cassation appeals can run concurrently, and showing only one would hide half of the
-         * procedure.
-         */
-        cell: ({ row }) => {
-          const etapes = row.original.etapes;
-          const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
-          const principale = etapes.filter((etape) => etape.type !== "RECOURS_2_CCJA").at(-1);
-          const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
-          if (aMontrer.length === 0) return "—";
-          return (
-            <div className="flex flex-wrap gap-1">
-              {aMontrer.map((etape) => (
-                <CycleEtape key={etape.id} statut={etape.statutCycleVie} type={etape.type} compact />
-              ))}
-            </div>
-          );
-        },
-      },
-    ],
-    [t],
-  );
+  const colonnes = useMemo(() => colonnesDossiers(t), [t]);
 
   const peutCreer = peut(roles, "creerDossier");
 
@@ -216,7 +238,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           <Select
             id="filtre-type-etape"
             value={filtres.typeEtape}
-            onChange={(evenement) => definirFiltre("typeEtape", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("typeEtape", evenement.target.value || undefined)
+            }
           >
             <option value="">{t("filtreTous")}</option>
             {TypeEtape.map((valeur) => (
@@ -231,7 +255,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           <Select
             id="filtre-statut-etape"
             value={filtres.statutEtape}
-            onChange={(evenement) => definirFiltre("statutEtape", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("statutEtape", evenement.target.value || undefined)
+            }
           >
             <option value="">{t("filtreTous")}</option>
             {StatutCycleVie.map((valeur) => (
@@ -252,7 +278,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
             type="date"
             max={filtres.dateFin || undefined}
             value={filtres.dateDebut}
-            onChange={(evenement) => definirFiltre("dateDebut", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("dateDebut", evenement.target.value || undefined)
+            }
           />
         </Champ>
 
@@ -288,7 +316,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           <Select
             id="filtre-sensibilite"
             value={filtres.sensibiliteStatut}
-            onChange={(evenement) => definirFiltre("sensibiliteStatut", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("sensibiliteStatut", evenement.target.value || undefined)
+            }
           >
             <option value="">{t("filtreTous")}</option>
             {StatutValidation.map((valeur) => (

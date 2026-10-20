@@ -10,7 +10,7 @@ export async function generateMetadata() {
 }
 
 /** Screen 32 - a publication: `GET /publications/{id}` requires `ROLE_CONSULTATION`. */
-export default async function PagePublication({ params }: { params: Promise<{ id: string }> }) {
+export default async function PagePublication({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await exigerCapacite("consulterDossiers");
 
   const { id } = await params;

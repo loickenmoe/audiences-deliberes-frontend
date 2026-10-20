@@ -19,12 +19,12 @@ export function Logo({
   hauteur = 32,
   decoratif = false,
   className,
-}: {
+}: Readonly<{
   variante?: "lockup" | "symbole";
   hauteur?: number;
   decoratif?: boolean;
   className?: string;
-}) {
+}>) {
   const lockup = variante === "lockup";
   const ratio = lockup ? 284.7 / 57.6 : 71.7 / 57.6;
 
