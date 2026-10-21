@@ -79,16 +79,16 @@ export const CAPACITES = {
   /** `POST .../audiences`, `PUT /audiences/{id}/compte-rendu`, alarms — JURISTE */
   gererAudiences: ["ROLE_JURISTE"],
   /**
-   * `GET /audiences/calendrier` — JURISTE, DJ. The DJA has access through her composite
-   * `ROLE_JURISTE`; the Assistant does not.
+   * `GET /audiences/calendrier` — JURISTE, DJ, ASSISTANTE, SH. The DJA has access through her
+   * composite `ROLE_JURISTE`. Opened to the Assistant and the SH on 2026-10-21.
    */
-  consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ"],
+  consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_ASSISTANTE", "ROLE_SH"],
 
   /**
-   * Hearing log and expected hearing reports. Open to legal officers as well as management: they use
-   * it daily and the expected reports are theirs.
+   * Hearing log and expected hearing reports. Open to legal officers, management, the Assistant and
+   * the SH (since 2026-10-21); the expected reports remain the legal officers' to write.
    */
-  consulterJournalAudiences: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
+  consulterJournalAudiences: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE", "ROLE_SH"],
   /** `POST .../deliberes`, extensions, withdrawal, certified copy, appeals — JURISTE */
   gererDeliberes: ["ROLE_JURISTE"],
 
@@ -107,8 +107,8 @@ export const CAPACITES = {
   validerConjointementFrais: ["ROLE_DJ", "ROLE_DJA"],
 
   // Publications and external parties
-  /** `GET /publications` — ASSISTANTE, JURISTE, DJ, DJA */
-  consulterPublications: ["ROLE_ASSISTANTE", "ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
+  /** `GET /publications` — ASSISTANTE, JURISTE, DJ, DJA, SH (consultation only for the SH) */
+  consulterPublications: ["ROLE_ASSISTANTE", "ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_SH"],
   /** `PUT /publications/{id}/validation` — ASSISTANTE */
   validerPublication: ["ROLE_ASSISTANTE"],
   /** `POST /publications/{id}/commentaires` — JURISTE */
@@ -118,10 +118,10 @@ export const CAPACITES = {
   /** `POST /publications/cr-audience`, `POST /publications/autres` — AVOCAT */
   deposerPublication: ["ROLE_AVOCAT"],
   /**
-   * `GET /repertoire/avocats` — JURISTE, ASSISTANTE. The DJ and the DJA also have access through
-   * their composite `ROLE_JURISTE`; only the SH and lawyers are excluded.
+   * `GET /repertoire/avocats` — JURISTE, ASSISTANTE, SH. The DJ and the DJA also have access through
+   * their composite `ROLE_JURISTE`; only lawyers are excluded.
    */
-  consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
+  consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE", "ROLE_SH"],
   /** `GET /constitutions/prestataires` — SH, JURISTE, ASSISTANTE */
   consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE", "ROLE_ASSISTANTE"],
   /** `POST /constitutions/prestataires` — JURISTE, ASSISTANTE */
@@ -200,8 +200,8 @@ export const CAPACITES = {
   arbitrerPartages: ["ROLE_DJ", "ROLE_DJA"],
   /** `PUT /audiences/{id}/note-avocat` — JURISTE: the note for the appointed lawyer. */
   ecrireNoteAvocat: ["ROLE_JURISTE"],
-  /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE */
-  consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE"],
+  /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE, SH */
+  consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE", "ROLE_SH"],
 
   // Final decisions
   /** adjudications, convictions, case law (write) — JURISTE */
@@ -212,8 +212,11 @@ export const CAPACITES = {
   // Steering and administration
   /** `GET /tableau-de-bord` — DJ and DJA (US 8.5) */
   consulterTableauDeBord: ["ROLE_DJ", "ROLE_DJA"],
-  /** `GET /rapports` — JURISTE; the DJ reaches it through his composite `ROLE_JURISTE` */
-  genererRapport: ["ROLE_JURISTE"],
+  /**
+   * `GET /rapports` — JURISTE, ASSISTANTE, SH; the DJ and the DJA reach it through their composite
+   * `ROLE_JURISTE`. The named activity reports stay with `consulterRapportNominatif`.
+   */
+  genererRapport: ["ROLE_JURISTE", "ROLE_ASSISTANTE", "ROLE_SH"],
   /** `GET /configurations` — CONSULTATION */
   consulterConfigurations: ["ROLE_CONSULTATION"],
   /**

@@ -150,11 +150,13 @@ test("rapport journalier : l'activité du jour, puis un état vide lisible un jo
   await expect(page.getByText("Aucune activité ce jour-là.")).toBeVisible();
 });
 
-test("le rapport s'ouvre à l'Assistante ; la file des suppressions reste réservée au DJ et à la DJA", async ({ browser }) => {
-  const assistante = await pageConnectee(browser, "assistante.test");
-  await assistante.goto("/ged/rapport-journalier");
-  await expect(assistante.getByRole("heading", { name: "Rapport journalier GED", level: 1 })).toBeVisible();
-  await assistante.context().close();
+test("le rapport s'ouvre à l'Assistante et au SH ; la file des suppressions reste réservée au DJ et à la DJA", async ({ browser }) => {
+  for (const identifiant of ["assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    await page.goto("/ged/rapport-journalier");
+    await expect(page.getByRole("heading", { name: "Rapport journalier GED", level: 1 })).toBeVisible();
+    await page.context().close();
+  }
 
   const juriste = await pageConnectee(browser, "juriste.test");
   await expect(

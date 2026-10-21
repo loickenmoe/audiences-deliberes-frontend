@@ -391,7 +391,7 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   await juriste.context().close();
 });
 
-test("le répertoire est trié par charge croissante ; le SH ne voit ni publications ni répertoire", async ({ browser }) => {
+test("le répertoire est trié par charge croissante ; le SH consulte publications et répertoire", async ({ browser }) => {
   const juriste = await pageConnectee(browser, "juriste.test");
   await menu(juriste).getByRole("link", { name: "Répertoire des avocats" }).click();
   await juriste.waitForURL(/\/repertoire\/avocats/, { timeout: 60_000 });
@@ -403,11 +403,15 @@ test("le répertoire est trié par charge croissante ; le SH ne voit ni publicat
   expect(nombres).toEqual([...nombres].sort((a, b) => a - b));
   await juriste.context().close();
 
+  // Since 2026-10-21 the SH consults both screens, without the actions of the other profiles.
   const sh = await pageConnectee(browser, "sh.test");
-  await expect(menu(sh).getByRole("link", { name: "Publications" })).toHaveCount(0);
-  await expect(menu(sh).getByRole("link", { name: "Répertoire des avocats" })).toHaveCount(0);
+  await expect(menu(sh).getByRole("link", { name: "Publications" })).toBeVisible();
+  await expect(menu(sh).getByRole("link", { name: "Répertoire des avocats" })).toBeVisible();
   await sh.goto("/publications");
-  await expect(sh.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+  await expect(sh.getByRole("heading", { name: "Publications des avocats", level: 1 })).toBeVisible();
+  await sh.goto("/repertoire/avocats");
+  await expect(sh.getByRole("heading", { name: "Répertoire des avocats", level: 1 })).toBeVisible();
+  await expect(sh.getByRole("button", { name: "Voir son activité" })).toHaveCount(0);
   await sh.context().close();
 });
 

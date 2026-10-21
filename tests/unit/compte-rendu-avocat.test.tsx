@@ -103,7 +103,8 @@ describe("compte rendu de l'avocat sur l'audience", () => {
    * guard, SH would get a 403 on a screen it is allowed to see.
    */
   it("n'interroge pas les publications pour un profil qui n'y a pas droit", () => {
-    rendre(<OngletAudiences dossier={DOSSIER} roles={["ROLE_SH", "ROLE_CONSULTATION"]} />);
+    // A consultation account with no business profile: the SH reads publications since 2026-10-21.
+    rendre(<OngletAudiences dossier={DOSSIER} roles={["ROLE_CONSULTATION"]} />);
 
     expect(publications).toHaveBeenCalledWith(false);
   });

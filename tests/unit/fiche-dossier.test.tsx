@@ -190,9 +190,16 @@ describe("FicheDossier - onglets", () => {
   });
 
   it("n'affiche pas l'onglet publications à qui ne peut pas les lire", () => {
-    rendre(<FicheDossier dossierId={3} roles={SH} ongletInitial="publications" />);
+    // A consultation account with no business profile: it does not read publications.
+    rendre(<FicheDossier dossierId={3} roles={["ROLE_CONSULTATION"]} ongletInitial="publications" />);
 
     expect(screen.queryByRole("tab", { name: F.ongletPublications })).not.toBeInTheDocument();
     expect(screen.queryByTestId("publications")).not.toBeInTheDocument();
+  });
+
+  it("affiche l'onglet publications au SH, qui les consulte depuis le 21 octobre 2026", () => {
+    rendre(<FicheDossier dossierId={3} roles={SH} ongletInitial="publications" />);
+
+    expect(screen.getByRole("tab", { name: F.ongletPublications })).toBeInTheDocument();
   });
 });

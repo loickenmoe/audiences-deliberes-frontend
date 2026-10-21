@@ -345,26 +345,38 @@ test("le journal du jour rapporte le compte rendu que le juriste vient de saisir
 });
 
 /**
- * The log is open to legal officers. It stays closed to profiles that do not write reports.
+ * The log and the calendar are open to the five internal profiles: the Assistant and the SH consult
+ * them since 2026-10-21. The lawyer, an external user, stays out.
  */
-test("le journal des audiences est ouvert aux juristes, fermé à l'Assistante", async ({ browser }) => {
-  const juriste = await pageConnectee(browser, "juriste.test");
-  await juriste.goto("/audiences/journal");
-  await expect(juriste.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
-  await juriste.context().close();
+test("le journal des audiences s'ouvre au juriste, à l'Assistante et au SH ; pas à l'avocat", async ({ browser }) => {
+  for (const identifiant of ["juriste.test", "assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    await expect(
+      page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Journal des audiences" }),
+    ).toBeVisible();
+    await page.goto("/audiences/journal");
+    await expect(page.getByRole("heading", { name: "Journal des audiences", level: 1 })).toBeVisible();
+    await page.context().close();
+  }
 
-  const assistante = await pageConnectee(browser, "assistante.test");
-  await assistante.goto("/audiences/journal");
-  await expect(
-    assistante.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" }),
-  ).toBeVisible();
-  await assistante.context().close();
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/audiences/journal");
+  await expect(avocat.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+  await avocat.context().close();
 });
 
-test("le calendrier est réservé au juriste et au DJ", async ({ page }) => {
-  await seConnecter(page, "assistante.test");
-  await page.goto("/audiences/calendrier");
-  await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+test("le calendrier s'ouvre à l'Assistante et au SH ; pas à l'avocat", async ({ browser }) => {
+  for (const identifiant of ["assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    await page.goto("/audiences/calendrier");
+    await expect(page.getByRole("heading", { name: "Calendrier des audiences", level: 1 })).toBeVisible();
+    await page.context().close();
+  }
+
+  const avocat = await pageConnectee(browser, "avocat.test");
+  await avocat.goto("/audiences/calendrier");
+  await expect(avocat.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+  await avocat.context().close();
 });
 
 test("le calendrier est traduit", async ({ page }) => {

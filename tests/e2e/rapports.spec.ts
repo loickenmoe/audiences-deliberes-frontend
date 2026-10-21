@@ -153,11 +153,16 @@ test("le rapport s'exporte dans les trois formats binaires", async ({ page }) =>
   await page.context().close();
 });
 
-test("l'Assistante n'atteint pas les rapports, faute de ROLE_JURISTE", async ({ page }) => {
-  await seConnecter(page, "assistante.test");
-  await page.goto("/rapports");
-
-  await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+test("l'Assistante et le SH atteignent le rapport d'activité, sans les activités nominatives", async ({ browser }) => {
+  for (const identifiant of ["assistante.test", "sh.test"]) {
+    const page = await pageConnectee(browser, identifiant);
+    await page.goto("/rapports");
+    await expect(page.getByRole("heading", { name: "Rapport d’activité", level: 1 })).toBeVisible();
+    // Reports naming people stay with management.
+    await expect(page.getByRole("heading", { name: "Activité par personne" })).toHaveCount(0);
+    await expect(page.locator("#nominatif-debut")).toHaveCount(0);
+    await page.context().close();
+  }
 });
 
 test("les écrans de reporting sont traduits", async ({ page }) => {
@@ -359,15 +364,11 @@ test("un juriste affiche son activité, la télécharge, puis clique jusqu'au do
 });
 
 /**
- * `/rapports` requires `ROLE_JURISTE`: the Assistant and the SH cannot enter it. "Mon compte" is the
- * only screen shared by the five internal profiles.
+ * The Assistant and the SH read their own activity sheet in "Mon compte", like every internal profile.
  */
 test("l'Assistante et le SH ont leur fiche, là où ils peuvent l'atteindre", async ({ browser }) => {
   for (const identifiant of ["assistante.test", "sh.test"]) {
     const page = await pageConnectee(browser, identifiant);
-    await page.goto("/rapports");
-    await expect(page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
-
     await page.goto("/mon-compte");
     await expect(page.getByRole("heading", { name: "Mon activité", level: 2 })).toBeVisible();
     await page.locator("#activite-debut-moi").fill("2020-01-01");
@@ -562,7 +563,7 @@ test("le DJ ouvre l'activité d'un avocat depuis le répertoire ; le juriste n'e
    * The legal officer and the Assistant reach this directory to choose a lawyer, but a named
    * person's activity stays with management: the column does not exist for them.
    */
-  for (const identifiant of ["juriste.test", "assistante.test"]) {
+  for (const identifiant of ["juriste.test", "assistante.test", "sh.test"]) {
     const page = await pageConnectee(browser, identifiant);
     await page.goto("/repertoire/avocats");
     await expect(page.locator("tbody tr").first()).toBeVisible({ timeout: 30_000 });

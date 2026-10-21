@@ -61,26 +61,25 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * `GET /rapports` is `hasRole('JURISTE')`. The DJ and DJA reach it through their composite role,
-   * which makes the P9 flow available.
+   * `GET /rapports` is open to the legal officer (and the DJ and DJA through their composite role),
+   * the Assistant and the SH since 2026-10-21. The avocat stays out.
    */
-  it("le juriste génère des rapports, le DJ et la DJA par leur composite", () => {
-    expect(peut(JURISTE, "genererRapport")).toBe(true);
-    expect(peut(DJ, "genererRapport")).toBe(true);
-    expect(peut(DJA, "genererRapport")).toBe(true);
-    expect(peut(ASSISTANTE, "genererRapport")).toBe(false);
+  it("les rapports s'ouvrent au juriste, à la direction, à l'Assistante et au SH", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(peut(profil, "genererRapport")).toBe(true);
+    }
+    expect(peut(AVOCAT, "genererRapport")).toBe(false);
   });
 
   /**
-   * `GET /audiences/calendrier` is `hasAnyRole('JURISTE','DJ')`. The DJA reaches it through its
-   * composite role, as the backend allows. The Assistant does not carry `ROLE_JURISTE` and is excluded.
+   * `GET /audiences/calendrier` is open to the legal officer, the DJ (the DJA through its composite
+   * role), the Assistant and the SH since 2026-10-21.
    */
-  it("le calendrier suit le composite : juriste, DJ et DJA, mais pas l'Assistante", () => {
-    expect(peut(JURISTE, "consulterCalendrier")).toBe(true);
-    expect(peut(DJ, "consulterCalendrier")).toBe(true);
-    expect(peut(DJA, "consulterCalendrier")).toBe(true);
-    expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
-    expect(peut(SH, "consulterCalendrier")).toBe(false);
+  it("le calendrier s'ouvre aux cinq profils internes, pas à l'avocat", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(peut(profil, "consulterCalendrier")).toBe(true);
+    }
+    expect(peut(AVOCAT, "consulterCalendrier")).toBe(false);
   });
 
   /**
@@ -91,7 +90,27 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     expect(peut(ASSISTANTE, "consulterRepertoire")).toBe(true);
     expect(peut(JURISTE, "consulterRepertoire")).toBe(true);
     expect(peut(DJ, "consulterRepertoire")).toBe(true);
-    expect(peut(SH, "consulterRepertoire")).toBe(false);
+    expect(peut(SH, "consulterRepertoire")).toBe(true);
+    expect(peut(AVOCAT, "consulterRepertoire")).toBe(false);
+  });
+
+  /**
+   * Since 2026-10-21 the Assistant and the SH also consult the hearings journal, publications and
+   * the daily DMS report. Consultation only: validating, commenting, sending the correspondence and
+   * the named activity reports stay with their owners.
+   */
+  it("l'Assistante et le SH consultent journal, publications et rapport journalier, sans les actions", () => {
+    for (const profil of [ASSISTANTE, SH]) {
+      expect(peut(profil, "consulterJournalAudiences")).toBe(true);
+      expect(peut(profil, "consulterPublications")).toBe(true);
+      expect(peut(profil, "consulterRapportJournalier")).toBe(true);
+      expect(peut(profil, "commenterPublication")).toBe(false);
+      expect(peut(profil, "transmettreCorrespondance")).toBe(false);
+      expect(peut(profil, "consulterRapportNominatif")).toBe(false);
+    }
+    expect(peut(ASSISTANTE, "validerPublication")).toBe(true);
+    expect(peut(SH, "validerPublication")).toBe(false);
+    expect(peut(AVOCAT, "consulterJournalAudiences")).toBe(false);
   });
 
   /**
@@ -189,8 +208,6 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
       expect(peut(profil, "consulterCalendrier")).toBe(true);
       expect(peut(profil, "consulterRepertoire")).toBe(true);
     }
-    expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
-    expect(peut(SH, "consulterRepertoire")).toBe(false);
   });
 });
 
