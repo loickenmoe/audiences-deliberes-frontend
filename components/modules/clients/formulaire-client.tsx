@@ -13,6 +13,7 @@ import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { useCreerClient, useModifierClient } from "@/hooks/useClients";
 import type { Client } from "@/types/domaine";
+import { telephoneValide } from "@/lib/notifications";
 
 /**
  * Creates a client, or edits an existing one when `client` is provided.
@@ -43,7 +44,12 @@ export function FormulaireClient({
   const schema = z.object({
     nom: z.string().trim().min(1, tm("champObligatoire")).max(255),
     email: z.union([z.string().email(), z.literal("")]).optional(),
-    telephone: z.string().max(20).optional(),
+    // Same rule as an intervenant's phone, also checked by the backend: report it here.
+    telephone: z
+      .string()
+      .max(20)
+      .refine((valeur) => telephoneValide(valeur ?? ""), { message: t("telephoneFormat") })
+      .optional(),
   });
 
   const valeursInitiales = {
@@ -146,7 +152,7 @@ export function FormulaireClient({
   placeholder={t("phEmail")} type="email" enErreur={!!errors.email} {...register("email")} />
         </Champ>
 
-        <Champ id="telephone" label={t("colonneTelephone")} erreur={errors.telephone?.message}>
+        <Champ id="telephone" label={t("colonneTelephone")} aide={t("telephoneAide")} erreur={errors.telephone?.message}>
           <Input id="telephone"
   placeholder={t("phTelephone")} type="tel" enErreur={!!errors.telephone} {...register("telephone")} />
         </Champ>

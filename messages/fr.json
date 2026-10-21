@@ -462,6 +462,8 @@
     "phNom": "Le nom tel qu’il figure sur les pièces",
     "phEmail": "nom@domaine.cm",
     "phTelephone": "9 chiffres commençant par 6, ou +indicatif hors Cameroun",
+    "telephoneAide": "Cameroun : mobile à neuf chiffres, 6XX XXX XXX. Hors Cameroun : indicatif obligatoire, +33 X XX XX XX XX.",
+    "telephoneFormat": "Numéro invalide. Cameroun : neuf chiffres commençant par 6. Hors Cameroun : indicatif obligatoire (+33…).",
     "phFiltreNom": "Nom du client",
     "phFiltreReference": "CLI-2026-…"
   },

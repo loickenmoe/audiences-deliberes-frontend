@@ -131,6 +131,22 @@ describe("FormulaireClient", () => {
     await waitFor(() => expect(mutations.modifier).toHaveBeenCalledWith({ nom: "Société Test", email: null, telephone: "690000000" }));
   });
 
+  it("refuse un téléphone hors format avant tout envoi, comme pour un intervenant", async () => {
+    rendre(<FormulaireClient ouvert onFermeture={vi.fn()} />);
+    const modale = fenetre(T.creerTitre);
+    expect(within(modale).getByText(T.telephoneAide)).toBeInTheDocument();
+    fireEvent.change(within(modale).getByLabelText(T.colonneNom, { exact: false }), { target: { value: "Nouvelle SA" } });
+    fireEvent.change(within(modale).getByLabelText(T.colonneTelephone), { target: { value: "2 22 45 67 89" } });
+    fireEvent.click(within(modale).getByRole("button", { name: C.enregistrer, hidden: true }));
+
+    expect(await within(modale).findByText(T.telephoneFormat)).toBeInTheDocument();
+    expect(mutations.creer).not.toHaveBeenCalled();
+
+    fireEvent.change(within(modale).getByLabelText(T.colonneTelephone), { target: { value: "+33 6 12 34 56 78" } });
+    fireEvent.click(within(modale).getByRole("button", { name: C.enregistrer, hidden: true }));
+    await waitFor(() => expect(mutations.creer).toHaveBeenCalledWith({ nom: "Nouvelle SA", email: undefined, telephone: "+33 6 12 34 56 78" }));
+  });
+
   it("place l'erreur du serveur sur son champ, sinon en tête", async () => {
     mutations.creer
       .mockRejectedValueOnce(new ErreurApi({ code: "REQUETE_INVALIDE", message: "Téléphone invalide", champ: "telephone", statut: 400 }))
