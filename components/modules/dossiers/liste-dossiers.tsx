@@ -62,7 +62,7 @@ function LienDossier({ dossier }: Readonly<{ dossier: Dossier }>) {
 function EtapesEnCours({ dossier }: Readonly<{ dossier: Dossier }>) {
   const etapes = dossier.etapes;
   const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
-  const principale = etapes.filter((etape) => etape.type !== "RECOURS_2_CCJA").at(-1);
+  const principale = etapes.findLast((etape) => etape.type !== "RECOURS_2_CCJA");
   const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
   if (aMontrer.length === 0) return "—";
   return (
@@ -358,9 +358,9 @@ export function ListeDossiers({ roles }: Readonly<{ roles: readonly string[] }>)
         announced only once the request completes (the table's loading state has its own
         `role="status"`).
       */}
-      <p role="status" aria-live="polite" className="sr-only">
+      <output aria-live="polite" className="sr-only">
         {requete.isLoading ? "" : tm("elements", { nombre: requete.data?.totalElements ?? 0 })}
-      </p>
+      </output>
 
       <TableDonnees
         colonnes={colonnes}

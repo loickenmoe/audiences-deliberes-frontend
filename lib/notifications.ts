@@ -107,7 +107,7 @@ export function trouver(configurations: ConfigurationSysteme[], cle: string): Co
  * start with 6; landlines start with 2 and receive no SMS). Elsewhere the country code is required.
  */
 export function telephoneValide(saisie: string): boolean {
-  const numero = saisie.replace(/[\s.()-]/g, "");
+  const numero = saisie.replaceAll(/[\s.()-]/g, "");
   if (numero === "") return true;
   if (/^(\+?237)?6\d{8}$/.test(numero)) return true;
   // A malformed Cameroonian number must not be accepted by the international rule.

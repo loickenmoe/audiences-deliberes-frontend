@@ -13,9 +13,8 @@ import { useMesConstitutions, useMesPublications } from "@/hooks/usePortailAvoca
 import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
 import { MesDossiers } from "@/components/modules/portail/mes-dossiers";
 import { estCompteAvocatNonRattache, messageErreur } from "@/lib/api/errors";
-import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION } from "@/lib/publications";
+import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION, cleStatutPublication } from "@/lib/publications";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
-import { cleStatutPublication } from "@/lib/publications";
 
 /**
  * Lawyer space: their submissions and their appointment letters.
@@ -27,6 +26,47 @@ import { cleStatutPublication } from "@/lib/publications";
  * Legal officers' comments are never shown: they write for the DJ/DJA, never directly to the lawyer
  * (US 5.5, RG-INT-07). The backend already excludes them from the portal payload.
  */
+function colonnesMesPublications(
+  t: ReturnType<typeof useTranslations<"portail">>,
+  td: ReturnType<typeof useTranslations<"domaine">>,
+): ColumnDef<Publication, unknown>[] {
+  return [
+    {
+      id: "type",
+      header: t("colonneType"),
+      cell: ({ row }) => td(`TypePublication.${row.original.type}` as never),
+    },
+    { accessorKey: "referenceDossier", header: t("colonneDossier") },
+    {
+      id: "depot",
+      header: t("colonneDepot"),
+      cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDepot} />,
+    },
+    {
+      id: "correspondance",
+      header: t("colonneCorrespondance"),
+      cell: ({ row }) => <Correspondance publication={row.original} />,
+    },
+    {
+      id: "statut",
+      header: t("colonneStatut"),
+      cell: ({ row }) => (
+        <span className="flex flex-col items-start gap-1">
+          <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
+            {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
+          </StatutChip>
+          {/* The reason is the only actionable part of a rejection: it is always shown. */}
+          {row.original.motifRejet ? (
+            <span className="max-w-prose text-[length:var(--taille-xs)] text-danger">
+              {row.original.motifRejet}
+            </span>
+          ) : null}
+        </span>
+      ),
+    },
+  ];
+}
+
 export function EspaceAvocat() {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
@@ -34,52 +74,17 @@ export function EspaceAvocat() {
   const publications = useMesPublications(page);
   const constitutions = useMesConstitutions();
 
-
-  const colonnes = useMemo<ColumnDef<Publication, unknown>[]>(
-    () => [
-      {
-        id: "type",
-        header: t("colonneType"),
-        cell: ({ row }) => td(`TypePublication.${row.original.type}` as never),
-      },
-      { accessorKey: "referenceDossier", header: t("colonneDossier") },
-      {
-        id: "depot",
-        header: t("colonneDepot"),
-        cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDepot} />,
-      },
-      {
-        id: "correspondance",
-        header: t("colonneCorrespondance"),
-        cell: ({ row }) => <Correspondance publication={row.original} />,
-      },
-      {
-        id: "statut",
-        header: t("colonneStatut"),
-        cell: ({ row }) => (
-          <span className="flex flex-col items-start gap-1">
-            <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
-              {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
-            </StatutChip>
-            {/* The reason is the only actionable part of a rejection: it is always shown. */}
-            {row.original.motifRejet ? (
-              <span className="max-w-prose text-[length:var(--taille-xs)] text-danger">
-                {row.original.motifRejet}
-              </span>
-            ) : null}
-          </span>
-        ),
-      },
-    ],
-    [t, td],
-  );
+  const colonnes = useMemo(() => colonnesMesPublications(t, td), [t, td]);
 
   /*
    * If the account is not linked to the directory, no section of this screen can load: explain it
    * once rather than showing two "loading failed" blocks. The check comes after the hooks, since an
    * early return before them would change the hook order between renders.
    */
-  if (estCompteAvocatNonRattache(publications.error) || estCompteAvocatNonRattache(constitutions.error)) {
+  if (
+    estCompteAvocatNonRattache(publications.error) ||
+    estCompteAvocatNonRattache(constitutions.error)
+  ) {
     return <CompteAvocatNonRattache />;
   }
 
@@ -87,7 +92,9 @@ export function EspaceAvocat() {
     <div className="flex flex-col gap-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("espaceTitre")}</h1>
+          <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+            {t("espaceTitre")}
+          </h1>
           <p className="max-w-prose text-texte-secondaire">{t("espaceDescription")}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -144,7 +151,11 @@ function Correspondance({ publication }: Readonly<{ publication: Publication }>)
   const t = useTranslations("portail");
 
   if (!publication.correspondance) {
-    return <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("sansCorrespondance")}</span>;
+    return (
+      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+        {t("sansCorrespondance")}
+      </span>
+    );
   }
 
   return (

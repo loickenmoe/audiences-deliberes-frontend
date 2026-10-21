@@ -76,7 +76,7 @@ export function EtatErreur({
 export function EtatChargement({ lignes = 5, className }: Readonly<{ lignes?: number; className?: string }>) {
   const t = useTranslations("commun");
   return (
-    <div className={cn("flex flex-col gap-2", className)} role="status" aria-live="polite">
+    <div className={cn("flex flex-col gap-2", className)} role="status" aria-live="polite" /* NOSONAR - <output> only accepts phrasing content; skeleton rows are blocks */>
       <span className="sr-only">{t("chargement")}</span>
       {Array.from({ length: lignes }, (_, index) => (
         <Skeleton key={index} className="h-11 w-full" />

@@ -158,8 +158,8 @@ describe("canal temps réel", () => {
   });
 
   it("resserre le repli HTTP quand le canal est coupé", () => {
-    expect(cadenceRafraichissement(true)).toBe(CADENCE_CANAL_OUVERT);
-    expect(cadenceRafraichissement(false)).toBe(CADENCE_REPLI);
+    expect(cadenceRafraichissement({ connecte: true })).toBe(CADENCE_CANAL_OUVERT);
+    expect(cadenceRafraichissement({ connecte: false })).toBe(CADENCE_REPLI);
     expect(CADENCE_REPLI).toBeLessThan(CADENCE_CANAL_OUVERT);
   });
 });

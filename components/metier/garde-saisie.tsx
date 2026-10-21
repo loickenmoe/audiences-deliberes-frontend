@@ -29,7 +29,7 @@ export function GardeSaisie({ actif }: Readonly<{ actif: boolean }>) {
     const surFermeture = (evenement: BeforeUnloadEvent) => {
       // `preventDefault` is enough in modern browsers; Safari still requires the return value.
       evenement.preventDefault();
-      evenement.returnValue = "";
+      evenement.returnValue = ""; // NOSONAR - deprecated, but still the only signal Safari honours
     };
 
     window.addEventListener("beforeunload", surFermeture);
@@ -56,11 +56,11 @@ export function GardeSaisie({ actif }: Readonly<{ actif: boolean }>) {
       if (lien.getAttribute("target") === "_blank" || lien.hasAttribute("download")) return;
       if (lien.closest('[data-garde-saisie="ignorer"]')) return;
 
-      const destination = new URL(href, window.location.href);
+      const destination = new URL(href, globalThis.location.href);
       // Another origin leaves the site: `beforeunload` handles it, not this dialog.
-      if (destination.origin !== window.location.origin) return;
+      if (destination.origin !== globalThis.location.origin) return;
       // Staying on the same page (e.g. a tab anchor) loses no input.
-      if (destination.pathname === window.location.pathname) return;
+      if (destination.pathname === globalThis.location.pathname) return;
 
       evenement.preventDefault();
       evenement.stopPropagation();

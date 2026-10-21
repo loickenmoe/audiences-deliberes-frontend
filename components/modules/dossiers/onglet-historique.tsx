@@ -16,7 +16,9 @@ function valeurLisible(valeur: unknown): string {
   if (valeur === null || valeur === undefined || valeur === "") return "—";
   if (Array.isArray(valeur)) return valeur.join(", ");
   if (typeof valeur === "object") return JSON.stringify(valeur);
-  return String(valeur);
+  if (typeof valeur === "string") return valeur;
+  // What remains of a JSON value: a number or a boolean.
+  return typeof valeur === "number" || typeof valeur === "boolean" ? String(valeur) : "—";
 }
 
 /**

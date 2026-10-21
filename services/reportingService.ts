@@ -51,7 +51,7 @@ export const reportingService = {
     const reponse = await apiClient.get<Rapport | "">("/rapports", {
       params: { ...periode, format: "JSON" },
     });
-    return reponse.status === 204 || !reponse.data ? null : (reponse.data as Rapport);
+    return reponse.status === 204 || !reponse.data ? null : reponse.data;
   },
 
   /**
@@ -62,7 +62,7 @@ export const reportingService = {
     const reponse = await apiClient.get<RapportNominatif | "">("/rapports/nominatif", {
       params: { dateDebut, dateFin },
     });
-    return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportNominatif);
+    return reponse.status === 204 || !reponse.data ? null : reponse.data;
   },
 
   /**
@@ -89,7 +89,7 @@ export const reportingService = {
     const reponse = await apiClient.get<RapportAvocats | "">("/rapports/nominatif/avocats", {
       params: { dateDebut, dateFin },
     });
-    return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportAvocats);
+    return reponse.status === 204 || !reponse.data ? null : reponse.data;
   },
 
   /**
@@ -104,7 +104,7 @@ export const reportingService = {
     const reponse = await apiClient.get<RapportActivite | "">("/rapports/activite", {
       params: { dateDebut, dateFin, ...cible },
     });
-    return reponse.status === 204 || !reponse.data ? null : (reponse.data as RapportActivite);
+    return reponse.status === 204 || !reponse.data ? null : reponse.data;
   },
 
   /**

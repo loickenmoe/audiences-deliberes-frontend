@@ -33,6 +33,108 @@ const VIDE: Record<CleVueNotifications, string> = {
   toutes: "videToutes",
 };
 
+/** The alert's case file: a link for internal profiles, plain text for lawyers, or "outside a case". */
+function DossierAlerte({
+  dossierId,
+  lienDossier,
+}: Readonly<{ dossierId: number | null; lienDossier: boolean }>) {
+  const t = useTranslations("notifications");
+  if (dossierId === null) {
+    return <span className="text-texte-tertiaire">{t("horsDossier")}</span>;
+  }
+  return lienDossier ? (
+    <Link
+      href={`/dossiers/${dossierId}`}
+      className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+    >
+      #{dossierId}
+    </Link>
+  ) : (
+    <span className="font-mono text-[length:var(--taille-xs)]">#{dossierId}</span>
+  );
+}
+
+/** "Mark as handled" on an unread alert, otherwise when it was handled. */
+function ActionAlerte({
+  alerte,
+  enCours,
+  onTraiter,
+}: Readonly<{ alerte: Alerte; enCours: boolean; onTraiter: (id: number) => void }>) {
+  const t = useTranslations("notifications");
+  if (estATraiter(alerte)) {
+    return (
+      <Button
+        variante="secondaire"
+        taille="sm"
+        disabled={enCours}
+        onClick={() => onTraiter(alerte.id)}
+      >
+        {t("marquerTraitee")}
+      </Button>
+    );
+  }
+  return (
+    <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+      {alerte.dateTraitement
+        ? t("traiteeLe", { date: new Date(alerte.dateTraitement).toLocaleDateString() })
+        : null}
+    </span>
+  );
+}
+
+function colonnesNotifications(
+  t: ReturnType<typeof useTranslations<"notifications">>,
+  td: ReturnType<typeof useTranslations<"domaine">>,
+  lienDossier: boolean,
+  enCours: boolean,
+  onTraiter: (id: number) => void,
+): ColumnDef<Alerte, unknown>[] {
+  return [
+    {
+      id: "type",
+      header: t("colonneType"),
+      cell: ({ row }) => (
+        <span className="font-medium">{td(`TypeAlerte.${row.original.type}` as never)}</span>
+      ),
+    },
+    {
+      id: "objet",
+      header: t("colonneObjet"),
+      cell: ({ row }) => (
+        <span className="block max-w-prose">{nettoyerDeclencheur(row.original.declencheur)}</span>
+      ),
+    },
+    {
+      id: "dossier",
+      header: t("colonneDossier"),
+      cell: ({ row }) => (
+        <DossierAlerte dossierId={row.original.dossierId} lienDossier={lienDossier} />
+      ),
+    },
+    {
+      id: "date",
+      header: t("colonneDate"),
+      cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDeclenchement} />,
+    },
+    {
+      id: "statut",
+      header: t("colonneStatut"),
+      cell: ({ row }) => (
+        <StatutChip ton={TON_STATUT_ALERTE[row.original.statut]}>
+          {td(`StatutAlerte.${row.original.statut}` as never)}
+        </StatutChip>
+      ),
+    },
+    {
+      id: "action",
+      header: t("colonneAction"),
+      cell: ({ row }) => (
+        <ActionAlerte alerte={row.original} enCours={enCours} onTraiter={onTraiter} />
+      ),
+    },
+  ];
+}
+
 /**
  * Screen 03 - my notifications.
  *
@@ -49,7 +151,7 @@ export function FileNotifications({ roles }: Readonly<{ roles: readonly string[]
     vue: "aTraiter",
     type: "",
   });
-  const vue = (VUES.find((cle) => cle === filtres.vue) ?? "aTraiter") as CleVueNotifications;
+  const vue: CleVueNotifications = VUES.find((cle) => cle === filtres.vue) ?? "aTraiter";
   const requete = useMesNotifications(
     VUES_NOTIFICATIONS[vue],
     page,
@@ -67,78 +169,8 @@ export function FileNotifications({ roles }: Readonly<{ roles: readonly string[]
     });
   };
 
-  const colonnes = useMemo<ColumnDef<Alerte, unknown>[]>(
-    () => [
-      {
-        id: "type",
-        header: t("colonneType"),
-        cell: ({ row }) => (
-          <span className="font-medium">{td(`TypeAlerte.${row.original.type}` as never)}</span>
-        ),
-      },
-      {
-        id: "objet",
-        header: t("colonneObjet"),
-        cell: ({ row }) => (
-          <span className="block max-w-prose">{nettoyerDeclencheur(row.original.declencheur)}</span>
-        ),
-      },
-      {
-        id: "dossier",
-        header: t("colonneDossier"),
-        cell: ({ row }) => {
-          const dossierId = row.original.dossierId;
-          if (dossierId === null) {
-            return <span className="text-texte-tertiaire">{t("horsDossier")}</span>;
-          }
-          return lienDossier ? (
-            <Link
-              href={`/dossiers/${dossierId}`}
-              className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-            >
-              #{dossierId}
-            </Link>
-          ) : (
-            <span className="font-mono text-[length:var(--taille-xs)]">#{dossierId}</span>
-          );
-        },
-      },
-      {
-        id: "date",
-        header: t("colonneDate"),
-        cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDeclenchement} />,
-      },
-      {
-        id: "statut",
-        header: t("colonneStatut"),
-        cell: ({ row }) => (
-          <StatutChip ton={TON_STATUT_ALERTE[row.original.statut]}>
-            {td(`StatutAlerte.${row.original.statut}` as never)}
-          </StatutChip>
-        ),
-      },
-      {
-        id: "action",
-        header: t("colonneAction"),
-        cell: ({ row }) =>
-          estATraiter(row.original) ? (
-            <Button
-              variante="secondaire"
-              taille="sm"
-              disabled={traiter.isPending}
-              onClick={() => marquerTraitee(row.original.id)}
-            >
-              {t("marquerTraitee")}
-            </Button>
-          ) : (
-            <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-              {row.original.dateTraitement
-                ? t("traiteeLe", { date: new Date(row.original.dateTraitement).toLocaleDateString() })
-                : null}
-            </span>
-          ),
-      },
-    ],
+  const colonnes = useMemo(
+    () => colonnesNotifications(t, td, lienDossier, traiter.isPending, marquerTraitee),
     // `marquerTraitee` is recreated on every render: listing it here would recompute the columns endlessly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, td, lienDossier, traiter.isPending],
@@ -147,12 +179,17 @@ export function FileNotifications({ roles }: Readonly<{ roles: readonly string[]
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label={t("vue")} className="flex w-fit rounded border border-bordure-forte">
+        <fieldset
+                    aria-label={t("vue")}
+          className="flex w-fit rounded border border-bordure-forte"
+        >
           {VUES.map((cle) => (
             <button
               key={cle}
@@ -167,7 +204,7 @@ export function FileNotifications({ roles }: Readonly<{ roles: readonly string[]
               {t(`vues.${cle}` as never)}
             </button>
           ))}
-        </div>
+        </fieldset>
 
         {/*
           Filter by alert type: there are seventeen types and hearing reminders fire three times per

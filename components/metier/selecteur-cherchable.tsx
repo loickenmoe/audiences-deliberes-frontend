@@ -23,6 +23,12 @@ export interface OptionCherchable {
  * Follows the ARIA `combobox` pattern. In multiple mode (e.g. case assignment, US 1.1), selected
  * choices are shown as removable chips under the field.
  */
+/** The selection as a list, whatever the mode. */
+function enListe(valeur: number | null | undefined | readonly number[]): readonly number[] {
+  if (Array.isArray(valeur)) return valeur;
+  return valeur === null || valeur === undefined ? [] : [valeur as number];
+}
+
 export function SelecteurCherchable({
   valeur,
   onChangement,
@@ -59,9 +65,13 @@ export function SelecteurCherchable({
   const [ouvert, setOuvert] = useState(false);
   const [indexActif, setIndexActif] = useState(0);
   const conteneur = useRef<HTMLDivElement>(null);
+  /** What the list says instead of options: still searching, or nothing found. */
+  let messageListe: string | null = null;
+  if (chargement) messageListe = t("rechercheEnCours");
+  else if (options.length === 0) messageListe = t("aucunResultat");
 
   const choisis = useMemo<readonly number[]>(
-    () => (Array.isArray(valeur) ? valeur : valeur === null || valeur === undefined ? [] : [valeur as number]),
+    () => enListe(valeur),
     [valeur],
   );
   /**
@@ -188,27 +198,21 @@ export function SelecteurCherchable({
           choices.
         */}
         {ouvert ? (
-          <ul
+          <ul // NOSONAR - listbox of the WAI-ARIA combobox pattern
             id={idListe}
-            role="listbox"
+            role="listbox" // NOSONAR - WAI-ARIA combobox pattern: a native <select> cannot filter as the user types
             aria-label={label}
             aria-multiselectable={multiple || undefined}
             className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded border border-bordure bg-surface shadow-[var(--ombre-carte)]"
           >
-            {chargement ? (
-              <li className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">
-                {t("rechercheEnCours")}
-              </li>
-            ) : options.length === 0 ? (
-              <li className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">
-                {t("aucunResultat")}
-              </li>
+            {messageListe ? (
+              <li className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{messageListe}</li>
             ) : (
               options.map((option, index) => (
-                <li
+                <li // NOSONAR - option of the WAI-ARIA combobox pattern
                   key={option.id}
                   id={`${idListe}-${option.id}`}
-                  role="option"
+                  role="option" // NOSONAR - option of the combobox listbox above
                   aria-selected={choisis.includes(option.id)}
                   onMouseDown={() => choisir(option)}
                   className={cn(

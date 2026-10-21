@@ -30,9 +30,7 @@ import { PeriodeCalendrier, TypeEtape } from "@/types/enums";
 export function CalendrierAudiences() {
   const t = useTranslations("calendrier");
   const tdom = useTranslations("domaine");
-  const tc = useTranslations("commun");
   const langue = useLocale() as Langue;
-  const { nomUtilisateur, nomIntervenant } = useLibelles();
   const [periode, setPeriode] = useState<PeriodeCalendrier>("HEBDOMADAIRE");
   const [debut, setDebut] = useState(() => debutDePeriode("HEBDOMADAIRE", new Date()));
   const [exportEnCours, setExportEnCours] = useState<"PDF" | "EXCEL" | null>(null);
@@ -53,7 +51,10 @@ export function CalendrierAudiences() {
       const contenu = await audienceService.exporterCalendrier(periode, dateDebut, format);
       // File name built here: the Content-Disposition header is not exposed through CORS, and a
       // dated name is more useful than "calendrier.pdf" when archiving several.
-      telechargerBlob(contenu, `calendrier-${periode.toLowerCase()}-${dateDebut}.${format === "PDF" ? "pdf" : "xlsx"}`);
+      telechargerBlob(
+        contenu,
+        `calendrier-${periode.toLowerCase()}-${dateDebut}.${format === "PDF" ? "pdf" : "xlsx"}`,
+      );
     } catch (error_) {
       setErreurExport(messageErreur(error_));
     } finally {
@@ -63,23 +64,27 @@ export function CalendrierAudiences() {
 
   const entrees = requete.data ?? [];
   const parJour = new Map<string, EntreeCalendrier[]>();
-  for (const entree of [...entrees].sort((a, b) => a.datePlanifiee.localeCompare(b.datePlanifiee))) {
+  for (const entree of [...entrees].sort((a, b) =>
+    a.datePlanifiee.localeCompare(b.datePlanifiee),
+  )) {
     parJour.set(entree.datePlanifiee, [...(parJour.get(entree.datePlanifiee) ?? []), entree]);
   }
-
-  const libelleEtape = (etape: string) =>
-    (TypeEtape as readonly string[]).includes(etape) ? tdom(`TypeEtape.${etape}` as never) : etape;
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-bordure bg-surface p-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div role="group" aria-label={t("periode")} className="flex rounded border border-bordure-forte">
+          <fieldset
+                        aria-label={t("periode")}
+            className="flex rounded border border-bordure-forte"
+          >
             {PeriodeCalendrier.map((valeur) => (
               <button
                 key={valeur}
@@ -94,7 +99,7 @@ export function CalendrierAudiences() {
                 {tdom(`PeriodeCalendrier.${valeur}` as never)}
               </button>
             ))}
-          </div>
+          </fieldset>
 
           <div className="flex items-center gap-1">
             <Button
@@ -105,7 +110,11 @@ export function CalendrierAudiences() {
             >
               <ChevronLeft size={16} aria-hidden />
             </Button>
-            <Button variante="secondaire" taille="sm" onClick={() => setDebut(debutDePeriode(periode, new Date()))}>
+            <Button
+              variante="secondaire"
+              taille="sm"
+              onClick={() => setDebut(debutDePeriode(periode, new Date()))}
+            >
               {t("aujourdhui")}
             </Button>
             <Button
@@ -124,16 +133,28 @@ export function CalendrierAudiences() {
               debut: formaterDate(dateDebut, langue),
               fin: formaterDate(versIso(finDePeriode(periode, debut)), langue),
             })}
-            <span className="ml-2 font-normal text-texte-secondaire">· {t("nombre", { nombre: entrees.length })}</span>
+            <span className="ml-2 font-normal text-texte-secondaire">
+              · {t("nombre", { nombre: entrees.length })}
+            </span>
           </p>
         </div>
 
         <div className="flex gap-2">
-          <Button variante="secondaire" taille="sm" onClick={() => void exporter("PDF")} disabled={exportEnCours !== null}>
+          <Button
+            variante="secondaire"
+            taille="sm"
+            onClick={() => void exporter("PDF")}
+            disabled={exportEnCours !== null}
+          >
             <Download size={14} aria-hidden />
             {t("exporterPdf")}
           </Button>
-          <Button variante="secondaire" taille="sm" onClick={() => void exporter("EXCEL")} disabled={exportEnCours !== null}>
+          <Button
+            variante="secondaire"
+            taille="sm"
+            onClick={() => void exporter("EXCEL")}
+            disabled={exportEnCours !== null}
+          >
             <Download size={14} aria-hidden />
             {t("exporterExcel")}
           </Button>
@@ -146,69 +167,122 @@ export function CalendrierAudiences() {
         </p>
       ) : null}
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={6} />
-      ) : requete.error ? (
-        <EtatErreur
-          message={messageErreur(requete.error)}
-          action={
-            <Button variante="secondaire" onClick={() => void requete.refetch()}>
-              {tc("reessayer")}
-            </Button>
-          }
-        />
-      ) : parJour.size === 0 ? (
-        <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
-          {t("aucune")}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-5">
-          {[...parJour.entries()].map(([jour, audiences]) => (
-            <section key={jour} aria-labelledby={`jour-${jour}`} className="flex flex-col gap-2">
-              <h2 id={`jour-${jour}`} className="text-[length:var(--taille-base)] font-semibold capitalize">
-                <DateValeur valeur={jour} />
-              </h2>
-              <div className="overflow-x-auto rounded border border-bordure bg-surface">
-                <table className="w-full text-left text-[length:var(--taille-sm)]">
-                  <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-                    <tr>
-                      <th scope="col" className="px-4 py-2 font-medium">{t("colonneDossier")}</th>
-                      <th scope="col" className="px-4 py-2 font-medium">{t("colonneClient")}</th>
-                      <th scope="col" className="px-4 py-2 font-medium">{t("colonneJuridiction")}</th>
-                      <th scope="col" className="px-4 py-2 font-medium">{t("colonneEtape")}</th>
-                      <th scope="col" className="px-4 py-2 font-medium">{t("colonneJuristes")}</th>
-                      <th scope="col" className="px-4 py-2 font-medium">{t("colonneAvocats")}</th>
-                      <th scope="col" className="px-4 py-2 text-right font-medium">{t("colonneRisque")}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-bordure">
-                    {audiences.map((audience) => (
-                      <tr key={audience.audienceId}>
-                        <td className="px-4 py-2">
-                          <Link
-                            href={`/dossiers/${audience.dossierId}`}
-                            className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-                          >
-                            {audience.referenceDossier}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-2">{audience.clientNom ?? "—"}</td>
-                        <td className="px-4 py-2">{audience.juridiction}</td>
-                        <td className="px-4 py-2">{libelleEtape(audience.etape)}</td>
-                        <td className="px-4 py-2">{audience.juristesAffectes.map(nomUtilisateur).join(", ") || "—"}</td>
-                        <td className="px-4 py-2">{audience.avocatsAffectes.map(nomIntervenant).join(", ") || "—"}</td>
-                        <td className="px-4 py-2 text-right">
-                          <MontantFcfa valeur={audience.risqueEncouru} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+      <Agenda
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        parJour={parJour}
+        onReessayer={() => void requete.refetch()}
+      />
+    </div>
+  );
+}
+
+/** One section per day of the period: loading, error, empty, or the day's hearings. */
+function Agenda({
+  enChargement,
+  erreur,
+  parJour,
+  onReessayer,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  parJour: ReadonlyMap<string, EntreeCalendrier[]>;
+  onReessayer: () => void;
+}>) {
+  const t = useTranslations("calendrier");
+  const tdom = useTranslations("domaine");
+  const tc = useTranslations("commun");
+  const { nomUtilisateur, nomIntervenant } = useLibelles();
+  const libelleEtape = (etape: string) =>
+    (TypeEtape as readonly string[]).includes(etape) ? tdom(`TypeEtape.${etape}` as never) : etape;
+
+  if (enChargement) return <EtatChargement lignes={6} />;
+  if (erreur) {
+    return (
+      <EtatErreur
+        message={messageErreur(erreur)}
+        action={
+          <Button variante="secondaire" onClick={onReessayer}>
+            {tc("reessayer")}
+          </Button>
+        }
+      />
+    );
+  }
+  if (parJour.size === 0) {
+    return (
+      <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
+        {t("aucune")}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-5">
+      {[...parJour.entries()].map(([jour, audiences]) => (
+        <section key={jour} aria-labelledby={`jour-${jour}`} className="flex flex-col gap-2">
+          <h2
+            id={`jour-${jour}`}
+            className="text-[length:var(--taille-base)] font-semibold capitalize"
+          >
+            <DateValeur valeur={jour} />
+          </h2>
+          <div className="overflow-x-auto rounded border border-bordure bg-surface">
+            <table className="w-full text-left text-[length:var(--taille-sm)]">
+              <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+                <tr>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneDossier")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneClient")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneJuridiction")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneEtape")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneJuristes")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    {t("colonneAvocats")}
+                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    {t("colonneRisque")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-bordure">
+                {audiences.map((audience) => (
+                  <tr key={audience.audienceId}>
+                    <td className="px-4 py-2">
+                      <Link
+                        href={`/dossiers/${audience.dossierId}`}
+                        className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+                      >
+                        {audience.referenceDossier}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2">{audience.clientNom ?? "—"}</td>
+                    <td className="px-4 py-2">{audience.juridiction}</td>
+                    <td className="px-4 py-2">{libelleEtape(audience.etape)}</td>
+                    <td className="px-4 py-2">
+                      {audience.juristesAffectes.map(nomUtilisateur).join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-2">
+                      {audience.avocatsAffectes.map(nomIntervenant).join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <MontantFcfa valeur={audience.risqueEncouru} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

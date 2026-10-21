@@ -52,7 +52,7 @@ export function verifierValeurConfiguration(
 
   if (configuration.typeValeur === "LISTE") {
     const elements = saisie.split(",").map((element) => element.trim().toUpperCase());
-    if (elements.some((element) => element === "")) return "vide";
+    if (elements.includes("")) return "vide";
     if (elements.some((element) => !configuration.valeursPossibles.includes(element))) return "inconnue";
     return null;
   }

@@ -18,7 +18,11 @@ import { Dialog } from "@/components/ui/dialog";
 import { useConstitutions, useDeciderConstitution } from "@/hooks/useConstitutions";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
-import { TON_STATUT_CONSTITUTION, vuesConstitutions, type CleVueConstitutions } from "@/lib/publications";
+import {
+  TON_STATUT_CONSTITUTION,
+  vuesConstitutions,
+  type CleVueConstitutions,
+} from "@/lib/publications";
 import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { gedService } from "@/services/gedService";
@@ -42,7 +46,6 @@ async function contenuLettre(documentId: number): Promise<Blob> {
 export function FileConstitutions({ roles }: Readonly<{ roles: readonly string[] }>) {
   const router = useRouter();
   const t = useTranslations("constitutions");
-  const td = useTranslations("domaine");
   const vues = useMemo(() => vuesConstitutions(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0] as string }), [vues]);
   /*
@@ -83,15 +86,26 @@ export function FileConstitutions({ roles }: Readonly<{ roles: readonly string[]
   }
 
   const demandes = requete.data?.content ?? [];
+  // A lawyer is notified by the application; another provider has no account and gets the letter by hand.
+  const cleMessageSignature =
+    signature?.prestataireType === "AVOCAT" ? "signerMessageAvocat" : "signerMessageAutre";
+  const messageSignature = signature
+    ? t(cleMessageSignature, {
+        prestataire: signature.prestataireNom,
+        dossier: signature.referenceDossier,
+      })
+    : "";
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
-      <div role="group" aria-label={t("vue")} className="flex w-fit rounded border border-bordure-forte">
+      <fieldset aria-label={t("vue")} className="flex w-fit rounded border border-bordure-forte">
         {vues.map((v) => (
           <button
             key={v}
@@ -106,130 +120,19 @@ export function FileConstitutions({ roles }: Readonly<{ roles: readonly string[]
             {t(`vues.${v}` as never)}
           </button>
         ))}
-      </div>
+      </fieldset>
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={5} />
-      ) : requete.error ? (
-        <EtatErreur message={messageErreur(requete.error)} />
-      ) : demandes.length === 0 ? (
-        <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
-          {vue === "aSigner" ? t("videASigner") : t("vide")}
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded border border-bordure bg-surface">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDossier")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonnePrestataire")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDemandeur")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneMotif")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneStatut")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">
-                  <span className="sr-only">{t("colonneActions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {demandes.map((demande) => {
-                const enAttente = demande.statut === "EN_ATTENTE";
-                return (
-                  <tr key={demande.id}>
-                    <td className="px-4 py-2">
-                      <Link href={`/dossiers/${demande.dossierId}`} className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4">
-                        {demande.referenceDossier}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className="flex flex-col gap-0.5">
-                        <span className="font-medium">{demande.prestataireNom}</span>
-                        <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-                          {td(`TypeIntervenant.${demande.prestataireType}` as never)}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className="flex flex-col gap-0.5">
-                        <span>{demande.demandeurNom ?? "—"}</span>
-                        <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-                          <DateHeureValeur valeur={demande.dateDemande} />
-                        </span>
-                      </span>
-                    </td>
-                    <td className="max-w-xs px-4 py-2">{demande.motif}</td>
-                    <td className="px-4 py-2">
-                      <span className="flex flex-col items-start gap-1">
-                        <StatutChip ton={TON_STATUT_CONSTITUTION[demande.statut]}>
-                          {td(`StatutConstitution.${demande.statut}` as never)}
-                        </StatutChip>
-                        {!enAttente && demande.dateDecision ? (
-                          <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-                            {demande.valideParNom ? `${demande.valideParNom} · ` : ""}
-                            <DateHeureValeur valeur={demande.dateDecision} />
-                          </span>
-                        ) : null}
-                        {demande.motifRejet ? (
-                          <span className="text-[length:var(--taille-xs)]">{t("motifRejet", { motif: demande.motifRejet })}</span>
-                        ) : null}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex justify-end gap-1">
-                        {enAttente ? (
-                          /*
-                           * Same button, two permissions, and the server decides which. The letter
-                           * belongs to whoever requested the representation: they draft it, the SH
-                           * corrects it before signing, and anyone else reads it. Deriving this
-                           * from a role would offer "Draft" to someone who would then get a 403.
-                           */
-                          <Button
-                            variante="secondaire"
-                            taille="sm"
-                            onClick={() => setLettreOuverte(demande.id)}
-                            aria-label={demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
-                          >
-                            <FileText size={14} aria-hidden />
-                            {demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
-                          </Button>
-                        ) : null}
-                        {enAttente && peutSigner ? (
-                          <>
-                            <Button taille="sm" onClick={() => setSignature(demande)} aria-label={t("signerAria", { prestataire: demande.prestataireNom })}>
-                              <Check size={14} aria-hidden />
-                              {t("signer")}
-                            </Button>
-                            <Button
-                              variante="secondaire"
-                              taille="sm"
-                              onClick={() => setRejet(demande)}
-                              aria-label={t("rejeterAria", { prestataire: demande.prestataireNom })}
-                            >
-                              <X size={14} aria-hidden />
-                              {t("rejeter")}
-                            </Button>
-                          </>
-                        ) : null}
-                        {demande.lettreDocumentId === null ? null : (
-                          <Button
-                            variante="secondaire"
-                            taille="sm"
-                            onClick={() => setLettre(demande)}
-                            aria-label={t("lettreAria", { dossier: demande.referenceDossier })}
-                          >
-                            <FileText size={14} aria-hidden />
-                            {t("lettre")}
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TableauDemandes
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        demandes={demandes}
+        videTexte={vue === "aSigner" ? t("videASigner") : t("vide")}
+        peutSigner={peutSigner}
+        onLettre={setLettreOuverte}
+        onSigner={setSignature}
+        onRejeter={setRejet}
+        onVoirLettre={setLettre}
+      />
 
       {/*
         Rendered as soon as a next page exists: silently truncating the queue would hide pending
@@ -255,14 +158,7 @@ export function FileConstitutions({ roles }: Readonly<{ roles: readonly string[]
         onFermeture={() => setSignature(null)}
         onConfirmation={() => void signer()}
         titre={t("signerTitre")}
-        message={
-          signature
-            ? t(signature.prestataireType === "AVOCAT" ? "signerMessageAvocat" : "signerMessageAutre", {
-                prestataire: signature.prestataireNom,
-                dossier: signature.referenceDossier,
-              })
-            : ""
-        }
+        message={messageSignature}
         libelleConfirmation={t("signer")}
         enCours={decider.isPending}
       />
@@ -274,15 +170,215 @@ export function FileConstitutions({ roles }: Readonly<{ roles: readonly string[]
         onFermeture={() => setLettre(null)}
         nomFichier={lettre ? `lettre-constitution-${lettre.id}.pdf` : ""}
         obtenir={() =>
-          lettre?.lettreDocumentId ? contenuLettre(lettre.lettreDocumentId) : Promise.reject(new Error("aucune lettre"))
+          lettre?.lettreDocumentId
+            ? contenuLettre(lettre.lettreDocumentId)
+            : Promise.reject(new Error("aucune lettre"))
         }
       />
     </div>
   );
 }
 
+type ActionsSurDemande = {
+  peutSigner: boolean;
+  onLettre: (demandeId: number) => void;
+  onSigner: (demande: DemandeConstitution) => void;
+  onRejeter: (demande: DemandeConstitution) => void;
+  onVoirLettre: (demande: DemandeConstitution) => void;
+};
+
+/** The queue: loading, error, empty, or one row per request. */
+function TableauDemandes({
+  enChargement,
+  erreur,
+  demandes,
+  videTexte,
+  ...actions
+}: Readonly<
+  {
+    enChargement: boolean;
+    erreur: unknown;
+    demandes: readonly DemandeConstitution[];
+    videTexte: string;
+  } & ActionsSurDemande
+>) {
+  const t = useTranslations("constitutions");
+  const td = useTranslations("domaine");
+  const { peutSigner, onLettre, onSigner, onRejeter, onVoirLettre } = actions;
+
+  if (enChargement) return <EtatChargement lignes={5} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (demandes.length === 0) {
+    return (
+      <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
+        {videTexte}
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDossier")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonnePrestataire")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDemandeur")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneMotif")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneStatut")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              <span className="sr-only">{t("colonneActions")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {demandes.map((demande) => {
+            const enAttente = demande.statut === "EN_ATTENTE";
+            const decideur = demande.valideParNom ? `${demande.valideParNom} · ` : "";
+            return (
+              <tr key={demande.id}>
+                <td className="px-4 py-2">
+                  <Link
+                    href={`/dossiers/${demande.dossierId}`}
+                    className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+                  >
+                    {demande.referenceDossier}
+                  </Link>
+                </td>
+                <td className="px-4 py-2">
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-medium">{demande.prestataireNom}</span>
+                    <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                      {td(`TypeIntervenant.${demande.prestataireType}` as never)}
+                    </span>
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <span className="flex flex-col gap-0.5">
+                    <span>{demande.demandeurNom ?? "—"}</span>
+                    <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                      <DateHeureValeur valeur={demande.dateDemande} />
+                    </span>
+                  </span>
+                </td>
+                <td className="max-w-xs px-4 py-2">{demande.motif}</td>
+                <td className="px-4 py-2">
+                  <span className="flex flex-col items-start gap-1">
+                    <StatutChip ton={TON_STATUT_CONSTITUTION[demande.statut]}>
+                      {td(`StatutConstitution.${demande.statut}` as never)}
+                    </StatutChip>
+                    {!enAttente && demande.dateDecision ? (
+                      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                        {decideur}
+                        <DateHeureValeur valeur={demande.dateDecision} />
+                      </span>
+                    ) : null}
+                    {demande.motifRejet ? (
+                      <span className="text-[length:var(--taille-xs)]">
+                        {t("motifRejet", { motif: demande.motifRejet })}
+                      </span>
+                    ) : null}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <ActionsDemande
+                    demande={demande}
+                    peutSigner={peutSigner}
+                    onLettre={onLettre}
+                    onSigner={onSigner}
+                    onRejeter={onRejeter}
+                    onVoirLettre={onVoirLettre}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** What can be done on one request: draft or read its letter, sign, reject, open the signed letter. */
+function ActionsDemande({
+  demande,
+  peutSigner,
+  onLettre,
+  onSigner,
+  onRejeter,
+  onVoirLettre,
+}: Readonly<{ demande: DemandeConstitution } & ActionsSurDemande>) {
+  const t = useTranslations("constitutions");
+  const enAttente = demande.statut === "EN_ATTENTE";
+  return (
+    <div className="flex justify-end gap-1">
+      {enAttente ? (
+        /*
+         * Same button, two permissions, and the server decides which. The letter
+         * belongs to whoever requested the representation: they draft it, the SH
+         * corrects it before signing, and anyone else reads it. Deriving this
+         * from a role would offer "Draft" to someone who would then get a 403.
+         */
+        <Button
+          variante="secondaire"
+          taille="sm"
+          onClick={() => onLettre(demande.id)}
+          aria-label={demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
+        >
+          <FileText size={14} aria-hidden />
+          {demande.redactionPossible ? t("redigerLettre") : t("consulterLettre")}
+        </Button>
+      ) : null}
+      {enAttente && peutSigner ? (
+        <>
+          <Button
+            taille="sm"
+            onClick={() => onSigner(demande)}
+            aria-label={t("signerAria", { prestataire: demande.prestataireNom })}
+          >
+            <Check size={14} aria-hidden />
+            {t("signer")}
+          </Button>
+          <Button
+            variante="secondaire"
+            taille="sm"
+            onClick={() => onRejeter(demande)}
+            aria-label={t("rejeterAria", { prestataire: demande.prestataireNom })}
+          >
+            <X size={14} aria-hidden />
+            {t("rejeter")}
+          </Button>
+        </>
+      ) : null}
+      {demande.lettreDocumentId === null ? null : (
+        <Button
+          variante="secondaire"
+          taille="sm"
+          onClick={() => onVoirLettre(demande)}
+          aria-label={t("lettreAria", { dossier: demande.referenceDossier })}
+        >
+          <FileText size={14} aria-hidden />
+          {t("lettre")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /** UC-INT-06 alt. 5-a: the request goes back to the lawyer with the reason; no letter is sent. */
-function ModaleRejet({ demande, onFermeture }: Readonly<{ demande: DemandeConstitution | null; onFermeture: () => void }>) {
+function ModaleRejet({
+  demande,
+  onFermeture,
+}: Readonly<{ demande: DemandeConstitution | null; onFermeture: () => void }>) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -305,7 +401,10 @@ function ModaleRejet({ demande, onFermeture }: Readonly<{ demande: DemandeConsti
       return;
     }
     try {
-      await decider.mutateAsync({ id: demande.id, decision: { decision: "REJETEE", motifRejet: motif.trim() } });
+      await decider.mutateAsync({
+        id: demande.id,
+        decision: { decision: "REJETEE", motifRejet: motif.trim() },
+      });
       toast.success(t("rejetee"));
       setPour(null);
       onFermeture();
@@ -334,7 +433,12 @@ function ModaleRejet({ demande, onFermeture }: Readonly<{ demande: DemandeConsti
         </>
       }
     >
-      <Champ id="motif-rejet-constitution" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
+      <Champ
+        id="motif-rejet-constitution"
+        label={t("champMotifRejet")}
+        obligatoire
+        erreur={erreur ?? undefined}
+      >
         <Textarea
           id="motif-rejet-constitution"
           placeholder={t("phMotifRejet")}

@@ -25,6 +25,13 @@ const CHAMPS = ["seuilMontant", "typeClientSensible", "motif"] as const;
  */
 export type IntentionDiligence = "proposer" | "poser" | "retirer";
 
+/** Message key fragment of each intent. */
+const SUFFIXE_INTENTION: Record<IntentionDiligence, string> = {
+  proposer: "Proposer",
+  poser: "Poser",
+  retirer: "Retirer",
+};
+
 /**
  * Special due diligence review after opening, since a case can turn out sensitive along the way.
  * One modal for three actions, because the fields are the same and only the intent changes what is
@@ -139,12 +146,8 @@ export function ModaleDiligence({
     }
   });
 
-  const titre = t(
-    `diligence${intention === "proposer" ? "Proposer" : intention === "poser" ? "Poser" : "Retirer"}Titre`,
-  );
-  const description = t(
-    `diligence${intention === "proposer" ? "Proposer" : intention === "poser" ? "Poser" : "Retirer"}Description`,
-  );
+  const titre = t(`diligence${SUFFIXE_INTENTION[intention]}Titre`);
+  const description = t(`diligence${SUFFIXE_INTENTION[intention]}Description`);
 
   return (
     <Dialog

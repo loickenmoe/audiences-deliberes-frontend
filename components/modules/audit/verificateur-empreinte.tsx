@@ -86,8 +86,8 @@ export function VerificateurEmpreinte() {
       ) : null}
 
       {resultat ? (
-        <div
-          role="status"
+        <div // NOSONAR - <output> only accepts phrasing content; the result holds paragraphs
+          role="status" // NOSONAR - same reason
           className={`flex flex-col gap-2 rounded border p-3 ${
             resultat.reconnue ? "border-succes bg-succes-fond" : "border-danger bg-danger-fond"
           }`}

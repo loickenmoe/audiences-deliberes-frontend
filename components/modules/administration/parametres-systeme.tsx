@@ -53,7 +53,9 @@ export function ParametresSysteme({ modifiable }: Readonly<{ modifiable: boolean
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
         {modifiable ? null : (
           <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">
@@ -88,7 +90,6 @@ function LigneParametre({
 }>) {
   const t = useTranslations("configurations");
   const tr = useTranslations("referentiels");
-  const td = useTranslations("domaine");
   const { nomUtilisateur } = useLibelles();
   const modifier = useModifierConfiguration();
   const [valeur, setValeur] = useState(configuration.valeur);
@@ -96,10 +97,6 @@ function LigneParametre({
   const refus = verifierValeurConfiguration(configuration, valeur);
   const modifie = valeur.trim() !== configuration.valeur;
   const identifiant = `configuration-${configuration.cle}`;
-  const elements = valeur.split(",").map((item) => item.trim().toUpperCase());
-  // Channels are displayed by name ("Personal email"); other lists by code.
-  const enumCanaux = CLES_CANAUX[configuration.cle];
-  const libelleValeur = (code: string) => (enumCanaux ? td(`${enumCanaux}.${code}` as never) : code);
 
   // The business description is translated; the backend one is the fallback for an unknown key.
   const messages = tr.raw("configurations") as Record<string, string | undefined>;
@@ -117,6 +114,14 @@ function LigneParametre({
         })
       : t(`refus.${motif}` as never);
 
+  function mentionModification() {
+    if (!configuration.dateModification) return t("jamaisModifiee");
+    const date = new Date(configuration.dateModification).toLocaleDateString();
+    return configuration.dernierAuteurId === null
+      ? t("modifiee", { date })
+      : t("modifieeParAuteur", { date, auteur: nomUtilisateur(configuration.dernierAuteurId) });
+  }
+
   const enregistrer = () => {
     modifier.mutate(
       { cle: configuration.cle, valeur: valeur.trim() },
@@ -133,42 +138,31 @@ function LigneParametre({
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-bordure bg-surface p-4">
       <div className="flex flex-col gap-1">
-        <h2 className="font-mono text-[length:var(--taille-sm)] font-semibold">{configuration.cle}</h2>
+        <h2 className="font-mono text-[length:var(--taille-sm)] font-semibold">
+          {configuration.cle}
+        </h2>
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
           {description}
         </p>
       </div>
 
       {configuration.typeValeur === "LISTE" ? (
-        <fieldset className="flex flex-col gap-2" disabled={!modifiable || modifier.isPending}>
-          <legend className="text-[length:var(--taille-sm)] font-medium">
-            {t("valeursAcceptees")}
-          </legend>
-          <div className="flex flex-wrap gap-3">
-            {configuration.valeursPossibles.map((possible) => (
-              <label key={possible} className="flex items-center gap-2 text-[length:var(--taille-sm)]">
-                <input
-                  type="checkbox"
-                  name={configuration.cle}
-                  value={possible}
-                  checked={elements.includes(possible)}
-                  onChange={() =>
-                    setValeur(basculerElement(valeur, possible, configuration.valeursPossibles))
-                  }
-                  className="size-4 accent-[color:var(--afb-anthracite)]"
-                />
-                {libelleValeur(possible)}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <ChoixListe
+          configuration={configuration}
+          valeur={valeur}
+          desactive={!modifiable || modifier.isPending}
+          onChangement={setValeur}
+        />
       ) : (
         <Champ
           id={identifiant}
           label={t("valeur")}
           aide={
             configuration.valeurMinimale !== null && configuration.valeurMaximale !== null
-              ? t("bornes", { min: configuration.valeurMinimale, max: configuration.valeurMaximale })
+              ? t("bornes", {
+                  min: configuration.valeurMinimale,
+                  max: configuration.valeurMaximale,
+                })
               : undefined
           }
           erreur={refus ? messageRefus(refus) : undefined}
@@ -194,22 +188,17 @@ function LigneParametre({
             "Modified on ... by ...": answers who changed a setting and when, directly on its row.
             The full system action log lives on the audit screen.
           */}
-          <span>
-            {configuration.dateModification
-              ? configuration.dernierAuteurId === null
-                ? t("modifiee", { date: new Date(configuration.dateModification).toLocaleDateString() })
-                : t("modifieeParAuteur", {
-                    date: new Date(configuration.dateModification).toLocaleDateString(),
-                    auteur: nomUtilisateur(configuration.dernierAuteurId),
-                  })
-              : t("jamaisModifiee")}
-          </span>
+          <span>{mentionModification()}</span>
         </p>
 
         {modifiable ? (
           <div className="flex items-center gap-2">
             {modifie ? (
-              <Button variante="discrete" taille="sm" onClick={() => setValeur(configuration.valeur)}>
+              <Button
+                variante="discrete"
+                taille="sm"
+                onClick={() => setValeur(configuration.valeur)}
+              >
                 {t("annuler")}
               </Button>
             ) : null}
@@ -224,5 +213,51 @@ function LigneParametre({
         ) : null}
       </div>
     </article>
+  );
+}
+
+/** A closed list: one checkbox per accepted value. */
+function ChoixListe({
+  configuration,
+  valeur,
+  desactive,
+  onChangement,
+}: Readonly<{
+  configuration: ConfigurationSysteme;
+  valeur: string;
+  desactive: boolean;
+  onChangement: (valeur: string) => void;
+}>) {
+  const t = useTranslations("configurations");
+  const td = useTranslations("domaine");
+  const elements = new Set(valeur.split(",").map((item) => item.trim().toUpperCase()));
+  // Channels are displayed by name ("Personal email"); other lists by code.
+  const enumCanaux = CLES_CANAUX[configuration.cle];
+  const libelleValeur = (code: string) =>
+    enumCanaux ? td(`${enumCanaux}.${code}` as never) : code;
+
+  return (
+    <fieldset className="flex flex-col gap-2" disabled={desactive}>
+      <legend className="text-[length:var(--taille-sm)] font-medium">
+        {t("valeursAcceptees")}
+      </legend>
+      <div className="flex flex-wrap gap-3">
+        {configuration.valeursPossibles.map((possible) => (
+          <label key={possible} className="flex items-center gap-2 text-[length:var(--taille-sm)]">
+            <input
+              type="checkbox"
+              name={configuration.cle}
+              value={possible}
+              checked={elements.has(possible)}
+              onChange={() =>
+                onChangement(basculerElement(valeur, possible, configuration.valeursPossibles))
+              }
+              className="size-4 accent-[color:var(--afb-anthracite)]"
+            />
+            {libelleValeur(possible)}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }

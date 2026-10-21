@@ -15,7 +15,7 @@ import { messageErreur } from "@/lib/api/errors";
 import { signatureService } from "@/services/signatureService";
 
 /** What the letter can display, and nothing else. */
-const FORMATS = ["image/png", "image/jpeg"];
+const FORMATS = new Set(["image/png", "image/jpeg"]);
 /** Wide for a scanned signature, narrow for a photo: the server applies the same limit. */
 const TAILLE_MAX = 200_000;
 
@@ -60,7 +60,7 @@ export function MaSignature() {
      * The upload field already rejects by extension; these checks are on the content type, which
      * the server verifies for signatures, and catch a file whose extension lies.
      */
-    if (!FORMATS.includes(fichier.type)) {
+    if (!FORMATS.has(fichier.type)) {
       toast.error(t("formatRefuse"));
       return;
     }

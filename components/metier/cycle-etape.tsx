@@ -37,6 +37,7 @@ export function CycleEtape({
   className?: string;
 }>) {
   const t = useTranslations("domaine");
+  const libelleType = type ? t(`TypeEtape.${type}` as never) : null;
   const tm = useTranslations("metier");
   const indexCourant = ETATS.indexOf(statut);
 
@@ -63,7 +64,7 @@ export function CycleEtape({
           })}
         </ol>
         <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
-          {type ? `${t(`TypeEtape.${type}` as never)} · ` : ""}
+          {libelleType ? `${libelleType} · ` : ""}
           {t(`StatutCycleVie.${statut}` as never)}
         </span>
       </div>

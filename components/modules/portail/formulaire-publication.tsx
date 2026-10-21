@@ -110,7 +110,7 @@ export function FormulairePublication() {
           <legend className="mb-1 text-[length:var(--taille-sm)] font-medium">{t("natureDepot")}</legend>
           <div className="flex flex-col gap-2">
             {NATURES.map((valeur) => (
-              <label
+              <label // NOSONAR - its text is the option title and help, in the spans below
                 key={valeur}
                 className={cn(
                   "flex cursor-pointer items-start gap-3 rounded border p-3 transition-colors",

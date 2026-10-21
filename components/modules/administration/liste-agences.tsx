@@ -83,7 +83,12 @@ export function ListeAgences({ roles }: Readonly<{ roles: readonly string[] }>) 
       </header>
 
       <div className="flex items-end gap-3 rounded-lg border border-bordure bg-surface px-4 py-3">
-        <Champ id="recherche-agence" label={t("rechercher")} aide={t("rechercherAide")} className="w-80">
+        <Champ
+          id="recherche-agence"
+          label={t("rechercher")}
+          aide={t("rechercherAide")}
+          className="w-80"
+        >
           <Input
             id="recherche-agence"
             placeholder={t("phRechercheAgence")}
@@ -98,101 +103,19 @@ export function ListeAgences({ roles }: Readonly<{ roles: readonly string[] }>) 
         </Champ>
       </div>
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={5} />
-      ) : requete.error ? (
-        <EtatErreur
-          message={messageErreur(requete.error)}
-          action={
-            <Button variante="secondaire" onClick={() => void requete.refetch()}>
-              {t("reessayer")}
-            </Button>
-          }
-        />
-      ) : agences.length === 0 ? (
-        <EtatVide
-          titre={t("aucuneAgence")}
-          description={recherche ? t("aucuneAgenceRecherche") : t("aucuneAgenceTexte")}
-          action={
-            peutAdministrer && !recherche ? (
-              <Button onClick={() => setCreationOuverte(true)}>
-                <Plus size={15} aria-hidden />
-                {t("nouvelleAgence")}
-              </Button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <TableWrapper>
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>{t("colonneCode")}</Th>
-                <Th>{t("colonneNom")}</Th>
-                <Th>{t("colonneVille")}</Th>
-                <Th>{t("colonneAdresse")}</Th>
-                <Th>{t("colonneTelephone")}</Th>
-                <Th>{t("colonneEtat")}</Th>
-                {peutAdministrer ? (
-                  <Th>
-                    <span className="sr-only">{t("colonneActions")}</span>
-                  </Th>
-                ) : null}
-              </Tr>
-            </Thead>
-            <Tbody>
-              {agences.map((agence) => (
-                <Tr key={agence.id} className="hover:bg-surface-attenuee">
-                  <Td className="font-mono text-[length:var(--taille-xs)]">{agence.code}</Td>
-                  <Td className="font-medium">{agence.nom}</Td>
-                  <Td>{agence.ville}</Td>
-                  <Td className="max-w-80">{agence.adresse ?? "-"}</Td>
-                  <Td>{agence.telephone ?? "-"}</Td>
-                  <Td>
-                    <StatutChip ton={agence.actif ? "succes" : "neutre"}>
-                      {agence.actif ? t("ouverte") : t("fermee")}
-                    </StatutChip>
-                  </Td>
-                  {peutAdministrer ? (
-                    <Td className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variante="secondaire"
-                          aria-label={t("modifierNommee", { nom: agence.nom })}
-                          onClick={() => setEnEdition(agence)}
-                        >
-                          <Pencil size={14} aria-hidden />
-                          {t("modifier")}
-                        </Button>
-                        {agence.actif ? (
-                          <Button
-                            variante="secondaire"
-                            aria-label={t("desactiverNommee", { nom: agence.nom })}
-                            onClick={() => setAFermer(agence)}
-                          >
-                            <PowerOff size={14} aria-hidden />
-                            {t("desactiver")}
-                          </Button>
-                        ) : (
-                          <Button
-                            variante="secondaire"
-                            aria-label={t("reactiverNommee", { nom: agence.nom })}
-                            disabled={reactiver.isPending}
-                            onClick={() => void rouvrirLAgence(agence)}
-                          >
-                            <Power size={14} aria-hidden />
-                            {t("reactiver")}
-                          </Button>
-                        )}
-                      </div>
-                    </Td>
-                  ) : null}
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </TableWrapper>
-      )}
+      <ContenuAgences
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        agences={agences}
+        recherche={recherche}
+        peutAdministrer={peutAdministrer}
+        reactivationEnCours={reactiver.isPending}
+        onReessayer={() => void requete.refetch()}
+        onCreer={() => setCreationOuverte(true)}
+        onModifier={setEnEdition}
+        onFermer={setAFermer}
+        onRouvrir={(agence) => void rouvrirLAgence(agence)}
+      />
 
       {requete.data ? (
         <Pagination
@@ -229,6 +152,159 @@ export function ListeAgences({ roles }: Readonly<{ roles: readonly string[] }>) 
           enCours={desactiver.isPending}
         />
       ) : null}
+    </div>
+  );
+}
+
+type ActionsSurAgence = {
+  reactivationEnCours: boolean;
+  onModifier: (agence: Agence) => void;
+  onFermer: (agence: Agence) => void;
+  onRouvrir: (agence: Agence) => void;
+};
+
+/** The list: loading, error, empty (with a creation shortcut), or the branches. */
+function ContenuAgences({
+  enChargement,
+  erreur,
+  agences,
+  recherche,
+  peutAdministrer,
+  onReessayer,
+  onCreer,
+  ...actions
+}: Readonly<
+  {
+    enChargement: boolean;
+    erreur: unknown;
+    agences: readonly Agence[];
+    recherche: string;
+    peutAdministrer: boolean;
+    onReessayer: () => void;
+    onCreer: () => void;
+  } & ActionsSurAgence
+>) {
+  const t = useTranslations("agences");
+  const { reactivationEnCours, onModifier, onFermer, onRouvrir } = actions;
+
+  if (enChargement) return <EtatChargement lignes={5} />;
+  if (erreur) {
+    return (
+      <EtatErreur
+        message={messageErreur(erreur)}
+        action={
+          <Button variante="secondaire" onClick={onReessayer}>
+            {t("reessayer")}
+          </Button>
+        }
+      />
+    );
+  }
+  if (agences.length === 0) {
+    return (
+      <EtatVide
+        titre={t("aucuneAgence")}
+        description={recherche ? t("aucuneAgenceRecherche") : t("aucuneAgenceTexte")}
+        action={
+          peutAdministrer && !recherche ? (
+            <Button onClick={onCreer}>
+              <Plus size={15} aria-hidden />
+              {t("nouvelleAgence")}
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
+  return (
+    <TableWrapper>
+      <Table>
+        <Thead>
+          <Tr>
+            <Th>{t("colonneCode")}</Th>
+            <Th>{t("colonneNom")}</Th>
+            <Th>{t("colonneVille")}</Th>
+            <Th>{t("colonneAdresse")}</Th>
+            <Th>{t("colonneTelephone")}</Th>
+            <Th>{t("colonneEtat")}</Th>
+            {peutAdministrer ? (
+              <Th>
+                <span className="sr-only">{t("colonneActions")}</span>
+              </Th>
+            ) : null}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {agences.map((agence) => (
+            <Tr key={agence.id} className="hover:bg-surface-attenuee">
+              <Td className="font-mono text-[length:var(--taille-xs)]">{agence.code}</Td>
+              <Td className="font-medium">{agence.nom}</Td>
+              <Td>{agence.ville}</Td>
+              <Td className="max-w-80">{agence.adresse ?? "-"}</Td>
+              <Td>{agence.telephone ?? "-"}</Td>
+              <Td>
+                <StatutChip ton={agence.actif ? "succes" : "neutre"}>
+                  {agence.actif ? t("ouverte") : t("fermee")}
+                </StatutChip>
+              </Td>
+              {peutAdministrer ? (
+                <Td className="text-right">
+                  <ActionsAgence
+                    agence={agence}
+                    reactivationEnCours={reactivationEnCours}
+                    onModifier={onModifier}
+                    onFermer={onFermer}
+                    onRouvrir={onRouvrir}
+                  />
+                </Td>
+              ) : null}
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </TableWrapper>
+  );
+}
+
+/** Edit, then close an open branch or reopen a closed one. */
+function ActionsAgence({
+  agence,
+  reactivationEnCours,
+  onModifier,
+  onFermer,
+  onRouvrir,
+}: Readonly<{ agence: Agence } & ActionsSurAgence>) {
+  const t = useTranslations("agences");
+  return (
+    <div className="flex justify-end gap-2">
+      <Button
+        variante="secondaire"
+        aria-label={t("modifierNommee", { nom: agence.nom })}
+        onClick={() => onModifier(agence)}
+      >
+        <Pencil size={14} aria-hidden />
+        {t("modifier")}
+      </Button>
+      {agence.actif ? (
+        <Button
+          variante="secondaire"
+          aria-label={t("desactiverNommee", { nom: agence.nom })}
+          onClick={() => onFermer(agence)}
+        >
+          <PowerOff size={14} aria-hidden />
+          {t("desactiver")}
+        </Button>
+      ) : (
+        <Button
+          variante="secondaire"
+          aria-label={t("reactiverNommee", { nom: agence.nom })}
+          disabled={reactivationEnCours}
+          onClick={() => onRouvrir(agence)}
+        >
+          <Power size={14} aria-hidden />
+          {t("reactiver")}
+        </Button>
+      )}
     </div>
   );
 }

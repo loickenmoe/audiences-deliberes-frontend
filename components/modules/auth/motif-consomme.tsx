@@ -12,11 +12,11 @@ import { useEffect } from "react";
  */
 export function MotifConsomme() {
   useEffect(() => {
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     if (!url.searchParams.has("motif")) return;
 
     url.searchParams.delete("motif");
-    window.history.replaceState(null, "", url.pathname + url.search);
+    globalThis.history.replaceState(null, "", url.pathname + url.search);
   }, []);
 
   return null;

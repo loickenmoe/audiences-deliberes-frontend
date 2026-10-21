@@ -128,7 +128,7 @@ function claims(jeton: string): Record<string, unknown> {
     const charge = jeton.split(".")[1];
     if (!charge) return {};
     return JSON.parse(
-      Buffer.from(charge.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"),
+      Buffer.from(charge.replaceAll("-", "+").replaceAll("_", "/"), "base64").toString("utf8"),
     ) as Record<string, unknown>;
   } catch {
     return {};

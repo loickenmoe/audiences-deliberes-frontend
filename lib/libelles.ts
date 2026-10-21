@@ -10,7 +10,7 @@ type Traducteur = ReturnType<typeof useTranslations>;
 
 /** Label of a domain enum value. `t` must come from the `domaine` namespace. */
 export function libelleDomaine(t: Traducteur, enumeration: string, valeur: string): string {
-  return t(`${enumeration}.${valeur}` as Parameters<Traducteur>[0]);
+  return t(`${enumeration}.${valeur}`);
 }
 
 /**
@@ -22,7 +22,7 @@ export function libelleErreur(
   code: string,
   messageBackend?: string | null,
 ): string {
-  const cle = code as Parameters<Traducteur>[0];
+  const cle = code;
   const traduit = t.has(cle) ? t(cle) : null;
   return traduit ?? messageBackend ?? t("generique" as Parameters<Traducteur>[0]);
 }

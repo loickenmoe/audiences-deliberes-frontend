@@ -11,7 +11,6 @@ import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { usePublications } from "@/hooks/usePublications";
-import type { Publication } from "@/types/domaine";
 import { StatutChip, type TonStatut } from "@/components/global/statut-chip";
 import { DateValeur, DialogueConfirmation } from "@/components/metier";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ import { ErreurApi, messageErreur } from "@/lib/api/errors";
 import { aujourdhui } from "@/lib/calendrier";
 import { peut } from "@/lib/rbac";
 import { formaterDate } from "@/lib/utils";
-import type { Audience, Dossier, PlanifierAudience } from "@/types/domaine";
+import type { Audience, Dossier, PlanifierAudience, Publication } from "@/types/domaine";
 import type { StatutAudience } from "@/types/enums";
 
 const TON: Record<StatutAudience, TonStatut> = {

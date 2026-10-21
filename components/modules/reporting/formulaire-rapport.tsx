@@ -16,9 +16,7 @@ import { reportingService, type PeriodeRapport } from "@/services/reportingServi
 import { CategorieDossier, FormatRapport, TypeRapport } from "@/types/enums";
 import type { Rapport } from "@/types/domaine";
 
-const FORMATS_BINAIRES = FormatRapport.filter((format) => format !== "JSON") as (
-  "PDF" | "EXCEL" | "CSV"
-)[];
+const FORMATS_BINAIRES = FormatRapport.filter((format) => format !== "JSON");
 
 /**
  * Screen 40 - activity report (FR-REP-01, US 8.4).

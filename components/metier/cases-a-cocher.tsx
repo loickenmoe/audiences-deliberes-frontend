@@ -40,6 +40,10 @@ export function CasesACocher({
   const t = useTranslations("metier");
   const tc = useTranslations("commun");
   const id = useId();
+  /** What the list says instead of options: still loading, or nothing to choose. */
+  let messageListe: string | null = null;
+  if (chargement) messageListe = tc("chargement");
+  else if (options.length === 0) messageListe = t("aucunResultat");
   const idErreur = `${id}-erreur`;
 
   function basculer(optionId: number) {
@@ -64,10 +68,8 @@ export function CasesACocher({
           erreur ? "border-danger" : "border-bordure-forte",
         )}
       >
-        {chargement ? (
-          <p className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{tc("chargement")}</p>
-        ) : options.length === 0 ? (
-          <p className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucunResultat")}</p>
+        {messageListe ? (
+          <p className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{messageListe}</p>
         ) : (
           options.map((option) => (
             <label

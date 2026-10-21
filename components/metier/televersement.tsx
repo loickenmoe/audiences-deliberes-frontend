@@ -7,8 +7,14 @@ import { useId, useRef, useState } from "react";
 import { PoidsFichier } from "@/components/metier/valeurs";
 import { Button } from "@/components/ui/button";
 import type { Langue } from "@/i18n/config";
-import { formaterOctets } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { cn, formaterOctets } from "@/lib/utils";
+
+
+/** Lowercase extension of a file name, or "" when it has none. */
+function extension(nomFichier: string): string {
+  const point = nomFichier.lastIndexOf(".");
+  return point === -1 ? "" : nomFichier.slice(point + 1).toLowerCase();
+}
 
 /**
  * File selection with format and size checks **before** upload.
@@ -59,11 +65,6 @@ export function Televersement({
   const [erreur, setErreur] = useState<string | null>(null);
 
   const listeFormats = formats.map((f) => f.toUpperCase()).join(", ");
-
-  function extension(nomFichier: string): string {
-    const point = nomFichier.lastIndexOf(".");
-    return point === -1 ? "" : nomFichier.slice(point + 1).toLowerCase();
-  }
 
   function selectionner(choisi: File | null) {
     if (!choisi) {

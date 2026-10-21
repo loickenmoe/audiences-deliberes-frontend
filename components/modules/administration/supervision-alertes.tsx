@@ -33,7 +33,9 @@ export function SupervisionAlertes() {
   return (
     <section className="flex flex-col gap-4 rounded border border-bordure bg-surface p-5">
       <header className="flex flex-col gap-1">
-        <h2 className="text-[length:var(--taille-lg)] font-semibold tracking-tight">{t("titre")}</h2>
+        <h2 className="text-[length:var(--taille-lg)] font-semibold tracking-tight">
+          {t("titre")}
+        </h2>
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
           {t("description")}
         </p>
@@ -71,65 +73,105 @@ export function SupervisionAlertes() {
         An inverted window is stopped here: the backend rejects it (400), but the user would see a
         technical error for simply swapping two dates.
       */}
-      {fenetreInversee ? (
-        <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
-          {t("fenetreInversee")}
-        </p>
-      ) : requete.isLoading ? (
-        <EtatChargement lignes={3} />
-      ) : requete.error ? (
-        <EtatErreur
-          message={messageErreur(requete.error)}
-          action={
-            <Button variante="secondaire" onClick={() => void requete.refetch()}>
-              {t("actualiser")}
-            </Button>
-          }
-        />
-      ) : stats ? (
-        <div className="flex flex-col gap-4">
-          {stats.observees === 0 ? (
-            // An empty window is neither compliant nor failing: showing "0%" would suggest a total
-            // outage when no alert was triggered.
-            <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucuneMesure")}</p>
-          ) : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Taux
-                  libelle={t("tauxDelivrance")}
-                  aide={t("tauxDelivranceAide")}
-                  valeur={stats.tauxDelivrance}
-                  etat={stats.seuilRespecte ? "conforme" : "alerte"}
-                  mention={
-                    stats.seuilRespecte ? t("seuilRespecte") : t("seuilFranchi")
-                  }
-                />
-                <Taux
-                  libelle={t("tauxTempsReel")}
-                  aide={t("tauxTempsReelAide")}
-                  valeur={stats.tauxDiffusionTempsReel}
-                  etat="neutre"
-                  mention={t("sansSeuil")}
-                />
-              </div>
-
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-[length:var(--taille-sm)] sm:grid-cols-4">
-                <Compte libelle={t("observees")} valeur={stats.observees} />
-                <Compte libelle={t("diffusees")} valeur={stats.diffusees} />
-                <Compte libelle={t("differees")} valeur={stats.differees} />
-                <Compte libelle={t("echecs")} valeur={stats.echecs} accentue={stats.echecs > 0} />
-              </dl>
-
-              <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
-                {t("nonTraitees", { nombre: stats.nonTraitees })}
-              </p>
-            </>
-          )}
-        </div>
-      ) : null}
+      <ResultatSupervision
+        fenetreInversee={fenetreInversee}
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        stats={stats}
+        onActualiser={() => void requete.refetch()}
+      />
     </section>
   );
 }
+
+type Statistiques = NonNullable<ReturnType<typeof useStatistiquesDiffusion>["data"]>;
+
+/**
+ * An inverted window is stopped here: the backend rejects it (400), but the user would see a
+ * technical error for simply swapping two dates.
+ */
+function ResultatSupervision({
+  fenetreInversee,
+  enChargement,
+  erreur,
+  stats,
+  onActualiser,
+}: Readonly<{
+  fenetreInversee: boolean;
+  enChargement: boolean;
+  erreur: unknown;
+  stats: Statistiques | undefined;
+  onActualiser: () => void;
+}>) {
+  const t = useTranslations("supervisionAlertes");
+
+  if (fenetreInversee) {
+    return (
+      <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
+        {t("fenetreInversee")}
+      </p>
+    );
+  }
+  if (enChargement) return <EtatChargement lignes={3} />;
+  if (erreur) {
+    return (
+      <EtatErreur
+        message={messageErreur(erreur)}
+        action={
+          <Button variante="secondaire" onClick={onActualiser}>
+            {t("actualiser")}
+          </Button>
+        }
+      />
+    );
+  }
+  if (!stats) return null;
+  return (
+    <div className="flex flex-col gap-4">
+      {stats.observees === 0 ? (
+        // An empty window is neither compliant nor failing: showing "0%" would suggest a total
+        // outage when no alert was triggered.
+        <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucuneMesure")}</p>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Taux
+              libelle={t("tauxDelivrance")}
+              aide={t("tauxDelivranceAide")}
+              valeur={stats.tauxDelivrance}
+              etat={stats.seuilRespecte ? "conforme" : "alerte"}
+              mention={stats.seuilRespecte ? t("seuilRespecte") : t("seuilFranchi")}
+            />
+            <Taux
+              libelle={t("tauxTempsReel")}
+              aide={t("tauxTempsReelAide")}
+              valeur={stats.tauxDiffusionTempsReel}
+              etat="neutre"
+              mention={t("sansSeuil")}
+            />
+          </div>
+
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-[length:var(--taille-sm)] sm:grid-cols-4">
+            <Compte libelle={t("observees")} valeur={stats.observees} />
+            <Compte libelle={t("diffusees")} valeur={stats.diffusees} />
+            <Compte libelle={t("differees")} valeur={stats.differees} />
+            <Compte libelle={t("echecs")} valeur={stats.echecs} accentue={stats.echecs > 0} />
+          </dl>
+
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("nonTraitees", { nombre: stats.nonTraitees })}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+const COULEUR_TAUX = {
+  alerte: "text-danger",
+  conforme: "text-succes",
+  neutre: "text-texte",
+} as const;
 
 function Taux({
   libelle,
@@ -150,7 +192,7 @@ function Taux({
       <p
         className={cn(
           "text-[length:var(--taille-2xl)] font-semibold tabular-nums",
-          etat === "alerte" ? "text-danger" : etat === "conforme" ? "text-succes" : "text-texte",
+          COULEUR_TAUX[etat],
         )}
       >
         {valeur.toFixed(2)} %

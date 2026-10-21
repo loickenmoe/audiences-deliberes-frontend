@@ -17,7 +17,7 @@ export function versIso(date: Date): string {
 /** Local date from a `YYYY-MM-DD`. */
 export function depuisIso(iso: string): Date {
   const [annee, mois, jour] = iso.split("-").map(Number);
-  return new Date(annee!, mois! - 1, jour!);
+  return new Date(annee!, mois! - 1, jour);
 }
 
 export function ajouterJours(date: Date, jours: number): Date {

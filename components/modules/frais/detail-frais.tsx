@@ -16,13 +16,12 @@ import { Dialog } from "@/components/ui/dialog";
 import { useDecisionFrais, useDemandeFrais, usePaiementFrais, type EtapeDecision } from "@/hooks/useFrais";
 import { telechargerBlob } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
-import type { PieceTelechargeable } from "@/types/domaine";
 import type { Langue } from "@/i18n/config";
 import { messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_FRAIS, aDonneSonAccord, etapeConjointeDe } from "@/lib/frais";
 import { peut } from "@/lib/rbac";
 import { formaterFcfa } from "@/lib/utils";
-import type { DemandeFrais } from "@/types/domaine";
+import type { DemandeFrais, PieceTelechargeable } from "@/types/domaine";
 import type { EtapeValidationFrais, StatutCircuitFrais } from "@/types/enums";
 
 /** Length of `validation_frais.motif` in the database. */
@@ -30,7 +29,7 @@ const MOTIF_MAX = 255;
 
 type EtapeCircuit = "DEPOT" | EtapeValidationFrais | "PAIEMENT";
 
-const EN_COURS: readonly StatutCircuitFrais[] = ["DEPOSEE", "CONFORMITE", "OPPORTUNITE"];
+const EN_COURS: ReadonlySet<StatutCircuitFrais> = new Set(["DEPOSEE", "CONFORMITE", "OPPORTUNITE"]);
 
 /**
  * Screen 29 - expense request detail and workflow action (UC-INT-02/03/04).
@@ -64,11 +63,10 @@ export function DetailFrais({ demandeId, roles }: Readonly<{ demandeId: number; 
     telechargerBlob(contenu, piece.nomFichier);
   }
   const seuil = formaterFcfa(demande.seuilApplicable, langue);
-  const raison = !demande.validationConjointeRequise
-    ? t("sousSeuil", { seuil })
-    : demande.dossierSensible
-      ? t("motifSensible")
-      : t("motifSeuil", { seuil });
+  let raison = t("sousSeuil", { seuil });
+  if (demande.validationConjointeRequise) {
+    raison = demande.dossierSensible ? t("motifSensible") : t("motifSeuil", { seuil });
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -208,7 +206,7 @@ function Circuit({ demande }: Readonly<{ demande: DemandeFrais }>) {
   const td = useTranslations("domaine");
   const conjointe =
     demande.validations.some((v) => v.etape === "CONJOINTE_DJ" || v.etape === "CONJOINTE_DJA") ||
-    (demande.validationConjointeRequise && EN_COURS.includes(demande.statutCircuit));
+    (demande.validationConjointeRequise && EN_COURS.has(demande.statutCircuit));
   const etapes: EtapeCircuit[] = [
     "DEPOT",
     "CONFORMITE",
@@ -329,36 +327,16 @@ function PanneauActions({ demande, roles }: Readonly<{ demande: DemandeFrais; ro
     }
   }
 
-  let contenu: ReactNode;
-  if (!action) {
-    contenu = <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneAction")}</p>;
-  } else if (dejaVote) {
-    contenu = (
-      <p className="text-[length:var(--taille-sm)]">
-        {t(etapeConjointeDe(roles) === "CONJOINTE_DJ" ? "attenteDja" : "attenteDj")}
-      </p>
-    );
-  } else {
-    contenu = (
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => setConfirmation(action)}>
-          {action === "paiement" ? <Banknote size={15} aria-hidden /> : <Check size={15} aria-hidden />}
-          {t(libelles!.accord as never)}
-        </Button>
-        {action === "paiement" ? null : (
-          <Button variante="secondaire" onClick={() => setRejet(action)}>
-            <X size={15} aria-hidden />
-            {t(action === "conjointe" ? "refuser" : "rejeter")}
-          </Button>
-        )}
-      </div>
-    );
-  }
-
   return (
     <section aria-labelledby="frais-actions" className="flex flex-col gap-3 rounded border border-bordure bg-surface p-4">
       <h2 id="frais-actions" className="font-semibold">{t("actions")}</h2>
-      {contenu}
+      <BoutonsDecision
+        action={action}
+        dejaVote={dejaVote}
+        roles={roles}
+        onConfirmer={setConfirmation}
+        onRejeter={setRejet}
+      />
 
       <DialogueConfirmation
         ouvert={confirmation !== null}
@@ -372,6 +350,48 @@ function PanneauActions({ demande, roles }: Readonly<{ demande: DemandeFrais; ro
 
       <ModaleRejet demandeId={demande.id} etape={rejet} onFermeture={() => setRejet(null)} />
     </section>
+  );
+}
+
+/** The decision this profile can take now, or why there is none. */
+function BoutonsDecision({
+  action,
+  dejaVote,
+  roles,
+  onConfirmer,
+  onRejeter,
+}: Readonly<{
+  action: Action | null;
+  dejaVote: boolean;
+  roles: readonly string[];
+  onConfirmer: (action: Action) => void;
+  onRejeter: (etape: EtapeDecision) => void;
+}>) {
+  const t = useTranslations("frais");
+
+  if (!action) {
+    return <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneAction")}</p>;
+  }
+  if (dejaVote) {
+    return (
+      <p className="text-[length:var(--taille-sm)]">
+        {t(etapeConjointeDe(roles) === "CONJOINTE_DJ" ? "attenteDja" : "attenteDj")}
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button onClick={() => onConfirmer(action)}>
+        {action === "paiement" ? <Banknote size={15} aria-hidden /> : <Check size={15} aria-hidden />}
+        {t(LIBELLES[action].accord as never)}
+      </Button>
+      {action === "paiement" ? null : (
+        <Button variante="secondaire" onClick={() => onRejeter(action)}>
+          <X size={15} aria-hidden />
+          {t(action === "conjointe" ? "refuser" : "rejeter")}
+        </Button>
+      )}
+    </div>
   );
 }
 

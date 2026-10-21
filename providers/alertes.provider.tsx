@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CLES } from "@/hooks/const";
@@ -62,5 +62,7 @@ export function AlertesProvider({ children }: Readonly<{ children: React.ReactNo
     };
   }, [status, queryClient]);
 
-  return <ContexteAlertes.Provider value={{ connecte }}>{children}</ContexteAlertes.Provider>;
+  // Stable value: consumers re-render when the channel status changes, not on every render here.
+  const valeur = useMemo(() => ({ connecte }), [connecte]);
+  return <ContexteAlertes.Provider value={valeur}>{children}</ContexteAlertes.Provider>;
 }

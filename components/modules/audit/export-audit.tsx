@@ -14,6 +14,29 @@ import type { FiltresAudit } from "@/services/auditService";
 import { auditService } from "@/services/auditService";
 
 /**
+ * The download uses a temporary link rather than a navigation: the call carries the auth token,
+ * which `window.open` would not send.
+ */
+function remettre(fichier: Blob, nomFichier: string) {
+  const url = URL.createObjectURL(fichier);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = nomFichier;
+  lien.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Opens a sealed archive through a fresh pre-signed address. */
+async function recuperer(id: number) {
+  try {
+    const url = await auditService.urlArchive(id);
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch (error_) {
+    toast.error(messageErreur(error_));
+  }
+}
+
+/**
  * Audit export and previously produced archives.
  * Each export is sealed: stored on the server with its SHA-256 fingerprint recorded, so the file
  * can later be proven to be the one that was sealed.
@@ -41,19 +64,6 @@ export function ExportAudit({
 
   const periodeManquante = !debut || !fin;
 
-  /**
-   * The download uses a temporary link rather than a navigation: the call carries the auth token,
-   * which `window.open` would not send.
-   */
-  function remettre(fichier: Blob, nomFichier: string) {
-    const url = URL.createObjectURL(fichier);
-    const lien = document.createElement("a");
-    lien.href = url;
-    lien.download = nomFichier;
-    lien.click();
-    URL.revokeObjectURL(url);
-  }
-
   function lancer(format: "PDF" | "EXCEL") {
     exporter.mutate(
       { filtres: { ...filtres, dateDebut: debut, dateFin: fin }, format },
@@ -67,15 +77,6 @@ export function ExportAudit({
         onError: (erreur) => toast.error(messageErreur(erreur)),
       },
     );
-  }
-
-  async function recuperer(id: number) {
-    try {
-      const url = await auditService.urlArchive(id);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (error_) {
-      toast.error(messageErreur(error_));
-    }
   }
 
   const lignes = archives.data?.content ?? [];

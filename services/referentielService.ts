@@ -29,7 +29,7 @@ export const referentielService = {
     size?: number;
   }): Promise<PageReponse<Agence>> => {
     const { data } = await apiClient.get<PageReponse<Agence>>("/referentiels/agences", {
-      params: { ...(params ?? {}), size: params?.size ?? TAILLE_SELECTEUR },
+      params: { ...params, size: params?.size ?? TAILLE_SELECTEUR },
     });
     return data;
   },

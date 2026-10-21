@@ -64,9 +64,9 @@ export function nomFichierActivite(
       ? String(personne.utilisateurId)
       : personne.nom
           .normalize("NFD")
-          .replace(/\p{M}+/gu, "")
+          .replaceAll(/\p{M}+/gu, "")
           .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
+          .replaceAll(/[^a-z0-9]+/g, "-")
           .replace(/^-/, "")
           .replace(/-$/, "");
   return `activite-${qui}-${dateDebut}_${dateFin}.${EXTENSION_RAPPORT[format]}`;

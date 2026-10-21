@@ -25,12 +25,11 @@ export function CardHeader({ className, ...props }: Readonly<HTMLAttributes<HTML
   return <div className={cn("flex flex-col gap-1 border-b border-bordure p-5", className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: Readonly<HTMLAttributes<HTMLHeadingElement>>) {
+export function CardTitle({ className, children, ...props }: Readonly<HTMLAttributes<HTMLHeadingElement>>) {
   return (
-    <h2
-      className={cn("text-[length:var(--taille-xl)] font-semibold tracking-tight", className)}
-      {...props}
-    />
+    <h2 className={cn("text-[length:var(--taille-xl)] font-semibold tracking-tight", className)} {...props}>
+      {children}
+    </h2>
   );
 }
 

@@ -24,7 +24,7 @@ import { useTableauDeBord } from "@/hooks/useReporting";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
-import type { IndicateurTableauDeBord, TableauDeBord } from "@/types/domaine";
+import type { IndicateurTableauDeBord } from "@/types/domaine";
 import { CategorieDossier } from "@/types/enums";
 
 /**
@@ -256,4 +256,4 @@ function Indicateur({
   );
 }
 
-export type { TableauDeBord };
+export type { TableauDeBord } from "@/types/domaine";

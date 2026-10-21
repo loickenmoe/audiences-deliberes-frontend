@@ -3,11 +3,10 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { CasesACocher, DialogueConfirmation } from "@/components/metier";
+import { CasesACocher, DialogueConfirmation, SelecteurCherchable } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useModifierAffectation } from "@/hooks/useDossiers";
-import { SelecteurCherchable } from "@/components/metier";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { useUtilisateurs } from "@/hooks/useReferentiels";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";

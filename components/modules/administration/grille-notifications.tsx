@@ -83,6 +83,10 @@ function SectionGrilleNotifications({
   const libelleCanal = (code: string) => td(`${enumCanal}.${code}` as never);
   const idTitre = `grille-${section.identifiant}`;
 
+  function basculer(cle: string, evenement: string) {
+    setSaisie((courante) => basculerCase(courante, cle, evenement, evenements));
+  }
+
   /**
    * One key at a time: each takes effect and is audited on its own, and the failing one is
    * identifiable.
@@ -142,7 +146,7 @@ function SectionGrilleNotifications({
                         aria-label={t("case", { evenement: libelleEvenement(evenement), canal: libelleCanal(canal) })}
                         checked={(saisie[cle] ?? []).includes(evenement)}
                         disabled={!modifiable || enCours}
-                        onChange={() => setSaisie((courante) => basculerCase(courante, cle, evenement, evenements))}
+                        onChange={() => basculer(cle, evenement)}
                         className="size-4 accent-[color:var(--afb-anthracite)]"
                       />
                     </Td>

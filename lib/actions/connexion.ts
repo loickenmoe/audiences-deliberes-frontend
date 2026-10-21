@@ -17,12 +17,17 @@ export interface EtatConnexion {
   cleErreur?: CleErreurConnexion;
 }
 
+/** A text field of the form; a missing field reads as empty. */
+function texte(valeur: FormDataEntryValue | null): string {
+  return typeof valeur === "string" ? valeur : "";
+}
+
 export async function connexion(
   _etat: EtatConnexion | undefined,
   donnees: FormData,
 ): Promise<EtatConnexion> {
-  const identifiant = String(donnees.get("identifiant") ?? "").trim();
-  const motDePasse = String(donnees.get("motDePasse") ?? "");
+  const identifiant = texte(donnees.get("identifiant")).trim();
+  const motDePasse = texte(donnees.get("motDePasse"));
 
   if (!identifiant || !motDePasse) return { cleErreur: "champsRequis" };
 

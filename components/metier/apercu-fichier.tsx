@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { EtatChargement } from "@/components/global";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { natureApercu, telechargerBlob } from "@/lib/documents";
+import { natureApercu, telechargerBlob, type NatureApercu } from "@/lib/documents";
 import { cn } from "@/lib/utils";
 
 type Etat =
@@ -132,21 +132,8 @@ export function ApercuFichier({
         </p>
       ) : null}
 
-      {etat.phase === "pret" && nature === "pdf" ? (
-        <iframe title={nomFichier} src={etat.url} className="h-[70vh] w-full rounded border border-bordure" />
-      ) : null}
-
-      {etat.phase === "pret" && nature === "image" ? (
-        // A `blob:` URL does not go through the Next image optimizer, so `<img>` is the only
-        // option.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={etat.url} alt={nomFichier} className="mx-auto max-h-[70vh] rounded" />
-      ) : null}
-
-      {etat.phase === "pret" && nature === "texte" ? (
-        <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded border border-bordure bg-surface-attenuee p-4 text-[length:var(--taille-sm)]">
-          {etat.texte}
-        </pre>
+      {etat.phase === "pret" && nature !== "word" ? (
+        <ApercuSimple nature={nature} url={etat.url} texte={etat.texte} nomFichier={nomFichier} />
       ) : null}
 
       {etat.phase === "pret" && nature === "word" ? (
@@ -170,16 +157,37 @@ export function ApercuFichier({
           />
         </>
       ) : null}
-
-      {etat.phase === "pret" && nature === "word-ancien" ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
-          {t("apercuWordAncien")}
-        </p>
-      ) : null}
-
-      {etat.phase === "pret" && nature === null ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("apercuImpossible")}</p>
-      ) : null}
     </Dialog>
   );
+}
+
+/** Every format except `.docx`, which needs its own rendering container. */
+function ApercuSimple({
+  nature,
+  url,
+  texte,
+  nomFichier,
+}: Readonly<{ nature: Exclude<NatureApercu, "word">; url: string; texte: string | null; nomFichier: string }>) {
+  const t = useTranslations("documents");
+  switch (nature) {
+    case "pdf":
+      return <iframe title={nomFichier} src={url} className="h-[70vh] w-full rounded border border-bordure" />;
+    case "image":
+      return (
+        // A `blob:` URL does not go through the Next image optimizer, so `<img>` is the only
+        // option.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={nomFichier} className="mx-auto max-h-[70vh] rounded" />
+      );
+    case "texte":
+      return (
+        <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded border border-bordure bg-surface-attenuee p-4 text-[length:var(--taille-sm)]">
+          {texte}
+        </pre>
+      );
+    case "word-ancien":
+      return <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("apercuWordAncien")}</p>;
+    default:
+      return <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("apercuImpossible")}</p>;
+  }
 }

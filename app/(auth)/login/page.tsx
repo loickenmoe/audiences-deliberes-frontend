@@ -37,12 +37,9 @@ export default async function PageConnexion({
    * session. A rejected token calls for signing in again; an unreachable auth service calls for patience.
    */
   const { motif } = await searchParams;
-  const message =
-    motif === "session-expiree"
-      ? t("sessionExpiree")
-      : motif === "auth-indisponible"
-        ? t("authIndisponible")
-        : null;
+  let message: string | null = null;
+  if (motif === "session-expiree") message = t("sessionExpiree");
+  else if (motif === "auth-indisponible") message = t("authIndisponible");
 
   return (
     <div className="flex h-svh flex-col overflow-hidden">

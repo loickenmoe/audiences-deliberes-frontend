@@ -102,14 +102,19 @@ function Carte({
   );
 }
 
+/** The expense step each profile is responsible for. */
+function etapeFraisDe(profil: ReturnType<typeof profilPrincipal>) {
+  if (profil === "ROLE_ASSISTANTE") return "DEPOSEE";
+  return profil === "ROLE_DJA" ? "CONFORMITE" : "OPPORTUNITE";
+}
+
 /**
  * The Assistant checks a request's compliance, the DJA its merits, and the DJ and DJA validate it
  * jointly: each one sees only the step they are responsible for.
  */
 function FileFraisAControler({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("accueil");
-  const profil = profilPrincipal(roles);
-  const statut = profil === "ROLE_ASSISTANTE" ? "DEPOSEE" : profil === "ROLE_DJA" ? "CONFORMITE" : "OPPORTUNITE";
+  const statut = etapeFraisDe(profilPrincipal(roles));
   const requete = useDemandesFrais(statut, 0, TAILLE_COMPTEUR);
   return (
     <Carte

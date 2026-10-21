@@ -124,11 +124,13 @@ function PiecesDuDossier({ dossierId }: Readonly<{ dossierId: number }>) {
           {erreur}
         </p>
       ) : null}
-      {!reponse?.constitue ? (
+      {reponse?.constitue ? null : (
         <EtatVide titre={t("piecesNonConstitue")} description={t("piecesNonConstitueTexte")} />
-      ) : reponse.pieces.length === 0 ? (
+      )}
+      {reponse?.constitue && reponse.pieces.length === 0 ? (
         <EtatVide titre={t("piecesVide")} description={t("piecesVideTexte")} />
-      ) : (
+      ) : null}
+      {reponse?.constitue && reponse.pieces.length > 0 ? (
         <div className="overflow-x-auto rounded border border-bordure bg-surface">
           <table className="w-full text-left text-[length:var(--taille-sm)]">
             <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
@@ -179,7 +181,7 @@ function PiecesDuDossier({ dossierId }: Readonly<{ dossierId: number }>) {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       <ApercuFichier
         ouvert={apercu !== null}

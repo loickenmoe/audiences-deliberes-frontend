@@ -17,7 +17,7 @@ export function TableWrapper({ className, ...props }: Readonly<HTMLAttributes<HT
   return (
     <div
       className={cn("overflow-x-auto rounded-lg border border-bordure bg-surface", className)}
-      tabIndex={0}
+      tabIndex={0} // NOSONAR - a scrollable region must be keyboard-reachable (WCAG 2.1.1, see above)
       {...props}
     />
   );

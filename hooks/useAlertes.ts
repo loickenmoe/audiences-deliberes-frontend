@@ -16,8 +16,8 @@ import type { StatutAlerte, TypeAlerte } from "@/types/enums";
 export const CADENCE_CANAL_OUVERT = 60 * 1000;
 export const CADENCE_REPLI = 30 * 1000;
 
-export function cadenceRafraichissement(connecte: boolean): number {
-  return connecte ? CADENCE_CANAL_OUVERT : CADENCE_REPLI;
+export function cadenceRafraichissement(canal: { connecte: boolean }): number {
+  return canal.connecte ? CADENCE_CANAL_OUVERT : CADENCE_REPLI;
 }
 
 /** `null`: both statuses. */
@@ -27,11 +27,11 @@ export function useMesNotifications(
   size = TAILLE_PAGE,
   type?: TypeAlerte,
 ) {
-  const { connecte } = useCanalAlertes();
+  const canal = useCanalAlertes();
   return useQuery({
     queryKey: [CLES.notifications, statut ?? "toutes", page, size, type ?? "tous"],
     queryFn: () => alerteService.mesNotifications(statut, page, size, type),
-    refetchInterval: cadenceRafraichissement(connecte),
+    refetchInterval: cadenceRafraichissement(canal),
   });
 }
 
@@ -40,11 +40,11 @@ export function useMesNotifications(
  * separate from the queue so the badge is independent of the queue's pagination.
  */
 export function useNombreNotificationsATraiter() {
-  const { connecte } = useCanalAlertes();
+  const canal = useCanalAlertes();
   return useQuery({
     queryKey: [CLES.notifications, "compteur"],
     queryFn: () => alerteService.mesNotifications("DECLENCHEE", 0, 1),
-    refetchInterval: cadenceRafraichissement(connecte),
+    refetchInterval: cadenceRafraichissement(canal),
     select: (page) => page.totalElements,
   });
 }

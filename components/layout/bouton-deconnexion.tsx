@@ -22,7 +22,7 @@ import { attendreLecturesEnCours, verrouillerJeton } from "@/lib/cache-jeton";
 export function BoutonDeconnexion({ libelle }: Readonly<{ libelle: string }>) {
   const [enCours, setEnCours] = useState(false);
 
-  async function deconnecter(evenement: React.FormEvent<HTMLFormElement>) {
+  async function deconnecter(evenement: React.SyntheticEvent<HTMLFormElement>) {
     evenement.preventDefault();
     // `currentTarget` is null after the first `await`: capture the form right away.
     const formulaire = evenement.currentTarget;

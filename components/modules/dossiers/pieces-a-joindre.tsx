@@ -15,6 +15,28 @@ export interface PieceAJoindre {
   fichier: File;
 }
 
+/** Opens the chosen file before upload; nothing when no file is chosen yet. */
+function BoutonApercu({
+  fichier,
+  onApercu,
+}: Readonly<{ fichier: File | undefined | null; onApercu: (fichier: File) => void }>) {
+  const t = useTranslations("documents");
+  if (!fichier) return null;
+  return (
+    // The accessible name includes the file: both required documents have a "Preview" button, and
+    // two actions with the same name in one form cannot be told apart by ear.
+    <Button
+      variante="secondaire"
+      taille="sm"
+      aria-label={`${t("apercu")} - ${fichier.name}`}
+      onClick={() => onApercu(fichier)}
+    >
+      <Eye size={14} aria-hidden />
+      {t("apercu")}
+    </Button>
+  );
+}
+
 /**
  * Documents attached when creating a case; they are **required**.
  * One area per document required by the category (credit file and transfer report for debt
@@ -54,29 +76,12 @@ export function PiecesAJoindre({
 
   useEffect(() => {
     const pieces: PieceAJoindre[] = types.flatMap((type) =>
-      attendues[type] ? [{ type, fichier: attendues[type]! }] : [],
+      attendues[type] ? [{ type, fichier: attendues[type] }] : [],
     );
     onChangement(pieces);
     // `types` derives from `categorie`, already in the dependencies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attendues, categorie]);
-
-  function BoutonApercu({ fichier }: Readonly<{ fichier: File | undefined | null }>) {
-    if (!fichier) return null;
-    return (
-      // The accessible name includes the file: both required documents have a "Preview" button, and
-      // two actions with the same name in one form cannot be told apart by ear.
-      <Button
-        variante="secondaire"
-        taille="sm"
-        aria-label={`${t("apercu")} - ${fichier.name}`}
-        onClick={() => setApercu(fichier)}
-      >
-        <Eye size={14} aria-hidden />
-        {t("apercu")}
-      </Button>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -103,7 +108,9 @@ export function PiecesAJoindre({
               </span>
             </>
           ) : (
-            <span className="text-[length:var(--taille-sm)] font-medium">{t(`types.${type}` as never)}</span>
+            <span className="text-[length:var(--taille-sm)] font-medium">
+              {t(`types.${type}` as never)}
+            </span>
           )}
           <div className="flex flex-wrap items-start gap-3">
             <Televersement
@@ -115,7 +122,7 @@ export function PiecesAJoindre({
                 setAttendues((precedentes) => ({ ...precedentes, [type]: fichier ?? undefined }))
               }
             />
-            <BoutonApercu fichier={attendues[type]} />
+            <BoutonApercu fichier={attendues[type]} onApercu={setApercu} />
           </div>
           {manquantes?.includes(type) ? (
             <p role="alert" className="text-[length:var(--taille-xs)] text-danger">
@@ -129,7 +136,9 @@ export function PiecesAJoindre({
         ouvert={apercu !== null}
         onFermeture={() => setApercu(null)}
         nomFichier={apercu?.name ?? ""}
-        obtenir={() => (apercu ? Promise.resolve(apercu) : Promise.reject(new Error("aucun fichier")))}
+        obtenir={() =>
+          apercu ? Promise.resolve(apercu) : Promise.reject(new Error("aucun fichier"))
+        }
       />
     </div>
   );

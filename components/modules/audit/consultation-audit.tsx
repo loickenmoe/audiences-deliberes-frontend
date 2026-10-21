@@ -21,7 +21,62 @@ function valeurLisible(valeur: unknown): string {
   if (valeur === null || valeur === undefined || valeur === "") return "—";
   if (Array.isArray(valeur)) return valeur.join(", ");
   if (typeof valeur === "object") return JSON.stringify(valeur);
-  return String(valeur);
+  if (typeof valeur === "string") return valeur;
+  // What remains of a JSON value: a number or a boolean.
+  return typeof valeur === "number" || typeof valeur === "boolean" ? String(valeur) : "—";
+}
+
+/** The `details` of an action, as label / value pairs; "—" when there are none. */
+function DetailsAction({ details }: Readonly<{ details: HistoriqueAction["details"] }>) {
+  const { libelleDetail } = useLibellesHistorique();
+  if (!details || Object.keys(details).length === 0) return "—";
+  return (
+    <dl className="flex flex-col gap-0.5">
+      {Object.entries(details).map(([cle, valeur]) => (
+        <div key={cle} className="flex gap-1">
+          <dt className="text-texte-tertiaire">{libelleDetail(cle)}</dt>
+          <dd className="font-medium">{valeurLisible(valeur)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function colonnesAudit(
+  t: ReturnType<typeof useTranslations<"audit">>,
+  nomUtilisateur: (id: number) => string,
+  libelleAction: (code: string, action: string) => string,
+) {
+  return [
+    {
+      id: "dateAction",
+      header: t("colonneDate"),
+      cell: ({ row }: { row: { original: HistoriqueAction } }) => (
+        <DateHeureValeur valeur={row.original.dateAction} />
+      ),
+    },
+    {
+      id: "utilisateurId",
+      header: t("colonneAuteur"),
+      cell: ({ row }: { row: { original: HistoriqueAction } }) =>
+        row.original.utilisateurId === null ? "—" : nomUtilisateur(row.original.utilisateurId),
+    },
+    {
+      id: "action",
+      header: t("colonneAction"),
+      // The label comes from the typed code, not the backend sentence, which remains the fallback
+      // so an untranslated code is still readable.
+      cell: ({ row }: { row: { original: HistoriqueAction } }) =>
+        libelleAction(row.original.code, row.original.action),
+    },
+    {
+      id: "details",
+      header: t("colonneDetails"),
+      cell: ({ row }: { row: { original: HistoriqueAction } }) => (
+        <DetailsAction details={row.original.details} />
+      ),
+    },
+  ];
 }
 
 /**
@@ -35,7 +90,7 @@ function valeurLisible(valeur: unknown): string {
 export function ConsultationAudit() {
   const t = useTranslations("audit");
   const { nomUtilisateur } = useLibelles();
-  const { libelleAction, libelleDetail } = useLibellesHistorique();
+  const { libelleAction } = useLibellesHistorique();
   const utilisateurs = useUtilisateurs();
 
   const [perimetre, setPerimetre] = useState<PerimetreAudit>("TOUT");
@@ -65,48 +120,8 @@ export function ConsultationAudit() {
   );
 
   const colonnes = useMemo(
-    () => [
-      {
-        id: "dateAction",
-        header: t("colonneDate"),
-        cell: ({ row }: { row: { original: HistoriqueAction } }) => (
-          <DateHeureValeur valeur={row.original.dateAction} />
-        ),
-      },
-      {
-        id: "utilisateurId",
-        header: t("colonneAuteur"),
-        cell: ({ row }: { row: { original: HistoriqueAction } }) =>
-          row.original.utilisateurId === null ? "—" : nomUtilisateur(row.original.utilisateurId),
-      },
-      {
-        id: "action",
-        header: t("colonneAction"),
-        // The label comes from the typed code, not the backend sentence, which remains the fallback
-        // so an untranslated code is still readable.
-        cell: ({ row }: { row: { original: HistoriqueAction } }) =>
-          libelleAction(row.original.code, row.original.action),
-      },
-      {
-        id: "details",
-        header: t("colonneDetails"),
-        cell: ({ row }: { row: { original: HistoriqueAction } }) => {
-          const details = row.original.details;
-          if (!details || Object.keys(details).length === 0) return "—";
-          return (
-            <dl className="flex flex-col gap-0.5">
-              {Object.entries(details).map(([cle, valeur]) => (
-                <div key={cle} className="flex gap-1">
-                  <dt className="text-texte-tertiaire">{libelleDetail(cle)}</dt>
-                  <dd className="font-medium">{valeurLisible(valeur)}</dd>
-                </div>
-              ))}
-            </dl>
-          );
-        },
-      },
-    ],
-    [t, nomUtilisateur, libelleAction, libelleDetail],
+    () => colonnesAudit(t, nomUtilisateur, libelleAction),
+    [t, nomUtilisateur, libelleAction],
   );
 
   /**
@@ -123,13 +138,17 @@ export function ConsultationAudit() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">
           {t("perimetreCouvert")}
         </p>
         {/* Tells the viewer that their consultation is logged. */}
-        <p className="max-w-prose text-[length:var(--taille-sm)] font-medium">{t("consultationTracee")}</p>
+        <p className="max-w-prose text-[length:var(--taille-sm)] font-medium">
+          {t("consultationTracee")}
+        </p>
       </header>
 
       <section
@@ -288,7 +307,7 @@ export function ConsultationAudit() {
           titreVide={t("videTitre")}
           descriptionVide={t("videTexte")}
           onReessayer={() => void requete.refetch()}
-          cleLigne={(ligne) => String((ligne as HistoriqueAction).id)}
+          cleLigne={(ligne) => String(ligne.id)}
         />
       )}
     </div>

@@ -25,7 +25,7 @@ import { portailAvocatService, type PieceJustificative } from "@/services/portai
  * is `NaN`.
  */
 export function normaliserMontant(saisie: string): string {
-  return saisie.replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
+  return saisie.replaceAll(/[\s\u00a0\u202f]/g, "").replace(",", ".");
 }
 
 /**
@@ -57,7 +57,7 @@ export function FormulaireFrais() {
   const montantValide = /^\d+(\.\d+)?$/.test(montantNormalise) && Number(montantNormalise) > 0;
 
   /** The document shown by the upload component, which the adjacent preview button opens. */
-  const derniere = pieces.length > 0 ? pieces[pieces.length - 1]! : null;
+  const derniere = pieces.at(-1) ?? null;
 
   /**
    * The upload component's remove button removes the document it shows, so it is not sent with
@@ -65,6 +65,11 @@ export function FormulaireFrais() {
    */
   function retirerDerniere() {
     setPieces((precedentes) => precedentes.slice(0, -1));
+  }
+
+  /** Removes an earlier document from the request. */
+  function retirerPiece(cle: string) {
+    setPieces((precedentes) => precedentes.filter((piece) => piece.cle !== cle));
   }
 
   /**
@@ -150,7 +155,9 @@ export function FormulaireFrais() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("fraisTitre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("fraisTitre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("fraisDescription")}</p>
       </header>
 
@@ -293,7 +300,9 @@ export function FormulaireFrais() {
                   key={piece.cle}
                   className="flex items-center justify-between gap-2 rounded border border-bordure bg-fond px-3 py-1.5"
                 >
-                  <span className="truncate text-[length:var(--taille-sm)]">{piece.nomFichier}</span>
+                  <span className="truncate text-[length:var(--taille-sm)]">
+                    {piece.nomFichier}
+                  </span>
                   <span className="flex items-center gap-1">
                     <Button
                       variante="discrete"
@@ -307,7 +316,7 @@ export function FormulaireFrais() {
                       variante="discrete"
                       taille="sm"
                       aria-label={t("retirerPiece", { numero: index + 1 })}
-                      onClick={() => setPieces((precedentes) => precedentes.filter((p) => p.cle !== piece.cle))}
+                      onClick={() => retirerPiece(piece.cle)}
                     >
                       <X size={14} aria-hidden />
                     </Button>
@@ -335,7 +344,11 @@ export function FormulaireFrais() {
           <Button onClick={soumettre} disabled={deposer.isPending || envoiPiece}>
             {deposer.isPending ? t("envoiEnCours") : t("deposer")}
           </Button>
-          <Button variante="discrete" data-garde-saisie="ignorer" onClick={() => router.push("/frais")}>
+          <Button
+            variante="discrete"
+            data-garde-saisie="ignorer"
+            onClick={() => router.push("/frais")}
+          >
             {t("annuler")}
           </Button>
         </div>

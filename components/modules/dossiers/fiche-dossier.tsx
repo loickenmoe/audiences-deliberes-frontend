@@ -93,6 +93,58 @@ function actionsPermises(roles: readonly string[], dossier: Dossier) {
   };
 }
 
+type Modale = "affectation" | "derogation" | "sensibilite" | "constitution";
+
+/** The header actions this profile may take on this case. */
+function ActionsEntete({
+  permissions,
+  onModale,
+  onDiligence,
+}: Readonly<{
+  permissions: ReturnType<typeof actionsPermises>;
+  onModale: (modale: Modale) => void;
+  onDiligence: (intention: IntentionDiligence) => void;
+}>) {
+  const t = useTranslations("fiche");
+  return (
+    <div className="flex flex-wrap gap-2">
+      {permissions.peutAffecter ? (
+        <Button variante="secondaire" onClick={() => onModale("affectation")}>
+          {t("actionAffectation")}
+        </Button>
+      ) : null}
+      {permissions.peutDemanderDerogation ? (
+        <Button variante="secondaire" onClick={() => onModale("derogation")}>
+          {t("actionDerogation")}
+        </Button>
+      ) : null}
+      {permissions.peutSolliciter ? (
+        <Button variante="secondaire" onClick={() => onModale("constitution")}>
+          {t("actionConstitution")}
+        </Button>
+      ) : null}
+      {permissions.peutProposerDiligence ? (
+        <Button variante="secondaire" onClick={() => onDiligence("proposer")}>
+          {t("actionDiligenceProposer")}
+        </Button>
+      ) : null}
+      {permissions.peutPoserDiligence ? (
+        <Button variante="secondaire" onClick={() => onDiligence("poser")}>
+          {t("actionDiligencePoser")}
+        </Button>
+      ) : null}
+      {permissions.peutRetirerDiligence ? (
+        <Button variante="secondaire" onClick={() => onDiligence("retirer")}>
+          {t("actionDiligenceRetirer")}
+        </Button>
+      ) : null}
+      {permissions.peutStatuer ? (
+        <Button onClick={() => onModale("sensibilite")}>{t("actionSensibilite")}</Button>
+      ) : null}
+    </div>
+  );
+}
+
 /** The content of the selected tab. */
 function ContenuOnglet({
   onglet,
@@ -150,9 +202,7 @@ export function FicheDossier({
       ? (ongletInitial as Onglet)
       : "synthese",
   );
-  const [modale, setModale] = useState<
-    "affectation" | "derogation" | "sensibilite" | "constitution" | null
-  >(null);
+  const [modale, setModale] = useState<Modale | null>(null);
   /*
    * Due diligence review carries its intent rather than a boolean: three actions share the same
    * modal and the intent decides what is required.
@@ -182,16 +232,14 @@ export function FicheDossier({
 
   const dossier = requete.data;
   const statutSensibilite = dossier.estSensible ? dossier.sensibiliteStatut : null;
+  const permissions = actionsPermises(roles, dossier);
   const {
     peutAffecter,
     peutDemanderDerogation,
     peutStatuer,
     peutArbitrerDerogation,
-    peutProposerDiligence,
-    peutPoserDiligence,
-    peutRetirerDiligence,
     peutSolliciter,
-  } = actionsPermises(roles, dossier);
+  } = permissions;
   // The SH cannot read publications (`GET /publications` refuses): no tab for them.
   const onglets = ONGLETS.filter(
     (cle) => cle !== "publications" || peut(roles, "consulterPublications"),
@@ -253,41 +301,7 @@ export function FicheDossier({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {peutAffecter ? (
-            <Button variante="secondaire" onClick={() => setModale("affectation")}>
-              {t("actionAffectation")}
-            </Button>
-          ) : null}
-          {peutDemanderDerogation ? (
-            <Button variante="secondaire" onClick={() => setModale("derogation")}>
-              {t("actionDerogation")}
-            </Button>
-          ) : null}
-          {peutSolliciter ? (
-            <Button variante="secondaire" onClick={() => setModale("constitution")}>
-              {t("actionConstitution")}
-            </Button>
-          ) : null}
-          {peutProposerDiligence ? (
-            <Button variante="secondaire" onClick={() => setDiligence("proposer")}>
-              {t("actionDiligenceProposer")}
-            </Button>
-          ) : null}
-          {peutPoserDiligence ? (
-            <Button variante="secondaire" onClick={() => setDiligence("poser")}>
-              {t("actionDiligencePoser")}
-            </Button>
-          ) : null}
-          {peutRetirerDiligence ? (
-            <Button variante="secondaire" onClick={() => setDiligence("retirer")}>
-              {t("actionDiligenceRetirer")}
-            </Button>
-          ) : null}
-          {peutStatuer ? (
-            <Button onClick={() => setModale("sensibilite")}>{t("actionSensibilite")}</Button>
-          ) : null}
-        </div>
+        <ActionsEntete permissions={permissions} onModale={setModale} onDiligence={setDiligence} />
       </header>
 
       {peutArbitrerDerogation ? <DerogationsEnAttente dossierId={dossier.id} /> : null}
