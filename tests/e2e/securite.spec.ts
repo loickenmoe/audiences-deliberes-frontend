@@ -82,7 +82,8 @@ test("une route protégée renvoie vers la connexion sans session", async ({ pag
 test("une URL forcée vers un écran interdit est refusée", async ({ page }) => {
   await seConnecter(page, "assistante.test");
 
-  for (const chemin of ["/tableau-de-bord", "/rapports", "/portail"]) {
+  // `/rapports` is open to the Assistant since 2026-10-21; the deletion arbitration stays with the DJ and DJA.
+  for (const chemin of ["/tableau-de-bord", "/ged/demandes-suppression", "/portail"]) {
     await page.goto(chemin);
     await expect(
       page.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" }),
