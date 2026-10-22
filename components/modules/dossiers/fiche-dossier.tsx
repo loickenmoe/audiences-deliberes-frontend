@@ -32,6 +32,7 @@ import { useDossier } from "@/hooks/useDossiers";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
+import type { Dossier } from "@/types/domaine";
 import type { StatutValidation } from "@/types/enums";
 
 const ONGLETS = [
@@ -66,41 +67,150 @@ const TON_SENSIBILITE: Record<StatutValidation, TonStatut> = {
 };
 
 /**
- * Écran 07 — fiche dossier.
- *
- * Les actions de l'en-tête dépendent **à la fois** du profil et de l'état du dossier, parce que le
- * backend applique les deux conditions :
- * · la dérogation de seuil n'est recevable que sur un dossier sensible **déjà validé** ;
- * · la validation de sensibilité n'a de sens que tant qu'une proposition est **en attente**.
- * Proposer ces boutons hors de ces états conduirait l'utilisateur à un refus.
+ * Header actions offered on this case to this profile. The backend enforces both the role and the
+ * case state; the screen only offers what it would accept.
+ */
+function actionsPermises(roles: readonly string[], dossier: Dossier) {
+  const sensible = !!dossier.estSensible;
+  const statut = sensible ? dossier.sensibiliteStatut : null;
+  const arbitre = peut(roles, "arbitrerDossier");
+  return {
+    peutAffecter: peut(roles, "modifierAffectation"),
+    peutDemanderDerogation: peut(roles, "demanderDerogationSeuil") && statut === "VALIDEE",
+    peutStatuer: arbitre && statut === "EN_ATTENTE",
+    // Arbitrating a derogation is only accepted on an already validated sensitivity.
+    peutArbitrerDerogation: arbitre && statut === "VALIDEE",
+    /*
+     * Due diligence can be revised after opening: the lawyer proposes it on a case not already
+     * under due diligence; the DJ and DJA set it directly in that case, and remove a validated one.
+     * The three conditions are exclusive: a case pending arbitration only offers arbitration.
+     */
+    peutProposerDiligence: peut(roles, "proposerDiligence") && !sensible,
+    peutPoserDiligence: arbitre && !sensible,
+    peutRetirerDiligence: arbitre && statut === "VALIDEE",
+    // UC-INT-05: the lawyer requests a service provider's representation from the case.
+    peutSolliciter: peut(roles, "solliciterConstitution"),
+  };
+}
+
+type Modale = "affectation" | "derogation" | "sensibilite" | "constitution";
+
+/** The header actions this profile may take on this case. */
+function ActionsEntete({
+  permissions,
+  onModale,
+  onDiligence,
+}: Readonly<{
+  permissions: ReturnType<typeof actionsPermises>;
+  onModale: (modale: Modale) => void;
+  onDiligence: (intention: IntentionDiligence) => void;
+}>) {
+  const t = useTranslations("fiche");
+  return (
+    <div className="flex flex-wrap gap-2">
+      {permissions.peutAffecter ? (
+        <Button variante="secondaire" onClick={() => onModale("affectation")}>
+          {t("actionAffectation")}
+        </Button>
+      ) : null}
+      {permissions.peutDemanderDerogation ? (
+        <Button variante="secondaire" onClick={() => onModale("derogation")}>
+          {t("actionDerogation")}
+        </Button>
+      ) : null}
+      {permissions.peutSolliciter ? (
+        <Button variante="secondaire" onClick={() => onModale("constitution")}>
+          {t("actionConstitution")}
+        </Button>
+      ) : null}
+      {permissions.peutProposerDiligence ? (
+        <Button variante="secondaire" onClick={() => onDiligence("proposer")}>
+          {t("actionDiligenceProposer")}
+        </Button>
+      ) : null}
+      {permissions.peutPoserDiligence ? (
+        <Button variante="secondaire" onClick={() => onDiligence("poser")}>
+          {t("actionDiligencePoser")}
+        </Button>
+      ) : null}
+      {permissions.peutRetirerDiligence ? (
+        <Button variante="secondaire" onClick={() => onDiligence("retirer")}>
+          {t("actionDiligenceRetirer")}
+        </Button>
+      ) : null}
+      {permissions.peutStatuer ? (
+        <Button onClick={() => onModale("sensibilite")}>{t("actionSensibilite")}</Button>
+      ) : null}
+    </div>
+  );
+}
+
+/** The content of the selected tab. */
+function ContenuOnglet({
+  onglet,
+  dossier,
+  roles,
+}: Readonly<{ onglet: Onglet; dossier: Dossier; roles: readonly string[] }>) {
+  switch (onglet) {
+    case "synthese":
+      return <OngletSynthese dossier={dossier} />;
+    case "etapes":
+      return <OngletEtapes dossier={dossier} roles={roles} />;
+    case "audiences":
+      return <OngletAudiences dossier={dossier} roles={roles} />;
+    case "deliberes":
+      return <OngletDeliberes dossier={dossier} roles={roles} />;
+    case "alarmes":
+      return <OngletAlarmes dossier={dossier} roles={roles} />;
+    case "decisions":
+      return <OngletDecisions dossier={dossier} roles={roles} />;
+    case "historique":
+      return <OngletHistorique dossierId={dossier.id} />;
+    case "documents":
+      return (
+        <OngletDocuments dossierId={dossier.id} roles={roles} sensible={!!dossier.estSensible} />
+      );
+    case "publications":
+      return peut(roles, "consulterPublications") ? (
+        <OngletPublications dossierId={dossier.id} />
+      ) : null;
+  }
+}
+
+/**
+ * Screen 07 - case page.
+ * Header actions depend on both the profile and the case state, because the backend enforces both:
+ * a threshold derogation is only accepted on an already validated sensitive case, and sensitivity
+ * validation only makes sense while a proposal is pending. Showing these buttons otherwise would
+ * lead the user to a rejection.
  */
 export function FicheDossier({
   dossierId,
   roles,
   ongletInitial,
-}: {
+}: Readonly<{
   dossierId: number;
   roles: readonly string[];
   ongletInitial?: string;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const td = useTranslations("dossiers");
   const tdom = useTranslations("domaine");
   const requete = useDossier(dossierId);
   const [onglet, setOnglet] = useState<Onglet>(
-    (ONGLETS as readonly string[]).includes(ongletInitial ?? "") ? (ongletInitial as Onglet) : "synthese",
+    (ONGLETS as readonly string[]).includes(ongletInitial ?? "")
+      ? (ongletInitial as Onglet)
+      : "synthese",
   );
-  const [modale, setModale] = useState<"affectation" | "derogation" | "sensibilite" | "constitution" | null>(null);
+  const [modale, setModale] = useState<Modale | null>(null);
   /*
-   * La révision de la diligence porte son **intention** et non un simple booléen : trois gestes
-   * partagent la même modale, et c'est l'intention qui décide de ce qui est exigé.
+   * Due diligence review carries its intent rather than a boolean: three actions share the same
+   * modal and the intent decides what is required.
    */
   const [diligence, setDiligence] = useState<IntentionDiligence | null>(null);
   /**
-   * La lettre à rédiger dans la foulée d'une sollicitation (QF-60).
-   *
-   * Elle vit ici et non dans la modale de sollicitation : celle-ci se ferme, et une modale fermée
-   * n'affiche plus rien. L'enchaînement appartient donc à l'écran qui porte les deux.
+   * The letter to draft right after a representation request. It lives here rather than in the
+   * request modal, which closes and can no longer display anything.
    */
   const [lettreARediger, setLettreARediger] = useState<number | null>(null);
   const refsOnglets = useRef<Record<Onglet, HTMLButtonElement | null>>({
@@ -122,32 +232,20 @@ export function FicheDossier({
 
   const dossier = requete.data;
   const statutSensibilite = dossier.estSensible ? dossier.sensibiliteStatut : null;
+  const permissions = actionsPermises(roles, dossier);
+  const {
+    peutAffecter,
+    peutDemanderDerogation,
+    peutStatuer,
+    peutArbitrerDerogation,
+    peutSolliciter,
+  } = permissions;
+  // The SH cannot read publications (`GET /publications` refuses): no tab for them.
+  const onglets = ONGLETS.filter(
+    (cle) => cle !== "publications" || peut(roles, "consulterPublications"),
+  );
 
-  const peutAffecter = peut(roles, "modifierAffectation");
-  const peutDemanderDerogation =
-    peut(roles, "demanderDerogationSeuil") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
-  const peutStatuer =
-    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "EN_ATTENTE";
-  // L'arbitrage d'une dérogation n'est recevable que sur une sensibilité déjà validée (Q-74).
-  const peutArbitrerDerogation =
-    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
-  /*
-   * N4 — la diligence se révise après l'ouverture (observation 5).
-   *
-   * Le juriste **propose** sur un dossier qui n'est pas déjà en diligence ; le DJ et la DJA
-   * **posent** directement dans le même cas, et **retirent** une diligence validée. Les trois
-   * conditions sont exclusives : un dossier en attente d'arbitrage n'offre que l'arbitrage.
-   */
-  const peutProposerDiligence = peut(roles, "proposerDiligence") && !dossier.estSensible;
-  const peutPoserDiligence = peut(roles, "arbitrerDossier") && !dossier.estSensible;
-  const peutRetirerDiligence =
-    peut(roles, "arbitrerDossier") && !!dossier.estSensible && statutSensibilite === "VALIDEE";
-  // UC-INT-05 : le juriste sollicite la constitution d'un prestataire depuis le dossier.
-  const peutSolliciter = peut(roles, "solliciterConstitution");
-  // Le SH ne lit pas les publications (`GET /publications` le refuse) : pas d'onglet pour lui.
-  const onglets = ONGLETS.filter((cle) => cle !== "publications" || peut(roles, "consulterPublications"));
-
-  // Navigation clavier du motif « onglets » (WAI-ARIA) : flèches, début, fin.
+  // Keyboard navigation for the WAI-ARIA tabs pattern: arrows, Home, End.
   function surToucheOnglet(evenement: KeyboardEvent<HTMLButtonElement>) {
     const index = onglets.indexOf(onglet);
     const cibles: Record<string, number> = {
@@ -203,47 +301,17 @@ export function FicheDossier({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {peutAffecter ? (
-            <Button variante="secondaire" onClick={() => setModale("affectation")}>
-              {t("actionAffectation")}
-            </Button>
-          ) : null}
-          {peutDemanderDerogation ? (
-            <Button variante="secondaire" onClick={() => setModale("derogation")}>
-              {t("actionDerogation")}
-            </Button>
-          ) : null}
-          {peutSolliciter ? (
-            <Button variante="secondaire" onClick={() => setModale("constitution")}>
-              {t("actionConstitution")}
-            </Button>
-          ) : null}
-          {peutProposerDiligence ? (
-            <Button variante="secondaire" onClick={() => setDiligence("proposer")}>
-              {t("actionDiligenceProposer")}
-            </Button>
-          ) : null}
-          {peutPoserDiligence ? (
-            <Button variante="secondaire" onClick={() => setDiligence("poser")}>
-              {t("actionDiligencePoser")}
-            </Button>
-          ) : null}
-          {peutRetirerDiligence ? (
-            <Button variante="secondaire" onClick={() => setDiligence("retirer")}>
-              {t("actionDiligenceRetirer")}
-            </Button>
-          ) : null}
-          {peutStatuer ? (
-            <Button onClick={() => setModale("sensibilite")}>{t("actionSensibilite")}</Button>
-          ) : null}
-        </div>
+        <ActionsEntete permissions={permissions} onModale={setModale} onDiligence={setDiligence} />
       </header>
 
       {peutArbitrerDerogation ? <DerogationsEnAttente dossierId={dossier.id} /> : null}
 
       <div className="flex flex-col gap-5">
-        <div role="tablist" aria-label={t("ongletsLibelle")} className="flex gap-1 border-b border-bordure">
+        <div
+          role="tablist"
+          aria-label={t("ongletsLibelle")}
+          className="flex gap-1 border-b border-bordure"
+        >
           {onglets.map((cle) => {
             const actif = cle === onglet;
             return (
@@ -257,7 +325,7 @@ export function FicheDossier({
                 id={`onglet-${cle}`}
                 aria-selected={actif}
                 aria-controls={`panneau-${cle}`}
-                // Un seul onglet dans l'ordre de tabulation : les autres se rejoignent aux flèches.
+                // A single tab in the tab order: the others are reached with the arrow keys.
                 tabIndex={actif ? 0 : -1}
                 onClick={() => setOnglet(cle)}
                 onKeyDown={surToucheOnglet}
@@ -275,19 +343,7 @@ export function FicheDossier({
         </div>
 
         <div role="tabpanel" id={`panneau-${onglet}`} aria-labelledby={`onglet-${onglet}`}>
-          {onglet === "synthese" ? <OngletSynthese dossier={dossier} /> : null}
-          {onglet === "etapes" ? <OngletEtapes dossier={dossier} roles={roles} /> : null}
-          {onglet === "audiences" ? <OngletAudiences dossier={dossier} roles={roles} /> : null}
-          {onglet === "deliberes" ? <OngletDeliberes dossier={dossier} roles={roles} /> : null}
-          {onglet === "alarmes" ? <OngletAlarmes dossier={dossier} roles={roles} /> : null}
-          {onglet === "decisions" ? <OngletDecisions dossier={dossier} roles={roles} /> : null}
-          {onglet === "historique" ? <OngletHistorique dossierId={dossier.id} /> : null}
-          {onglet === "documents" ? (
-            <OngletDocuments dossierId={dossier.id} roles={roles} sensible={!!dossier.estSensible} />
-          ) : null}
-          {onglet === "publications" && peut(roles, "consulterPublications") ? (
-            <OngletPublications dossierId={dossier.id} />
-          ) : null}
+          <ContenuOnglet onglet={onglet} dossier={dossier} roles={roles} />
         </div>
       </div>
 
@@ -312,7 +368,7 @@ export function FicheDossier({
           onFermeture={() => setModale(null)}
         />
       ) : null}
-      {/* La clé remonte la modale à chaque intention : son formulaire repart propre. */}
+      {/* The key remounts the modal for each intent so its form starts clean. */}
       {diligence ? (
         <ModaleDiligence
           key={diligence}
@@ -331,10 +387,9 @@ export function FicheDossier({
         />
       ) : null}
       {/*
-        **La rédaction s'ouvre sur la demande qui vient d'être enregistrée** (QF-60), sans quitter le
-        dossier. La lettre existe déjà - le backend la crée avec la demande, sans numéro, pour cette
-        raison même. Elle reste rédigeable plus tard depuis la file des constitutions : ceci est un
-        raccourci, pas le seul chemin.
+        The letter editor opens on the request just saved, without leaving the case. The letter
+        already exists (the backend creates it with the request, without a number); it can also be
+        drafted later from the representation queue.
       */}
       {peutSolliciter ? (
         <ModaleLettre

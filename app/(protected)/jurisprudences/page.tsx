@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 38 — base jurisprudentielle : consultation par tous les profils internes, archivage par le juriste. */
+/** Screen 38 - case law base: readable by all internal profiles, archiving by legal officers. */
 export default async function PageJurisprudences() {
   const session = await exigerCapacite("consulterJurisprudence");
   return <BaseJurisprudentielle roles={session.roles} />;

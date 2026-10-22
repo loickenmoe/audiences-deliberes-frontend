@@ -22,25 +22,31 @@ import {
 } from "@/hooks/usePublications";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";
 import { telechargerBlob } from "@/lib/documents";
-import { TON_STATUT_PUBLICATION, estCentralisateur, peutCommenter } from "@/lib/publications";
+import {
+  TON_STATUT_PUBLICATION,
+  cleStatutPublication,
+  estCentralisateur,
+  peutCommenter,
+} from "@/lib/publications";
 import { peut } from "@/lib/rbac";
 import { publicationService } from "@/services/publicationService";
 import type { Publication } from "@/types/domaine";
-import { cleStatutPublication } from "@/lib/publications";
 
-/** Longueur de `publication.motif_rejet` en base. */
+/** Length of `publication.motif_rejet` in the database. */
 const MOTIF_MAX = 255;
 
 /**
- * Écran 32 — une publication d'avocat, et ce qu'on en fait selon son profil (UC-INT-08, UC-INT-10) :
- * l'Assistante la valide ou la rejette ; un juriste la commente pour le DJ et la DJA, jamais pour
- * l'avocat ; le DJ ou la DJA transmet la correspondance unique à l'avocat (RG-INT-07).
+ * Screen 32 - a lawyer's publication and what each profile does with it (UC-INT-08, UC-INT-10):
+ * the Assistant validates or rejects it; a legal officer comments for the DJ and DJA, never for the
+ * lawyer; the DJ or DJA sends the single correspondence to the lawyer (RG-INT-07).
  *
- * Une restriction d'accès désignant un autre juriste rend 403 `ERR-009` : on l'affiche comme un
- * accès restreint, pas comme une panne. Une publication non validée rend 404 à qui n'est pas
- * l'Assistante.
+ * An access restriction naming another legal officer returns 403 `ERR-009`: shown as restricted
+ * access, not as a failure. An unvalidated publication returns 404 to anyone but the Assistant.
  */
-export function DetailPublication({ publicationId, roles }: { publicationId: number; roles: readonly string[] }) {
+export function DetailPublication({
+  publicationId,
+  roles,
+}: Readonly<{ publicationId: number; roles: readonly string[] }>) {
   const t = useTranslations("publications");
   const td = useTranslations("domaine");
   const libelle = useLibellePublication();
@@ -49,23 +55,17 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
   const [erreurFichier, setErreurFichier] = useState<string | null>(null);
 
   if (requete.isLoading) return <EtatChargement lignes={6} />;
-  if (requete.error || !requete.data) {
-    const erreur = requete.error;
-    if (erreur instanceof ErreurApi && erreur.code === "ERR-009") {
-      return <EtatVide titre={t("accesRestreint")} description={t("accesRestreintTexte")} action={<Retour />} />;
-    }
-    if (erreur instanceof ErreurApi && erreur.statut === 404) {
-      return <EtatVide titre={t("introuvable")} description={t("introuvableTexte")} action={<Retour />} />;
-    }
-    return <EtatErreur message={messageErreur(erreur)} />;
-  }
+  if (requete.error || !requete.data) return <PublicationInaccessible erreur={requete.error} />;
 
   const publication = requete.data;
 
   async function telecharger() {
     setErreurFichier(null);
     try {
-      telechargerBlob(await publicationService.contenuFichier(publication.id), publication.nomFichier ?? "publication");
+      telechargerBlob(
+        await publicationService.contenuFichier(publication.id),
+        publication.nomFichier ?? "publication",
+      );
     } catch (e) {
       setErreurFichier(messageErreur(e));
     }
@@ -76,7 +76,9 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
       <Retour />
 
       <header className="flex flex-wrap items-center gap-3">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{libelle(publication)}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {libelle(publication)}
+        </h1>
         <StatutChip ton={TON_STATUT_PUBLICATION[publication.statutValidation]}>
           {td(cleStatutPublication(publication.type, publication.statutValidation) as never)}
         </StatutChip>
@@ -89,73 +91,20 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section aria-labelledby="publication-resume" className="flex flex-col gap-4 rounded border border-bordure bg-surface p-4">
-          <h2 id="publication-resume" className="font-semibold">{t("resume")}</h2>
-          <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-[length:var(--taille-sm)]">
-            <dt className="text-texte-secondaire">{t("dossier")}</dt>
-            <dd>
-              <Link href={`/dossiers/${publication.dossierId}`} className="font-mono underline underline-offset-4">
-                {publication.referenceDossier}
-              </Link>
-            </dd>
-            <dt className="text-texte-secondaire">{t("avocat")}</dt>
-            <dd>{publication.avocatNom}</dd>
-            {publication.type === "CR_AUDIENCE" ? (
-              <>
-                <dt className="text-texte-secondaire">{t("audience")}</dt>
-                <dd><DateValeur valeur={publication.audienceDate} /></dd>
-              </>
-            ) : (
-              <>
-                <dt className="text-texte-secondaire">{t("typeDocument")}</dt>
-                <dd>{publication.typeDocument ? td(`TypeAutrePublication.${publication.typeDocument}` as never) : "—"}</dd>
-              </>
-            )}
-            <dt className="text-texte-secondaire">{t("deposee")}</dt>
-            <dd><DateHeureValeur valeur={publication.dateDepot} /></dd>
-            <dt className="text-texte-secondaire">{t("restriction")}</dt>
-            <dd>{publication.restrictionAccesNom ? t("reservee", { nom: publication.restrictionAccesNom }) : t("restrictionTous")}</dd>
-          </dl>
-
-          {publication.type === "CR_AUDIENCE" ? (
-            <div className="flex flex-col gap-2">
-              <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("contenu")}</h3>
-              <p className="whitespace-pre-wrap text-[length:var(--taille-sm)]">{publication.contenu}</p>
-            </div>
-          ) : null}
-
-          {/*
-            Q-98 : le fichier n'appartient plus au seul sous-type « autre publication ». Un compte
-            rendu peut porter sa pièce — et n'en porte pas toujours : le bloc disparaît alors, au
-            lieu d'afficher un « — » et deux boutons qui échoueraient. Une autre publication a
-            toujours son fichier, et garde donc son bloc quoi qu'il arrive.
-          */}
-          {publication.type !== "CR_AUDIENCE" || publication.nomFichier ? (
-            <div className="flex flex-col gap-2">
-              <h3 className="text-[length:var(--taille-sm)] font-semibold">
-                {publication.type === "CR_AUDIENCE" ? t("pieceJointe") : t("fichier")}
-              </h3>
-              <div className="flex flex-wrap items-center gap-2 text-[length:var(--taille-sm)]">
-                <span className="font-medium">{publication.nomFichier ?? "—"}</span>
-                <Button variante="secondaire" taille="sm" onClick={() => setApercu(true)}>
-                  <Eye size={14} aria-hidden />
-                  {t("consulter")}
-                </Button>
-                <Button variante="secondaire" taille="sm" onClick={() => void telecharger()}>
-                  <Download size={14} aria-hidden />
-                  {t("telecharger")}
-                </Button>
-              </div>
-              {erreurFichier ? <p role="alert" className="text-[length:var(--taille-sm)] text-danger">{erreurFichier}</p> : null}
-            </div>
-          ) : null}
-        </section>
+        <ResumePublication
+          publication={publication}
+          erreurFichier={erreurFichier}
+          onApercu={() => setApercu(true)}
+          onTelecharger={() => void telecharger()}
+        />
 
         <div className="flex flex-col gap-5">
           {publication.statutValidation === "DEPOSE" && peut(roles, "validerPublication") ? (
             <PanneauValidation publication={publication} />
           ) : null}
-          {publication.statutValidation === "VALIDE" ? <PanneauEchanges publication={publication} roles={roles} /> : null}
+          {publication.statutValidation === "VALIDE" ? (
+            <PanneauEchanges publication={publication} roles={roles} />
+          ) : null}
         </div>
       </div>
 
@@ -169,10 +118,139 @@ export function DetailPublication({ publicationId, roles }: { publicationId: num
   );
 }
 
+/**
+ * An access restriction naming another legal officer (`ERR-009`) is a restricted access, not a
+ * failure; an unvalidated publication is not found by anyone but the Assistant.
+ */
+function PublicationInaccessible({ erreur }: Readonly<{ erreur: unknown }>) {
+  const t = useTranslations("publications");
+  if (erreur instanceof ErreurApi && erreur.code === "ERR-009") {
+    return (
+      <EtatVide
+        titre={t("accesRestreint")}
+        description={t("accesRestreintTexte")}
+        action={<Retour />}
+      />
+    );
+  }
+  if (erreur instanceof ErreurApi && erreur.statut === 404) {
+    return (
+      <EtatVide titre={t("introuvable")} description={t("introuvableTexte")} action={<Retour />} />
+    );
+  }
+  return <EtatErreur message={messageErreur(erreur)} />;
+}
+
+/** What the publication is, where it belongs, and its file. */
+function ResumePublication({
+  publication,
+  erreurFichier,
+  onApercu,
+  onTelecharger,
+}: Readonly<{
+  publication: Publication;
+  erreurFichier: string | null;
+  onApercu: () => void;
+  onTelecharger: () => void;
+}>) {
+  const t = useTranslations("publications");
+  const td = useTranslations("domaine");
+  return (
+    <section
+      aria-labelledby="publication-resume"
+      className="flex flex-col gap-4 rounded border border-bordure bg-surface p-4"
+    >
+      <h2 id="publication-resume" className="font-semibold">
+        {t("resume")}
+      </h2>
+      <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-[length:var(--taille-sm)]">
+        <dt className="text-texte-secondaire">{t("dossier")}</dt>
+        <dd>
+          <Link
+            href={`/dossiers/${publication.dossierId}`}
+            className="font-mono underline underline-offset-4"
+          >
+            {publication.referenceDossier}
+          </Link>
+        </dd>
+        <dt className="text-texte-secondaire">{t("avocat")}</dt>
+        <dd>{publication.avocatNom}</dd>
+        {publication.type === "CR_AUDIENCE" ? (
+          <>
+            <dt className="text-texte-secondaire">{t("audience")}</dt>
+            <dd>
+              <DateValeur valeur={publication.audienceDate} />
+            </dd>
+          </>
+        ) : (
+          <>
+            <dt className="text-texte-secondaire">{t("typeDocument")}</dt>
+            <dd>
+              {publication.typeDocument
+                ? td(`TypeAutrePublication.${publication.typeDocument}` as never)
+                : "—"}
+            </dd>
+          </>
+        )}
+        <dt className="text-texte-secondaire">{t("deposee")}</dt>
+        <dd>
+          <DateHeureValeur valeur={publication.dateDepot} />
+        </dd>
+        <dt className="text-texte-secondaire">{t("restriction")}</dt>
+        <dd>
+          {publication.restrictionAccesNom
+            ? t("reservee", { nom: publication.restrictionAccesNom })
+            : t("restrictionTous")}
+        </dd>
+      </dl>
+
+      {publication.type === "CR_AUDIENCE" ? (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("contenu")}</h3>
+          <p className="whitespace-pre-wrap text-[length:var(--taille-sm)]">
+            {publication.contenu}
+          </p>
+        </div>
+      ) : null}
+
+      {/*
+        A hearing report may or may not carry a file: without one, the block is hidden rather than
+        showing "—" and two failing buttons. Other publications always have a file.
+      */}
+      {publication.type !== "CR_AUDIENCE" || publication.nomFichier ? (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-[length:var(--taille-sm)] font-semibold">
+            {publication.type === "CR_AUDIENCE" ? t("pieceJointe") : t("fichier")}
+          </h3>
+          <div className="flex flex-wrap items-center gap-2 text-[length:var(--taille-sm)]">
+            <span className="font-medium">{publication.nomFichier ?? "—"}</span>
+            <Button variante="secondaire" taille="sm" onClick={onApercu}>
+              <Eye size={14} aria-hidden />
+              {t("consulter")}
+            </Button>
+            <Button variante="secondaire" taille="sm" onClick={onTelecharger}>
+              <Download size={14} aria-hidden />
+              {t("telecharger")}
+            </Button>
+          </div>
+          {erreurFichier ? (
+            <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
+              {erreurFichier}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function Retour() {
   const t = useTranslations("publications");
   return (
-    <Link href="/publications" className="flex w-fit items-center gap-1 text-[length:var(--taille-sm)] underline underline-offset-4">
+    <Link
+      href="/publications"
+      className="flex w-fit items-center gap-1 text-[length:var(--taille-sm)] underline underline-offset-4"
+    >
       <ArrowLeft size={14} aria-hidden />
       {t("retour")}
     </Link>
@@ -180,18 +258,14 @@ function Retour() {
 }
 
 /**
- * UC-INT-10 — ce que l'Assistante fait d'un dépôt, et qui dépend de sa nature.
+ * UC-INT-10 - what the Assistant does with a submission, depending on its kind.
  *
- * Sur une **autre publication**, elle valide ou rejette : sa décision commande la lecture, et un
- * rejet exige son motif, transmis à l'avocat.
- *
- * Sur un **compte rendu d'audience**, elle n'accuse que réception (RG-INT-06 amendée, 2026-10-05).
- * La pièce est lue de toute la Direction Juridique depuis son dépôt ; il n'y a plus rien à
- * autoriser, et rien à rejeter — le récit d'un avocat ne s'écarte pas, il se conteste par une
- * correspondance. Le serveur refuse d'ailleurs le rejet : garder le bouton n'offrirait qu'une
- * erreur à qui le presse.
+ * Other publication: validate or reject; the decision governs read access and a rejection requires
+ * a reason, sent to the lawyer.
+ * Hearing report: acknowledge receipt only (amended RG-INT-06). It is readable by the whole Legal
+ * Department from submission; it is contested through a correspondence, and the server refuses a rejection.
  */
-function PanneauValidation({ publication }: { publication: Publication }) {
+function PanneauValidation({ publication }: Readonly<{ publication: Publication }>) {
   const t = useTranslations("publications");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -201,6 +275,13 @@ function PanneauValidation({ publication }: { publication: Publication }) {
   const [rejet, setRejet] = useState(false);
   const [motif, setMotif] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
+
+  function messageValidation() {
+    if (compteRendu) return t("accuserReceptionMessage");
+    return publication.restrictionAccesNom
+      ? t("validerMessageRestreinte", { nom: publication.restrictionAccesNom })
+      : t("validerMessage");
+  }
 
   async function accepter() {
     try {
@@ -219,7 +300,10 @@ function PanneauValidation({ publication }: { publication: Publication }) {
       return;
     }
     try {
-      await valider.mutateAsync({ id: publication.id, decision: { statut: "REJETE", motifRejet: motif.trim() } });
+      await valider.mutateAsync({
+        id: publication.id,
+        decision: { statut: "REJETE", motifRejet: motif.trim() },
+      });
       toast.success(t("rejetee"));
       setRejet(false);
     } catch (e) {
@@ -228,8 +312,13 @@ function PanneauValidation({ publication }: { publication: Publication }) {
   }
 
   return (
-    <section aria-labelledby="publication-validation" className="flex flex-col gap-3 rounded border border-bordure bg-surface p-4">
-      <h2 id="publication-validation" className="font-semibold">{t("validation")}</h2>
+    <section
+      aria-labelledby="publication-validation"
+      className="flex flex-col gap-3 rounded border border-bordure bg-surface p-4"
+    >
+      <h2 id="publication-validation" className="font-semibold">
+        {t("validation")}
+      </h2>
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => setConfirmation(true)}>
           <Check size={15} aria-hidden />
@@ -255,13 +344,7 @@ function PanneauValidation({ publication }: { publication: Publication }) {
         onFermeture={() => setConfirmation(false)}
         onConfirmation={() => void accepter()}
         titre={t(compteRendu ? "accuserReceptionTitre" : "validerTitre")}
-        message={
-          compteRendu
-            ? t("accuserReceptionMessage")
-            : publication.restrictionAccesNom
-              ? t("validerMessageRestreinte", { nom: publication.restrictionAccesNom })
-              : t("validerMessage")
-        }
+        message={messageValidation()}
         libelleConfirmation={t(compteRendu ? "accuserReception" : "valider")}
         enCours={valider.isPending}
       />
@@ -273,7 +356,11 @@ function PanneauValidation({ publication }: { publication: Publication }) {
         description={t("rejetDescription")}
         pied={
           <>
-            <Button variante="secondaire" onClick={() => setRejet(false)} disabled={valider.isPending}>
+            <Button
+              variante="secondaire"
+              onClick={() => setRejet(false)}
+              disabled={valider.isPending}
+            >
               {tc("annuler")}
             </Button>
             <Button onClick={() => void rejeter()} disabled={valider.isPending}>
@@ -282,7 +369,12 @@ function PanneauValidation({ publication }: { publication: Publication }) {
           </>
         }
       >
-        <Champ id="motif-rejet-publication" label={t("champMotifRejet")} obligatoire erreur={erreur ?? undefined}>
+        <Champ
+          id="motif-rejet-publication"
+          label={t("champMotifRejet")}
+          obligatoire
+          erreur={erreur ?? undefined}
+        >
           <Textarea
             id="motif-rejet-publication"
             placeholder={t("phMotifRejetPublication")}
@@ -299,10 +391,13 @@ function PanneauValidation({ publication }: { publication: Publication }) {
 }
 
 /**
- * UC-INT-08 : les commentaires des juristes, lus par tous les profils internes ; le formulaire de
- * commentaire pour un juriste ; la correspondance unique pour le DJ et la DJA.
+ * UC-INT-08: legal officers' comments, read by all internal profiles; the comment form for a legal
+ * officer; the single correspondence for the DJ and the DJA.
  */
-function PanneauEchanges({ publication, roles }: { publication: Publication; roles: readonly string[] }) {
+function PanneauEchanges({
+  publication,
+  roles,
+}: Readonly<{ publication: Publication; roles: readonly string[] }>) {
   const t = useTranslations("publications");
   const tm = useTranslations("metier");
   const commenter = useCommenterPublication();
@@ -351,13 +446,20 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
   }
 
   return (
-    <section aria-labelledby="publication-echanges" className="flex flex-col gap-4 rounded border border-bordure bg-surface p-4">
-      <h2 id="publication-echanges" className="font-semibold">{t("echanges")}</h2>
+    <section
+      aria-labelledby="publication-echanges"
+      className="flex flex-col gap-4 rounded border border-bordure bg-surface p-4"
+    >
+      <h2 id="publication-echanges" className="font-semibold">
+        {t("echanges")}
+      </h2>
 
       <div className="flex flex-col gap-2">
         <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("commentaires")}</h3>
         {commentaires.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucunCommentaire")}</p>
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("aucunCommentaire")}
+          </p>
         ) : (
           <ul className="flex flex-col divide-y divide-bordure text-[length:var(--taille-sm)]">
             {commentaires.map((c) => (
@@ -374,7 +476,12 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
 
       {peutCommenter(roles) ? (
         <div className="flex flex-col gap-2">
-          <Champ id="commentaire-publication" label={t("commenter")} aide={t("commenterAide")} erreur={erreurCommentaire ?? undefined}>
+          <Champ
+            id="commentaire-publication"
+            label={t("commenter")}
+            aide={t("commenterAide")}
+            erreur={erreurCommentaire ?? undefined}
+          >
             <Textarea
               id="commentaire-publication"
               placeholder={t("phCommentaire")}
@@ -384,7 +491,11 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
               onChange={(evenement) => setCommentaire(evenement.target.value)}
             />
           </Champ>
-          <Button className="w-fit" onClick={() => void envoyerCommentaire()} disabled={commenter.isPending}>
+          <Button
+            className="w-fit"
+            onClick={() => void envoyerCommentaire()}
+            disabled={commenter.isPending}
+          >
             <Send size={15} aria-hidden />
             {t("envoyerDjDja")}
           </Button>
@@ -401,7 +512,8 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
             </span>
             <span className="whitespace-pre-wrap">{publication.correspondance.contenu}</span>
           </div>
-        ) : estCentralisateur(roles) ? (
+        ) : null}
+        {!publication.correspondance && estCentralisateur(roles) ? (
           <div className="flex flex-col gap-2">
             <Champ
               id="correspondance-publication"
@@ -418,13 +530,20 @@ function PanneauEchanges({ publication, roles }: { publication: Publication; rol
                 onChange={(evenement) => setCorrespondance(evenement.target.value)}
               />
             </Champ>
-            <Button className="w-fit" onClick={demanderTransmission} disabled={transmettre.isPending}>
+            <Button
+              className="w-fit"
+              onClick={demanderTransmission}
+              disabled={transmettre.isPending}
+            >
               <Send size={15} aria-hidden />
               {t("transmettre")}
             </Button>
           </div>
-        ) : (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneCorrespondance")}</p>
+        ) : null}
+        {publication.correspondance || estCentralisateur(roles) ? null : (
+          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+            {t("aucuneCorrespondance")}
+          </p>
         )}
       </div>
 

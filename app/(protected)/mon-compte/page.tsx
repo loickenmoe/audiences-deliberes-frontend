@@ -10,18 +10,14 @@ export async function generateMetadata() {
 }
 
 /**
- * Mon compte — ma signature enregistrée (N8) et mon activité (Q-133).
+ * My account - my saved signature and my activity.
  *
- * <p>**Pourquoi l'activité vit ici et non sur l'écran des rapports.** « Chaque utilisateur doit être
- * capable de télécharger ses propres rapports » (métier, 2026-10-09) - or `/rapports` exige
- * `ROLE_JURISTE` : l'Assistante et le supérieur hiérarchique n'y entrent pas. Les y laisser entrer
- * leur montrerait le rapport périodique du service, auquel ils n'ont pas droit, et dont l'appel
- * échouerait sous leurs yeux. « Mon compte » est le seul écran que les cinq profils internes
- * partagent, et c'est l'endroit où l'on vient chercher ce qui est à soi.
+ * Personal activity lives here rather than on the reports screen because `/rapports` requires
+ * `ROLE_JURISTE`, which the assistant and line manager lack, and would expose the department report.
+ * "My account" is the only screen shared by all five internal profiles.
  *
- * Ouvert à tous les profils **internes** : chacun peut déposer la sienne, et c'est la condition
- * pour qu'elle garde un sens (métier, 2026-10-06). L'avocat, qui ne porte pas `ROLE_CONSULTATION`,
- * n'y accède pas : il ne signe aucune lettre de la banque.
+ * Open to all **internal** profiles. The lawyer, without `ROLE_CONSULTATION`, has no access: they
+ * sign no bank letters.
  */
 export default async function PageMonCompte() {
   const t = await getTranslations("compte");

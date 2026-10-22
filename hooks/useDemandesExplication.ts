@@ -6,10 +6,8 @@ import { CLES } from "@/hooks/const";
 import { demandeExplicationService } from "@/services/demandeExplicationService";
 
 /**
- * Les demandes d'explication (N7 temps 2).
- *
- * La même requête sert la direction et l'avocat : le serveur décide du périmètre sur l'identité de
- * qui appelle. L'écran n'a donc rien à filtrer, et rien à savoir de l'autre public.
+ * Explanation requests. The same query serves management and lawyers: the server scopes results
+ * by the caller's identity, so the screen filters nothing.
  */
 export function useDemandesExplication(enAttente: boolean, page: number) {
   return useQuery({
@@ -19,11 +17,8 @@ export function useDemandesExplication(enAttente: boolean, page: number) {
 }
 
 /**
- * Écrire et répondre, deux mutations distinctes.
- *
- * Les deux invalident la même clé : une demande qui part ou une réponse qui arrive change la file
- * des deux côtés, et laisser l'un des deux écrans sur son ancienne vue ferait croire qu'il ne s'est
- * rien passé.
+ * Ask and answer mutations. Both invalidate the same key: a new request or answer changes the
+ * queue on both sides.
  */
 export function useEcritureExplication() {
   const client = useQueryClient();

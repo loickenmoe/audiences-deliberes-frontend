@@ -20,20 +20,18 @@ import {
 import type { ConfigurationSysteme } from "@/types/domaine";
 
 /**
- * Grille des notifications externes (backend Q-118) : pour chaque public, quels événements partent
- * sur quel canal. Une colonne est une clé de configuration ; les lignes sont les valeurs acceptées
- * que le backend publie pour elle.
- *
- * Un canal coupé garde sa colonne, grisée et toujours modifiable : on prépare la grille avant
- * d'allumer le canal, et on le rallume tel qu'on l'avait laissé.
+ * External notification grid: for each audience, which events go out on which channel. A column is
+ * a configuration key; rows are the accepted values the backend publishes for it.
+ * A disabled channel keeps its column, greyed out but still editable, so the grid can be prepared
+ * before enabling the channel.
  */
 export function GrilleNotifications({
   configurations,
   modifiable,
-}: {
+}: Readonly<{
   configurations: ConfigurationSysteme[];
   modifiable: boolean;
-}) {
+}>) {
   const t = useTranslations("grilleNotifications");
   const sections = SECTIONS_GRILLE.filter((section) =>
     section.colonnes.every(({ cle }) => trouver(configurations, cle)),
@@ -64,18 +62,18 @@ function SectionGrilleNotifications({
   section,
   configurations,
   modifiable,
-}: {
+}: Readonly<{
   section: SectionGrille;
   configurations: ConfigurationSysteme[];
   modifiable: boolean;
-}) {
+}>) {
   const t = useTranslations("grilleNotifications");
   const td = useTranslations("domaine");
   const modifier = useModifierConfiguration();
   const [saisie, setSaisie] = useState(() => saisieInitiale(section, configurations));
   const [enCours, setEnCours] = useState(false);
 
-  // Les colonnes d'un même public partagent leurs valeurs acceptées : la première suffit.
+  // Columns of the same audience share their accepted values: the first one is enough.
   const premiere = section.colonnes[0];
   const evenements = (premiere && trouver(configurations, premiere.cle)?.valeursPossibles) ?? [];
   const modifiees = colonnesModifiees(saisie, configurations);
@@ -85,15 +83,22 @@ function SectionGrilleNotifications({
   const libelleCanal = (code: string) => td(`${enumCanal}.${code}` as never);
   const idTitre = `grille-${section.identifiant}`;
 
-  /** Une clé après l'autre : chacune prend effet et s'historise seule, et l'on sait laquelle a échoué. */
+  function basculer(cle: string, evenement: string) {
+    setSaisie((courante) => basculerCase(courante, cle, evenement, evenements));
+  }
+
+  /**
+   * One key at a time: each takes effect and is audited on its own, and the failing one is
+   * identifiable.
+   */
   const enregistrer = async () => {
     setEnCours(true);
     try {
       for (const { cle, valeur } of modifiees) {
         try {
           await modifier.mutateAsync({ cle, valeur });
-        } catch (erreur) {
-          toast.error(messageErreur(erreur));
+        } catch (error_) {
+          toast.error(messageErreur(error_));
           return;
         }
       }
@@ -119,9 +124,9 @@ function SectionGrilleNotifications({
                   <Th key={cle} className="text-center">
                     <span className="flex flex-col items-center gap-0.5">
                       <span>{libelleCanal(canal)}</span>
-                      {!actif ? (
+                      {actif ? null : (
                         <span className="normal-case tracking-normal text-texte-tertiaire">{t("canalCoupe")}</span>
-                      ) : null}
+                      )}
                     </span>
                   </Th>
                 );
@@ -141,7 +146,7 @@ function SectionGrilleNotifications({
                         aria-label={t("case", { evenement: libelleEvenement(evenement), canal: libelleCanal(canal) })}
                         checked={(saisie[cle] ?? []).includes(evenement)}
                         disabled={!modifiable || enCours}
-                        onChange={() => setSaisie((courante) => basculerCase(courante, cle, evenement, evenements))}
+                        onChange={() => basculer(cle, evenement)}
                         className="size-4 accent-[color:var(--afb-anthracite)]"
                       />
                     </Td>

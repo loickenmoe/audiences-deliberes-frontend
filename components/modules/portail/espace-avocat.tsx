@@ -13,28 +13,60 @@ import { useMesConstitutions, useMesPublications } from "@/hooks/usePortailAvoca
 import { CompteAvocatNonRattache } from "@/components/modules/portail/compte-non-rattache";
 import { MesDossiers } from "@/components/modules/portail/mes-dossiers";
 import { estCompteAvocatNonRattache, messageErreur } from "@/lib/api/errors";
-import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION } from "@/lib/publications";
+import { TON_STATUT_CONSTITUTION, TON_STATUT_PUBLICATION, cleStatutPublication } from "@/lib/publications";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
-import { cleStatutPublication } from "@/lib/publications";
 
 /**
- * Espace de l'avocat — ses dépôts et ses lettres de constitution (backend Q-96).
+ * Lawyer space: their submissions and their appointment letters.
  *
- * **Périmètre ajouté, pas exigé.** Aucune user story ne demande à l'avocat de relire ses
- * publications : US 5.4 vise le juriste. L'écran existe sur arbitrage du porteur du projet, au motif
- * qu'un avocat notifié d'un rejet ne pouvait pas relire ce qui avait été rejeté — ni en lire le
- * motif, qui est précisément ce qu'il doit corriger.
+ * Beyond the user stories (US 5.4 targets the legal officer): a lawyer notified of a rejection must
+ * be able to reread what was rejected and the reason, which is what they have to correct. The
+ * correspondence sent by the DJ or DJA on a publication (RG-INT-07) is shown for the same reason.
  *
- * **Et la correspondance, depuis QF-58**, pour la même raison, à un objet près. Le DJ ou la DJA
- * transmet une correspondance unique sur la publication (RG-INT-07) ; l'avocat en était notifié,
- * sans qu'aucun écran ne la lui montre. Une notification qui renvoie vers une page muette vaut moins
- * que pas de notification du tout : elle dit qu'il y a quelque chose à lire, et ne le donne pas.
- *
- * **Ce que cet écran ne montre pas, et ne doit pas montrer.** Les commentaires des juristes. Le
- * juriste ne s'adresse jamais directement à l'avocat (Q-20, US 5.5, RG-INT-07) : il écrit pour le
- * DJ/DJA, qui tranche et transmet. Le backend les tient d'ailleurs hors de la charge utile du
- * portail - ce n'est pas à l'affichage de garder cette règle, mais il la respecte.
+ * Legal officers' comments are never shown: they write for the DJ/DJA, never directly to the lawyer
+ * (US 5.5, RG-INT-07). The backend already excludes them from the portal payload.
  */
+function colonnesMesPublications(
+  t: ReturnType<typeof useTranslations<"portail">>,
+  td: ReturnType<typeof useTranslations<"domaine">>,
+): ColumnDef<Publication, unknown>[] {
+  return [
+    {
+      id: "type",
+      header: t("colonneType"),
+      cell: ({ row }) => td(`TypePublication.${row.original.type}` as never),
+    },
+    { accessorKey: "referenceDossier", header: t("colonneDossier") },
+    {
+      id: "depot",
+      header: t("colonneDepot"),
+      cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDepot} />,
+    },
+    {
+      id: "correspondance",
+      header: t("colonneCorrespondance"),
+      cell: ({ row }) => <Correspondance publication={row.original} />,
+    },
+    {
+      id: "statut",
+      header: t("colonneStatut"),
+      cell: ({ row }) => (
+        <span className="flex flex-col items-start gap-1">
+          <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
+            {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
+          </StatutChip>
+          {/* The reason is the only actionable part of a rejection: it is always shown. */}
+          {row.original.motifRejet ? (
+            <span className="max-w-prose text-[length:var(--taille-xs)] text-danger">
+              {row.original.motifRejet}
+            </span>
+          ) : null}
+        </span>
+      ),
+    },
+  ];
+}
+
 export function EspaceAvocat() {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
@@ -42,53 +74,17 @@ export function EspaceAvocat() {
   const publications = useMesPublications(page);
   const constitutions = useMesConstitutions();
 
-
-  const colonnes = useMemo<ColumnDef<Publication, unknown>[]>(
-    () => [
-      {
-        id: "type",
-        header: t("colonneType"),
-        cell: ({ row }) => td(`TypePublication.${row.original.type}` as never),
-      },
-      { accessorKey: "referenceDossier", header: t("colonneDossier") },
-      {
-        id: "depot",
-        header: t("colonneDepot"),
-        cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDepot} />,
-      },
-      {
-        id: "correspondance",
-        header: t("colonneCorrespondance"),
-        cell: ({ row }) => <Correspondance publication={row.original} />,
-      },
-      {
-        id: "statut",
-        header: t("colonneStatut"),
-        cell: ({ row }) => (
-          <span className="flex flex-col items-start gap-1">
-            <StatutChip ton={TON_STATUT_PUBLICATION[row.original.statutValidation]}>
-              {td(cleStatutPublication(row.original.type, row.original.statutValidation) as never)}
-            </StatutChip>
-            {/* Le motif est la seule chose actionnable d'un rejet : il s'affiche, il ne se cache pas. */}
-            {row.original.motifRejet ? (
-              <span className="max-w-prose text-[length:var(--taille-xs)] text-danger">
-                {row.original.motifRejet}
-              </span>
-            ) : null}
-          </span>
-        ),
-      },
-    ],
-    [t, td],
-  );
+  const colonnes = useMemo(() => colonnesMesPublications(t, td), [t, td]);
 
   /*
-   * Q-107 : si le compte n'est pas rattaché au référentiel, **aucune** section de cet écran ne peut
-   * aboutir. On l'explique une fois plutôt que d'afficher deux blocs « le chargement a échoué » pour
-   * une cause unique sur laquelle l'avocat n'a aucune prise. Le test vient **après** les hooks : un
-   * retour anticipé placé avant en changerait l'ordre d'un rendu à l'autre.
+   * If the account is not linked to the directory, no section of this screen can load: explain it
+   * once rather than showing two "loading failed" blocks. The check comes after the hooks, since an
+   * early return before them would change the hook order between renders.
    */
-  if (estCompteAvocatNonRattache(publications.error) || estCompteAvocatNonRattache(constitutions.error)) {
+  if (
+    estCompteAvocatNonRattache(publications.error) ||
+    estCompteAvocatNonRattache(constitutions.error)
+  ) {
     return <CompteAvocatNonRattache />;
   }
 
@@ -96,7 +92,9 @@ export function EspaceAvocat() {
     <div className="flex flex-col gap-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("espaceTitre")}</h1>
+          <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+            {t("espaceTitre")}
+          </h1>
           <p className="max-w-prose text-texte-secondaire">{t("espaceDescription")}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -127,7 +125,7 @@ export function EspaceAvocat() {
         />
       </section>
 
-      {/* QF-64 : ses dossiers, leurs audiences avec la note de la Direction Juridique, et les pièces partagées. */}
+      {/* Their case files, the hearings with the Legal Department's note, and shared documents. */}
       <MesDossiers />
 
       <section className="flex flex-col gap-3">
@@ -143,27 +141,27 @@ export function EspaceAvocat() {
 }
 
 /**
- * La correspondance transmise sur une publication (QF-58).
+ * The correspondence sent on a publication.
  *
- * **L'absence se dit.** Une cellule vide laisserait croire à un affichage incomplet là où il n'y a
- * simplement rien à lire : la plupart des publications n'appellent aucune correspondance.
- *
- * **Le nom de qui a transmis, et la date.** Une lettre sans signature n'en est pas une, et l'avocat
- * doit savoir à qui il répond. `whitespace-pre-wrap` conserve les retours à la ligne du message :
- * il est saisi dans une zone de texte, et le découper en un seul paragraphe changerait ce que la
- * Direction Juridique a écrit.
+ * Its absence is stated explicitly: most publications have none, and an empty cell would look like a
+ * display glitch. The sender's name and date are shown so the lawyer knows whom they answer.
+ * `whitespace-pre-wrap` keeps the message's line breaks as written.
  */
-function Correspondance({ publication }: { publication: Publication }) {
+function Correspondance({ publication }: Readonly<{ publication: Publication }>) {
   const t = useTranslations("portail");
 
   if (!publication.correspondance) {
-    return <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("sansCorrespondance")}</span>;
+    return (
+      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+        {t("sansCorrespondance")}
+      </span>
+    );
   }
 
   return (
     <span className="flex max-w-prose flex-col gap-1">
       <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-        {/* Sans nom d'auteur, on ne signe pas d'un blanc : la date seule vaut mieux qu'un « par  ». */}
+        {/* Without an author name, show the date only rather than an empty "by". */}
         {publication.correspondance.auteurNom
           ? `${t("correspondancePar", { nom: publication.correspondance.auteurNom })} · `
           : null}
@@ -177,19 +175,18 @@ function Correspondance({ publication }: { publication: Publication }) {
 }
 
 /**
- * Les constitutions ne sont pas paginées côté backend : la liste est courte par nature, un avocat
- * n'est constitué que sur les dossiers qu'on lui confie. Une table paginée serait de la mécanique
- * pour rien.
+ * Appointments are not paginated by the backend: the list is short by nature, since a lawyer is
+ * appointed only on the case files entrusted to them.
  */
 function Constitutions({
   demandes,
   chargement,
   erreur,
-}: {
+}: Readonly<{
   demandes: DemandeConstitution[] | undefined;
   chargement: boolean;
   erreur: unknown;
-}) {
+}>) {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
 

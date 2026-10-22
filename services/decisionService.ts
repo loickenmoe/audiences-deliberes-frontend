@@ -20,35 +20,35 @@ export interface FiltresJurisprudence {
   size?: number;
 }
 
-/** Décisions devenues définitives (#51-#53, lecture Q-88) et base jurisprudentielle (#54, #55). */
+/** Final decisions (#51-#53) and case-law base (#54, #55). */
 export const decisionService = {
-  /** 🆕 Q-88 — adjudications et condamnations du dossier (404 si le dossier est inconnu). */
+  /** Adjudications and convictions of the case (404 if the case is unknown). */
   lister: async (dossierId: number): Promise<DecisionsDossier> => {
     const { data } = await apiClient.get<DecisionsDossier>(`/dossiers/${dossierId}/decisions`);
     return data;
   },
 
-  /** #51 — juriste ; étape `CLOTURE` exigée, reliquat ≥ 0 (400 sinon). */
+  /** #51: legal officer; requires step `CLOTURE` and a remainder >= 0 (400 otherwise). */
   creerAdjudication: async (dossierId: number, corps: CreerAdjudication): Promise<Adjudication> => {
     const { data } = await apiClient.post<Adjudication>(`/dossiers/${dossierId}/adjudications`, corps);
     return data;
   },
 
-  /** #52 — juriste ; aucune précondition d'étape (Q-59). */
+  /** #52: legal officer; no step precondition. */
   creerCondamnation: async (dossierId: number, corps: CreerCondamnation): Promise<Condamnation> => {
     const { data } = await apiClient.post<Condamnation>(`/dossiers/${dossierId}/condamnations`, corps);
     return data;
   },
 
-  /** #53 — le statut de paiement suit l'exécution (UC-DEF-02 étape 8). */
+  /** #53: the payment status tracks enforcement (UC-DEF-02 step 8). */
   modifierStatutCondamnation: async (id: number, statutPaiement: StatutPaiementCondamnation): Promise<Condamnation> => {
     const { data } = await apiClient.patch<Condamnation>(`/condamnations/${id}/statut`, { statutPaiement });
     return data;
   },
 
   /**
-   * #55 — recherche paginée, la plus récente d'abord. Depuis Q-89 : partielle et insensible à la
-   * casse, filtrable par dossier.
+   * #55: paginated search, most recent first; partial, case-insensitive matching, filterable by
+   * case.
    */
   rechercherJurisprudences: async (filtres: FiltresJurisprudence): Promise<PageReponse<Jurisprudence>> => {
     const { data } = await apiClient.get<PageReponse<Jurisprudence>>("/jurisprudences", {
@@ -65,9 +65,8 @@ export const decisionService = {
   },
 
   /**
-   * #54 — multipart : le fichier et les champs d'indexation, un champ `motsCles` par mot-clé.
-   * Comme pour la GED, le type multipart doit être déclaré : axios convertirait sinon le FormData
-   * en JSON.
+   * #54: multipart with the file and indexing fields, one `motsCles` field per keyword. The
+   * multipart content type must be declared, otherwise axios serializes the FormData as JSON.
    */
   archiverJurisprudence: async (indexation: ArchiverJurisprudence, fichier: File): Promise<Jurisprudence> => {
     const corps = new FormData();
@@ -85,7 +84,7 @@ export const decisionService = {
   },
 };
 
-/** « saisie immobilière, hypothèque » → ["saisie immobilière", "hypothèque"], sans vides ni doublons. */
+/** Splits a comma-separated keyword input, dropping blanks and case-insensitive duplicates. */
 export function decouperMotsCles(saisie: string): string[] {
   const vus = new Set<string>();
   const resultat: string[] = [];

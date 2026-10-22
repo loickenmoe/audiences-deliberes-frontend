@@ -14,21 +14,15 @@ import { fenetreParDefaut, tauxAboutissement } from "@/lib/notifications";
 import type { LigneCanalNotification } from "@/types/domaine";
 
 /**
- * Supervision des notifications externes (backend D17), sous celle du canal applicatif.
- *
- * **Pourquoi six colonnes et non un taux unique.** Une notification externe traverse des états que
- * rien ne permet de confondre : en file, remise au moteur, confirmée par lui, abandonnée, restée
- * sans réponse, ou sans destinataire joignable. Les réunir donnerait un chiffre rassurant et faux —
- * « remise » ne veut pas dire « reçue », et c'est justement l'écart que cet écran doit montrer.
- *
- * **« Sans retour » est l'état le plus instructif** — quand le moteur parle. Il rejette sans rien
- * dire un message mal signé : ni accusé de succès, ni accusé d'échec. Mais tant que ses topics de
- * suivi ne sont alimentés par personne (backend Q-121), le silence est la règle : la colonne des
- * confirmations reste vide, l'écran le dit, et « remise » devient le dernier état connu d'un envoi
- * réussi.
- *
- * **Les lignes sans coordonnée sortent du taux** : elles parlent d'une fiche à compléter, pas d'un
- * canal en panne.
+ * External notification monitoring, below the in-app channel monitoring.
+ * Six columns rather than a single rate, because the states differ: queued, handed to the engine,
+ * confirmed by it, abandoned, no response, or no reachable recipient. "Handed over" does not mean
+ * "received".
+ * "No response" is the most telling state when the engine reports back, as it silently drops a
+ * badly signed message. While its tracking topics are not fed, the confirmation column stays empty
+ * and "handed over" is the last known state of a successful send.
+ * Rows without contact details are excluded from the rate: they point to an incomplete record, not
+ * a channel failure.
  */
 export function SupervisionNotifications() {
   const t = useTranslations("supervisionNotifications");
@@ -140,7 +134,7 @@ export function SupervisionNotifications() {
                       <Td>{t(`statuts.${envoi.statut}` as never)}</Td>
                       <Td>
                         {envoi.destinataire ?? t("sansDestinataire")}
-                        {/* Hors production, le message part vers une adresse de test : on montre les deux. */}
+                        {/* Outside production the message goes to a test address: both are shown. */}
                         {envoi.destinataireOrigine ? (
                           <span className="block text-[length:var(--taille-2xs)] text-texte-tertiaire">
                             {t("destinataireReel", { destinataire: envoi.destinataireOrigine })}
@@ -170,7 +164,7 @@ export function SupervisionNotifications() {
   );
 }
 
-function LigneCanal({ ligne }: { ligne: LigneCanalNotification }) {
+function LigneCanal({ ligne }: Readonly<{ ligne: LigneCanalNotification }>) {
   const t = useTranslations("supervisionNotifications");
   const taux = tauxAboutissement(ligne);
   return (

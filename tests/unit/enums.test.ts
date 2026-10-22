@@ -10,8 +10,8 @@ import {
 } from "@/types/enums";
 
 /**
- * Ce fichier vérifie le **contrat** : les valeurs que le backend renvoie. Les libellés, eux, sont
- * vérifiés par `messages.test.ts` — ils vivent désormais dans les fichiers de traduction.
+ * Checks the **contract**: the values the backend returns. Labels live in the translation files
+ * and are checked by `messages.test.ts`.
  */
 describe("énumérations du domaine", () => {
   it("couvre les 19 types d'alerte du backend (Q-22, N7)", () => {

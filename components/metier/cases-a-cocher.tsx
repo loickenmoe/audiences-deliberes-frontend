@@ -5,23 +5,18 @@ import { useId } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Une option, réduite à ce dont le composant a besoin. */
+/** An option, reduced to what the component needs. */
 export interface OptionCase {
   id: number;
   libelle: string;
 }
 
 /**
- * Choix multiple par cases à cocher (2026-09-22).
- *
- * **Pour une liste courte, qu'on veut voir d'un coup d'œil** : les juristes d'un dossier. Chaque
- * personne se coche ou se décoche d'un clic, sans touche à maintenir. C'est ce qui manquait à la liste
- * native à sélection multiple qu'il remplace : il fallait y tenir Ctrl (ou Cmd), un clic sans Ctrl
- * effaçait toute la sélection sans rien signaler, et la zone ne montrait que deux lignes. Pour une
- * liste longue et qui grandit — les avocats —, c'est {@link SelecteurCherchable} qui convient.
- *
- * Le groupe porte son intitulé (`fieldset` / `legend`) : un lecteur d'écran annonce « Juristes
- * affectés » avant chaque case. Le nombre de cases cochées est annoncé à chaque changement.
+ * Multiple choice with checkboxes, for a short list meant to be seen at a glance (e.g. the lawyers
+ * of a case): each person is toggled with a single click, no modifier key needed. For long, growing
+ * lists, use {@link SelecteurCherchable}.
+ * The group is a `fieldset`/`legend` so screen readers announce its label; the number of checked
+ * boxes is announced on each change.
  */
 export function CasesACocher({
   label,
@@ -32,7 +27,7 @@ export function CasesACocher({
   erreur,
   chargement = false,
   className,
-}: {
+}: Readonly<{
   label: string;
   options: readonly OptionCase[];
   valeur: readonly number[];
@@ -41,10 +36,14 @@ export function CasesACocher({
   erreur?: string;
   chargement?: boolean;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const tc = useTranslations("commun");
   const id = useId();
+  /** What the list says instead of options: still loading, or nothing to choose. */
+  let messageListe: string | null = null;
+  if (chargement) messageListe = tc("chargement");
+  else if (options.length === 0) messageListe = t("aucunResultat");
   const idErreur = `${id}-erreur`;
 
   function basculer(optionId: number) {
@@ -53,7 +52,7 @@ export function CasesACocher({
 
   return (
     <fieldset className={cn("flex min-w-0 flex-col gap-1.5", className)} aria-describedby={erreur ? idErreur : undefined}>
-      {/* Premier enfant du fieldset : c'est à cette condition qu'il nomme le groupe. */}
+      {/* Must be the first child of the fieldset to name the group. */}
       <legend className="mb-1.5 text-[length:var(--taille-sm)] font-medium">
         {label}
         {obligatoire ? (
@@ -69,10 +68,8 @@ export function CasesACocher({
           erreur ? "border-danger" : "border-bordure-forte",
         )}
       >
-        {chargement ? (
-          <p className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{tc("chargement")}</p>
-        ) : options.length === 0 ? (
-          <p className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{t("aucunResultat")}</p>
+        {messageListe ? (
+          <p className="px-3 py-2 text-[length:var(--taille-sm)] text-texte-tertiaire">{messageListe}</p>
         ) : (
           options.map((option) => (
             <label

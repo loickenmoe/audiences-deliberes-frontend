@@ -2,20 +2,14 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Audit d'accessibilité **WCAG 2.1 niveau AA**, automatisé sur les écrans réellement servis.
- *
- * `tests/unit/contraste.test.ts` couvrait déjà les contrastes, mais sur les **jetons** : il mesure
- * ce que la feuille de style déclare, pas ce que le navigateur rend. Ici, axe inspecte l'arbre
- * d'accessibilité d'une page authentifiée, avec ses données réelles — étiquettes de formulaire,
- * noms accessibles, hiérarchie des titres, rôles ARIA, contraste calculé sur le rendu.
- *
- * **Aucune violation n'est tolérée.** Une exception admise deviendrait la règle : si une règle doit
- * être écartée, elle l'est explicitement, avec son motif écrit, et jamais en masse.
+ * Automated WCAG 2.1 AA audit (axe) of the rendered, authenticated screens with real data.
+ * Complements `tests/unit/contraste.test.ts`, which only checks the declared color tokens.
+ * No violation is tolerated: a rule may only be excluded explicitly, with its reason.
  */
 
 const MOT_DE_PASSE = "Password1!";
 
-/** Les balises du contrat : WCAG 2.0 et 2.1, niveaux A et AA. AAA n'est pas un objectif du projet. */
+/** WCAG 2.0 and 2.1, levels A and AA. AAA is out of scope. */
 const NORMES = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 async function seConnecter(page: Page, identifiant: string) {
@@ -28,7 +22,7 @@ async function seConnecter(page: Page, identifiant: string) {
 
 async function auditer(page: Page) {
   const resultat = await new AxeBuilder({ page }).withTags(NORMES).analyze();
-  // Le message d'échec nomme la règle et l'élément : sans cela, « 1 violation » est inexploitable.
+  // Name the rule and the elements in the failure message; "1 violation" alone is useless.
   const lisible = resultat.violations.map((v) => ({
     regle: v.id,
     impact: v.impact,
@@ -50,11 +44,6 @@ test("les pages d'erreur sont accessibles", async ({ page }) => {
   await auditer(page);
 });
 
-/**
- * Les écrans du juriste, celui qui porte le plus d'écrans : accueil, liste, fiche, formulaire de
- * création, calendrier et base jurisprudentielle. Un formulaire long est le cas le plus exposé —
- * étiquettes, messages d'erreur reliés, champs obligatoires.
- */
 test("les écrans du juriste sont accessibles", async ({ page }) => {
   await seConnecter(page, "juriste.test");
 
@@ -84,7 +73,7 @@ test("les écrans de la direction sont accessibles", async ({ page }) => {
   }
 });
 
-/** Le portail de l'avocat : le seul accessible à un utilisateur externe, donc le moins pardonnable. */
+/** The lawyer portal is the only one open to external users. */
 test("les écrans du portail avocat sont accessibles", async ({ page }) => {
   await seConnecter(page, "avocat.test");
 
@@ -95,11 +84,7 @@ test("les écrans du portail avocat sont accessibles", async ({ page }) => {
   }
 });
 
-/**
- * Une modale est le piège classique : elle doit porter un nom accessible, et le focus ne doit pas
- * pouvoir s'en échapper. Le cas est vérifié sur la fiche d'un dossier, où plusieurs modales
- * coexistent — une modale fermée reste dans le DOM.
- */
+/** A dialog must have an accessible name, otherwise a screen reader only announces "dialog". */
 test("une boîte de dialogue ouverte reste accessible", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/clients");
@@ -107,9 +92,7 @@ test("une boîte de dialogue ouverte reste accessible", async ({ page }) => {
 
   const dialogue = page.getByRole("dialog");
   await expect(dialogue).toBeVisible();
-  // Un nom accessible : sans lui, un lecteur d'écran annonce « boîte de dialogue » et rien d'autre.
-  // On vérifie le **nom calculé**, non l'attribut : la modale le tient d'`aria-labelledby`, ce qui
-  // est tout aussi valide et relie le titre affiché à la boîte.
+  // Check the computed name, not an attribute: the dialog gets it from `aria-labelledby`.
   await expect(dialogue).toHaveAccessibleName(/.+/);
   await auditer(page);
 });
@@ -118,7 +101,7 @@ test("la navigation au clavier atteint le contenu sans piège", async ({ page })
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers");
 
-  // Dix tabulations depuis le haut : le focus doit rester dans la page et rester visible.
+  // After ten tabs from the top, focus must still be inside the page and visible.
   for (let i = 0; i < 10; i += 1) {
     await page.keyboard.press("Tab");
   }

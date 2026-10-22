@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
 import { FilesDuJour } from "@/components/modules/accueil/files-du-jour";
-import { StatutChip } from "@/components/global";
 import { profilPrincipal } from "@/lib/rbac";
 import { exigerSession } from "@/lib/serverAuth";
 
@@ -11,15 +10,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Accueil.
+ * Home.
  *
- * **QF-19** : une seule racine pour tous les profils, dont le contenu s'adapte — pas de redirection
- * par rôle. Aucun profil interne n'a de métier unique.
- *
- * **Achevé en F17.** L'écran affichait jusqu'ici les identifiants de capacités en police à chasse
- * fixe : une vue de mise au point, utile pendant la construction du socle, sans valeur pour un
- * juriste. Il présente désormais les **files de travail** de chaque profil — ce qui l'attend, avec
- * le compte et le lien direct.
+ * A single root for all profiles, with content adapted to each, and no role-based redirect: no
+ * internal profile has a single job. It shows each profile's **work queues** with counts and direct links.
  */
 export default async function PageAccueil() {
   const session = await exigerSession();
@@ -43,21 +37,6 @@ export default async function PageAccueil() {
       </header>
 
       <FilesDuJour roles={session.roles} />
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-[length:var(--taille-lg)] font-semibold">{t("rolesTitre")}</h2>
-        <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
-          {t("rolesDescription")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {session.roles.map((role) => (
-            <StatutChip key={role} ton={role === profil ? "info" : "neutre"}>
-              {tr(role)}
-            </StatutChip>
-          ))}
-        </div>
-      </section>
-
     </div>
   );
 }

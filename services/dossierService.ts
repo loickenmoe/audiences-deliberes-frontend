@@ -17,21 +17,13 @@ import type {
 import type { StatutCycleVie, StatutValidation, TypeEtape } from "@/types/enums";
 
 /**
- * Dossiers (#1 à #8, plus `POST /dossiers/{id}/etapes`) — miroir 1:1 des endpoints, sans logique
- * métier.
- *
- * Les règles de cohérence (catégorie déduite de la nature, champs conditionnels, transitions de
- * cycle de vie) sont portées par le backend. L'interface les rejoue en amont pour éviter un
- * aller-retour, mais c'est le backend qui arbitre : ce service ne décide de rien.
+ * Dossiers (#1 to #8, plus `POST /dossiers/{id}/etapes`) - 1:1 mirror of the endpoints. Consistency
+ * rules are replayed in the UI to save a round trip, but the backend arbitrates.
  */
 export const dossierService = {
   /**
-   * #2 — liste paginée.
-   *
-   * `reference`, `clientId` et `mesDossiers` ont été ajoutés au backend en M16 (QF-07) : sans eux,
-   * un juriste ne pouvait retrouver un dossier qu'en parcourant les pages. Filtrer côté navigateur
-   * n'était pas une option — sur une liste paginée, la recherche n'aurait porté que sur la page
-   * affichée et aurait donc menti.
+   * #2 - paginated list. Filtering is server-side: on a paginated list, client-side search would
+   * only cover the displayed page.
    */
   lister: async (filtres: FiltresDossiers = {}): Promise<PageReponse<Dossier>> => {
     const { data } = await apiClient.get<PageReponse<Dossier>>("/dossiers", {
@@ -41,17 +33,16 @@ export const dossierService = {
         juridiction: filtres.juridiction || undefined,
         reference: filtres.reference || undefined,
         clientId: filtres.clientId ?? undefined,
-        // `false` est le défaut du backend : ne pas l'envoyer garde l'URL lisible.
+        // `false` is the backend default: omitting it keeps the URL readable.
         mesDossiers: filtres.mesDossiers ? true : undefined,
-        // Q-101 : `estSensible=false` est un filtre légitime (les dossiers non sensibles), il ne
-        // doit donc pas être confondu avec « non renseigné ».
+        // `estSensible=false` is a legitimate filter (non-sensitive dossiers), distinct from "unset".
         estSensible: filtres.estSensible ?? undefined,
         sensibiliteStatut: filtres.sensibiliteStatut || undefined,
         typeEtape: filtres.typeEtape || undefined,
         statutEtape: filtres.statutEtape || undefined,
         dateDebut: filtres.dateDebut || undefined,
         dateFin: filtres.dateFin || undefined,
-        // `RECENT` est le défaut du serveur : ne pas l'envoyer garde l'URL lisible.
+        // `RECENT` is the server default: omitting it keeps the URL readable.
         tri: filtres.tri && filtres.tri !== "RECENT" ? filtres.tri : undefined,
         page: filtres.page ?? 0,
         size: filtres.size ?? TAILLE_PAGE,
@@ -61,11 +52,8 @@ export const dossierService = {
   },
 
   /**
-   * Q-100 — l'historique complet d'un dossier, paginé.
-   *
-   * La fiche (#3) n'en embarque que la première page : RG-DOS-06 historise chaque action, et un
-   * dossier suivi plusieurs années en accumule des centaines qui voyageaient à chaque ouverture.
-   * **Aucune entrée n'est perdue** — les suivantes sont sur les pages suivantes, par cet endpoint.
+   * Full dossier history, paginated. The detail (#3) only embeds the first page, since RG-DOS-06
+   * records every action; later entries are available through this endpoint.
    */
   historique: async (
     dossierId: number,
@@ -79,17 +67,15 @@ export const dossierService = {
     return data;
   },
 
-  /** #3 — seule réponse qui porte l'historique. `documents` y est vide par construction (Q-67). */
+  /** #3 - the only response carrying the history. `documents` is always empty here. */
   consulter: async (id: number): Promise<Dossier> => {
     const { data } = await apiClient.get<Dossier>(`/dossiers/${id}`);
     return data;
   },
 
   /**
-   * #1 — création. Exige `ROLE_SAISIE`.
-   *
-   * `categorie` n'est délibérément pas transmise : le backend la déduit de `nature` (RG-DOS-02) et
-   * refuse une valeur divergente. L'envoyer n'apporterait qu'un risque d'incohérence.
+   * #1 - creation, requires `ROLE_SAISIE`. `categorie` is deliberately not sent: the backend derives
+   * it from `nature` (RG-DOS-02) and rejects a diverging value.
    */
   creer: async (dossier: CreerDossier): Promise<Dossier> => {
     const { data } = await apiClient.post<Dossier>("/dossiers", dossier);
@@ -97,10 +83,8 @@ export const dossierService = {
   },
 
   /**
-   * #4 — **remplace** les affectations, n'en ajoute pas.
-   *
-   * Un juriste ou un avocat déjà affecté provoque un 409 `ERR-003` : ce n'est pas un échec mais
-   * une demande de confirmation, que l'on rejoue avec `forcer`. Le backend alerte alors le DJ.
+   * #4 - **replaces** the assignments. An already assigned legal officer or lawyer yields a 409
+   * `ERR-003`: a confirmation request, replayed with `forcer`; the backend then alerts the DJ.
    */
   modifierAffectation: async (
     id: number,
@@ -113,7 +97,7 @@ export const dossierService = {
     return data;
   },
 
-  /** #5 — 400 `ERR-004` si la transition n'est pas permise (cf. `lib/transitions.ts`). */
+  /** #5 - 400 `ERR-004` if the transition is not allowed (see `lib/transitions.ts`). */
   modifierStatutEtape: async (
     id: number,
     etapeId: number,
@@ -126,26 +110,21 @@ export const dossierService = {
     return data;
   },
 
-  /**
-   * Endpoint non numéroté — positionnement direct à une étape. Crée au passage les étapes
-   * intermédiaires manquantes, au statut `OUVERTURE`.
-   */
+  /** Jumps directly to a step, creating missing intermediate steps with status `OUVERTURE`. */
   creerEtape: async (id: number, type: TypeEtape): Promise<EtapeProcedure> => {
     const { data } = await apiClient.post<EtapeProcedure>(`/dossiers/${id}/etapes`, { type });
     return data;
   },
 
-  /** #6 — uniquement sur un dossier sensible **déjà validé**. Motif obligatoire. */
+  /** #6 - only on a sensitive dossier that is **already validated**. Reason required. */
   demanderDerogation: async (id: number, demande: DemandeDerogation): Promise<AuditSeuil> => {
     const { data } = await apiClient.post<AuditSeuil>(`/dossiers/${id}/seuil-derogation`, demande);
     return data;
   },
 
   /**
-   * Demandes de seuil d'un dossier, la plus récente d'abord — `statut: "EN_ATTENTE"` pour la file
-   * d'arbitrage. Ajouté au backend le 2026-09-10 (Q-74) pour lever QF-23 : sans lui, l'identifiant
-   * qu'exige l'arbitrage n'était exposé nulle part. Contient aussi la proposition initiale de
-   * sensibilité.
+   * Threshold requests of a dossier, most recent first - `statut: "EN_ATTENTE"` for the arbitration
+   * queue. Exposes the identifier arbitration needs; also includes the initial sensitivity proposal.
    */
   listerDerogations: async (id: number, statut?: StatutValidation): Promise<AuditSeuil[]> => {
     const { data } = await apiClient.get<AuditSeuil[]>(`/dossiers/${id}/seuil-derogation`, {
@@ -155,8 +134,8 @@ export const dossierService = {
   },
 
   /**
-   * #7 — arbitrage DJ/DJA. Recevable seulement sur un dossier dont la sensibilité est **validée** :
-   * avant, le seul audit en attente est la proposition initiale, qui se tranche par #8 (Q-74).
+   * #7 - DJ/DJA arbitration, only on a dossier whose sensitivity is **validated**: before that, the
+   * only pending audit is the initial proposal, decided through #8.
    */
   validerDerogation: async (
     id: number,
@@ -170,19 +149,15 @@ export const dossierService = {
     return data;
   },
 
-  /**
-   * #8 — validation ou rejet d'une sensibilité proposée, qu'elle vienne de la création ou d'une
-   * proposition faite en cours de route (N4) : l'arbitrage n'a pas à savoir d'où elle vient.
-   */
+  /** #8 - validates or rejects a proposed sensitivity, whether proposed at creation or later. */
   validerSensibilite: async (id: number, decision: ValiderSensibilite): Promise<Dossier> => {
     const { data } = await apiClient.post<Dossier>(`/dossiers/${id}/sensibilite/validation`, decision);
     return data;
   },
 
   /**
-   * Le juriste propose la diligence particulière sur un dossier déjà ouvert - `ROLE_SAISIE`, comme
-   * la demande de dérogation de seuil. Le dossier passe `EN_ATTENTE` ; **rien ne change pour les
-   * frais avant l'arbitrage** (Q-10).
+   * The legal officer proposes special diligence on an open dossier (`ROLE_SAISIE`). The dossier
+   * becomes `EN_ATTENTE`; **nothing changes for fees until arbitration**.
    */
   proposerDiligence: async (id: number, demande: ProposerDiligence): Promise<Dossier> => {
     const { data } = await apiClient.post<Dossier>(`/dossiers/${id}/sensibilite/proposition`, demande);
@@ -190,8 +165,8 @@ export const dossierService = {
   },
 
   /**
-   * Le DJ ou la DJA pose ou lève la diligence directement - `PUT`, car on ne crée pas une demande,
-   * on fixe l'état de la diligence du dossier. Le retrait remet le seuil global.
+   * The DJ or DJA sets or lifts diligence directly - `PUT`, since it sets the dossier state rather
+   * than creating a request. Removal restores the global threshold.
    */
   modifierDiligence: async (id: number, modification: ModifierDiligence): Promise<Dossier> => {
     const { data } = await apiClient.put<Dossier>(`/dossiers/${id}/sensibilite`, modification);

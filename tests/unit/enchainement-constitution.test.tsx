@@ -6,16 +6,11 @@ import { ModaleConstitution } from "@/components/modules/dossiers/modale-constit
 import { rendre } from "../utils/rendu";
 
 /**
- * Les deux enchaînements de la constitution (QF-60, signalé le 2026-10-14).
+ * Retainer flow chaining. Once the request is saved, the user goes straight to drafting the letter,
+ * which the backend creates **with the request**, without a number.
  *
- * **Ce qui manquait.** Une fois la sollicitation enregistrée, rien ne menait à la rédaction de la
- * lettre : il fallait quitter le dossier, trouver la file des constitutions, et y retrouver sa
- * demande parmi les autres. Or le backend était fait pour cet enchaînement depuis le début - la
- * lettre **naît avec la demande**, sans numéro, « pour que le juriste puisse la rédiger aussitôt ».
- *
- * Ce fichier couvre la première moitié : la modale de sollicitation annonce la demande qu'elle vient
- * de créer. La seconde moitié - la signature qui mène à l'onglet Documents - est vérifiée par le
- * parcours e2e, la navigation étant ce qu'il faut y éprouver.
+ * This file covers the first half: the request dialog announces the request it just created.
+ * The second half (signature leading to the Documents tab) is covered by the e2e flow.
  */
 const solliciter = vi.fn();
 const intervenants = vi.fn();
@@ -69,7 +64,7 @@ describe("la sollicitation enchaîne sur la rédaction de la lettre", () => {
     await waitFor(() => expect(onSollicitee).toHaveBeenCalledWith(77));
   });
 
-  /** La modale se ferme d'abord : deux boîtes de dialogue empilées cacheraient la rédaction. */
+  /** The dialog closes first: two stacked dialogs would hide the drafting screen. */
   it("ferme la sollicitation avant d'ouvrir la rédaction", async () => {
     solliciter.mockResolvedValue({ id: 77 });
     const ordre: string[] = [];
@@ -83,8 +78,7 @@ describe("la sollicitation enchaîne sur la rédaction de la lettre", () => {
   });
 
   /**
-   * **Rien ne s'enchaîne sur un échec.** Si l'enregistrement est refusé, il n'y a pas de lettre à
-   * rédiger : ouvrir la rédaction afficherait un formulaire sur une demande qui n'existe pas.
+   * **Nothing chains on failure.** If saving is refused there is no letter to draft.
    */
   it("n'enchaîne pas quand l'enregistrement est refusé", async () => {
     solliciter.mockRejectedValue(new Error("Le prestataire est déjà constitué sur ce dossier"));
@@ -98,8 +92,7 @@ describe("la sollicitation enchaîne sur la rédaction de la lettre", () => {
   });
 
   /**
-   * Et une saisie incomplète ne part pas du tout : le serveur n'est pas appelé, donc il n'y a rien
-   * à enchaîner. Le reproche est nommé champ par champ.
+   * Incomplete input is not sent at all, so nothing chains. Errors are reported field by field.
    */
   it("n'appelle ni le serveur ni l'enchaînement sur une saisie incomplète", async () => {
     const onSollicitee = vi.fn();
@@ -111,7 +104,7 @@ describe("la sollicitation enchaîne sur la rédaction de la lettre", () => {
     expect(onSollicitee).not.toHaveBeenCalled();
   });
 
-  /** L'enchaînement est facultatif : la modale reste utilisable sans lui. */
+  /** Chaining is optional: the dialog works without it. */
   it("fonctionne sans enchaînement fourni", async () => {
     solliciter.mockResolvedValue({ id: 77 });
     const { onFermeture } = poser(undefined);

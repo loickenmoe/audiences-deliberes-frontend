@@ -7,11 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /**
- * Les quatre états obligatoires de toute vue de données. Le succès passe par une notification
- * (`sonner`), il n'a pas d'état de page.
+ * The four mandatory states of any data view. Success goes through a toast (`sonner`) and has no
+ * page state.
  *
- * Règle de rédaction : un état vide dit ce qui manque **et** propose une sortie ; un état d'erreur
- * dit ce qui s'est passé **et** offre de réessayer. Jamais d'excuse, jamais de « oups ».
+ * Writing rule: an empty state says what is missing **and** offers a way out; an error state says
+ * what happened **and** offers a retry. Never apologise.
  */
 
 export function EtatVide({
@@ -19,12 +19,12 @@ export function EtatVide({
   description,
   action,
   className,
-}: {
+}: Readonly<{
   titre: string;
   description?: string;
   action?: ReactNode;
   className?: string;
-}) {
+}>) {
   return (
     <div
       className={cn(
@@ -48,12 +48,12 @@ export function EtatErreur({
   message,
   action,
   className,
-}: {
+}: Readonly<{
   titre?: string;
   message?: string;
   action?: ReactNode;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("erreurs");
   return (
     <div
@@ -72,11 +72,11 @@ export function EtatErreur({
   );
 }
 
-/** Ossature générique d'une liste en cours de chargement. */
-export function EtatChargement({ lignes = 5, className }: { lignes?: number; className?: string }) {
+/** Generic skeleton of a loading list. */
+export function EtatChargement({ lignes = 5, className }: Readonly<{ lignes?: number; className?: string }>) {
   const t = useTranslations("commun");
   return (
-    <div className={cn("flex flex-col gap-2", className)} role="status" aria-live="polite">
+    <div className={cn("flex flex-col gap-2", className)} role="status" aria-live="polite" /* NOSONAR - <output> only accepts phrasing content; skeleton rows are blocks */>
       <span className="sr-only">{t("chargement")}</span>
       {Array.from({ length: lignes }, (_, index) => (
         <Skeleton key={index} className="h-11 w-full" />

@@ -9,11 +9,8 @@ import {
 } from "@/lib/cache-jeton";
 
 /**
- * QF-42 — le cache du jeton d'accès.
- *
- * Ce qui est vérifié ici n'est pas « le cache mémorise », c'est **le nombre de lectures de session**.
- * Chaque lecture repose le cookie de session côté serveur : c'est ce compte, et lui seul, qui
- * décidait qu'une déconnexion tienne ou non.
+ * Access token cache. What is checked is **the number of session reads**: each read sets the
+ * session cookie again on the server side, which decides whether a logout actually holds.
  */
 describe("cache du jeton d'accès", () => {
   const MAINTENANT = 1_700_000_000_000;
@@ -29,7 +26,7 @@ describe("cache du jeton d'accès", () => {
     });
     definirLectureDeSession(lire);
 
-    // Huit requêtes simultanées : c'est la charge d'un écran d'accueil.
+    // Eight concurrent requests: the load of a home screen.
     const jetons = await Promise.all(
       Array.from({ length: 8 }, () => jetonCourant(MAINTENANT)),
     );
@@ -64,8 +61,8 @@ describe("cache du jeton d'accès", () => {
   });
 
   /**
-   * Sans fenêtre publiée, garder le jeton indéfiniment servirait un jeton mort ; le relire à chaque
-   * appel rouvrirait QF-42. Le repli court tient les deux bouts.
+   * Without a published expiry, keeping the token forever would serve a dead token, and reading it
+   * on every call would defeat the cache. A short fallback covers both.
    */
   it("applique un repli court quand la session ne publie pas de fenêtre", async () => {
     const lire = vi.fn().mockResolvedValue({ accessToken: "jeton-A" });
@@ -94,8 +91,8 @@ describe("cache du jeton d'accès", () => {
   });
 
   /**
-   * Le cas qui fait le défaut : une lecture partie **avant** le verrou revient **après**. Son
-   * résultat doit être jeté, sans quoi le jeton — et le cookie qu'il accompagne — ressuscite.
+   * A read started **before** the lock returns **after** it. Its result must be discarded, otherwise
+   * the token (and its cookie) comes back to life.
    */
   it("jette le résultat d'une lecture revenue après le verrou", async () => {
     let resoudre: (v: { accessToken: string; rafraichirApres: number }) => void = () => {};
@@ -114,8 +111,8 @@ describe("cache du jeton d'accès", () => {
   });
 
   /**
-   * Le geste qui rend la déconnexion déterministe : elle attend que la lecture en vol soit retombée
-   * avant de partir, sans quoi cette réponse reposerait le cookie qu'elle vient d'effacer.
+   * Logout waits for the in-flight read to settle, otherwise that response would set again the
+   * cookie it has just cleared.
    */
   it("attend la lecture en vol avant de rendre la main", async () => {
     let resoudre: (v: { accessToken: string; rafraichirApres: number }) => void = () => {};

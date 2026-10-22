@@ -3,7 +3,7 @@ import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { DemandeFrais, DeposerFrais } from "@/types/domaine";
 import type { StatutCircuitFrais } from "@/types/enums";
 
-/** Un accord, ou un refus — toujours motivé (RG-INT-03). */
+/** An approval, or a refusal that always carries a reason (RG-INT-03). */
 export type DecisionFrais = { accord: true } | { accord: false; motifRejet: string };
 
 function corps(decision: DecisionFrais) {
@@ -11,17 +11,12 @@ function corps(decision: DecisionFrais) {
 }
 
 /**
- * Frais d'avocats, circuit interne (#24 à #28 et le détail ajouté en M16, Q-82 backend). Le dépôt
- * par l'avocat (#23) arrive avec son portail, en F16.
- *
- * Le backend arbitre tout : statut attendu à chaque étape (409 sinon), motif obligatoire à chaque
- * rejet (400), double vote refusé (409), paiement réservé à une demande validée (400).
+ * Lawyer fees workflow (#23 to #28). The backend enforces everything: expected status at each step
+ * (409), mandatory rejection reason (400), no double vote (409), payment only for a validated
+ * request (400).
  */
 export const fraisService = {
-  /**
-   * #28 — file de travail, la plus récente d'abord. Transverse pour le personnel interne ; l'avocat
-   * n'y voit que ses propres demandes.
-   */
+  /** #28: work queue, most recent first. All requests for internal staff; a lawyer sees only theirs. */
   lister: async (statut: StatutCircuitFrais | null, page = 0, size = TAILLE_PAGE): Promise<PageReponse<DemandeFrais>> => {
     const { data } = await apiClient.get<PageReponse<DemandeFrais>>("/frais/demandes", {
       params: { statut: statut ?? undefined, page, size },
@@ -29,13 +24,13 @@ export const fraisService = {
     return data;
   },
 
-  /** Détail et décisions du circuit (M16, Q-82) — l'avocat ne lit que les siennes (403 sinon). */
+  /** Detail and workflow decisions; a lawyer can only read their own (403 otherwise). */
   consulter: async (id: number): Promise<DemandeFrais> => {
     const { data } = await apiClient.get<DemandeFrais>(`/frais/demandes/${id}`);
     return data;
   },
 
-  /** #24 — Assistante, demande `DEPOSEE`. Conforme : elle passe au DJA. */
+  /** #24: assistant, request in `DEPOSEE`. If compliant, it moves to the DJA. */
   controlerConformite: async (id: number, decision: DecisionFrais): Promise<DemandeFrais> => {
     const { data } = await apiClient.put<DemandeFrais>(`/frais/demandes/${id}/conformite`, {
       conforme: decision.accord,
@@ -45,8 +40,8 @@ export const fraisService = {
   },
 
   /**
-   * #25 — DJA, demande `CONFORMITE`. Un accord valide la demande, sauf dossier sensible ou montant
-   * au-delà du seuil : elle passe alors en validation conjointe (`OPPORTUNITE`).
+   * #25: DJA, request in `CONFORMITE`. Approval validates it, unless the case is sensitive or the
+   * amount exceeds the threshold, in which case it goes to joint validation (`OPPORTUNITE`).
    */
   controlerOpportunite: async (id: number, decision: DecisionFrais): Promise<DemandeFrais> => {
     const { data } = await apiClient.put<DemandeFrais>(`/frais/demandes/${id}/opportunite`, {
@@ -56,7 +51,7 @@ export const fraisService = {
     return data;
   },
 
-  /** #26 — DJ et DJA, chacun son accord ; les deux valident, un seul refus rejette. */
+  /** #26: DJ and DJA each vote; both approvals validate, a single refusal rejects. */
   validerConjointement: async (id: number, decision: DecisionFrais): Promise<DemandeFrais> => {
     const { data } = await apiClient.post<DemandeFrais>(`/frais/demandes/${id}/validation-conjointe`, {
       accord: decision.accord,
@@ -66,18 +61,16 @@ export const fraisService = {
   },
 
   /**
-   * #23 — **l'avocat dépose sa demande** (US 4.1, écran 30). `referenceFacture` doit être unique :
-   * un doublon revient en 409 `ERR-006`, sur le champ `referenceFacture`.
-   *
-   * ⚠ `piecesJustificatives` est une liste de **noms**, pas de fichiers (QF-26) : le backend ne
-   * reçoit ici aucun document. L'écran le dit à l'avocat plutôt que de laisser croire à un dépôt.
+   * #23: the lawyer submits a request (US 4.1, screen 30). `referenceFacture` must be unique: a
+   * duplicate returns 409 `ERR-006` on that field. `piecesJustificatives` is a list of names, not
+   * files: no document is uploaded here.
    */
   deposer: async (demande: DeposerFrais): Promise<DemandeFrais> => {
     const { data } = await apiClient.post<DemandeFrais>("/frais/demandes", demande);
     return data;
   },
 
-  /** #27 — Assistante, demande `VALIDEE`, une fois le paiement confirmé par les circuits de la Banque. */
+  /** #27: assistant, request in `VALIDEE`, once the bank has confirmed payment. */
   enregistrerPaiement: async (id: number): Promise<DemandeFrais> => {
     const { data } = await apiClient.patch<DemandeFrais>(`/frais/demandes/${id}/paiement`);
     return data;

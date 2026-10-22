@@ -6,7 +6,7 @@ import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { gedService } from "@/services/gedService";
 import type { StatutSuppression } from "@/types/domaine";
 
-/** `null` : tout l'historique. */
+/** `null`: full history. */
 export function useDemandesSuppression(statut: StatutSuppression | null, page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.demandesSuppression, statut ?? "toutes", page, size],
@@ -14,10 +14,7 @@ export function useDemandesSuppression(statut: StatutSuppression | null, page = 
   });
 }
 
-/**
- * Une décision change la file (dans ses deux vues) et, si elle est approuvée, les documents du
- * dossier concerné.
- */
+/** A decision changes the queue (both views) and, if approved, the documents of the case. */
 export function useDeciderSuppression() {
   const client = useQueryClient();
   return useMutation({
@@ -33,7 +30,7 @@ export function useDeciderSuppression() {
   });
 }
 
-/** QF-64 — la file des partages proposés, que le DJ et la DJA valident. */
+/** Queue of proposed shares, validated by the DJ and DJA. */
 export function usePartagesAvocat(page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.partagesAvocat, page, size],
@@ -42,8 +39,8 @@ export function usePartagesAvocat(page = 0, size = TAILLE_PAGE) {
 }
 
 /**
- * Un geste de partage change l'onglet Documents du dossier **et** la file du DJ : une proposition y
- * entre, une validation ou un retrait l'en fait sortir. Les deux sont rechargés ensemble.
+ * A sharing action changes both the case's Documents tab and the DJ queue (a proposal enters it,
+ * a validation or withdrawal removes it), so both are reloaded together.
  */
 function useInvalidationPartage() {
   const client = useQueryClient();
@@ -54,8 +51,8 @@ function useInvalidationPartage() {
 }
 
 /**
- * QF-65 — un avocat affecté y est-il constitué ? Relu à chaque montage de l'onglet : une
- * constitution signée ailleurs doit y faire disparaître l'avertissement.
+ * Whether an assigned lawyer is retained on the case. Re-read on each tab mount so that a
+ * constitution signed elsewhere clears the warning.
  */
 export function useEtatPartageDossier(dossierId: number) {
   return useQuery({
@@ -91,7 +88,7 @@ export function useRapportJournalier(date: string) {
     queryKey: [CLES.rapportJournalier, date],
     queryFn: () => gedService.rapportJournalier(date),
     enabled: /^\d{4}-\d{2}-\d{2}$/.test(date),
-    // Garder le rapport affiché pendant le chargement d'une autre date.
+    // Keep the current report displayed while another date loads.
     placeholderData: (precedent) => precedent,
   });
 }

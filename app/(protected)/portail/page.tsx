@@ -10,16 +10,14 @@ export async function generateMetadata() {
 }
 
 /**
- * Espace de l'avocat : ses dépôts, ses lettres de constitution (backend Q-96) et **son activité**
- * (Q-135). Réservé à `ROLE_AVOCAT` — les profils internes ont leurs propres files.
+ * Lawyer's space: their submissions, appointment letters and **their activity**. Reserved to
+ * `ROLE_AVOCAT`; internal profiles have their own queues.
  *
- * <p>**Pourquoi son activité est ici et non sur « Mon compte ».** Cet écran-là porte aussi « Ma
- * signature », qui n'a pas de sens pour lui : il ne signe aucune lettre de la banque. Et il ne
- * porte pas `ROLE_CONSULTATION`, donc il n'y entre pas (QF-01). « Mon espace » est son écran.
+ * Their activity is here, not on "My account", because that screen holds "My signature" (irrelevant
+ * to them) and requires `ROLE_CONSULTATION`, which they lack.
  *
- * <p>**Ses lignes de détail ne mènent à aucun dossier**, et c'est voulu : l'avocat n'a pas d'écran
- * de fiche dossier. Il lit la référence, qui lui suffit - c'est ainsi qu'il nomme ses affaires dans
- * ses échanges avec la banque - et un lien ne l'aurait mené qu'à un refus de droits.
+ * Detail rows deliberately link to no case: the lawyer has no case file screen, and the reference
+ * is how they name their matters anyway.
  */
 export default async function PagePortail() {
   await exigerCapacite("deposerPublication");

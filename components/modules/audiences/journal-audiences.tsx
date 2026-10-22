@@ -17,7 +17,7 @@ import { messageErreur } from "@/lib/api/errors";
 import { aujourdhui } from "@/lib/calendrier";
 import { formaterDate } from "@/lib/utils";
 
-/** Fenêtre par défaut des comptes rendus attendus : un mois en arrière. */
+/** Default window for expected reports: one month back. */
 function ilYaUnMois(): string {
   const date = new Date();
   date.setMonth(date.getMonth() - 1);
@@ -25,27 +25,15 @@ function ilYaUnMois(): string {
 }
 
 /**
- * Écran 44 — journal des audiences et comptes rendus attendus (observation métier du 2026-09-25).
- *
- * **Deux questions, deux blocs.** Ce qui s'est passé tel jour, et ce qui n'a toujours pas été
- * rapporté. La première se regarde chaque matin, la seconde de loin en loin : les mêler dans un
- * seul tableau aurait obligé à choisir une date pour voir des retards qui n'en dépendent pas.
- *
- * **Les deux comptes rendus sont montrés côte à côte.** Celui du juriste, saisi sur l'audience, et
- * celui de l'avocat, déposé puis validé — avec la pièce qu'il y a jointe, s'il y en a une. Élire
- * l'un des deux aurait fait passer pour un manquement une audience dont l'autre partie a déjà
- * rendu compte.
- *
- * **Les deux tableaux sont paginés**, comme les autres listes du système : une juridiction chargée
- * aligne les audiences, et un mois de retards peut en compter beaucoup. La barre reste affichée même
- * sur une page unique, car c'est elle qui porte le nombre total et le choix du nombre de lignes —
- * savoir qu'on voit « 7 éléments » et non une liste tronquée fait partie de l'information.
+ * Screen 44 - hearing log and expected hearing reports.
+ * Two blocks for two questions: what happened on a given day, and what has still not been reported.
+ * The lawyer's report (entered on the hearing) and the counsel's report (submitted then validated,
+ * with its attachment if any) are shown side by side.
+ * Both tables are paginated; the bar stays visible even on a single page since it shows the total
+ * count and the page size selector.
  */
 export function JournalAudiences() {
   const t = useTranslations("journalAudiences");
-  const tdom = useTranslations("domaine");
-  const langue = useLocale() as Langue;
-  const { nomUtilisateur } = useLibelles();
 
   const [date, setDate] = useState(aujourdhui());
   const [pageJournal, setPageJournal] = useState(0);
@@ -59,7 +47,7 @@ export function JournalAudiences() {
   const attendus = useComptesRendusAttendus(debut, fin, pageAttendus, tailleAttendus);
   const fenetreInversee = debut > fin;
 
-  /** Changer de date ou de fenêtre ramène à la première page : sinon on reste sur une page vide. */
+  /** Changing the date or window returns to the first page, otherwise a page could stay empty. */
   function changerDate(valeur: string) {
     setDate(valeur);
     setPageJournal(0);
@@ -74,7 +62,9 @@ export function JournalAudiences() {
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
@@ -92,86 +82,26 @@ export function JournalAudiences() {
           />
         </Champ>
 
-        {journal.error ? (
-          <EtatErreur message={messageErreur(journal.error)} />
-        ) : journal.data === undefined ? (
-          <EtatChargement lignes={4} />
-        ) : journal.data.content.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("journalVide")}</p>
-        ) : (
-          <>
-            <Table aria-label={t("journalTitre")}>
-              <Thead>
-                <Tr>
-                  <Th>{t("colonneDossier")}</Th>
-                  <Th>{t("colonneEtape")}</Th>
-                  <Th>{t("colonneJuristes")}</Th>
-                  <Th>{t("colonneCompteRenduJuriste")}</Th>
-                  <Th>{t("colonneCompteRenduAvocat")}</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {journal.data.content.map((audience) => (
-                  <Tr key={audience.audienceId}>
-                    <Td>
-                      <Link
-                        href={`/dossiers/${audience.dossierId}?onglet=audiences`}
-                        className="underline underline-offset-2"
-                      >
-                        {audience.referenceDossier}
-                      </Link>
-                      {audience.juridiction ? (
-                        <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
-                          {audience.juridiction}
-                        </span>
-                      ) : null}
-                    </Td>
-                    <Td>{audience.etape ? tdom(`TypeEtape.${audience.etape}` as never) : "—"}</Td>
-                    <Td>{audience.juristesAffectes.map(nomUtilisateur).join(", ") || "—"}</Td>
-                    <Td>
-                      {audience.compteRenduJuriste ?? <span className="text-danger">{t("manquant")}</span>}
-                    </Td>
-                    <Td>
-                      {audience.compteRenduAvocat ?? (
-                        <span className="text-texte-tertiaire">{t("nonDepose")}</span>
-                      )}
-                      {audience.urlPieceJointeAvocat ? (
-                        <a
-                          href={audience.urlPieceJointeAvocat}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-1 flex items-center gap-1 text-[length:var(--taille-xs)] underline underline-offset-2"
-                        >
-                          <Paperclip size={12} aria-hidden />
-                          {t("consulterPiece")}
-                        </a>
-                      ) : null}
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-
-            <Pagination
-              page={pageJournal}
-              totalPages={journal.data.totalPages}
-              totalElements={journal.data.totalElements}
-              onChangement={setPageJournal}
-              taille={tailleJournal}
-              onChangementTaille={(nouvelle) => {
-                setTailleJournal(nouvelle);
-                setPageJournal(0);
-              }}
-            />
-          </>
-        )}
+        <TableauJournal
+          erreur={journal.error}
+          page={journal.data}
+          numeroPage={pageJournal}
+          taille={tailleJournal}
+          onPage={setPageJournal}
+          onTaille={(nouvelle) => {
+            setTailleJournal(nouvelle);
+            setPageJournal(0);
+          }}
+        />
       </section>
 
       <section className="flex flex-col gap-3" aria-labelledby="titre-attendus">
         <h2 id="titre-attendus" className="font-semibold">
           {t("attendusTitre")}
         </h2>
-        <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">{t("attendusAide")}</p>
+        <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("attendusAide")}
+        </p>
 
         <div className="flex flex-wrap items-end gap-3">
           <Champ id="attendus-debut" label={t("du")} className="w-48">
@@ -192,70 +122,199 @@ export function JournalAudiences() {
           </Champ>
         </div>
 
-        {fenetreInversee ? (
-          <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
-            {t("fenetreInversee")}
-          </p>
-        ) : attendus.error ? (
-          <EtatErreur message={messageErreur(attendus.error)} />
-        ) : attendus.data === undefined ? (
-          <EtatChargement lignes={3} />
-        ) : attendus.data.content.length === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("attendusVide")}</p>
-        ) : (
-          <>
-            <Table aria-label={t("attendusTitre")}>
-              <Thead>
-                <Tr>
-                  <Th>{t("colonneDate")}</Th>
-                  <Th>{t("colonneDossier")}</Th>
-                  <Th>{t("colonneEtape")}</Th>
-                  <Th>{t("colonneJuristes")}</Th>
-                  <Th>{t("colonneRetard")}</Th>
-                  <Th>{t("colonneAvocat")}</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {attendus.data.content.map((attendu) => (
-                  <Tr key={attendu.audienceId}>
-                    <Td>{formaterDate(attendu.datePlanifiee, langue)}</Td>
-                    <Td>
-                      <Link
-                        href={`/dossiers/${attendu.dossierId}?onglet=audiences`}
-                        className="underline underline-offset-2"
-                      >
-                        {attendu.referenceDossier}
-                      </Link>
-                    </Td>
-                    <Td>{attendu.etape ? tdom(`TypeEtape.${attendu.etape}` as never) : "—"}</Td>
-                    <Td>{attendu.juristesAffectes.map(nomUtilisateur).join(", ") || "—"}</Td>
-                    <Td>{t("joursDeRetard", { jours: attendu.joursDeRetard })}</Td>
-                    <Td>
-                      {attendu.compteRenduAvocatDepose ? (
-                        <span className="text-texte-secondaire">{t("avocatARendu")}</span>
-                      ) : (
-                        <span className="text-texte-tertiaire">{t("nonDepose")}</span>
-                      )}
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-
-            <Pagination
-              page={pageAttendus}
-              totalPages={attendus.data.totalPages}
-              totalElements={attendus.data.totalElements}
-              onChangement={setPageAttendus}
-              taille={tailleAttendus}
-              onChangementTaille={(nouvelle) => {
-                setTailleAttendus(nouvelle);
-                setPageAttendus(0);
-              }}
-            />
-          </>
-        )}
+        <TableauAttendus
+          fenetreInversee={fenetreInversee}
+          erreur={attendus.error}
+          page={attendus.data}
+          numeroPage={pageAttendus}
+          taille={tailleAttendus}
+          onPage={setPageAttendus}
+          onTaille={(nouvelle) => {
+            setTailleAttendus(nouvelle);
+            setPageAttendus(0);
+          }}
+        />
       </section>
     </div>
+  );
+}
+
+type PageJournal = NonNullable<ReturnType<typeof useJournalAudiences>["data"]>;
+type PageAttendus = NonNullable<ReturnType<typeof useComptesRendusAttendus>["data"]>;
+type Pagine = {
+  numeroPage: number;
+  taille: number;
+  onPage: (page: number) => void;
+  onTaille: (taille: number) => void;
+};
+
+/** The day's hearings: error, loading, empty, or both reports side by side. */
+function TableauJournal({
+  erreur,
+  page,
+  numeroPage,
+  taille,
+  onPage,
+  onTaille,
+}: Readonly<{ erreur: unknown; page: PageJournal | undefined } & Pagine>) {
+  const t = useTranslations("journalAudiences");
+  const tdom = useTranslations("domaine");
+  const { nomUtilisateur } = useLibelles();
+
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (page === undefined) return <EtatChargement lignes={4} />;
+  if (page.content.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("journalVide")}</p>
+    );
+  }
+  return (
+    <>
+      <Table aria-label={t("journalTitre")}>
+        <Thead>
+          <Tr>
+            <Th>{t("colonneDossier")}</Th>
+            <Th>{t("colonneEtape")}</Th>
+            <Th>{t("colonneJuristes")}</Th>
+            <Th>{t("colonneCompteRenduJuriste")}</Th>
+            <Th>{t("colonneCompteRenduAvocat")}</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {page.content.map((audience) => (
+            <Tr key={audience.audienceId}>
+              <Td>
+                <Link
+                  href={`/dossiers/${audience.dossierId}?onglet=audiences`}
+                  className="underline underline-offset-2"
+                >
+                  {audience.referenceDossier}
+                </Link>
+                {audience.juridiction ? (
+                  <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
+                    {audience.juridiction}
+                  </span>
+                ) : null}
+              </Td>
+              <Td>{audience.etape ? tdom(`TypeEtape.${audience.etape}` as never) : "—"}</Td>
+              <Td>{audience.juristesAffectes.map(nomUtilisateur).join(", ") || "—"}</Td>
+              <Td>
+                {audience.compteRenduJuriste ?? (
+                  <span className="text-danger">{t("manquant")}</span>
+                )}
+              </Td>
+              <Td>
+                {audience.compteRenduAvocat ?? (
+                  <span className="text-texte-tertiaire">{t("nonDepose")}</span>
+                )}
+                {audience.urlPieceJointeAvocat ? (
+                  <a
+                    href={audience.urlPieceJointeAvocat}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 flex items-center gap-1 text-[length:var(--taille-xs)] underline underline-offset-2"
+                  >
+                    <Paperclip size={12} aria-hidden />
+                    {t("consulterPiece")}
+                  </a>
+                ) : null}
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+
+      <Pagination
+        page={numeroPage}
+        totalPages={page.totalPages}
+        totalElements={page.totalElements}
+        onChangement={onPage}
+        taille={taille}
+        onChangementTaille={onTaille}
+      />
+    </>
+  );
+}
+
+/** Reports still expected over the window: inverted window, error, loading, empty, or the list. */
+function TableauAttendus({
+  fenetreInversee,
+  erreur,
+  page,
+  numeroPage,
+  taille,
+  onPage,
+  onTaille,
+}: Readonly<
+  { fenetreInversee: boolean; erreur: unknown; page: PageAttendus | undefined } & Pagine
+>) {
+  const t = useTranslations("journalAudiences");
+  const tdom = useTranslations("domaine");
+  const langue = useLocale() as Langue;
+  const { nomUtilisateur } = useLibelles();
+
+  if (fenetreInversee) {
+    return (
+      <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
+        {t("fenetreInversee")}
+      </p>
+    );
+  }
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (page === undefined) return <EtatChargement lignes={3} />;
+  if (page.content.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("attendusVide")}</p>
+    );
+  }
+  return (
+    <>
+      <Table aria-label={t("attendusTitre")}>
+        <Thead>
+          <Tr>
+            <Th>{t("colonneDate")}</Th>
+            <Th>{t("colonneDossier")}</Th>
+            <Th>{t("colonneEtape")}</Th>
+            <Th>{t("colonneJuristes")}</Th>
+            <Th>{t("colonneRetard")}</Th>
+            <Th>{t("colonneAvocat")}</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {page.content.map((attendu) => (
+            <Tr key={attendu.audienceId}>
+              <Td>{formaterDate(attendu.datePlanifiee, langue)}</Td>
+              <Td>
+                <Link
+                  href={`/dossiers/${attendu.dossierId}?onglet=audiences`}
+                  className="underline underline-offset-2"
+                >
+                  {attendu.referenceDossier}
+                </Link>
+              </Td>
+              <Td>{attendu.etape ? tdom(`TypeEtape.${attendu.etape}` as never) : "—"}</Td>
+              <Td>{attendu.juristesAffectes.map(nomUtilisateur).join(", ") || "—"}</Td>
+              <Td>{t("joursDeRetard", { jours: attendu.joursDeRetard })}</Td>
+              <Td>
+                {attendu.compteRenduAvocatDepose ? (
+                  <span className="text-texte-secondaire">{t("avocatARendu")}</span>
+                ) : (
+                  <span className="text-texte-tertiaire">{t("nonDepose")}</span>
+                )}
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+
+      <Pagination
+        page={numeroPage}
+        totalPages={page.totalPages}
+        totalElements={page.totalElements}
+        onChangement={onPage}
+        taille={taille}
+        onChangementTaille={onTaille}
+      />
+    </>
   );
 }

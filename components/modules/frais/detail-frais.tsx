@@ -16,31 +16,28 @@ import { Dialog } from "@/components/ui/dialog";
 import { useDecisionFrais, useDemandeFrais, usePaiementFrais, type EtapeDecision } from "@/hooks/useFrais";
 import { telechargerBlob } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
-import type { PieceTelechargeable } from "@/types/domaine";
 import type { Langue } from "@/i18n/config";
 import { messageErreur } from "@/lib/api/errors";
 import { TON_STATUT_FRAIS, aDonneSonAccord, etapeConjointeDe } from "@/lib/frais";
 import { peut } from "@/lib/rbac";
 import { formaterFcfa } from "@/lib/utils";
-import type { DemandeFrais } from "@/types/domaine";
+import type { DemandeFrais, PieceTelechargeable } from "@/types/domaine";
 import type { EtapeValidationFrais, StatutCircuitFrais } from "@/types/enums";
 
-/** Longueur de `validation_frais.motif` en base. */
+/** Length of `validation_frais.motif` in the database. */
 const MOTIF_MAX = 255;
 
 type EtapeCircuit = "DEPOT" | EtapeValidationFrais | "PAIEMENT";
 
-const EN_COURS: readonly StatutCircuitFrais[] = ["DEPOSEE", "CONFORMITE", "OPPORTUNITE"];
+const EN_COURS: ReadonlySet<StatutCircuitFrais> = new Set(["DEPOSEE", "CONFORMITE", "OPPORTUNITE"]);
 
 /**
- * Écran 29 — détail d'une demande de frais et action de circuit (UC-INT-02/03/04).
- *
- * La demande montre ce qui fonde la décision : montant, pièces déclarées, et la règle RG-INT-03
- * appliquée (dossier sensible ou montant au-delà du seuil). Le circuit liste chaque décision —
- * qui, quand, avec quel motif —, ce qui permet au DJ de voir l'accord déjà donné par la DJA. Une
- * seule action est proposée, celle qui revient au profil à cette étape.
+ * Screen 29 - expense request detail and workflow action (UC-INT-02/03/04).
+ * Shows what the decision is based on: amount, declared documents and the applied RG-INT-03 rule
+ * (sensitive case or amount above threshold). The workflow lists every decision (who, when, reason),
+ * so the DJ can see the DJA's prior approval. Only the action due to the current profile is offered.
  */
-export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: readonly string[] }) {
+export function DetailFrais({ demandeId, roles }: Readonly<{ demandeId: number; roles: readonly string[] }>) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
   const tdoc = useTranslations("documents");
@@ -54,24 +51,22 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
   const demande = requete.data;
 
   /*
-   * Les pièces réellement stockées portent leur propre entrée dans `piecesJustificatives` : on
-   * retire ces clés pour ne pas afficher deux fois la même pièce, une fois lisible et une fois sous
-   * sa forme technique.
+   * Stored documents have their own entry in `piecesJustificatives`: their keys are removed here so
+   * the same document is not listed twice (once readable, once as a raw storage key).
    */
   const clesStockees = new Set(demande.piecesTelechargeables.map((piece) => piece.cle));
   const piecesSansFichier = demande.piecesJustificatives.filter((piece) => !clesStockees.has(piece));
 
-  /** L'URL est signée et de courte durée : on la suit tout de suite, on ne la conserve pas. */
+  /** The URL is signed and short-lived: follow it immediately, never keep it. */
   async function telechargerPiece(piece: PieceTelechargeable) {
     const contenu = await gedService.recupererContenu(piece.urlTelechargement);
     telechargerBlob(contenu, piece.nomFichier);
   }
   const seuil = formaterFcfa(demande.seuilApplicable, langue);
-  const raison = !demande.validationConjointeRequise
-    ? t("sousSeuil", { seuil })
-    : demande.dossierSensible
-      ? t("motifSensible")
-      : t("motifSeuil", { seuil });
+  let raison = t("sousSeuil", { seuil });
+  if (demande.validationConjointeRequise) {
+    raison = demande.dossierSensible ? t("motifSensible") : t("motifSeuil", { seuil });
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -125,10 +120,8 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
             <h3 className="text-[length:var(--taille-sm)] font-semibold">{t("pieces")}</h3>
 
             {/*
-              Le contrôle de conformité porte sur les **documents**, pas sur leurs noms : chaque
-              pièce s'ouvre à l'écran ou se télécharge. L'écran n'affichait jusqu'ici que le chemin
-              de stockage, une chaîne technique que personne ne pouvait ouvrir — alors que le
-              backend rend l'adresse signée depuis Q-97.
+              Compliance is checked on the documents themselves: each one can be previewed or downloaded
+              through the signed URL returned by the backend.
             */}
             {demande.piecesTelechargeables.length > 0 ? (
               <ul className="flex flex-col gap-1 text-[length:var(--taille-sm)]">
@@ -158,9 +151,8 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
             ) : null}
 
             {/*
-              Les entrées qui ne désignent aucun fichier stocké — libellés saisis avant que le
-              téléversement n'existe — restent affichées telles quelles : les taire ferait croire
-              qu'aucune pièce n'a été déclarée.
+              Entries that do not point to a stored file (labels entered before uploads existed) are shown
+              as is: hiding them would suggest no document was declared.
             */}
             {piecesSansFichier.length > 0 ? (
               <ul className="list-inside list-disc text-[length:var(--taille-sm)] text-texte-secondaire">
@@ -195,7 +187,7 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
         </div>
       </div>
 
-      {/* L'aperçu ouvre la pièce sans quitter l'écran : le contrôle se fait là où la décision se prend. */}
+      {/* The preview opens without leaving the screen: the check happens where the decision is made. */}
       {apercu ? (
         <ApercuFichier
           ouvert
@@ -208,13 +200,13 @@ export function DetailFrais({ demandeId, roles }: { demandeId: number; roles: re
   );
 }
 
-/** Les étapes dans l'ordre, chacune avec sa décision si elle a été prise. */
-function Circuit({ demande }: { demande: DemandeFrais }) {
+/** Workflow steps in order, each with its decision if one was made. */
+function Circuit({ demande }: Readonly<{ demande: DemandeFrais }>) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
   const conjointe =
     demande.validations.some((v) => v.etape === "CONJOINTE_DJ" || v.etape === "CONJOINTE_DJA") ||
-    (demande.validationConjointeRequise && EN_COURS.includes(demande.statutCircuit));
+    (demande.validationConjointeRequise && EN_COURS.has(demande.statutCircuit));
   const etapes: EtapeCircuit[] = [
     "DEPOT",
     "CONFORMITE",
@@ -222,7 +214,7 @@ function Circuit({ demande }: { demande: DemandeFrais }) {
     ...(conjointe ? (["CONJOINTE_DJ", "CONJOINTE_DJA"] as const) : []),
     "PAIEMENT",
   ];
-  // Une demande rejetée ne passera plus les étapes suivantes : « — », pas « en attente ».
+  // A rejected request will not go through the next steps: show "—", not "pending".
   const enAttente = demande.statutCircuit === "REJETEE" ? "—" : t("enAttente");
 
   function etat(etape: EtapeCircuit): ReactNode {
@@ -271,7 +263,7 @@ function Circuit({ demande }: { demande: DemandeFrais }) {
 
 type Action = EtapeDecision | "paiement";
 
-/** L'action qui revient à ce profil, à cette étape — et à personne d'autre. */
+/** The action due to this profile at this step, and to no one else. */
 function actionDisponible(demande: DemandeFrais, roles: readonly string[]): Action | null {
   switch (demande.statutCircuit) {
     case "DEPOSEE":
@@ -300,7 +292,7 @@ function messageSucces(action: EtapeDecision, statut: StatutCircuitFrais): strin
   return statut === "VALIDEE" ? "accordEnregistreValidee" : "accordEnregistre";
 }
 
-function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: readonly string[] }) {
+function PanneauActions({ demande, roles }: Readonly<{ demande: DemandeFrais; roles: readonly string[] }>) {
   const t = useTranslations("frais");
   const decider = useDecisionFrais();
   const payer = usePaiementFrais();
@@ -310,10 +302,10 @@ function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: read
   if (demande.statutCircuit === "REJETEE" || demande.statutCircuit === "PAYEE") return null;
 
   const action = actionDisponible(demande, roles);
-  // Le backend refuserait un second vote du même profil (409) : on ne le propose pas.
+  // The backend rejects a second vote from the same profile (409): do not offer it.
   const dejaVote = action === "conjointe" && aDonneSonAccord(demande, roles);
   const libelles = action ? LIBELLES[action] : null;
-  // UC-INT-02 alt. 4-a : la DJA sait, avant de valider, que le DJ sera sollicité.
+  // UC-INT-02 alt. 4-a: the DJA knows, before approving, that the DJ will be asked next.
   const message =
     action === "opportunite" && demande.validationConjointeRequise ? "validerMessageConjointe" : libelles?.message;
 
@@ -328,43 +320,23 @@ function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: read
         const resultat = await decider.mutateAsync({ etape: choisie, id: demande.id, decision: { accord: true } });
         toast.success(t(messageSucces(choisie, resultat.statutCircuit) as never));
       }
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setConfirmation(null);
     }
   }
 
-  let contenu: ReactNode;
-  if (!action) {
-    contenu = <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneAction")}</p>;
-  } else if (dejaVote) {
-    contenu = (
-      <p className="text-[length:var(--taille-sm)]">
-        {t(etapeConjointeDe(roles) === "CONJOINTE_DJ" ? "attenteDja" : "attenteDj")}
-      </p>
-    );
-  } else {
-    contenu = (
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => setConfirmation(action)}>
-          {action === "paiement" ? <Banknote size={15} aria-hidden /> : <Check size={15} aria-hidden />}
-          {t(libelles!.accord as never)}
-        </Button>
-        {action !== "paiement" ? (
-          <Button variante="secondaire" onClick={() => setRejet(action)}>
-            <X size={15} aria-hidden />
-            {t(action === "conjointe" ? "refuser" : "rejeter")}
-          </Button>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <section aria-labelledby="frais-actions" className="flex flex-col gap-3 rounded border border-bordure bg-surface p-4">
       <h2 id="frais-actions" className="font-semibold">{t("actions")}</h2>
-      {contenu}
+      <BoutonsDecision
+        action={action}
+        dejaVote={dejaVote}
+        roles={roles}
+        onConfirmer={setConfirmation}
+        onRejeter={setRejet}
+      />
 
       <DialogueConfirmation
         ouvert={confirmation !== null}
@@ -381,16 +353,58 @@ function PanneauActions({ demande, roles }: { demande: DemandeFrais; roles: read
   );
 }
 
-/** Rejet motivé, à toute étape (RG-INT-03) : la demande est close, l'avocat reçoit le motif. */
+/** The decision this profile can take now, or why there is none. */
+function BoutonsDecision({
+  action,
+  dejaVote,
+  roles,
+  onConfirmer,
+  onRejeter,
+}: Readonly<{
+  action: Action | null;
+  dejaVote: boolean;
+  roles: readonly string[];
+  onConfirmer: (action: Action) => void;
+  onRejeter: (etape: EtapeDecision) => void;
+}>) {
+  const t = useTranslations("frais");
+
+  if (!action) {
+    return <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneAction")}</p>;
+  }
+  if (dejaVote) {
+    return (
+      <p className="text-[length:var(--taille-sm)]">
+        {t(etapeConjointeDe(roles) === "CONJOINTE_DJ" ? "attenteDja" : "attenteDj")}
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button onClick={() => onConfirmer(action)}>
+        {action === "paiement" ? <Banknote size={15} aria-hidden /> : <Check size={15} aria-hidden />}
+        {t(LIBELLES[action].accord as never)}
+      </Button>
+      {action === "paiement" ? null : (
+        <Button variante="secondaire" onClick={() => onRejeter(action)}>
+          <X size={15} aria-hidden />
+          {t(action === "conjointe" ? "refuser" : "rejeter")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** Rejection with a reason, at any step (RG-INT-03): the request is closed and the lawyer receives the reason. */
 function ModaleRejet({
   demandeId,
   etape,
   onFermeture,
-}: {
+}: Readonly<{
   demandeId: number;
   etape: EtapeDecision | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("frais");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

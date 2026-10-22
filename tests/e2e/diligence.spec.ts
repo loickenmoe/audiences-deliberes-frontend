@@ -6,13 +6,9 @@ import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { referenceDuDossier } from "./reference-attribuee";
 
 /**
- * N4 — la diligence particulière se révise après l'ouverture (métier, 2026-10-03, observation 5 ;
- * les deux sens arrêtés le 2026-10-06).
- *
- * **Ce que ces parcours protègent.** La diligence ne se posait qu'à la création : un dossier ouvert
- * comme ordinaire le restait définitivement. Trois règles la gouvernent désormais, et chacune
- * casserait en silence : la proposition du juriste **ne change rien aux frais** avant l'arbitrage,
- * le DJ **pose sans proposition**, et le retrait **rend le seuil global** en exigeant un motif.
+ * N4: special diligence can be revised after opening. Rules covered: the legal officer's proposal
+ * does not change fees before the DJ decides, the DJ sets it without a proposal, and withdrawal
+ * requires a reason and restores the global threshold.
  */
 const MOT_DE_PASSE = "Password1!";
 
@@ -35,7 +31,7 @@ function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-/** Un dossier **ordinaire** : le point de départ: avant N4, il le restait pour toujours. */
+/** An ordinary case: the starting point. */
 async function dossierOrdinaire(page: Page) {
   const marque = suffixe();
   await page.goto("/dossiers/nouveau");
@@ -52,7 +48,7 @@ async function dossierOrdinaire(page: Page) {
   await affecterParDefaut(page);
   await page.getByRole("button", { name: "Enregistrer" }).click();
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  // La référence est attribuée par le système : on la lit sur la fiche (2026-09-29).
+  // The reference is assigned by the system: read it from the case page.
   return { url: page.url(), reference: await referenceDuDossier(page) };
 }
 
@@ -60,7 +56,7 @@ test("le juriste propose la diligence, le DJ l'arbitre, la DJA la retire", async
   const juriste = await pageConnectee(browser, "juriste.test");
   const { url } = await dossierOrdinaire(juriste);
 
-  // Un dossier ordinaire : le juriste propose, il ne pose pas.
+  // Ordinary case: the legal officer proposes, he does not set.
   await expect(juriste.getByRole("button", { name: "Mettre en diligence particulière" })).toHaveCount(0);
   await juriste.getByRole("button", { name: "Proposer la diligence particulière" }).click();
   const proposition = juriste.getByRole("dialog", { name: "Proposer la diligence particulière" });
@@ -75,17 +71,17 @@ test("le juriste propose la diligence, le DJ l'arbitre, la DJA la retire", async
   });
 
   /*
-   * Q-10 : aucun effet avant l'arbitrage. Le seuil reste **global** - sans cela, un juriste
-   * déclencherait seul la double validation des frais.
+   * No effect before the decision: the threshold stays global, otherwise a legal officer alone
+   * would trigger the double validation of fees.
    */
   await juriste.goto(`${url}?onglet=synthese`);
   await expect(juriste.getByText("En attente", { exact: true }).first()).toBeVisible();
   await expect(juriste.getByText("Seuil global", { exact: true }).first()).toBeVisible();
-  // Proposer deux fois n'a pas de sens : le bouton a disparu.
+  // Proposing twice makes no sense: the button is gone.
   await expect(juriste.getByRole("button", { name: "Proposer la diligence particulière" })).toHaveCount(0);
   await juriste.context().close();
 
-  // Le DJ arbitre par la modale qui existait déjà : elle ignore d'où vient la proposition.
+  // The DJ decides through the existing dialog, regardless of where the proposal came from.
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto(url);
   await dj.getByRole("button", { name: "Statuer sur la diligence particulière" }).click();
@@ -99,7 +95,7 @@ test("le juriste propose la diligence, le DJ l'arbitre, la DJA la retire", async
   await expect(dj.getByText("Dérogation validée", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
   await dj.context().close();
 
-  // La DJA retire : motif obligatoire, et le seuil redevient global.
+  // The DJA withdraws it: reason required, and the threshold becomes global again.
   const dja = await pageConnectee(browser, "dja.test");
   await dja.goto(url);
   await dja.getByRole("button", { name: "Retirer la diligence particulière" }).click();
@@ -111,10 +107,7 @@ test("le juriste propose la diligence, le DJ l'arbitre, la DJA la retire", async
   await retrait.getByRole("button", { name: "Retirer" }).click();
   await expect(dja.getByText("Diligence particulière mise à jour.")).toBeVisible({ timeout: 30_000 });
 
-  /*
-   * Le motif reste lisible **après** le retrait, alors que le dossier n'est plus sensible : sans
-   * cela, il aurait été exigé de la DJA pour n'être lu nulle part.
-   */
+  // The reason stays readable after withdrawal, even though the case is no longer sensitive.
   await dja.goto(`${url}?onglet=synthese`);
   await expect(dja.getByText("L’affaire s’est révélée ordinaire")).toBeVisible({ timeout: 30_000 });
   await expect(dja.getByText("Seuil global", { exact: true }).first()).toBeVisible();
@@ -135,11 +128,11 @@ test("le DJ pose la diligence directement, sans proposition", async ({ browser }
   await pose.getByRole("button", { name: "Enregistrer" }).click();
   await expect(dj.getByText("Diligence particulière mise à jour.")).toBeVisible({ timeout: 30_000 });
 
-  // Directement **validée** : il n'y a personne d'autre à attendre, et le seuil s'applique.
+  // Validated directly: nobody else to wait for, and the threshold applies.
   await dj.goto(`${url}?onglet=synthese`);
   await expect(dj.getByText("Validée", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
   await expect(dj.getByText("Dérogation validée", { exact: true }).first()).toBeVisible();
-  // La diligence étant posée, elle ne se pose plus : elle se retire.
+  // Once set, it can no longer be set, only withdrawn.
   await expect(dj.getByRole("button", { name: "Mettre en diligence particulière" })).toHaveCount(0);
   await expect(dj.getByRole("button", { name: "Retirer la diligence particulière" })).toBeVisible();
   await dj.context().close();
@@ -159,7 +152,7 @@ test("l'historique porte la proposition et le retrait", async ({ browser }) => {
     timeout: 30_000,
   });
 
-  // L'action est tracée, en français, et nommée : c'est ce que l'audit relira.
+  // The action is traced, in French, and named: this is what the audit will read.
   await juriste.goto(`${url}?onglet=historique`);
   await expect(juriste.getByText("Proposition de diligence particulière").first()).toBeVisible({
     timeout: 30_000,

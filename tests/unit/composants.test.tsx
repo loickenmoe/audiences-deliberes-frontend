@@ -9,8 +9,8 @@ import { rendre as render } from "../utils/rendu";
 
 describe("Button", () => {
   /**
-   * Le point le plus facile à défaire par inadvertance : le rouge de marque n'est pas lisible en
-   * texte et se confondrait avec le rouge d'erreur. L'action principale doit rester anthracite.
+   * The brand red is not readable as text and would be confused with the error red: the primary
+   * action must stay charcoal.
    */
   it("l'action principale est anthracite, jamais rouge", () => {
     render(<Button>Enregistrer</Button>);
@@ -21,7 +21,7 @@ describe("Button", () => {
     expect(bouton.className).not.toContain("bg-danger");
   });
 
-  /** Une suppression se signale par un contour, pas par un aplat : l'acte doit être délibéré. */
+  /** A delete action uses an outline, not a solid fill: the act must be deliberate. */
   it("l'action destructive est contournée, pas remplie", () => {
     render(<Button variante="destructive">Supprimer</Button>);
     const bouton = screen.getByRole("button", { name: "Supprimer" });
@@ -50,7 +50,7 @@ describe("états standards", () => {
     expect(screen.getByRole("button", { name: "Créer un dossier" })).toBeVisible();
   });
 
-  /** Une erreur doit être annoncée aux technologies d'assistance, pas seulement colorée. */
+  /** An error must be announced to assistive technologies, not just colored. */
   it("l'état d'erreur porte le rôle alert", () => {
     render(<EtatErreur message="Cette référence est déjà utilisée." />);
 
@@ -70,8 +70,8 @@ describe("états standards", () => {
 
 describe("bilinguisme des composants", () => {
   /**
-   * Le seul moyen d'attraper un texte resté en dur : rendre le même composant dans les deux
-   * langues et vérifier que la sortie change.
+   * The only way to catch hard-coded text: render the same component in both languages and check
+   * that the output changes.
    */
   it("l'état de chargement s'annonce dans la langue active", () => {
     const { unmount } = render(<EtatChargement lignes={1} />, { langue: "fr" });
@@ -93,7 +93,7 @@ describe("bilinguisme des composants", () => {
 });
 
 describe("StatutChip", () => {
-  /** La couleur double le libellé, elle ne le remplace pas : lisible sans percevoir la couleur. */
+  /** Color complements the label, never replaces it: readable without perceiving color. */
   it("affiche toujours un libellé textuel", () => {
     render(<StatutChip ton="danger">Rejetée</StatutChip>);
     expect(screen.getByText("Rejetée")).toBeVisible();
@@ -112,11 +112,8 @@ describe("StatutChip", () => {
 });
 
 /**
- * `Champ` rattache au contrôle les paragraphes qui le décrivent (défaut corrigé le 2026-10-07).
- *
- * Les deux portaient déjà leur identifiant - `{id}-aide`, `{id}-erreur` - mais rien ne les reliait :
- * ils existaient pour qui voit l'écran et disparaissaient pour qui l'écoute, sur les 128 champs de
- * l'application. Le commentaire du composant affirmait pourtant le contraire.
+ * `Champ` links the control to the paragraphs that describe it (`{id}-aide`, `{id}-erreur`),
+ * so screen reader users hear them too.
  */
 describe("Champ, rattachement de l'aide et de l'erreur", () => {
   it("relie l'aide au contrôle", () => {
@@ -131,7 +128,7 @@ describe("Champ, rattachement de l'aide et de l'erreur", () => {
     expect(controle).toHaveAttribute("aria-describedby", aide.id);
   });
 
-  /** L'erreur remplace l'aide : deux messages concurrents sous un champ en erreur se gênent. */
+  /** The error replaces the help text: two competing messages under a field get in each other's way. */
   it("relie l'erreur au contrôle, et l'aide s'efface", () => {
     render(
       <Champ id="juridiction" label="Juridiction saisie" aide="Le tribunal saisi." erreur="Champ requis">
@@ -145,7 +142,7 @@ describe("Champ, rattachement de l'aide et de l'erreur", () => {
     expect(screen.queryByText("Le tribunal saisi.")).not.toBeInTheDocument();
   });
 
-  /** Ce que l'appelant a posé lui-même est conservé : le nôtre s'y ajoute, il ne l'écrase pas. */
+  /** What the caller set is kept: ours is appended, not overwritten. */
   it("conserve un aria-describedby déjà posé par l'appelant", () => {
     render(
       <>

@@ -16,10 +16,54 @@ import type { Client } from "@/types/domaine";
 
 const DEFAUTS = { nom: "", reference: "" };
 
-export function ListeClients({ roles }: { roles: readonly string[] }) {
+function colonnesClients(
+  t: ReturnType<typeof useTranslations<"clients">>,
+): ColumnDef<Client, unknown>[] {
+  return [
+    {
+      accessorKey: "reference",
+      header: t("colonneReference"),
+      cell: ({ row }) => (
+        // The reference is the natural entry point to the client's consolidated view.
+        <Link
+          href={`/clients/${row.original.id}`}
+          className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+        >
+          {row.original.reference}
+        </Link>
+      ),
+    },
+    { accessorKey: "nom", header: t("colonneNom") },
+    {
+      accessorKey: "email",
+      header: t("colonneEmail"),
+      cell: ({ row }) => row.original.email ?? "—",
+    },
+    {
+      accessorKey: "telephone",
+      header: t("colonneTelephone"),
+      cell: ({ row }) => row.original.telephone ?? "—",
+    },
+    {
+      accessorKey: "createdAt",
+      header: t("colonneCreation"),
+      cell: ({ row }) => <DateValeur valeur={row.original.createdAt} />,
+    },
+  ];
+}
+
+export function ListeClients({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("clients");
-  const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
-    useFiltresUrl(DEFAUTS);
+  const {
+    filtres,
+    page,
+    taille,
+    definirTaille,
+    definirFiltre,
+    definirPage,
+    effacer,
+    nbFiltresActifs,
+  } = useFiltresUrl(DEFAUTS);
   const [creationOuverte, setCreationOuverte] = useState(false);
 
   const requete = useClients({
@@ -29,40 +73,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
     size: taille,
   });
 
-  const colonnes = useMemo<ColumnDef<Client, unknown>[]>(
-    () => [
-      {
-        accessorKey: "reference",
-        header: t("colonneReference"),
-        cell: ({ row }) => (
-          // La référence est le point d'entrée naturel vers la vue consolidée du client.
-          <Link
-            href={`/clients/${row.original.id}`}
-            className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-          >
-            {row.original.reference}
-          </Link>
-        ),
-      },
-      { accessorKey: "nom", header: t("colonneNom") },
-      {
-        accessorKey: "email",
-        header: t("colonneEmail"),
-        cell: ({ row }) => row.original.email ?? "—",
-      },
-      {
-        accessorKey: "telephone",
-        header: t("colonneTelephone"),
-        cell: ({ row }) => row.original.telephone ?? "—",
-      },
-      {
-        accessorKey: "createdAt",
-        header: t("colonneCreation"),
-        cell: ({ row }) => <DateValeur valeur={row.original.createdAt} />,
-      },
-    ],
-    [t],
-  );
+  const colonnes = useMemo(() => colonnesClients(t), [t]);
 
   const peutCreer = peut(roles, "creerClient");
 
@@ -85,12 +96,7 @@ export function ListeClients({ roles }: { roles: readonly string[] }) {
       </header>
 
       <BarreFiltres nbFiltresActifs={nbFiltresActifs} onEffacer={effacer}>
-        {/*
-          **Au fil de la frappe** (QF-57). Les deux champs se validaient sur `onBlur`, et le
-          commentaire qui s'y trouvait disait « une requête **et une entrée d'historique** par
-          caractère » : la seconde moitié était fausse - `useFiltresUrl` écrit avec `router.replace`,
-          qui n'empile rien -, et la première est réglée par la pause de 300 ms de `ChampRecherche`.
-        */}
+        {/* Filter as the user types (debounced by `ChampRecherche`). */}
         <ChampRecherche
           id="filtre-nom"
           label={t("rechercheNom")}

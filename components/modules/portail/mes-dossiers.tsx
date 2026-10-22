@@ -15,16 +15,12 @@ import { estTypeConnu, telechargerBlob } from "@/lib/documents";
 import { portailAvocatService, type PieceAvocat } from "@/services/portailAvocatService";
 
 /**
- * Ses dossiers, vus de l'avocat : les audiences et les pièces que la banque lui partage (QF-64).
+ * The lawyer's case files: hearings and the documents the bank shares with them.
  *
- * **Ce qu'il voit, et à quelle condition.** Les audiences lui étaient déjà ouvertes dès
- * l'affectation. La **note** de la Direction Juridique et les **pièces** ne s'ouvrent qu'une fois
- * constitué : c'est la lettre signée par le SH qui fait de lui le représentant de la banque, pas
- * l'affectation. Le serveur le vérifie à chaque lecture ; l'écran se contente de dire pourquoi une
- * liste est vide - « pas encore constitué » ne se règle pas comme « aucune pièce ».
- *
- * **Ce qu'il ne voit jamais** : le compte rendu du juriste, qui reste interne (RG-INT-07). La note
- * lui est écrite à part.
+ * Hearings are visible from assignment. The Legal Department's note and the documents become visible
+ * only once the lawyer is formally appointed (letter signed by the SH). The server checks this on
+ * every read; the screen only explains why a list is empty ("not yet appointed" vs "no document").
+ * The legal officer's hearing report is never shown: it stays internal (RG-INT-07).
  */
 export function MesDossiers() {
   const t = useTranslations("portail");
@@ -37,17 +33,17 @@ export function MesDossiers() {
       <div className="max-w-md">
         <SelecteurDossier id="dossier-espace" obligatoire={false} valeur={dossierId} onChangement={setDossierId} />
       </div>
-      {dossierId !== null ? (
+      {dossierId === null ? null : (
         <div className="flex flex-col gap-6">
           <AudiencesDuDossier dossierId={dossierId} />
           <PiecesDuDossier dossierId={dossierId} />
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
 
-function AudiencesDuDossier({ dossierId }: { dossierId: number }) {
+function AudiencesDuDossier({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("portail");
   const td = useTranslations("domaine");
   const requete = useAudiencesDeMonDossier(dossierId);
@@ -82,7 +78,7 @@ function AudiencesDuDossier({ dossierId }: { dossierId: number }) {
                   <td className="px-4 py-2">
                     <StatutChip>{td(`StatutAudience.${audience.statut}` as never)}</StatutChip>
                   </td>
-                  {/* Les retours à la ligne de la note sont ceux du juriste : ils font partie du message. */}
+                  {/* The note's line breaks are the legal officer's: they are part of the message. */}
                   <td className="max-w-prose whitespace-pre-wrap px-4 py-2">{audience.noteAvocat ?? "-"}</td>
                 </tr>
               ))}
@@ -94,7 +90,7 @@ function AudiencesDuDossier({ dossierId }: { dossierId: number }) {
   );
 }
 
-function PiecesDuDossier({ dossierId }: { dossierId: number }) {
+function PiecesDuDossier({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("portail");
   const tdoc = useTranslations("documents");
   const tf = useTranslations("fiche");
@@ -128,11 +124,13 @@ function PiecesDuDossier({ dossierId }: { dossierId: number }) {
           {erreur}
         </p>
       ) : null}
-      {!reponse?.constitue ? (
+      {reponse?.constitue ? null : (
         <EtatVide titre={t("piecesNonConstitue")} description={t("piecesNonConstitueTexte")} />
-      ) : reponse.pieces.length === 0 ? (
+      )}
+      {reponse?.constitue && reponse.pieces.length === 0 ? (
         <EtatVide titre={t("piecesVide")} description={t("piecesVideTexte")} />
-      ) : (
+      ) : null}
+      {reponse?.constitue && reponse.pieces.length > 0 ? (
         <div className="overflow-x-auto rounded border border-bordure bg-surface">
           <table className="w-full text-left text-[length:var(--taille-sm)]">
             <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
@@ -183,7 +181,7 @@ function PiecesDuDossier({ dossierId }: { dossierId: number }) {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       <ApercuFichier
         ouvert={apercu !== null}

@@ -13,16 +13,12 @@ import { messageErreur } from "@/lib/api/errors";
 import { cleStatutPublication, TON_STATUT_PUBLICATION } from "@/lib/publications";
 
 /**
- * Écran 13 — onglet « Publications » de la fiche.
- *
- * **La visibilité n'est plus décidée ici** (RG-INT-06 amendée, 2026-10-05). L'écran demandait
- * `statut=VALIDE` pour tout profil autre que l'Assistante : une restriction tenue par l'appelant,
- * qu'un simple appel direct à l'API contournait. Depuis que le juriste affecté au dossier a le
- * droit de lire le compte rendu de l'avocat **avant** validation — et pas les autres publications —
- * la distinction est une règle métier, et le serveur la tient. L'écran demande tout et affiche ce
- * qu'on lui rend, chaque ligne portant son statut.
+ * Screen 13 - "Publications" tab of the case page.
+ * Visibility is decided by the server (RG-INT-06): the lawyer assigned to the case may read the
+ * counsel's hearing report before validation, but not other publications. The screen requests
+ * everything and displays what it gets, each row showing its status.
  */
-export function OngletPublications({ dossierId }: { dossierId: number }) {
+export function OngletPublications({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("publications");
   const td = useTranslations("domaine");
   const libelle = useLibellePublication();

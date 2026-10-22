@@ -21,17 +21,14 @@ import { CLES_CANAUX, estCleDeGrille } from "@/lib/notifications";
 import type { ConfigurationSysteme } from "@/types/domaine";
 
 /**
- * Écran 41 — paramètres système (CONF01-07).
- *
- * Le formulaire se **règle sur le contrat** : chaque clé annonce si elle attend un entier borné ou
- * une liste fermée (backend Q-91), et l'écran en déduit le champ de saisie, les bornes affichées et
- * le contrôle immédiat. Rien n'est redéclaré ici — une clé ajoutée côté backend apparaît avec le
- * bon champ sans toucher à ce fichier.
- *
- * Les valeurs partent une par une, jamais en bloc : chacune prend effet immédiatement pour tous les
- * modules qui la relisent, et un enregistrement groupé masquerait laquelle a échoué.
+ * Screen 41 - system settings (CONF01-07).
+ * The form is driven by the contract: each key declares whether it expects a bounded integer or a
+ * closed list, and the screen derives the input, displayed bounds and validation. A key added on
+ * the backend shows up with the right input without changing this file.
+ * Values are saved one by one, never in bulk: each takes effect immediately, and a bulk save would
+ * hide which one failed.
  */
-export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
+export function ParametresSysteme({ modifiable }: Readonly<{ modifiable: boolean }>) {
   const t = useTranslations("configurations");
   const requete = useConfigurations();
 
@@ -50,19 +47,21 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
   }
 
   const configurations = requete.data ?? [];
-  // Les colonnes de la grille des notifications (Q-118) se lisent ensemble, dans leur tableau.
+  // Notification grid columns are read together, in their own table.
   const parametres = configurations.filter((configuration) => !estCleDeGrille(configuration.cle));
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
-        {!modifiable ? (
+        {modifiable ? null : (
           <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-tertiaire">
             {t("lectureSeule")}
           </p>
-        ) : null}
+        )}
       </header>
 
       {parametres.length === 0 ? (
@@ -85,13 +84,12 @@ export function ParametresSysteme({ modifiable }: { modifiable: boolean }) {
 function LigneParametre({
   configuration,
   modifiable,
-}: {
+}: Readonly<{
   configuration: ConfigurationSysteme;
   modifiable: boolean;
-}) {
+}>) {
   const t = useTranslations("configurations");
   const tr = useTranslations("referentiels");
-  const td = useTranslations("domaine");
   const { nomUtilisateur } = useLibelles();
   const modifier = useModifierConfiguration();
   const [valeur, setValeur] = useState(configuration.valeur);
@@ -99,18 +97,14 @@ function LigneParametre({
   const refus = verifierValeurConfiguration(configuration, valeur);
   const modifie = valeur.trim() !== configuration.valeur;
   const identifiant = `configuration-${configuration.cle}`;
-  const elements = valeur.split(",").map((item) => item.trim().toUpperCase());
-  // Les canaux s'affichent par leur nom (« Courriel personnel ») ; les autres listes, par leur code.
-  const enumCanaux = CLES_CANAUX[configuration.cle];
-  const libelleValeur = (code: string) => (enumCanaux ? td(`${enumCanaux}.${code}` as never) : code);
 
-  // La description métier est traduite ; celle du backend reste le repli pour une clé inconnue.
+  // The business description is translated; the backend one is the fallback for an unknown key.
   const messages = tr.raw("configurations") as Record<string, string | undefined>;
   const description = messages[configuration.cle] ?? configuration.description ?? "";
 
   /**
-   * Seul le motif « bornes » est paramétré : le regrouper avec les autres dans un `t(cle as never)`
-   * ferait perdre le typage des variables du message.
+   * Only the "bounds" message is parameterized: grouping it with the others in a `t(cle as never)`
+   * would lose the typing of the message variables.
    */
   const messageRefus = (motif: MotifRefusConfiguration) =>
     motif === "bornes"
@@ -119,6 +113,14 @@ function LigneParametre({
           max: configuration.valeurMaximale ?? 0,
         })
       : t(`refus.${motif}` as never);
+
+  function mentionModification() {
+    if (!configuration.dateModification) return t("jamaisModifiee");
+    const date = new Date(configuration.dateModification).toLocaleDateString();
+    return configuration.dernierAuteurId === null
+      ? t("modifiee", { date })
+      : t("modifieeParAuteur", { date, auteur: nomUtilisateur(configuration.dernierAuteurId) });
+  }
 
   const enregistrer = () => {
     modifier.mutate(
@@ -136,42 +138,31 @@ function LigneParametre({
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-bordure bg-surface p-4">
       <div className="flex flex-col gap-1">
-        <h2 className="font-mono text-[length:var(--taille-sm)] font-semibold">{configuration.cle}</h2>
+        <h2 className="font-mono text-[length:var(--taille-sm)] font-semibold">
+          {configuration.cle}
+        </h2>
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
           {description}
         </p>
       </div>
 
       {configuration.typeValeur === "LISTE" ? (
-        <fieldset className="flex flex-col gap-2" disabled={!modifiable || modifier.isPending}>
-          <legend className="text-[length:var(--taille-sm)] font-medium">
-            {t("valeursAcceptees")}
-          </legend>
-          <div className="flex flex-wrap gap-3">
-            {configuration.valeursPossibles.map((possible) => (
-              <label key={possible} className="flex items-center gap-2 text-[length:var(--taille-sm)]">
-                <input
-                  type="checkbox"
-                  name={configuration.cle}
-                  value={possible}
-                  checked={elements.includes(possible)}
-                  onChange={() =>
-                    setValeur(basculerElement(valeur, possible, configuration.valeursPossibles))
-                  }
-                  className="size-4 accent-[color:var(--afb-anthracite)]"
-                />
-                {libelleValeur(possible)}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <ChoixListe
+          configuration={configuration}
+          valeur={valeur}
+          desactive={!modifiable || modifier.isPending}
+          onChangement={setValeur}
+        />
       ) : (
         <Champ
           id={identifiant}
           label={t("valeur")}
           aide={
             configuration.valeurMinimale !== null && configuration.valeurMaximale !== null
-              ? t("bornes", { min: configuration.valeurMinimale, max: configuration.valeurMaximale })
+              ? t("bornes", {
+                  min: configuration.valeurMinimale,
+                  max: configuration.valeurMaximale,
+                })
               : undefined
           }
           erreur={refus ? messageRefus(refus) : undefined}
@@ -194,28 +185,20 @@ function LigneParametre({
             <PoidsFichier valeur={Number(configuration.valeur)} />
           ) : null}
           {/*
-            Q-112 : « modifié le … par … ». Le journal des actions système a déménagé vers l'écran
-            d'audit — un outil d'enquête n'avait pas sa place sous les paramètres. Mais la question
-            qui naît **en regardant un réglage** — « pourquoi vaut-il 14, et qui l'a mis là ? » —
-            mérite une réponse sur place, et non un changement d'écran. Elle est ici, rattachée à la
-            ligne qui la pose.
+            "Modified on ... by ...": answers who changed a setting and when, directly on its row.
+            The full system action log lives on the audit screen.
           */}
-          <span>
-            {configuration.dateModification
-              ? configuration.dernierAuteurId !== null
-                ? t("modifieeParAuteur", {
-                    date: new Date(configuration.dateModification).toLocaleDateString(),
-                    auteur: nomUtilisateur(configuration.dernierAuteurId),
-                  })
-                : t("modifiee", { date: new Date(configuration.dateModification).toLocaleDateString() })
-              : t("jamaisModifiee")}
-          </span>
+          <span>{mentionModification()}</span>
         </p>
 
         {modifiable ? (
           <div className="flex items-center gap-2">
             {modifie ? (
-              <Button variante="discrete" taille="sm" onClick={() => setValeur(configuration.valeur)}>
+              <Button
+                variante="discrete"
+                taille="sm"
+                onClick={() => setValeur(configuration.valeur)}
+              >
                 {t("annuler")}
               </Button>
             ) : null}
@@ -230,5 +213,51 @@ function LigneParametre({
         ) : null}
       </div>
     </article>
+  );
+}
+
+/** A closed list: one checkbox per accepted value. */
+function ChoixListe({
+  configuration,
+  valeur,
+  desactive,
+  onChangement,
+}: Readonly<{
+  configuration: ConfigurationSysteme;
+  valeur: string;
+  desactive: boolean;
+  onChangement: (valeur: string) => void;
+}>) {
+  const t = useTranslations("configurations");
+  const td = useTranslations("domaine");
+  const elements = new Set(valeur.split(",").map((item) => item.trim().toUpperCase()));
+  // Channels are displayed by name ("Personal email"); other lists by code.
+  const enumCanaux = CLES_CANAUX[configuration.cle];
+  const libelleValeur = (code: string) =>
+    enumCanaux ? td(`${enumCanaux}.${code}` as never) : code;
+
+  return (
+    <fieldset className="flex flex-col gap-2" disabled={desactive}>
+      <legend className="text-[length:var(--taille-sm)] font-medium">
+        {t("valeursAcceptees")}
+      </legend>
+      <div className="flex flex-wrap gap-3">
+        {configuration.valeursPossibles.map((possible) => (
+          <label key={possible} className="flex items-center gap-2 text-[length:var(--taille-sm)]">
+            <input
+              type="checkbox"
+              name={configuration.cle}
+              value={possible}
+              checked={elements.has(possible)}
+              onChange={() =>
+                onChangement(basculerElement(valeur, possible, configuration.valeursPossibles))
+              }
+              className="size-4 accent-[color:var(--afb-anthracite)]"
+            />
+            {libelleValeur(possible)}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }

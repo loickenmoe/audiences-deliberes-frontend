@@ -14,8 +14,8 @@ import { rendre as render } from "../utils/rendu";
 
 describe("CycleEtape", () => {
   /**
-   * L'étape courante ne doit pas être signalée par la seule couleur : un utilisateur daltonien, et
-   * un lecteur d'écran, doivent la percevoir aussi.
+   * The current step must not be signaled by color alone: color-blind users and screen readers
+   * must perceive it too.
    */
   it("marque l'étape courante par aria-current", () => {
     render(<CycleEtape statut="EN_DELIBERE" />);
@@ -39,7 +39,7 @@ describe("CycleEtape", () => {
     }
   });
 
-  /** La boucle de prorogation est invisible sur une frise linéaire : il faut la dire. */
+  /** The postponement loop is invisible on a linear timeline, so it must be stated. */
   it("annonce les prorogations et le rabattement possible en délibéré", () => {
     render(<CycleEtape statut="EN_DELIBERE" nbProrogations={11} />);
 
@@ -63,7 +63,7 @@ describe("CycleEtape", () => {
 });
 
 describe("Pagination", () => {
-  /** Le backend numérote les pages à partir de 0 ; l'utilisateur lit à partir de 1. */
+  /** The backend numbers pages from 0; the user reads from 1. */
   it("affiche la page en base 1 alors que le backend compte à partir de 0", () => {
     render(<Pagination page={0} totalPages={4} totalElements={87} onChangement={() => {}} />);
 
@@ -127,7 +127,7 @@ describe("TableDonnees", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
-  /** Le message du backend est plus précis que le nôtre : il doit primer. */
+  /** The backend message is more precise than ours, so it takes precedence. */
   it("relaie le message de l'erreur backend", () => {
     render(
       <TableDonnees
@@ -143,8 +143,8 @@ describe("TableDonnees", () => {
   });
 
   /**
-   * La pagination vient du serveur : la table ne doit pas repaginer les lignes reçues. Deux lignes
-   * envoyées, deux lignes affichées, même si le total en annonce 40.
+   * Pagination comes from the server: the table must not paginate received rows again. Two rows
+   * sent, two rows shown, even if the total says 40.
    */
   it("affiche toutes les lignes reçues sans repaginer", () => {
     render(
@@ -161,15 +161,15 @@ describe("TableDonnees", () => {
     );
 
     const tableau = screen.getByRole("table");
-    expect(within(tableau).getAllByRole("row")).toHaveLength(3); // en-tête + 2 lignes
+    expect(within(tableau).getAllByRole("row")).toHaveLength(3); // header + 2 rows
     expect(screen.getByText("Page 1 sur 20")).toBeInTheDocument();
   });
 });
 
 describe("DialogueConfirmation", () => {
   /**
-   * Motif central : `ERR-003` et `ERR-005` ne sont pas des échecs mais des demandes de confirmation,
-   * rejouées avec `?forcer=true`.
+   * `ERR-003` and `ERR-005` are not failures but confirmation requests, replayed with
+   * `?forcer=true`.
    */
   it("propose de confirmer et d'annuler", async () => {
     const onConfirmation = vi.fn();
@@ -225,11 +225,10 @@ describe("Televersement", () => {
     expect(screen.getByText(/10 Mo/)).toBeInTheDocument();
   });
 
-  /** Le format est dérivé de l'extension, pas du type MIME — c'est la règle du backend (Q-46). */
+  /** The format is derived from the extension, not the MIME type, as the backend does. */
   /**
-   * `applyAccept: false` : par défaut `userEvent` respecte l'attribut `accept` et refuserait de
-   * simuler la sélection — or c'est précisément ce cas qu'on veut couvrir. Un navigateur laisse
-   * d'ailleurs choisir « tous les fichiers », l'attribut n'est donc pas une garantie.
+   * `applyAccept: false`: by default `userEvent` honors `accept` and would refuse the selection,
+   * which is exactly the case to cover. Browsers allow "all files", so `accept` is no guarantee.
    */
   it("refuse une extension non admise", async () => {
     const onChangement = vi.fn();

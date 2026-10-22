@@ -7,17 +7,10 @@ import { Button } from "@/components/ui/button";
 import { grouperEmpreinte } from "@/lib/empreinte";
 
 /**
- * Une empreinte SHA-256, présentée pour être lue et comparée (backend Q-114).
- *
- * **Le défaut qu'elle corrige.** Affichée d'un seul tenant, une empreinte de soixante-quatre
- * caractères est illisible : personne ne la compare, et une valeur que nul ne vérifie n'est qu'une
- * décoration. Groupée par blocs de huit, elle se compare — on lit les premiers blocs, puis les
- * derniers, comme on le fait d'une clé GPG ou d'un numéro de compte.
- *
- * **Le bouton de copie n'est pas un ornement** : recopier soixante-quatre caractères à la main est
- * la façon la plus sûre d'introduire l'erreur qu'on cherchait à écarter.
+ * A SHA-256 fingerprint displayed for reading and comparison: grouped in blocks of eight characters
+ * so it can be compared, with a copy button to avoid retyping errors.
  */
-export function EmpreinteAffichee({ empreinte }: { empreinte: string }) {
+export function EmpreinteAffichee({ empreinte }: Readonly<{ empreinte: string }>) {
   const t = useTranslations("audit");
   const [copiee, setCopiee] = useState(false);
 
@@ -25,11 +18,11 @@ export function EmpreinteAffichee({ empreinte }: { empreinte: string }) {
     try {
       await navigator.clipboard.writeText(empreinte);
       setCopiee(true);
-      // Le retour visuel s'efface : un bouton qui reste « Copié » ment dès la seconde suivante.
+      // The visual feedback fades: a button that stays "Copied" is misleading.
       setTimeout(() => setCopiee(false), 2_000);
     } catch {
-      // Presse-papiers refusé (contexte non sécurisé, permission) : l'empreinte reste sélectionnable
-      // à la main. Un message d'erreur pour un geste de confort serait disproportionné.
+      // Clipboard denied (insecure context, permission): the fingerprint can still be selected
+      // manually, an error message would be disproportionate.
     }
   }
 
@@ -37,8 +30,8 @@ export function EmpreinteAffichee({ empreinte }: { empreinte: string }) {
     <span className="flex flex-wrap items-center gap-2">
       <code
         className="font-mono text-[length:var(--taille-xs)] leading-5 text-texte-secondaire"
-        // Une empreinte n'est d'aucune langue : l'annoncer évite qu'un lecteur d'écran tente de la
-        // prononcer comme un mot.
+        // A fingerprint has no language: declaring it prevents a screen reader from pronouncing it
+        // as a word.
         lang="zxx"
       >
         {grouperEmpreinte(empreinte).map((ligne) => (

@@ -3,48 +3,40 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { CasesACocher, DialogueConfirmation } from "@/components/metier";
+import { CasesACocher, DialogueConfirmation, SelecteurCherchable } from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useModifierAffectation } from "@/hooks/useDossiers";
-import { SelecteurCherchable } from "@/components/metier";
 import { useIntervenants } from "@/hooks/useIntervenants";
 import { useUtilisateurs } from "@/hooks/useReferentiels";
 import { ErreurApi, messageErreur } from "@/lib/api/errors";
 import type { Dossier } from "@/types/domaine";
 
 /**
- * Écran 16 — modification des affectations.
- *
- * Deux comportements du backend à connaître :
- * · l'endpoint **remplace** les deux listes. Les sélections partent donc de l'affectation actuelle,
- *   sans quoi valider sans rien toucher retirerait tout le monde ;
- * · conserver une personne déjà affectée provoque un 409 `ERR-003`. Ce n'est pas une erreur mais
- *   une demande de confirmation (RG-DOS-07) : on la présente comme telle, puis on rejoue avec
- *   `?forcer=true` — et le backend alerte alors le DJ.
- *
- * Au moins un juriste et un avocat sont exigés, comme à la création. Le backend l'impose aussi
- * depuis M16 (Q-75, QF-25) ; le vérifier ici évite seulement un aller-retour pour une omission
- * visible.
+ * Screen 16 - assignment editing.
+ * The endpoint **replaces** both lists, so selections start from the current assignment; otherwise
+ * saving without changes would remove everyone.
+ * Keeping an already assigned person returns a 409 `ERR-003`: a confirmation request (RG-DOS-07),
+ * presented as such, then replayed with `?forcer=true`, after which the backend alerts the DJ.
+ * At least one lawyer and one counsel are required, as at creation; the backend also enforces it.
  */
 export function ModaleAffectation({
   dossier,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossier: Dossier;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const td = useTranslations("dossiers");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const juristes = useUtilisateurs("JURISTE");
   /*
-   * Q-105 — la recherche remplace le « charger tout l'annuaire ». Le champ n'affiche que ce que le
-   * serveur renvoie pour la saisie en cours : le choix reste exact quel que soit le nombre d'avocats
-   * inscrits, là où une page fixe se serait tronquée en silence.
+   * Server-side search instead of loading the whole directory: the field only shows what the server
+   * returns for the current input, so the choice stays exact whatever the number of counsel.
    */
   const [rechercheAvocat, setRechercheAvocat] = useState("");
   const avocats = useIntervenants({ type: "AVOCAT", nom: rechercheAvocat || undefined });
@@ -56,7 +48,7 @@ export function ModaleAffectation({
   const [erreur, setErreur] = useState<string | null>(null);
   const [tentee, setTentee] = useState(false);
 
-  // À chaque ouverture, repartir de l'affectation actuelle du dossier — qui a pu changer entre-temps.
+  // On each opening, start again from the case's current assignment, which may have changed.
   useEffect(() => {
     if (ouvert) {
       setJuristesChoisis(dossier.juristesAffectes);
@@ -122,7 +114,7 @@ export function ModaleAffectation({
             </p>
           ) : null}
 
-          {/* Mêmes cases à cocher qu'à la création (2026-09-22) : un clic ajoute ou retire. */}
+          {/* Same checkboxes as at creation: one click adds or removes. */}
           <CasesACocher
             label={td("champJuristes")}
             obligatoire

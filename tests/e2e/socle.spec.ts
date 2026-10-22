@@ -1,9 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Socle applicatif. Depuis le jalon F2, la racine est protégée : un visiteur non authentifié est
- * renvoyé vers la connexion. Les parcours d'authentification sont couverts par
- * `authentification.spec.ts` ; les parcours métier (P1 à P9) arriveront avec les écrans.
+ * Application shell. The root is protected: an unauthenticated visitor is redirected to login.
+ * Authentication journeys are covered by `authentification.spec.ts`.
  */
 test("la racine est protégée et renvoie vers la connexion", async ({ page }) => {
   await page.goto("/");

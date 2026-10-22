@@ -9,11 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 34 — répertoire des avocats (juristes, Assistante).
+ * Screen 34 - lawyers directory (legal officers, assistant).
  *
- * <p>Les rôles descendent dans l'écran depuis Q-135 : le DJ et la DJA y ouvrent la **fiche
- * d'activité** d'un avocat, et eux seuls. Le serveur l'arbitre - masquer n'est pas sécuriser - mais
- * l'écran ne doit pas proposer une porte qui donne sur un mur.
+ * Only the DJ and DJA can open a lawyer's **activity sheet**. The server enforces it (hiding is not
+ * securing), but the screen should not offer a door that leads to a wall.
  */
 export default async function PageRepertoire() {
   const session = await exigerCapacite("consulterRepertoire");

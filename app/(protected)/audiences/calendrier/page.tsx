@@ -9,10 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 22 — calendrier des audiences.
+ * Screen 22 - hearings calendar.
  *
- * `GET /audiences/calendrier` est réservé au juriste et au DJ : ni le DJA, ni l'Assistante, ni le SH,
- * ni l'avocat. La garde est posée ici, avant tout rendu.
+ * `GET /audiences/calendrier` is reserved to legal officers and the DJ (not the DJA, assistant, SH
+ * or lawyer). The guard is applied here, before any rendering.
  */
 export default async function PageCalendrier() {
   await exigerCapacite("consulterCalendrier");

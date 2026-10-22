@@ -21,9 +21,13 @@ import { cn } from "@/lib/utils";
 import { gedService } from "@/services/gedService";
 import type { DemandeSuppression, StatutSuppression } from "@/types/domaine";
 
-const TON: Record<StatutSuppression, TonStatut> = { EN_ATTENTE: "attention", APPROUVEE: "neutre", REJETEE: "info" };
+const TON: Record<StatutSuppression, TonStatut> = {
+  EN_ATTENTE: "attention",
+  APPROUVEE: "neutre",
+  REJETEE: "info",
+};
 
-/** Longueur de `demande_suppression.motif_rejet` en base. */
+/** Length of `demande_suppression.motif_rejet` in the database. */
 const MOTIF_MAX = 255;
 
 type Vue = "EN_ATTENTE" | "TOUTES";
@@ -35,41 +39,32 @@ async function contenuDocument(documentId: number): Promise<Blob> {
 }
 
 /**
- * Écran 36 — demandes de suppression (UC-GED-03). Un juriste ne supprime pas lui-même une pièce :
- * sa demande attend ici la décision du DJ ou de la DJA, relancée toutes les 72 heures. Le document
- * se consulte avant de décider ; un rejet exige un motif, transmis au juriste.
- *
- * Deux vues : **en attente** (la plus ancienne d'abord, l'ordre de traitement) et **toutes** (l'historique,
- * la plus récente d'abord). Depuis Q-79, chaque demande nomme son fichier et son dossier.
+ * Screen 36 - deletion requests (UC-GED-03). A legal officer cannot delete a document directly:
+ * the request waits here for the DJ or DJA decision, with a reminder every 72 hours. The document
+ * can be viewed before deciding; a rejection requires a reason, sent to the legal officer.
+ * Two views: pending (oldest first, processing order) and all (history, newest first).
  */
 export function FileSuppressions() {
   const t = useTranslations("suppressions");
-  const tdoc = useTranslations("documents");
   const [vue, setVue] = useState<Vue>("EN_ATTENTE");
   /*
-   * La file est paginée **côté serveur**, dix lignes par page. Elle l'a toujours été : ce qui
-   * manquait, c'était le moyen d'atteindre les pages suivantes. L'écran n'en montrait donc que dix,
-   * et la vue « en attente » étant la plus ancienne d'abord, **les demandes les plus récentes
-   * étaient invisibles** — celles-là même qu'un juriste venait de déposer.
+   * The queue is paginated server-side, ten rows per page. Without pagination controls, the most
+   * recent pending requests (oldest-first order) would be unreachable.
    */
   const [page, setPage] = useState(0);
   const requete = useDemandesSuppression(vue === "EN_ATTENTE" ? "EN_ATTENTE" : null, page);
   const decider = useDeciderSuppression();
-  const { nomUtilisateur } = useLibelles();
   const [apercu, setApercu] = useState<DemandeSuppression | null>(null);
   const [approbation, setApprobation] = useState<DemandeSuppression | null>(null);
   const [rejet, setRejet] = useState<DemandeSuppression | null>(null);
-
-  const libelleType = (type: string | null) =>
-    !type ? null : estTypeConnu(type) ? tdoc(`types.${type}` as never) : type;
 
   async function approuver() {
     if (!approbation) return;
     try {
       await decider.mutateAsync({ documentId: approbation.documentId });
       toast.success(t("approuvee", { nom: approbation.documentNom }));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setApprobation(null);
     }
@@ -80,17 +75,25 @@ export function FileSuppressions() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
-      <div role="group" aria-label={t("vue")} className="flex w-fit rounded border border-bordure-forte">
+      <fieldset
+                aria-label={t("vue")}
+        className="flex w-fit rounded border border-bordure-forte"
+      >
         {(["EN_ATTENTE", "TOUTES"] as const).map((valeur) => (
           <button
             key={valeur}
             type="button"
             aria-pressed={valeur === vue}
-            onClick={() => { setVue(valeur); setPage(0); }}
+            onClick={() => {
+              setVue(valeur);
+              setPage(0);
+            }}
             className={cn(
               "px-3 py-1.5 text-[length:var(--taille-sm)] transition-colors first:rounded-l last:rounded-r",
               valeur === vue ? "bg-anthracite text-white" : "hover:bg-surface-attenuee",
@@ -99,120 +102,19 @@ export function FileSuppressions() {
             {valeur === "EN_ATTENTE" ? t("enAttente") : t("toutes")}
           </button>
         ))}
-      </div>
+      </fieldset>
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={5} />
-      ) : requete.error ? (
-        <EtatErreur message={messageErreur(requete.error)} />
-      ) : demandes.length === 0 ? (
-        <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
-          {vue === "EN_ATTENTE" ? t("aucuneEnAttente") : t("aucune")}
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded border border-bordure bg-surface">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDocument")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDossier")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDemandeur")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDate")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneStatut")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">
-                  <span className="sr-only">{t("colonneActions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {demandes.map((demande) => {
-                const enAttente = demande.statut === "EN_ATTENTE";
-                const type = libelleType(demande.typeDocument);
-                return (
-                  <tr key={demande.id}>
-                    <td className="px-4 py-2">
-                      <span className="flex flex-col gap-0.5">
-                        <span className="font-medium">{demande.documentNom}</span>
-                        {type ? <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{type}</span> : null}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Link
-                        href={`/dossiers/${demande.dossierId}?onglet=documents`}
-                        className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-                      >
-                        {demande.referenceDossier}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2">{demande.demandeurId !== null ? nomUtilisateur(demande.demandeurId) : "—"}</td>
-                    <td className="px-4 py-2">
-                      <span className="flex flex-col gap-0.5">
-                        <DateHeureValeur valeur={demande.dateDemande} />
-                        {enAttente && demande.dateDerniereRelance ? (
-                          <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-                            {t("relancee")} <DateHeureValeur valeur={demande.dateDerniereRelance} />
-                          </span>
-                        ) : null}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className="flex flex-col items-start gap-1">
-                        <StatutChip ton={TON[demande.statut]}>{t(`statut.${demande.statut}` as never)}</StatutChip>
-                        {!enAttente && demande.dateDecision ? (
-                          <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-                            {demande.valideParId !== null ? `${nomUtilisateur(demande.valideParId)} · ` : ""}
-                            <DateHeureValeur valeur={demande.dateDecision} />
-                          </span>
-                        ) : null}
-                        {demande.motifRejet ? (
-                          <span className="text-[length:var(--taille-xs)]">{t("motif", { motif: demande.motifRejet })}</span>
-                        ) : null}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      {enAttente ? (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variante="secondaire"
-                            taille="sm"
-                            onClick={() => setApercu(demande)}
-                            aria-label={t("consulterAria", { nom: demande.documentNom })}
-                          >
-                            <Eye size={14} aria-hidden />
-                            {t("consulter")}
-                          </Button>
-                          <Button
-                            taille="sm"
-                            onClick={() => setApprobation(demande)}
-                            aria-label={t("approuverAria", { nom: demande.documentNom })}
-                          >
-                            <Check size={14} aria-hidden />
-                            {t("approuver")}
-                          </Button>
-                          <Button
-                            variante="secondaire"
-                            taille="sm"
-                            onClick={() => setRejet(demande)}
-                            aria-label={t("rejeterAria", { nom: demande.documentNom })}
-                          >
-                            <X size={14} aria-hidden />
-                            {t("rejeter")}
-                          </Button>
-                        </div>
-                      ) : null}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TableauDemandes
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        demandes={demandes}
+        videTexte={vue === "EN_ATTENTE" ? t("aucuneEnAttente") : t("aucune")}
+        onApercu={setApercu}
+        onApprobation={setApprobation}
+        onRejet={setRejet}
+      />
 
-      {/*
-        Rendue dès qu'une page suivante existe : une file tronquée sans le dire est pire qu'une file
-        longue, car rien n'indique à qui décide qu'il lui manque quelque chose.
-      */}
+      {/* Shown whenever a next page exists: a silently truncated queue hides requests from the decision maker. */}
       {requete.data && requete.data.totalPages > 1 ? (
         <Pagination
           page={page}
@@ -226,7 +128,9 @@ export function FileSuppressions() {
         ouvert={apercu !== null}
         onFermeture={() => setApercu(null)}
         nomFichier={apercu?.documentNom ?? ""}
-        obtenir={() => (apercu ? contenuDocument(apercu.documentId) : Promise.reject(new Error("aucun document")))}
+        obtenir={() =>
+          apercu ? contenuDocument(apercu.documentId) : Promise.reject(new Error("aucun document"))
+        }
       />
 
       <DialogueConfirmation
@@ -245,8 +149,174 @@ export function FileSuppressions() {
   );
 }
 
-/** Rejet motivé (UC-GED-03 alt. 9-a) : le document est conservé, le juriste reçoit le motif. */
-function ModaleRejet({ demande, onFermeture }: { demande: DemandeSuppression | null; onFermeture: () => void }) {
+/** Label of a document type: translated when known, as stored otherwise, nothing when absent. */
+function useLibelleType() {
+  const tdoc = useTranslations("documents");
+  return (type: string | null) => {
+    if (!type) return null;
+    return estTypeConnu(type) ? tdoc(`types.${type}` as never) : type;
+  };
+}
+
+/** The queue: loading, error, empty, or one row per request. */
+function TableauDemandes({
+  enChargement,
+  erreur,
+  demandes,
+  videTexte,
+  onApercu,
+  onApprobation,
+  onRejet,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  demandes: readonly DemandeSuppression[];
+  videTexte: string;
+  onApercu: (demande: DemandeSuppression) => void;
+  onApprobation: (demande: DemandeSuppression) => void;
+  onRejet: (demande: DemandeSuppression) => void;
+}>) {
+  const t = useTranslations("suppressions");
+  const { nomUtilisateur } = useLibelles();
+  const libelleType = useLibelleType();
+
+  if (enChargement) return <EtatChargement lignes={5} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (demandes.length === 0) {
+    return (
+      <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
+        {videTexte}
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDocument")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDossier")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDemandeur")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDate")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneStatut")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              <span className="sr-only">{t("colonneActions")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {demandes.map((demande) => {
+            const enAttente = demande.statut === "EN_ATTENTE";
+            const type = libelleType(demande.typeDocument);
+            return (
+              <tr key={demande.id}>
+                <td className="px-4 py-2">
+                  <span className="flex flex-col gap-0.5">
+                    <span className="font-medium">{demande.documentNom}</span>
+                    {type ? (
+                      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                        {type}
+                      </span>
+                    ) : null}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <Link
+                    href={`/dossiers/${demande.dossierId}?onglet=documents`}
+                    className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+                  >
+                    {demande.referenceDossier}
+                  </Link>
+                </td>
+                <td className="px-4 py-2">
+                  {demande.demandeurId === null ? "—" : nomUtilisateur(demande.demandeurId)}
+                </td>
+                <td className="px-4 py-2">
+                  <span className="flex flex-col gap-0.5">
+                    <DateHeureValeur valeur={demande.dateDemande} />
+                    {enAttente && demande.dateDerniereRelance ? (
+                      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                        {t("relancee")} <DateHeureValeur valeur={demande.dateDerniereRelance} />
+                      </span>
+                    ) : null}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <span className="flex flex-col items-start gap-1">
+                    <StatutChip ton={TON[demande.statut]}>
+                      {t(`statut.${demande.statut}` as never)}
+                    </StatutChip>
+                    {!enAttente && demande.dateDecision ? (
+                      <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                        {demande.valideParId === null
+                          ? ""
+                          : `${nomUtilisateur(demande.valideParId)} · `}
+                        <DateHeureValeur valeur={demande.dateDecision} />
+                      </span>
+                    ) : null}
+                    {demande.motifRejet ? (
+                      <span className="text-[length:var(--taille-xs)]">
+                        {t("motif", { motif: demande.motifRejet })}
+                      </span>
+                    ) : null}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  {enAttente ? (
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variante="secondaire"
+                        taille="sm"
+                        onClick={() => onApercu(demande)}
+                        aria-label={t("consulterAria", { nom: demande.documentNom })}
+                      >
+                        <Eye size={14} aria-hidden />
+                        {t("consulter")}
+                      </Button>
+                      <Button
+                        taille="sm"
+                        onClick={() => onApprobation(demande)}
+                        aria-label={t("approuverAria", { nom: demande.documentNom })}
+                      >
+                        <Check size={14} aria-hidden />
+                        {t("approuver")}
+                      </Button>
+                      <Button
+                        variante="secondaire"
+                        taille="sm"
+                        onClick={() => onRejet(demande)}
+                        aria-label={t("rejeterAria", { nom: demande.documentNom })}
+                      >
+                        <X size={14} aria-hidden />
+                        {t("rejeter")}
+                      </Button>
+                    </div>
+                  ) : null}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Rejection with a reason (UC-GED-03 alt. 9-a): the document is kept and the legal officer receives the reason. */
+function ModaleRejet({
+  demande,
+  onFermeture,
+}: Readonly<{ demande: DemandeSuppression | null; onFermeture: () => void }>) {
   const t = useTranslations("suppressions");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");

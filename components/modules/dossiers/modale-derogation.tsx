@@ -16,21 +16,20 @@ import { messageErreur } from "@/lib/api/errors";
 const CHAMPS = ["nouveauSeuil", "motif"] as const;
 
 /**
- * Écran 17 — demande de dérogation de seuil.
- *
- * Recevable uniquement sur un dossier sensible **déjà validé** : la fiche ne propose l'action que
- * dans cet état. La demande part ensuite à l'arbitrage du DJ/DJA, qui la voit apparaître en tête
- * de fiche (`DerogationsEnAttente`).
+ * Screen 17 - threshold derogation request.
+ * Only accepted on an already validated sensitive case: the case page only offers the action in
+ * that state. The request then goes to DJ/DJA arbitration, shown at the top of the case page
+ * (`DerogationsEnAttente`).
  */
 export function ModaleDerogation({
   dossierId,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -64,9 +63,9 @@ export function ModaleDerogation({
     try {
       await demander.mutateAsync({ nouveauSeuil: Number(valeurs.nouveauSeuil), motif: valeurs.motif });
       onFermeture();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

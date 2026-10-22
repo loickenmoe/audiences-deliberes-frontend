@@ -4,9 +4,8 @@ import { avocatDeTest } from "./avocat-de-test";
 import { ligneDansLaFile } from "./files-de-travail";
 
 /**
- * Publications, constitutions et répertoire (écrans 13, 31, 32, 34, 35) **contre le backend réel et
- * MinIO**. L'avocat dépose par l'API (son portail arrive en F16) ; l'Assistante, les juristes, le
- * DJ et le SH agissent à l'écran.
+ * Publications, appointments and directory (screens 13, 31, 32, 34, 35) against the real backend and
+ * MinIO. The lawyer files through the API; the Assistant, legal officers, DJ and SH act on screen.
  */
 
 loadEnvConfig(process.cwd());
@@ -38,7 +37,7 @@ async function jeton(identifiant: string): Promise<string> {
 
 async function appel(chemin: string, jetonAcces: string, init: RequestInit = {}): Promise<Response> {
   const entetes: Record<string, string> = { Authorization: `Bearer ${jetonAcces}` };
-  // Un corps multipart pose lui-même son type (avec la frontière des parties).
+  // A multipart body sets its own content type (with the part boundary).
   if (!(init.body instanceof FormData)) entetes["Content-Type"] = "application/json";
   return fetch(`${API}${chemin}`, { ...init, headers: { ...entetes, ...init.headers } });
 }
@@ -53,7 +52,7 @@ function suffixe() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-/** L'avocat rattaché à `avocat.test` par son identifiant de connexion (Q-84). */
+/** The lawyer linked to `avocat.test` by login identifier. */
 async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
   const trouver = async () =>
@@ -77,7 +76,7 @@ async function avocatDuCompteTest(): Promise<number> {
   throw new Error(`POST /intervenants → ${creation.status}`);
 }
 
-/** Un dossier suivi par `juriste.test` et `avocat.test`. */
+/** A case followed by `juriste.test` and `avocat.test`. */
 async function dossier(): Promise<{ id: number; reference: string }> {
   const juriste = await jeton("juriste.test");
   const avocatId = await avocatDuCompteTest();
@@ -94,17 +93,17 @@ async function dossier(): Promise<{ id: number; reference: string }> {
       pvTransfert: "PV-PUB",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocatId],
-      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      // At least one party on each side is required.
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
-      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      // Required: the branch comes from the reference data (00002 = Bonanjo).
       codeAgenceOrigine: "00002",
     }),
   });
-  // La référence est ATTRIBUÉE par le système : celle qu'on aurait envoyée n'existe nulle part.
+  // The reference is system-assigned: any value sent would not exist anywhere.
   return { id: cree.id, reference: cree.reference };
 }
 
-/** L'avocat dépose une pièce sur le dossier, éventuellement réservée à un utilisateur. */
+/** The lawyer files a document on the case, optionally restricted to one user. */
 async function pieceDeposee(dossierId: number, restrictionAcces?: number) {
   const nom = `piece-${suffixe().toLowerCase()}.pdf`;
   const corps = new FormData();
@@ -118,10 +117,10 @@ async function pieceDeposee(dossierId: number, restrictionAcces?: number) {
   return { id: publication.id, nom };
 }
 
-/** Une audience sur l'étape en cours du dossier, puis le compte rendu que l'avocat en dépose. */
+/** A hearing on the case's current step, then the report the lawyer files for it. */
 async function compteRenduDepose(dossierId: number): Promise<{ id: number; recit: string }> {
   const juriste = await jeton("juriste.test");
-  // Les étapes se lisent sur la fiche du dossier : `/etapes` n'accepte que la création.
+  // Steps are read from the case page: `/etapes` only accepts creation.
   const fiche = await json<{ etapes: { id: number; statutCycleVie: string }[] }>(
     `/dossiers/${dossierId}`,
     juriste,
@@ -180,15 +179,14 @@ function menu(page: Page) {
 test.setTimeout(240_000);
 
 /**
- * Une « Pièce » est une AUTRE publication : elle garde l'ancien régime, invisible
- * jusqu'à sa validation. Le compte rendu d'audience, lui, ne l'a plus — voir le
- * parcours dédié plus bas (RG-INT-06 amendée, 2026-10-05).
+ * A "Pièce" publication stays invisible until validated, unlike a hearing report (see the dedicated
+ * journey below, amended RG-INT-06).
  */
 test("un document du dossier reste invisible au juriste jusqu'à sa validation", async ({ browser }) => {
   const { id: dossierId, reference } = await dossier();
   const { id, nom } = await pieceDeposee(dossierId);
 
-  // Non validée, la publication n'existe pas pour le juriste.
+  // Not validated, the publication does not exist for the legal officer.
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`/publications/${id}`);
   await expect(juriste.getByText("Publication introuvable")).toBeVisible();
@@ -208,23 +206,21 @@ test("un document du dossier reste invisible au juriste jusqu'à sa validation",
 
   await juriste.reload();
   await expect(juriste.getByRole("heading", { name: `Pièce - ${nom}`, level: 1 })).toBeVisible();
-  // L'onglet de la fiche la liste aussi.
+  // The case page tab lists it too.
   await juriste.goto(`/dossiers/${dossierId}?onglet=publications`);
   await expect(juriste.getByRole("link", { name: `Pièce - ${nom}` })).toBeVisible();
   await juriste.context().close();
 });
 
 /**
- * RG-INT-06 amendée (métier du 2026-10-05) : un compte rendu d'audience est lu de **tous** les
- * habilités dès son dépôt, et l'Assistante n'en accuse que réception. À comparer au parcours
- * précédent, qui dépose une « Pièce » et reste, lui, fermé jusqu'à validation : c'est la nature du
- * dépôt, et non le statut, qui commande désormais la lecture.
+ * Amended RG-INT-06: a hearing report is readable by all authorised users as soon as it is filed,
+ * and the Assistant only acknowledges receipt. The filing type, not the status, governs access.
  */
 test("le compte rendu de l'avocat est lu de tous les habilités dès son dépôt", async ({ browser }) => {
   const { id: dossierId } = await dossier();
   const { id, recit } = await compteRenduDepose(dossierId);
 
-  // Le juriste du dossier le lit, et l'onglet le liste marqué « Déposé ».
+  // The case's legal officer reads it, and the tab lists it as "Déposé".
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`/publications/${id}`);
   await expect(juriste.getByText(recit)).toBeVisible();
@@ -233,18 +229,18 @@ test("le compte rendu de l'avocat est lu de tous les habilités dès son dépôt
   await expect(ligne).toBeVisible();
   await expect(ligne.getByText("Déposé")).toBeVisible();
 
-  // Il en a été prévenu au dépôt, sans attendre l'Assistante.
+  // They were notified at filing, without waiting for the Assistant.
   await juriste.goto("/notifications");
   await expect(juriste.getByText(/consultable dès maintenant/).first()).toBeVisible();
   await juriste.context().close();
 
-  // Le SH n'a aucun régime propre : il lit comme les autres, et tout de suite.
+  // The SH has no specific regime: reads like the others, immediately.
   const sh = await pageConnectee(browser, "sh.test");
   await sh.goto(`/publications/${id}`);
   await expect(sh.getByText(recit)).toBeVisible();
   await sh.context().close();
 
-  // L'Assistante n'approuve pas : elle accuse réception, et ne peut pas rejeter.
+  // The Assistant does not approve: she acknowledges receipt and cannot reject.
   const assistante = await pageConnectee(browser, "assistante.test");
   await assistante.goto(`/publications/${id}`);
   const panneau = assistante.getByRole("region", { name: "Validation" });
@@ -297,7 +293,7 @@ test("le commentaire du juriste va au DJ, qui transmet une correspondance unique
   await dj.goto(`/publications/${id}`);
   const echanges = dj.getByRole("region", { name: "Échanges" });
   await expect(echanges.getByText("La pièce n’est pas signée.")).toBeVisible();
-  // Le DJ, qui porte aussi ROLE_JURISTE (Q-81), n'a pas de formulaire de commentaire : il écrit la correspondance.
+  // The DJ, who also holds ROLE_JURISTE, has no comment form: they write the correspondence.
   await expect(dj.getByLabel("Votre commentaire", { exact: true })).toHaveCount(0);
   await echanges.getByLabel("Correspondance", { exact: true }).fill("Merci de nous faire parvenir la pièce signée.");
   await echanges.getByRole("button", { name: "Transmettre à l’avocat" }).click();
@@ -307,7 +303,7 @@ test("le commentaire du juriste va au DJ, qui transmet une correspondance unique
   await expect(echanges.getByRole("button", { name: "Transmettre à l’avocat" })).toHaveCount(0);
   await dj.context().close();
 
-  // Unique : une seconde correspondance est refusée par le backend.
+  // Unique: a second correspondence is refused by the backend.
   const seconde = await appel(`/publications/${id}/correspondance`, await jeton("dja.test"), {
     method: "POST",
     body: JSON.stringify({ contenu: "Seconde correspondance" }),
@@ -321,8 +317,8 @@ test("le commentaire du juriste va au DJ, qui transmet une correspondance unique
 
 test("une publication réservée à un autre destinataire affiche un accès restreint, pas une erreur", async ({ browser }) => {
   const sh = await jeton("sh.test");
-  // Un appel qui résout l'utilisateur courant provisionne le SH : il existe alors dans l'annuaire
-  // et peut être désigné. (`GET /constitutions/prestataires` ne le fait pas : il ne lit pas l'appelant.)
+  // A call resolving the current user provisions the SH in the directory so it can be designated.
+  // (`GET /constitutions/prestataires` does not: it does not read the caller.)
   await appel("/alertes/mes-notifications", sh);
   const shId = (await json<{ id: number }[]>("/utilisateurs?profil=SH", await jeton("juriste.test")))[0]!.id;
   const { id: dossierId } = await dossier();
@@ -361,15 +357,13 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
 
   /*
-   * **La signature mène à la pièce qu'elle vient de déposer** (QF-60). Ce parcours encodait
-   * l'ancien comportement : il cliquait « Toutes » ici, sur un écran que le SH ne voit plus. La
-   * signature dépose la lettre dans la GED du dossier, et rien n'y menait - le SH signait, lisait
-   * « Constitution signée », et restait devant sa file sans voir ce qu'il venait de produire.
+   * Signing leads to the document just filed: the letter is stored in the case's document
+   * management, and the SH lands on it.
    */
   await sh.waitForURL(new RegExp(`/dossiers/${dossierId}\\?onglet=documents`), { timeout: 60_000 });
   await expect(sh.getByText(/lettre-constitution-\d+\.pdf/)).toBeVisible({ timeout: 30_000 });
 
-  // La file reste atteignable : la redirection est un enchaînement, pas une porte qui se ferme.
+  // The queue stays reachable: the redirect chains screens, it does not close a door.
   await sh.goto("/constitutions");
   await sh.getByRole("button", { name: "Toutes" }).click();
   const signee = await ligneDansLaFile(sh, new RegExp(reference));
@@ -380,9 +374,8 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   await expect(juriste.getByText(/lettre-constitution-\d+\.pdf/)).toBeVisible();
 
   /*
-   * Le tirage pour papier préimprimé (observation métier du 2026-09-25). Sa seule présence prouve
-   * que le type de pièce posé par le backend — un texte libre — est bien celui que l'interface
-   * attend : aucun typage ne peut garantir cet accord, seul un parcours réel le peut.
+   * The print for pre-printed paper. Its presence proves that the document type set by the backend
+   * (free text) matches what the UI expects; only a real journey can guarantee it.
    */
   const ligneLettre = juriste.getByRole("row", { name: /lettre-constitution-\d+\.pdf/ });
   const sansEntete = ligneLettre.getByRole("button", { name: /^Sans en-tête - lettre-constitution/ });
@@ -393,16 +386,16 @@ test("constitution : motif obligatoire, signature du SH, lettre dans la GED du d
   const fichier = await telechargement;
   expect(fichier.suggestedFilename()).toMatch(/^lettre-constitution-\d+-sans-entete\.pdf$/);
 
-  // La pièce archivée reste téléchargeable telle quelle : le tirage s'ajoute, il ne remplace rien.
+  // The archived document stays downloadable as is: the print is added, it replaces nothing.
   await expect(ligneLettre.getByRole("button", { name: /^Télécharger - lettre-constitution/ })).toBeVisible();
   await juriste.context().close();
 });
 
-test("le répertoire est trié par charge croissante ; le SH ne voit ni publications ni répertoire", async ({ browser }) => {
+test("le répertoire est trié par charge croissante ; le SH consulte publications et répertoire", async ({ browser }) => {
   const juriste = await pageConnectee(browser, "juriste.test");
   await menu(juriste).getByRole("link", { name: "Répertoire des avocats" }).click();
   await juriste.waitForURL(/\/repertoire\/avocats/, { timeout: 60_000 });
-  // `allInnerTexts` n'attend rien : attendre que le tableau ait remplacé l'état de chargement.
+  // `allInnerTexts` does not wait: wait for the table to replace the loading state.
   await expect(juriste.locator("tbody tr").first()).toBeVisible();
   const charges = await juriste.locator("tbody tr td:nth-child(4)").allInnerTexts();
   expect(charges.length).toBeGreaterThan(0);
@@ -410,35 +403,29 @@ test("le répertoire est trié par charge croissante ; le SH ne voit ni publicat
   expect(nombres).toEqual([...nombres].sort((a, b) => a - b));
   await juriste.context().close();
 
+  // Since 2026-10-21 the SH consults both screens, without the actions of the other profiles.
   const sh = await pageConnectee(browser, "sh.test");
-  await expect(menu(sh).getByRole("link", { name: "Publications" })).toHaveCount(0);
-  await expect(menu(sh).getByRole("link", { name: "Répertoire des avocats" })).toHaveCount(0);
+  await expect(menu(sh).getByRole("link", { name: "Publications" })).toBeVisible();
+  await expect(menu(sh).getByRole("link", { name: "Répertoire des avocats" })).toBeVisible();
   await sh.goto("/publications");
-  await expect(sh.getByRole("heading", { name: "Vous n’avez pas les droits nécessaires" })).toBeVisible();
+  await expect(sh.getByRole("heading", { name: "Publications des avocats", level: 1 })).toBeVisible();
+  await sh.goto("/repertoire/avocats");
+  await expect(sh.getByRole("heading", { name: "Répertoire des avocats", level: 1 })).toBeVisible();
+  await expect(sh.getByRole("button", { name: "Voir son activité" })).toHaveCount(0);
   await sh.context().close();
 });
 
 /**
- * La rédaction de la lettre de constitution (backend Q-124, amendant Q-115 B2).
- *
- * Ce parcours vérifiait l'inverse jusqu'au 2026-10-06 : le supérieur hiérarchique consultait sans
- * pouvoir récrire, le serveur lui rendant un 403, pour que la seconde signature garde son sens. Le
- * métier a tranché dans l'autre sens : **il corrige plutôt que de renvoyer au juriste**.
- *
- * Ce que la séparation des plumes garantissait, la **traçabilité** le garantit désormais, et c'est
- * elle que ce parcours vérifie : la lettre porte qui l'a écrite en dernier, et une reprise par le
- * supérieur hiérarchique est nommée comme telle.
- *
- * Et une fois signée, la lettre est **figée** : elle est partie chez un huissier et figure dans la
- * GED. La retoucher ferait mentir la pièce - une correction passe par une nouvelle demande. Le gel
- * vaut pour tous, SH compris : la porte ouverte par Q-124 l'est avant la signature, et là seulement.
+ * Drafting the appointment letter. The hierarchical superior (SH) may edit the letter before
+ * signing; traceability records who wrote it last, and an SH edit is named as such. Once signed,
+ * the letter is frozen for everyone, SH included: a correction requires a new request.
  */
 test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)", async ({
   browser,
 }) => {
   const { id: dossierId, reference } = await dossier();
 
-  // ── Le juriste sollicite, puis rédige ────────────────────────────────────────
+  // The legal officer requests, then drafts.
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`/dossiers/${dossierId}`);
   await juriste.getByRole("button", { name: "Solliciter un prestataire" }).click();
@@ -449,10 +436,8 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
   /*
-   * **La rédaction s'ouvre dans la foulée** (QF-60) : ce parcours-ci reprend la lettre plus tard,
-   * depuis la file, et ferme donc la boîte - ce que fait aussi qui ne veut pas rédiger tout de
-   * suite. Sans cela, elle intercepte le clic sur le menu, et c'est ainsi que ces trois parcours
-   * ont signalé le changement.
+   * Drafting opens right after the request. This journey resumes the letter later from the queue,
+   * so it closes the dialog, which would otherwise intercept the menu click.
    */
   await juriste
     .getByRole("dialog", { name: "Lettre de constitution" })
@@ -465,7 +450,7 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
   await ligneJuriste.getByRole("button", { name: "Rédiger la lettre" }).click();
 
   const lettre = juriste.getByRole("dialog", { name: "Lettre de constitution" });
-  // Le numéro n'est pas encore attribué : il le sera à la signature, pour ne pas en brûler un.
+  // The number is not assigned yet: it is assigned at signature, so none is wasted.
   await expect(lettre.getByText(/Le numéro est attribué à la signature/)).toBeVisible();
   await lettre.getByLabel("Objet", { exact: true }).fill("Constitution aux fins de saisie-attribution");
   await lettre.getByLabel("Corps de la lettre", { exact: true })
@@ -474,11 +459,7 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
   await expect(juriste.getByText("Lettre enregistrée.")).toBeVisible();
   await juriste.context().close();
 
-  /*
-   * ── Le SH **corrige** avant de signer ─────────────────────────────────────
-   *
-   * C'est le coeur de Q-124. Le bouton lui-même a changé de nom : il ne consulte plus, il rédige.
-   */
+  // The SH edits before signing: the button drafts, it no longer just views.
   const sh = await pageConnectee(browser, "sh.test");
   await menu(sh).getByRole("link", { name: "Constitutions" }).click();
   await sh.waitForURL(/\/constitutions/, { timeout: 60_000 });
@@ -487,7 +468,7 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
 
   const lue = sh.getByRole("dialog", { name: "Lettre de constitution" });
   await expect(lue.getByLabel("Objet", { exact: true })).toHaveValue("Constitution aux fins de saisie-attribution");
-  // La lettre porte son rédacteur : ici le juriste, qui vient de l'écrire.
+  // The letter shows its author: here the legal officer who just wrote it.
   await expect(lue.getByText(/Dernière rédaction par/)).toBeVisible();
 
   await lue.getByLabel("Corps de la lettre", { exact: true })
@@ -496,53 +477,44 @@ test("le juriste rédige, le SH corrige, et la signature fige la lettre (Q-124)"
   await expect(sh.getByText("Lettre enregistrée.")).toBeVisible();
 
   /*
-   * La correction est **nommée**. C'est ce qui remplace la séparation des plumes : qui rouvre la
-   * lettre voit qu'elle a été reprise, et par qui, sans aller fouiller l'historique.
+   * The edit is named: whoever reopens the letter sees it was taken over, and by whom, without
+   * digging into the history.
    */
   await ligneSh.getByRole("button", { name: "Rédiger la lettre" }).click();
   await expect(sh.getByText(/Corrigée par le supérieur hiérarchique/)).toBeVisible();
   await sh.getByRole("dialog", { name: "Lettre de constitution" })
     .getByRole("button", { name: "Annuler" }).click();
 
-  // ── La signature fige la lettre ─────────────────────────────────────────────
+  // Signing freezes the letter.
   await ligneSh.getByRole("button", { name: `Signer la constitution - ${avocatRattache}` }).click();
   await sh.getByRole("dialog", { name: "Signer la constitution ?" }).getByRole("button", { name: "Signer" }).click();
   await expect(sh.getByText("Constitution signée : la lettre est dans la GED du dossier.")).toBeVisible();
   await sh.context().close();
 
   /*
-   * Une fois signée, le chemin d'édition **disparaît** : le juriste ne se voit plus proposer de
-   * rédiger, et c'est la lettre elle-même — le PDF versé au dossier — qu'il consulte désormais.
-   * Le gel n'est donc pas un message à lire, c'est une action qui n'est plus offerte ; le serveur
-   * la refuse de son côté par un 409, au cas où l'on passerait outre l'écran.
+   * Once signed, the edit path disappears: the legal officer views the signed PDF instead. The
+   * server also refuses edits with a 409 if the screen is bypassed.
    */
   const relecture = await pageConnectee(browser, "juriste.test");
   await relecture.goto("/constitutions");
   await relecture.getByRole("button", { name: "Toutes" }).click();
   const ligneFigee = await ligneDansLaFile(relecture, reference);
-  // Le gel vaut pour **tous**, SH compris : la porte ouverte par Q-124 l'est avant la signature.
+  // The freeze applies to everyone, SH included.
   await expect(ligneFigee.getByRole("button", { name: "Rédiger la lettre" })).toHaveCount(0);
   await expect(ligneFigee.getByRole("button", { name: `Lettre de constitution - ${reference}` })).toBeVisible();
   await relecture.context().close();
 });
 
 /**
- * La lettre appartient à son demandeur (backend Q-126, métier du 2026-10-07).
- *
- * **Le trou que ce parcours garde fermé.** Le droit d'écrire tenait au rôle, et `ROLE_JURISTE`
- * étant composite (Q-81), le DJ et la DJA le portent aussi : n'importe lequel pouvait récrire la
- * lettre d'un juriste et la signer de son nom. Une lettre engage la banque sous le nom de celui qui
- * l'a écrite ; nul ne doit pouvoir écrire sous le nom d'un autre.
- *
- * Le DJ est le bon témoin : il a tous les droits métier, et c'est précisément pour cela qu'il ne
- * doit pas avoir celui-ci. Le parcours vérifie les deux faces - ce que l'écran lui propose, et ce
- * que le serveur lui répond s'il passe outre.
+ * The letter belongs to its requester. `ROLE_JURISTE` is composite, so the DJ and DJA hold it too,
+ * yet nobody may write under someone else's name. The DJ is the witness: the journey checks both
+ * what the screen offers and what the server answers if the screen is bypassed.
  */
 test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", async ({ browser }) => {
   const { id: dossierId, reference } = await dossier();
   const avocatRattache = (await avocatDeTest()).nom;
 
-  // ── Le juriste sollicite et rédige : la lettre est la sienne ────────────────
+  // The legal officer requests and drafts: the letter is theirs.
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto(`/dossiers/${dossierId}`);
   await juriste.getByRole("button", { name: "Solliciter un prestataire" }).click();
@@ -552,10 +524,8 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
   /*
-   * **La rédaction s'ouvre dans la foulée** (QF-60) : ce parcours-ci reprend la lettre plus tard,
-   * depuis la file, et ferme donc la boîte - ce que fait aussi qui ne veut pas rédiger tout de
-   * suite. Sans cela, elle intercepte le clic sur le menu, et c'est ainsi que ces trois parcours
-   * ont signalé le changement.
+   * Drafting opens right after the request. This journey resumes the letter later from the queue,
+   * so it closes the dialog, which would otherwise intercept the menu click.
    */
   await juriste
     .getByRole("dialog", { name: "Lettre de constitution" })
@@ -572,11 +542,11 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
   await expect(juriste.getByText("Lettre enregistrée.")).toBeVisible();
   await juriste.context().close();
 
-  // ── Le DJ lit, et ne touche pas ────────────────────────────────────────────
+  // The DJ reads and does not touch.
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto("/constitutions");
   const ligneDj = await ligneDansLaFile(dj, reference);
-  // L'écran ne lui propose pas d'écrire : le serveur le lui a dit, ligne par ligne.
+  // The screen does not offer writing: the server said so, row by row.
   await expect(ligneDj.getByRole("button", { name: "Rédiger la lettre" })).toHaveCount(0);
   await ligneDj.getByRole("button", { name: "Consulter la lettre" }).click();
   const lue = dj.getByRole("dialog", { name: "Lettre de constitution" });
@@ -586,8 +556,7 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
   await dj.context().close();
 
   /*
-   * Et s'il passe outre l'écran, le serveur refuse. C'est là que la règle vit : un écran qui cache
-   * un bouton ne protège rien, il rend seulement l'erreur moins probable.
+   * If the screen is bypassed, the server refuses: that is where the rule lives.
    */
   const demande = await json<{ content: { id: number; referenceDossier: string }[] }>(
     "/constitutions/prestataires?size=100", await jeton("juriste.test"));
@@ -605,7 +574,7 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
     expect(refus.status, `${intrus} ne doit pas pouvoir écrire sur la lettre d'un autre`).toBe(403);
   }
 
-  // ── Le SH, lui, corrige avant de signer (Q-124) ────────────────────────────
+  // The SH may edit before signing.
   const sh = await pageConnectee(browser, "sh.test");
   await sh.goto("/constitutions");
   const ligneSh = await ligneDansLaFile(sh, reference);
@@ -616,7 +585,7 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
   await expect(sh.getByText("Lettre enregistrée.")).toBeVisible();
   await sh.context().close();
 
-  // ── Et son auteur garde sa plume, même après la reprise du SH ──────────────
+  // The author keeps write access, even after the SH's edit.
   const retour = await pageConnectee(browser, "juriste.test");
   await retour.goto("/constitutions");
   const ligneRetour = await ligneDansLaFile(retour, reference);
@@ -628,11 +597,8 @@ test("la lettre est à son demandeur : le DJ la lit, le SH la corrige (Q-126)", 
 });
 
 /**
- * L'Assistante sollicite et rédige, comme un juriste (backend Q-126, métier du 2026-10-07).
- *
- * Elle n'y avait pas accès : le droit tenait à `ROLE_JURISTE`, qu'elle ne porte pas. La lettre
- * qu'elle fait naître est **la sienne** - la règle de Q-126 vaut pour elle comme pour les autres,
- * et c'est le second volet que ce parcours vérifie : elle rédige, mais ne signe pas.
+ * The Assistant requests and drafts like a legal officer. The letter she creates is hers (same
+ * ownership rule), and she drafts but does not sign.
  */
 test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", async ({ browser }) => {
   const { id: dossierId, reference } = await dossier();
@@ -649,10 +615,8 @@ test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", asyn
   await modale.getByRole("button", { name: "Soumettre" }).click();
   await expect(assistante.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
   /*
-   * **La rédaction s'ouvre dans la foulée** (QF-60) : ce parcours-ci reprend la lettre plus tard,
-   * depuis la file, et ferme donc la boîte - ce que fait aussi qui ne veut pas rédiger tout de
-   * suite. Sans cela, elle intercepte le clic sur le menu, et c'est ainsi que ces trois parcours
-   * ont signalé le changement.
+   * Drafting opens right after the request. This journey resumes the letter later from the queue,
+   * so it closes the dialog, which would otherwise intercept the menu click.
    */
   await assistante
     .getByRole("dialog", { name: "Lettre de constitution" })
@@ -668,11 +632,11 @@ test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", asyn
   await lettre.getByRole("button", { name: "Enregistrer la lettre" }).click();
   await expect(assistante.getByText("Lettre enregistrée.")).toBeVisible();
 
-  // Elle rédige, elle ne signe pas : la seconde signature reste au supérieur hiérarchique.
+  // She drafts, she does not sign: the second signature stays with the hierarchical superior.
   await expect(ligne.getByRole("button", { name: `Signer la constitution - ${avocatRattache}` })).toHaveCount(0);
   await assistante.context().close();
 
-  // Et sa lettre est la sienne : le juriste la lit, il ne l'écrit pas.
+  // Her letter is hers: the legal officer reads it but cannot write it.
   const juriste = await pageConnectee(browser, "juriste.test");
   await juriste.goto("/constitutions");
   const ligneJuriste = await ligneDansLaFile(juriste, reference);
@@ -682,10 +646,7 @@ test("l'Assistante sollicite et rédige sa lettre, sans la signer (Q-126)", asyn
 });
 
 /**
- * Le fil de la frappe sur le **répertoire des avocats** (QF-57).
- *
- * Dernier des quatre écrans dont les filtres texte n'agissaient qu'en quittant le champ. Le
- * raccourci Entrée y existait aussi : il est conservé.
+ * The lawyer directory filters search as the user types. The Enter shortcut is kept.
  */
 test("le filtre du répertoire des avocats cherche au fil de la frappe", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -703,15 +664,9 @@ test("le filtre du répertoire des avocats cherche au fil de la frappe", async (
 });
 
 /**
- * **Les deux enchaînements de la constitution** (QF-60, signalé le 2026-10-14).
- *
- * Ce qui manquait : une fois la sollicitation enregistrée, rien ne menait à la rédaction de la
- * lettre. Il fallait quitter le dossier, trouver la file des constitutions, et y retrouver sa
- * demande parmi les autres. Or le backend était fait pour cet enchaînement depuis le début - la
- * lettre **naît avec la demande**, sans numéro, « pour que le juriste puisse la rédiger aussitôt ».
- *
- * Le second enchaînement - la signature qui mène à l'onglet Documents - est éprouvé par le parcours
- * « constitution : motif obligatoire… » ci-dessus, qui le traverse déjà de bout en bout.
+ * Appointment flow: once the request is saved, the letter drafting opens directly (the letter is
+ * created with the request, without a number). The second step (signing leads to the Documents
+ * tab) is covered by the "constitution : motif obligatoire…" journey above.
  */
 test("enregistrer une sollicitation ouvre aussitôt la rédaction de sa lettre", async ({ browser }) => {
   const { id: dossierId, reference } = await dossier();
@@ -730,21 +685,19 @@ test("enregistrer une sollicitation ouvre aussitôt la rédaction de sa lettre",
   await expect(juriste.getByText("Demande envoyée au supérieur hiérarchique pour signature.")).toBeVisible();
 
   /*
-   * **C'est l'enchaînement corrigé** : la rédaction s'ouvre d'elle-même sur la demande qui vient
-   * d'être enregistrée, sans quitter le dossier.
+   * Drafting opens by itself on the request just saved, without leaving the case.
    */
   const redaction = juriste.getByRole("dialog", { name: /Lettre de constitution/ });
   await expect(redaction, "la rédaction ne s'est pas ouverte après l'enregistrement").toBeVisible({
     timeout: 30_000,
   });
-  // Et la modale de sollicitation a cédé la place : deux boîtes empilées cacheraient la rédaction.
+  // The request dialog has closed: two stacked dialogs would hide the drafting.
   await expect(sollicitation).toBeHidden();
 
   /*
-   * Elle est **rédigeable sur-le-champ** : la lettre existe déjà côté serveur, et elle est à son
-   * demandeur (Q-126). C'est ce que cet enchaînement rend utile - sans quoi il n'ouvrirait qu'un
-   * formulaire en lecture seule. L'enregistrement de la lettre lui-même est éprouvé par le parcours
-   * « le juriste rédige, le SH corrige… » : ici on vérifie qu'on **peut** écrire, pas l'écriture.
+   * It is editable immediately: the letter already exists server-side and belongs to its requester.
+   * Saving the letter is covered by the "le juriste rédige, le SH corrige…" journey; here we only
+   * check that writing is possible.
    */
   const corps = redaction.getByLabel("Corps de la lettre", { exact: true });
   await expect(corps).toBeEnabled();

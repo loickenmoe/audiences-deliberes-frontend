@@ -3,13 +3,13 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Surface portante. Convention relevée sur GFA, application Afriland en production : carte blanche
- * posée sur un fond gris clair, ombre discrète, angles peu marqués.
+ * Container surface, following the GFA convention (Afriland application in production): white card
+ * on a light grey background, subtle shadow, slightly rounded corners.
  *
- * Une carte signale un objet distinct — ne pas en envelopper chaque bloc, sous peine d'aplatir la
- * hiérarchie qu'elle est censée créer.
+ * A card marks a distinct object: do not wrap every block in one, or it flattens the hierarchy it
+ * is meant to create.
  */
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
       className={cn(
@@ -21,20 +21,19 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   );
 }
 
-export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function CardHeader({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return <div className={cn("flex flex-col gap-1 border-b border-bordure p-5", className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+export function CardTitle({ className, children, ...props }: Readonly<HTMLAttributes<HTMLHeadingElement>>) {
   return (
-    <h2
-      className={cn("text-[length:var(--taille-xl)] font-semibold tracking-tight", className)}
-      {...props}
-    />
+    <h2 className={cn("text-[length:var(--taille-xl)] font-semibold tracking-tight", className)} {...props}>
+      {children}
+    </h2>
   );
 }
 
-export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
+export function CardDescription({ className, ...props }: Readonly<HTMLAttributes<HTMLParagraphElement>>) {
   return (
     <p
       className={cn("text-[length:var(--taille-sm)] text-texte-secondaire", className)}
@@ -43,6 +42,6 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
   );
 }
 
-export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function CardContent({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return <div className={cn("p-5", className)} {...props} />;
 }

@@ -9,10 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 42 — référentiel des intervenants.
+ * Screen 42 - external contributors reference data.
  *
- * Consultation ouverte à tous les profils internes (#62, `ROLE_CONSULTATION`) ; la création est
- * réservée au DJ et au DJA (#61) et masquée pour les autres.
+ * Readable by every internal profile (#62, `ROLE_CONSULTATION`); creation is reserved to the DJ and
+ * DJA (#61) and hidden from everyone else.
  */
 export default async function PageIntervenants() {
   const session = await exigerCapacite("consulterReferentiels");

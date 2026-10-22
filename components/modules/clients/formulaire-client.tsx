@@ -13,17 +13,13 @@ import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { useCreerClient, useModifierClient } from "@/hooks/useClients";
 import type { Client } from "@/types/domaine";
+import { telephoneValide } from "@/lib/notifications";
 
 /**
- * Création d'un client, ou correction d'un client existant quand `client` est fourni.
- *
- * Le schéma **reprend les contraintes Bean Validation du backend** (`CreerClientRequest`,
- * `ModifierClientRequest`) : le nom est obligatoire, avec les mêmes longueurs maximales. Valider en
- * amont évite un aller-retour pour une faute que le formulaire pouvait voir ; le backend reste
- * l'arbitre.
- *
- * Un seul formulaire pour les deux usages, et non deux : ses règles de validation ne doivent pas
- * pouvoir diverger entre la création et la correction d'un même client.
+ * Creates a client, or edits an existing one when `client` is provided.
+ * The schema mirrors the backend Bean Validation constraints (`CreerClientRequest`,
+ * `ModifierClientRequest`); the backend remains the authority. A single form for both uses so the
+ * validation rules cannot diverge.
  */
 const CHAMPS = ["nom", "email", "telephone"] as const;
 
@@ -31,12 +27,12 @@ export function FormulaireClient({
   ouvert,
   onFermeture,
   client,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
-  /** Le client à corriger. Absent : le formulaire crée un nouveau client. */
+  /** The client to edit. When absent, the form creates a new client. */
   client?: Client;
-}) {
+}>) {
   const t = useTranslations("clients");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -48,7 +44,12 @@ export function FormulaireClient({
   const schema = z.object({
     nom: z.string().trim().min(1, tm("champObligatoire")).max(255),
     email: z.union([z.string().email(), z.literal("")]).optional(),
-    telephone: z.string().max(20).optional(),
+    // Same rule as an intervenant's phone, also checked by the backend: report it here.
+    telephone: z
+      .string()
+      .max(20)
+      .refine((valeur) => telephoneValide(valeur ?? ""), { message: t("telephoneFormat") })
+      .optional(),
   });
 
   const valeursInitiales = {
@@ -65,8 +66,8 @@ export function FormulaireClient({
     formState: { errors },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    // `values` et non `defaultValues` : le client peut arriver après le premier rendu, et le
-    // formulaire doit alors se remplir de ses valeurs courantes.
+    // `values` rather than `defaultValues`: the client may arrive after the first render, and the
+    // form must then fill with its current values.
     values: valeursInitiales,
   });
 
@@ -79,7 +80,7 @@ export function FormulaireClient({
   const soumettre = handleSubmit(async (valeurs) => {
     try {
       if (edition) {
-        // Un champ vidé part en `null` : le backend l'enregistre comme absent.
+        // An emptied field is sent as `null`: the backend stores it as absent.
         await modifier.mutateAsync({
           nom: valeurs.nom,
           email: valeurs.email || null,
@@ -91,13 +92,13 @@ export function FormulaireClient({
           email: valeurs.email || undefined,
           telephone: valeurs.telephone || undefined,
         });
-        // La référence est attribuée par le serveur : l'annoncer est la seule façon de la connaître.
+        // The reference is assigned by the server: announcing it is the only way to know it.
         toast.success(t("clientCree", { reference: cree.reference }));
       }
       fermer();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });
@@ -130,9 +131,8 @@ export function FormulaireClient({
         ) : null}
 
         {/*
-          La référence est l'identifiant du client : attribuée à la création (2026-09-29), figée
-          ensuite. Elle reste montrée en correction — savoir lequel on modifie en dépend — mais
-          n'est plus un champ : rien ne la saisit, rien ne l'envoie.
+          The reference is the client identifier: assigned at creation and fixed afterwards. It is
+          still shown when editing but is not an input field and is never sent.
         */}
         {edition ? (
           <div className="flex flex-col gap-1.5">
@@ -152,7 +152,7 @@ export function FormulaireClient({
   placeholder={t("phEmail")} type="email" enErreur={!!errors.email} {...register("email")} />
         </Champ>
 
-        <Champ id="telephone" label={t("colonneTelephone")} erreur={errors.telephone?.message}>
+        <Champ id="telephone" label={t("colonneTelephone")} aide={t("telephoneAide")} erreur={errors.telephone?.message}>
           <Input id="telephone"
   placeholder={t("phTelephone")} type="tel" enErreur={!!errors.telephone} {...register("telephone")} />
         </Champ>

@@ -4,7 +4,7 @@ import { gedService } from "@/services/gedService";
 import type { DemandeConstitution, Publication } from "@/types/domaine";
 import type { StatutAudience } from "@/types/enums";
 
-/** Un dossier tel que l'avocat le voit : son identification, rien de plus (backend Q-96). */
+/** A case as the lawyer sees it: identification only. */
 export interface DossierAvocat {
   id: number;
   reference: string;
@@ -12,19 +12,19 @@ export interface DossierAvocat {
   juridictionSaisie: string;
 }
 
-/** Une audience d'un de ses dossiers, de quoi la désigner dans un compte rendu (US 5.1). */
+/** A hearing of one of the lawyer's cases, enough to reference it in a report (US 5.1). */
 export interface AudienceAvocat {
   id: number;
   datePlanifiee: string;
   dateTenue: string | null;
-  /** Là où l'audience se tient : l'avocat s'y rend. */
+  /** Where the hearing takes place. */
   juridiction: string | null;
   statut: StatutAudience;
-  /** La note que le juriste lui adresse (QF-64). Nulle tant qu'il n'est pas constitué. */
+  /** Note from the legal officer; null until the lawyer is retained. */
   noteAvocat: string | null;
 }
 
-/** Une pièce du dossier que la banque lui partage (QF-64). */
+/** A case document shared with the lawyer by the bank. */
 export interface PieceAvocat {
   id: number;
   nomFichier: string;
@@ -35,8 +35,8 @@ export interface PieceAvocat {
 }
 
 /**
- * Les pièces partagées d'un dossier, et la raison de leur absence (QF-64). `constitue` est porté à
- * part : « aucune pièce » et « pas encore constitué » ne se règlent pas de la même façon.
+ * Shared documents of a case. `constitue` is separate because "no documents" and "not yet
+ * retained" are resolved differently.
  */
 export interface PiecesDossierAvocat {
   constitue: boolean;
@@ -44,9 +44,8 @@ export interface PiecesDossierAvocat {
 }
 
 /**
- * Une pièce justificative stockée (backend Q-97). `cle` est le **chemin de stockage**, à reporter
- * tel quel dans `piecesJustificatives` — c'est ce que le dictionnaire des données prévoit pour
- * `pieces_justificatives TEXT[]` : « chemins ou références des pièces ».
+ * A stored supporting document. `cle` is the storage path, to be copied as is into
+ * `piecesJustificatives` (data dictionary: `pieces_justificatives TEXT[]`).
  */
 export interface PieceJustificative {
   cle: string;
@@ -55,22 +54,14 @@ export interface PieceJustificative {
 }
 
 /**
- * Portail Avocat — les quatre lectures cadrées sur le prestataire connecté (backend Q-96, QF-01).
- *
- * L'avocat ne porte que `ROLE_AVOCAT` : il n'atteint ni `GET /dossiers` ni `GET /publications`,
- * réservés à `ROLE_CONSULTATION`. Ces endpoints lui sont propres et restreints **dans la requête**
- * du backend, pas par un filtre appliqué après coup.
+ * Lawyer portal: reads scoped to the logged-in provider. The lawyer only has `ROLE_AVOCAT` and
+ * cannot reach `GET /dossiers` or `GET /publications`; these endpoints are restricted in the
+ * backend query itself, not by post-filtering.
  */
 export const portailAvocatService = {
   /**
-   * Les dossiers auxquels il est affecté. `size` est généreux par défaut : la liste alimente un
-   * sélecteur, et paginer un sélecteur le rendrait inutilisable.
-   */
-  /**
-   * Ses dossiers, éventuellement cherchés par référence.
-   *
-   * La recherche est faite **par le serveur** : filtrer la page reçue n'aurait cherché que parmi
-   * les dossiers les plus récents, et aurait répondu « aucun résultat » pour un dossier qui existe.
+   * Cases the lawyer is assigned to, optionally searched by reference (server-side, so older cases
+   * are found too). Large default `size` because the list feeds a picker.
    */
   mesDossiers: async (reference?: string, page = 0, size = 100): Promise<PageReponse<DossierAvocat>> => {
     const { data } = await apiClient.get<PageReponse<DossierAvocat>>("/avocat/mes-dossiers", {
@@ -79,7 +70,7 @@ export const portailAvocatService = {
     return data;
   },
 
-  /** Les audiences d'un de **ses** dossiers ; un autre dossier répond 403. */
+  /** Hearings of one of the lawyer's own cases; any other case returns 403. */
   audiencesDeMonDossier: async (dossierId: number): Promise<AudienceAvocat[]> => {
     const { data } = await apiClient.get<AudienceAvocat[]>(
       `/avocat/mes-dossiers/${dossierId}/audiences`,
@@ -87,16 +78,15 @@ export const portailAvocatService = {
     return data;
   },
 
-  /** Ses propres dépôts, quel qu'en soit le statut — c'est là qu'il lit le motif d'un rejet. */
-  /** QF-64 — les pièces partagées de son dossier, s'il y est affecté et constitué. */
+  /** Shared documents of the lawyer's case, if assigned and retained. */
   piecesDeMonDossier: async (dossierId: number): Promise<PiecesDossierAvocat> => {
     const { data } = await apiClient.get<PiecesDossierAvocat>(`/avocat/mes-dossiers/${dossierId}/pieces`);
     return data;
   },
 
   /**
-   * QF-64 — le contenu d'une pièce partagée. L'URL pré-signée est redemandée à chaque ouverture :
-   * elle ne vit que dix minutes, et c'est cette demande que le serveur trace comme une lecture.
+   * Content of a shared document. The pre-signed URL is requested on each opening: it is valid ten
+   * minutes, and this request is what the server logs as a read.
    */
   contenuPiece: async (dossierId: number, documentId: number): Promise<Blob> => {
     const { data } = await apiClient.get<{ urlTelechargement: string }>(
@@ -105,6 +95,7 @@ export const portailAvocatService = {
     return gedService.recupererContenu(data.urlTelechargement);
   },
 
+  /** The lawyer's own submissions, any status; this is where rejection reasons are read. */
   mesPublications: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<Publication>> => {
     const { data } = await apiClient.get<PageReponse<Publication>>("/avocat/mes-publications", {
       params: { page, size },
@@ -113,24 +104,21 @@ export const portailAvocatService = {
   },
 
   /**
-   * Dépose une pièce justificative et renvoie sa clé de stockage (UC-INT-01 étape 4, « l'avocat
-   * **charge** les pièces justificatives »).
-   *
-   * Deux temps plutôt qu'un envoi unique : le contrat de `POST /frais/demandes` reste du JSON, et
-   * un envoi qui échoue ne fait pas reperdre les pièces déjà transmises. Mêmes contrôles de format
-   * et de poids que la GED — le backend les refuse en 400 `ERR-008`.
+   * Uploads a supporting document and returns its storage key (UC-INT-01 step 4). Done separately
+   * so `POST /frais/demandes` stays JSON and a failed submission does not lose uploaded files.
+   * Same format and size checks as the document store (400 `ERR-008`).
    */
   deposerPieceJustificative: async (fichier: File): Promise<PieceJustificative> => {
     const corps = new FormData();
     corps.append("file", fichier);
     const { data } = await apiClient.post<PieceJustificative>("/avocat/pieces-justificatives", corps, {
-      // Sans ce type déclaré, axios sérialise le FormData en JSON et le fichier ne part jamais.
+      // Without this header, axios serializes the FormData as JSON and the file is never sent.
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data;
   },
 
-  /** Les lettres de constitution qui le désignent. Liste courte, non paginée côté backend. */
+  /** Constitution letters naming the lawyer. Short list, not paginated by the backend. */
   mesConstitutions: async (): Promise<DemandeConstitution[]> => {
     const { data } = await apiClient.get<DemandeConstitution[]>("/avocat/mes-constitutions");
     return data;

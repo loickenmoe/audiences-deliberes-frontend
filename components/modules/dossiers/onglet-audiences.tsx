@@ -11,7 +11,6 @@ import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
 import { usePublications } from "@/hooks/usePublications";
-import type { Publication } from "@/types/domaine";
 import { StatutChip, type TonStatut } from "@/components/global/statut-chip";
 import { DateValeur, DialogueConfirmation } from "@/components/metier";
 import { Button } from "@/components/ui/button";
@@ -29,37 +28,37 @@ import { ErreurApi, messageErreur } from "@/lib/api/errors";
 import { aujourdhui } from "@/lib/calendrier";
 import { peut } from "@/lib/rbac";
 import { formaterDate } from "@/lib/utils";
-import type { Audience, Dossier, PlanifierAudience } from "@/types/domaine";
+import type { Audience, Dossier, PlanifierAudience, Publication } from "@/types/domaine";
 import type { StatutAudience } from "@/types/enums";
 
-const TON: Record<StatutAudience, TonStatut> = { PLANIFIEE: "info", TENUE: "succes", ANNULEE: "neutre" };
+const TON: Record<StatutAudience, TonStatut> = {
+  PLANIFIEE: "info",
+  TENUE: "succes",
+  ANNULEE: "neutre",
+};
 
 /**
- * Écran 09 — audiences du dossier, la plus récente d'abord (ordre du backend).
- *
- * Deux règles du backend commandent les actions proposées :
- * · on ne planifie que sur une étape **en cours** (RG-AUD-01), à une date qui ne précède pas
- *   l'ouverture du dossier (RG-AUD-08) ;
- * · le compte rendu n'est recevable qu'**à partir du jour de l'audience**.
- * L'interface n'offre donc ni une étape qui serait refusée, ni un compte rendu sur une audience à
- * venir.
- *
- * Une audience planifiée peut être **annulée**, motif obligatoire (QF-30, Q-76 backend) : elle quitte
- * alors le calendrier et ses rappels. Un renvoi du tribunal = annuler, puis planifier la nouvelle date.
+ * Screen 09 - case hearings, most recent first (backend order).
+ * Two backend rules drive the available actions:
+ * · scheduling only on a step **in progress** (RG-AUD-01), on a date not before the case opening
+ *   (RG-AUD-08);
+ * · the hearing report is only accepted **from the hearing day onwards**.
+ * A scheduled hearing can be **cancelled** with a required reason: it then leaves the calendar and
+ * its reminders. A court adjournment = cancel, then schedule the new date.
  */
-export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletAudiences({
+  dossier,
+  roles,
+}: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("audiences");
   const tdom = useTranslations("domaine");
   const requete = useAudiencesDossier(dossier.id);
   const peutGerer = peut(roles, "gererAudiences");
 
   /*
-   * Le compte rendu de l'avocat vit dans les **publications**, rattaché à l'audience mais pas porté
-   * par elle. Sans ce croisement, l'onglet n'affichait que le récit du juriste : une audience dont
-   * l'avocat avait rendu compte paraissait muette, et personne ne savait où chercher.
-   *
-   * Seules les publications **validées** comptent : un dépôt en attente n'est lisible d'aucun
-   * juriste, et le montrer ici ferait croire à une information disponible.
+   * The counsel's report lives in **publications**, linked to the hearing but not held by it;
+   * without this join, a hearing reported by the counsel would look empty.
+   * Only **validated** publications count: a pending submission is not readable by lawyers.
    */
   const peutVoirPublications = peut(roles, "consulterPublications");
   const publications = usePublications(
@@ -75,7 +74,7 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
   const [planification, setPlanification] = useState(false);
   const [compteRendu, setCompteRendu] = useState<Audience | null>(null);
   const [annulation, setAnnulation] = useState<Audience | null>(null);
-  /** QF-64 : la note destinée à l'avocat constitué, distincte du compte rendu interne. */
+  /** The note for the appointed counsel, separate from the internal hearing report. */
   const [note, setNote] = useState<Audience | null>(null);
   const peutEcrireNote = peut(roles, "ecrireNoteAvocat");
   const langue = useLocale() as Langue;
@@ -99,7 +98,9 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
             {t("planifier")}
           </Button>
           {etapesEnCours.length === 0 ? (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("aucuneEtapeEnCours")}</p>
+            <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+              {t("aucuneEtapeEnCours")}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -111,11 +112,21 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
           <table className="w-full text-left text-[length:var(--taille-sm)]">
             <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
               <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDate")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneEtape")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneStatut")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneTenue")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneCompteRendu")}</th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneDate")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneEtape")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneStatut")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneTenue")}
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  {t("colonneCompteRendu")}
+                </th>
                 <th scope="col" className="px-4 py-2 font-medium">
                   <span className="sr-only">{t("colonneActions")}</span>
                 </th>
@@ -123,17 +134,22 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
             </thead>
             <tbody className="divide-y divide-bordure">
               {audiences.map((audience) => {
-                // Recevable le jour même : « pas après aujourd'hui », comme le backend.
+                // Accepted on the same day: "not after today", as in the backend.
                 const compteRenduPossible =
-                  peutGerer && audience.statut === "PLANIFIEE" && audience.datePlanifiee <= aujourdhui();
+                  peutGerer &&
+                  audience.statut === "PLANIFIEE" &&
+                  audience.datePlanifiee <= aujourdhui();
                 return (
-                  <tr key={audience.id} className={audience.statut === "ANNULEE" ? "text-texte-tertiaire" : undefined}>
+                  <tr
+                    key={audience.id}
+                    className={audience.statut === "ANNULEE" ? "text-texte-tertiaire" : undefined}
+                  >
                     <td className="px-4 py-2 font-medium">
                       <DateValeur valeur={audience.datePlanifiee} />
                     </td>
                     <td className="px-4 py-2">
                       {libelleEtape(audience.etapeId)}
-                      {/* Là où elle se tient : un appel ne siège pas devant le tribunal qui a jugé. */}
+                      {/* Where it sits: an appeal is not heard by the court that ruled. */}
                       {audience.juridiction ? (
                         <span className="block text-[length:var(--taille-xs)] text-texte-tertiaire">
                           {audience.juridiction}
@@ -150,27 +166,16 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     </td>
                     <td className="max-w-md px-4 py-2">
                       <div className="flex flex-col gap-1">
-                        {audience.compteRendu ? (
-                          <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
-                            {audience.compteRendu}
-                          </p>
-                        ) : audience.statut === "ANNULEE" && audience.motifAnnulation ? (
-                          <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
-                            {t("motifAnnulation", { motif: audience.motifAnnulation })}
-                          </p>
-                        ) : compteRenduPossible ? (
-                          <Button variante="secondaire" taille="sm" onClick={() => setCompteRendu(audience)}>
-                            <FileText size={14} aria-hidden />
-                            {t("saisirCompteRendu")}
-                          </Button>
-                        ) : !compteRenduAvocatParAudience.has(audience.id) ? (
-                          "—"
-                        ) : null}
+                        <CompteRenduInterne
+                          audience={audience}
+                          saisiePossible={compteRenduPossible}
+                          compteRenduAvocat={compteRenduAvocatParAudience.has(audience.id)}
+                          onSaisie={() => setCompteRendu(audience)}
+                        />
 
                         {/*
-                          La note à l'avocat, **à part** du compte rendu (QF-64) : celui-ci reste
-                          interne, celle-là lui est écrite. Les confondre à l'écran ferait croire que
-                          l'avocat lit le compte rendu.
+                          The note to the counsel, kept **separate** from the internal report:
+                          mixing them on screen would suggest the counsel reads the report.
                         */}
                         {audience.noteAvocat ? (
                           <p
@@ -194,27 +199,31 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
                     </td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex justify-end gap-1">
-                      {peutEcrireNote && audience.statut !== "ANNULEE" ? (
-                        <Button
-                          variante="secondaire"
-                          taille="sm"
-                          onClick={() => setNote(audience)}
-                          aria-label={t("ecrireNoteAria", { date: formaterDate(audience.datePlanifiee, langue) })}
-                          title={t("ecrireNote")}
-                        >
-                          <MessageSquareText size={14} aria-hidden />
-                        </Button>
-                      ) : null}
-                      {peutGerer && audience.statut === "PLANIFIEE" ? (
-                        <Button
-                          variante="secondaire"
-                          taille="sm"
-                          onClick={() => setAnnulation(audience)}
-                          aria-label={t("annulerAria", { date: formaterDate(audience.datePlanifiee, langue) })}
-                        >
-                          {t("annulerAudience")}
-                        </Button>
-                      ) : null}
+                        {peutEcrireNote && audience.statut !== "ANNULEE" ? (
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setNote(audience)}
+                            aria-label={t("ecrireNoteAria", {
+                              date: formaterDate(audience.datePlanifiee, langue),
+                            })}
+                            title={t("ecrireNote")}
+                          >
+                            <MessageSquareText size={14} aria-hidden />
+                          </Button>
+                        ) : null}
+                        {peutGerer && audience.statut === "PLANIFIEE" ? (
+                          <Button
+                            variante="secondaire"
+                            taille="sm"
+                            onClick={() => setAnnulation(audience)}
+                            aria-label={t("annulerAria", {
+                              date: formaterDate(audience.datePlanifiee, langue),
+                            })}
+                          >
+                            {t("annulerAudience")}
+                          </Button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -231,19 +240,76 @@ export function OngletAudiences({ dossier, roles }: { dossier: Dossier; roles: r
             dossierId={dossier.id}
             ouvertureDossier={dossier.createdAt.slice(0, 10)}
             juridictionDuDossier={dossier.juridictionSaisie}
-            etapes={etapesEnCours.map((etape) => ({ id: etape.id, libelle: libelleEtape(etape.id) }))}
+            etapes={etapesEnCours.map((etape) => ({
+              id: etape.id,
+              libelle: libelleEtape(etape.id),
+            }))}
             ouvert={planification}
             onFermeture={() => setPlanification(false)}
           />
-          <ModaleCompteRendu dossierId={dossier.id} audience={compteRendu} onFermeture={() => setCompteRendu(null)} />
-          <ModaleAnnulation dossierId={dossier.id} audience={annulation} onFermeture={() => setAnnulation(null)} />
+          <ModaleCompteRendu
+            dossierId={dossier.id}
+            audience={compteRendu}
+            onFermeture={() => setCompteRendu(null)}
+          />
+          <ModaleAnnulation
+            dossierId={dossier.id}
+            audience={annulation}
+            onFermeture={() => setAnnulation(null)}
+          />
         </>
       ) : null}
       {peutEcrireNote ? (
-        <ModaleNoteAvocat dossierId={dossier.id} audience={note} onFermeture={() => setNote(null)} />
+        <ModaleNoteAvocat
+          dossierId={dossier.id}
+          audience={note}
+          onFermeture={() => setNote(null)}
+        />
       ) : null}
     </div>
   );
+}
+
+/**
+ * The internal report of a hearing, or what replaces it: the cancellation reason, the action to
+ * write it once the hearing day has come, or a dash. Nothing when the counsel's report stands in.
+ */
+function CompteRenduInterne({
+  audience,
+  saisiePossible,
+  compteRenduAvocat,
+  onSaisie,
+}: Readonly<{
+  audience: Audience;
+  saisiePossible: boolean;
+  compteRenduAvocat: boolean;
+  onSaisie: () => void;
+}>) {
+  const t = useTranslations("audiences");
+
+  if (audience.compteRendu) {
+    return (
+      <p className="line-clamp-2 whitespace-pre-line" title={audience.compteRendu}>
+        {audience.compteRendu}
+      </p>
+    );
+  }
+  if (audience.statut === "ANNULEE" && audience.motifAnnulation) {
+    return (
+      <p className="line-clamp-2 whitespace-pre-line" title={audience.motifAnnulation}>
+        {t("motifAnnulation", { motif: audience.motifAnnulation })}
+      </p>
+    );
+  }
+  if (saisiePossible) {
+    return (
+      <Button variante="secondaire" taille="sm" onClick={onSaisie}>
+        <FileText size={14} aria-hidden />
+        {t("saisirCompteRendu")}
+      </Button>
+    );
+  }
+  return compteRenduAvocat ? null : "—";
 }
 
 function ModalePlanification({
@@ -253,39 +319,39 @@ function ModalePlanification({
   etapes,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
-  /** Date d'ouverture du dossier, `YYYY-MM-DD` : borne basse de la date d'audience (RG-AUD-08). */
+  /** Case opening date, `YYYY-MM-DD`: lower bound of the hearing date (RG-AUD-08). */
   ouvertureDossier: string;
-  /** Juridiction de la saisine : ce que la planification propose par défaut. */
+  /** Court seized: the default proposed when scheduling. */
   juridictionDuDossier: string;
   etapes: { id: number; libelle: string }[];
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const planifier = usePlanifierAudience(dossierId);
-  // La confirmation d'un doublon rejoue **la demande refusée**, gardée ici telle quelle : relire le
-  // formulaire à ce moment-là exposait la date à une réinitialisation intercalée (envoi d'une date
-  // vide, 400 « Requête invalide » — e2e F8, le 2026-09-10).
+  // Confirming a duplicate replays **the rejected request**, kept here as is: re-reading the form
+  // at that point exposed the date to an intervening reset (sending an empty date, 400 "Invalid
+  // request").
   const [confirmation, setConfirmation] = useState<PlanifierAudience | null>(null);
   const etapeParDefaut = etapes[0]?.id;
 
-  // RG-AUD-08 (2026-09-23) : une audience s'enregistre le jour même et après coup — une
-  // audience tenue sans avoir été saisie doit pouvoir être régularisée. La seule borne est
-  // l'ouverture du dossier, comme côté serveur : les deux doivent refuser la même chose.
+  // RG-AUD-08: a hearing can be recorded on the same day and afterwards (a hearing held without
+  // being entered must be regularizable). The only bound is the case opening, as on the server:
+  // both must reject the same thing.
   const schema = useMemo(
     () =>
       z.object({
         etapeId: z.coerce.number().int().positive(tm("champObligatoire")),
-        // Comparaison de chaînes `YYYY-MM-DD` : l'ordre lexical est l'ordre chronologique.
+        // Comparing `YYYY-MM-DD` strings: lexical order is chronological order.
         datePlanifiee: z
           .string()
           .min(1, tm("champObligatoire"))
           .refine((date) => date >= ouvertureDossier, { message: t("dateAvantOuverture") }),
-        // Facultative : laissée vide, le serveur reprend la juridiction du dossier.
+        // Optional: when left empty, the server uses the case's court.
         juridiction: z.string().trim().max(100).optional(),
       }),
     [tm, t, ouvertureDossier],
@@ -297,10 +363,12 @@ function ModalePlanification({
     reset,
     setError,
     formState: { errors },
-  } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({ resolver: zodResolver(schema) });
+  } = useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>({
+    resolver: zodResolver(schema),
+  });
 
-  // Réinitialiser à l'ouverture seulement. Dépendre de la liste des étapes — un tableau recréé à
-  // chaque rendu du parent — effaçait la saisie à chaque rechargement du dossier.
+  // Reset on opening only. Depending on the step list (an array recreated on every parent render)
+  // would clear the input on every case reload.
   useEffect(() => {
     if (ouvert) {
       reset({ etapeId: etapeParDefaut, datePlanifiee: "", juridiction: juridictionDuDossier });
@@ -314,14 +382,14 @@ function ModalePlanification({
       toast.success(t("audiencePlanifiee"));
       setConfirmation(null);
       onFermeture();
-    } catch (erreur) {
-      // ERR-005 : un doublon n'est pas un échec, c'est une demande de confirmation (RG-AUD-06).
-      if (erreur instanceof ErreurApi && erreur.demandeConfirmation) {
+    } catch (error_) {
+      // ERR-005: a duplicate is not a failure but a confirmation request (RG-AUD-06).
+      if (error_ instanceof ErreurApi && error_.demandeConfirmation) {
         setConfirmation(audience);
         return;
       }
       setConfirmation(null);
-      setError("root", { message: messageErreur(erreur) });
+      setError("root", { message: messageErreur(error_) });
     }
   }
 
@@ -347,11 +415,19 @@ function ModalePlanification({
       >
         <form onSubmit={soumettre} className="flex flex-col gap-4">
           {errors.root ? (
-            <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+            <p
+              role="alert"
+              className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+            >
               {errors.root.message}
             </p>
           ) : null}
-          <Champ id="audience-etape" label={t("champEtape")} obligatoire erreur={errors.etapeId?.message}>
+          <Champ
+            id="audience-etape"
+            label={t("champEtape")}
+            obligatoire
+            erreur={errors.etapeId?.message}
+          >
             <Select id="audience-etape" enErreur={!!errors.etapeId} {...register("etapeId")}>
               {etapes.map((etape) => (
                 <option key={etape.id} value={etape.id}>
@@ -374,7 +450,12 @@ function ModalePlanification({
               {...register("juridiction")}
             />
           </Champ>
-          <Champ id="audience-date" label={t("champDate")} obligatoire erreur={errors.datePlanifiee?.message}>
+          <Champ
+            id="audience-date"
+            label={t("champDate")}
+            obligatoire
+            erreur={errors.datePlanifiee?.message}
+          >
             <Input
               id="audience-date"
               type="date"
@@ -404,24 +485,30 @@ function ModaleCompteRendu({
   dossierId,
   audience,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   audience: Audience | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const enregistrer = useEnregistrerCompteRendu(dossierId);
 
-  const schema = useMemo(() => z.object({ compteRendu: z.string().trim().min(1, tm("champObligatoire")) }), [tm]);
+  const schema = useMemo(
+    () => z.object({ compteRendu: z.string().trim().min(1, tm("champObligatoire")) }),
+    [tm],
+  );
   const {
     register,
     handleSubmit,
     reset,
     setError,
     formState: { errors },
-  } = useForm<z.input<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { compteRendu: "" } });
+  } = useForm<z.input<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { compteRendu: "" },
+  });
 
   useEffect(() => {
     if (audience) reset({ compteRendu: "" });
@@ -433,8 +520,8 @@ function ModaleCompteRendu({
       await enregistrer.mutateAsync({ audienceId: audience.id, compteRendu: compteRendu.trim() });
       toast.success(t("compteRenduEnregistre"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -457,7 +544,10 @@ function ModaleCompteRendu({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         {errors.root ? (
-          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+          <p
+            role="alert"
+            className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+          >
             {errors.root.message}
           </p>
         ) : null}
@@ -466,25 +556,35 @@ function ModaleCompteRendu({
             <DateValeur valeur={audience.datePlanifiee} />
           </p>
         ) : null}
-        <Champ id="compte-rendu" label={t("champCompteRendu")} obligatoire erreur={errors.compteRendu?.message}>
-          <Textarea id="compte-rendu"
-  placeholder={t("phCompteRendu")} rows={6} enErreur={!!errors.compteRendu} {...register("compteRendu")} />
+        <Champ
+          id="compte-rendu"
+          label={t("champCompteRendu")}
+          obligatoire
+          erreur={errors.compteRendu?.message}
+        >
+          <Textarea
+            id="compte-rendu"
+            placeholder={t("phCompteRendu")}
+            rows={6}
+            enErreur={!!errors.compteRendu}
+            {...register("compteRendu")}
+          />
         </Champ>
       </form>
     </Dialog>
   );
 }
 
-/** Annulation motivée (QF-30) : le motif est exigé par le backend et reste lisible dans la liste. */
+/** Cancellation with a reason: required by the backend and shown in the list. */
 function ModaleAnnulation({
   dossierId,
   audience,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   audience: Audience | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -500,7 +600,10 @@ function ModaleAnnulation({
     reset,
     setError,
     formState: { errors },
-  } = useForm<z.input<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { motif: "" } });
+  } = useForm<z.input<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { motif: "" },
+  });
 
   useEffect(() => {
     if (audience) reset({ motif: "" });
@@ -512,8 +615,8 @@ function ModaleAnnulation({
       await annuler.mutateAsync({ audienceId: audience.id, motif: motif.trim() });
       toast.success(t("audienceAnnulee"));
       onFermeture();
-    } catch (erreur) {
-      setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      setError("root", { message: messageErreur(error_) });
     }
   });
 
@@ -536,7 +639,10 @@ function ModaleAnnulation({
     >
       <form onSubmit={soumettre} className="flex flex-col gap-4">
         {errors.root ? (
-          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+          <p
+            role="alert"
+            className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+          >
             {errors.root.message}
           </p>
         ) : null}
@@ -545,9 +651,20 @@ function ModaleAnnulation({
             <DateValeur valeur={audience.datePlanifiee} />
           </p>
         ) : null}
-        <Champ id="annulation-motif" label={t("champMotif")} obligatoire erreur={errors.motif?.message}>
-          <Textarea id="annulation-motif"
-  placeholder={t("phAnnulationMotif")} rows={4} maxLength={1000} enErreur={!!errors.motif} {...register("motif")} />
+        <Champ
+          id="annulation-motif"
+          label={t("champMotif")}
+          obligatoire
+          erreur={errors.motif?.message}
+        >
+          <Textarea
+            id="annulation-motif"
+            placeholder={t("phAnnulationMotif")}
+            rows={4}
+            maxLength={1000}
+            enErreur={!!errors.motif}
+            {...register("motif")}
+          />
         </Champ>
       </form>
     </Dialog>
@@ -555,31 +672,29 @@ function ModaleAnnulation({
 }
 
 /**
- * La note destinée à l'avocat constitué (QF-64, backend Q-139).
- *
- * **Distincte du compte rendu**, qui reste interne : il peut juger la stratégie, voire le travail de
- * l'avocat lui-même (RG-INT-07). La note, elle, lui est écrite - « apportez l'original de l'acte » se
- * dit avant l'audience, d'où un champ ouvert dès la planification.
- *
- * Elle se reprend telle qu'elle a été écrite, et **vide, elle s'efface** : c'est ainsi qu'on retire
- * une note devenue sans objet, sans second bouton pour le même geste.
+ * The note for the appointed counsel.
+ * Separate from the hearing report, which stays internal: it may assess the strategy or even the
+ * counsel's own work (RG-INT-07). The note is written to the counsel and can be entered as soon as
+ * the hearing is scheduled.
+ * It is edited as written, and **an empty note is deleted**: that is how an obsolete note is
+ * removed, without a second button.
  */
 function ModaleNoteAvocat({
   dossierId,
   audience,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   audience: Audience | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("audiences");
   const tc = useTranslations("commun");
   const modifier = useModifierNoteAvocat(dossierId);
   const [texte, setTexte] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // La note en vigueur, reprise à l'ouverture : on la corrige, on ne la réécrit pas de mémoire.
+  // The current note, loaded on opening: it is corrected, not rewritten from memory.
   const audienceId = audience?.id;
   const noteEnVigueur = audience?.noteAvocat ?? "";
   useEffect(() => {
@@ -619,7 +734,10 @@ function ModaleNoteAvocat({
     >
       <div className="flex flex-col gap-4">
         {erreur ? (
-          <p role="alert" className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger">
+          <p
+            role="alert"
+            className="rounded border border-danger/40 bg-danger-fond px-4 py-3 text-[length:var(--taille-sm)] text-danger"
+          >
             {erreur}
           </p>
         ) : null}

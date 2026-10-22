@@ -1,12 +1,9 @@
 /**
  * @vitest-environment node
  *
- * Portail Avocat (#23, #29, #31 et les quatre lectures de Q-96) : ce qui part sur le fil.
- *
- * L'enjeu de ce jalon n'est pas la forme des écrans, c'est le **cloisonnement** : un prestataire
- * externe ne doit atteindre que des endpoints qui lui sont propres. Ces tests vérifient qu'aucun
- * appel ne vise les endpoints internes, et que les dépôts respectent les contrats des stories 4.1,
- * 5.1 et 5.3.
+ * Lawyer portal (#23, #29, #31): what goes over the wire. The key point is **isolation**: an external
+ * provider must only reach its own endpoints. These tests check that no call targets internal
+ * endpoints, and that submissions follow the contracts of stories 4.1, 5.1 and 5.3.
  */
 import { HttpResponse, http, type JsonBodyType } from "msw";
 import { setupServer } from "msw/node";
@@ -58,8 +55,8 @@ const serveur = setupServer(
 beforeAll(() => {
   process.env.NEXT_PUBLIC_API_URL = BASE;
   process.env.NEXT_PUBLIC_WS_URL = "http://localhost:8080/ws";
-  // `onUnhandledRequest: "error"` est ici la garantie du cloisonnement : tout appel vers un
-  // endpoint interne, non déclaré ci-dessus, fait échouer le test au lieu de passer inaperçu.
+  // `onUnhandledRequest: "error"` enforces isolation: any call to an internal endpoint not declared
+  // above fails the test instead of going unnoticed.
   serveur.listen({ onUnhandledRequest: "error" });
 });
 afterEach(() => {
@@ -73,7 +70,7 @@ describe("lectures du portail", () => {
     await portailAvocatService.mesDossiers();
 
     expect(derniere?.url.pathname).toBe("/api/v1/avocat/mes-dossiers");
-    // Sélecteur, pas file de travail : une page généreuse évite de paginer un menu déroulant.
+    // A selector, not a work queue: a large page avoids paginating a dropdown.
     expect(derniere?.url.searchParams.get("size")).toBe("100");
   });
 
@@ -95,9 +92,8 @@ describe("lectures du portail", () => {
 
 describe("dépôt d'une demande de frais (#23, US 4.1)", () => {
   /**
-   * UC-INT-01 étape 4 : « l'avocat **charge** les pièces justificatives ». Le fichier part seul, et
-   * c'est sa **clé de stockage** qui accompagnera la demande — ce que le dictionnaire des données
-   * appelle « chemins ou références des pièces » (QF-26, backend Q-97).
+   * UC-INT-01 step 4: the lawyer **uploads** supporting documents. The file is sent alone, and its
+   * **storage key** accompanies the request ("document paths or references" in the data dictionary).
    */
   it("téléverse une pièce en multipart et en récupère la clé", async () => {
     const fichier = new File(["x"], "facture.pdf", { type: "application/pdf" });
@@ -122,7 +118,7 @@ describe("dépôt d'une demande de frais (#23, US 4.1)", () => {
     expect(derniere?.corps).toEqual({
       dossierId: 4,
       montant: 1_200_000,
-      // Des chemins de stockage, pas des libellés : c'est ce qui rend la pièce consultable.
+      // Storage paths, not labels: this is what makes the document viewable.
       piecesJustificatives: ["frais/uuid-facture.pdf", "frais/uuid-releve.pdf"],
       referenceFacture: "FAC-2026-001",
     });
@@ -131,8 +127,8 @@ describe("dépôt d'une demande de frais (#23, US 4.1)", () => {
 
 describe("dépôts de publication (#29, #31)", () => {
   /**
-   * Depuis Q-98, le compte rendu part en multipart : les métadonnées en paramètres, la pièce
-   * facultative en partie. Sans pièce, aucune partie n'est envoyée — le récit se suffit.
+   * The report is sent as multipart: metadata as parameters, the optional document as a part.
+   * Without a document, no part is sent.
    */
   it("envoie le compte rendu en multipart, rattaché à une audience, sans pièce", async () => {
     await publicationService.deposerCompteRendu({ dossierId: 4, audienceId: 9, contenu: "Renvoi au 12." });
@@ -163,8 +159,8 @@ describe("dépôts de publication (#29, #31)", () => {
     expect(derniere?.url.pathname).toBe("/api/v1/publications/autres");
     expect(derniere?.url.searchParams.get("dossierId")).toBe("4");
     expect(derniere?.url.searchParams.get("typeDocument")).toBe("CONCLUSION");
-    // Le fichier doit réellement partir : avec le type JSON par défaut, axios sérialiserait le
-    // FormData et la partie disparaîtrait.
+    // The file must really be sent: with the default JSON type, axios would serialize the FormData
+    // and the part would be lost.
     expect((derniere?.formulaire?.get("file") as File)?.name).toBe("conclusion.pdf");
   });
 

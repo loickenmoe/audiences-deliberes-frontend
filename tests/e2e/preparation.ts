@@ -1,16 +1,11 @@
 import { loadEnvConfig } from "@next/env";
 
 /**
- * Préparation globale des parcours e2e : garantit le **socle de données** sans lequel aucun
- * dossier n'est créable — au moins un client et au moins un avocat.
+ * Global e2e setup: guarantees the baseline data without which no case can be created (at least
+ * one client and one lawyer), so the suite does not depend on the state left by a previous run.
  *
- * Les parcours supposaient auparavant que ces données existaient déjà. Une base recréée à neuf
- * (conteneurs Docker supprimés, le 2026-09-10) a suffi à faire échouer dix parcours sur onze, sans
- * qu'aucune ligne de l'application soit en cause. Une suite qui dépend de l'état laissé par
- * l'exécution précédente ne teste pas l'application : elle teste l'historique de la base.
- *
- * Idempotent : ne crée rien si le socle existe, et tolère un 409 si une exécution parallèle l'a
- * créé entre-temps. Passe par l'API réelle — mêmes jetons Keycloak, mêmes contrôles de droits.
+ * Idempotent: creates nothing if the baseline exists, and tolerates a 409 if a parallel run created
+ * it meanwhile. Goes through the real API (same Keycloak tokens, same permission checks).
  */
 export default async function preparation() {
   loadEnvConfig(process.cwd());
@@ -52,7 +47,7 @@ export default async function preparation() {
     }).catch(() => {
       throw new Error(`Backend injoignable (${api}) : démarrez l'application backend.`);
     });
-    // 409 : une autre exécution a créé le même socle entre-temps — c'est le résultat recherché.
+    // 409: another run created the same baseline meanwhile, which is the desired outcome.
     if (reponse.status === 409) return null;
     if (!reponse.ok) {
       throw new Error(`${init.method ?? "GET"} ${chemin} → ${reponse.status} ${await reponse.text()}`);
@@ -64,14 +59,10 @@ export default async function preparation() {
   const dj = await jeton("dj.test");
 
   /*
-   * Provisionne le juriste dans l'annuaire, sans quoi il n'apparaîtrait pas dans la liste des
-   * juristes affectables (QF-16).
-   *
-   * **L'endpoint compte.** Le provisionnement a lieu quand le serveur **résout l'utilisateur
-   * courant** ; `GET /utilisateurs` se contente de lire l'annuaire et ne provisionne personne. Cet
-   * appel-ci est celui que fait la cloche des notifications à l'ouverture de l'application. Avec le
-   * précédent, les parcours qui lisent l'annuaire par l'API trouvaient une liste vide sur une base
-   * neuve, et ne passaient que parce qu'une connexion par l'écran avait eu lieu avant eux.
+   * Provisions the test users in the directory, otherwise they would not appear in the list of
+   * assignable legal officers. Provisioning happens when the server resolves the current user;
+   * `GET /utilisateurs` only reads the directory, hence this call (the one the notification bell
+   * makes when the application opens).
    */
   await appel("/alertes/mes-notifications?size=1", juriste);
   await appel("/alertes/mes-notifications?size=1", dj);
@@ -85,13 +76,8 @@ export default async function preparation() {
   }
 
   /*
-   * Le socle ne garantissait qu'« au moins un avocat », créé sous le compte `avocat.socle.e2e`. Or
-   * les parcours du portail se connectent en **`avocat.test`** : sur une base neuve, ce compte
-   * n'était rattaché à aucune fiche du référentiel, et cinq parcours échouaient — non pas parce que
-   * l'application était en cause, mais parce que le socle ne couvrait pas ce dont ils ont besoin.
-   * C'est exactement le défaut que ce fichier existe pour prévenir (cf. son en-tête).
-   *
-   * Q-100 : la réponse est paginée ; `size` explicite parce qu'on cherche dans tout l'annuaire.
+   * Portal journeys log in as `avocat.test`, so that account must be linked to a lawyer in the
+   * reference data. The response is paginated; `size` is explicit to search the whole directory.
    */
   const avocats =
     (await appel<{ content: { id: number; compteKeycloak: string | null }[] }>(
@@ -101,7 +87,7 @@ export default async function preparation() {
 
   const avocatDuCompteTest = avocats.find((a) => a.compteKeycloak === "avocat.test");
   if (!avocatDuCompteTest) {
-    // La création d'un intervenant est réservée au DJ/DJA (#61).
+    // Creating a party is restricted to DJ/DJA.
     await appel("/intervenants", dj, {
       method: "POST",
       body: JSON.stringify({ type: "AVOCAT", nom: "Me Claire Avocat", compteKeycloak: "avocat.test" }),

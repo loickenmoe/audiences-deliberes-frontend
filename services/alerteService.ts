@@ -4,20 +4,13 @@ import type { Alerte, ConfigurationSysteme, StatistiquesDiffusion } from "@/type
 import type { StatutAlerte, TypeAlerte } from "@/types/enums";
 
 /**
- * Alertes et notifications (#44, #45, #46).
- *
- * `GET /alertes/mes-notifications` est le **repli garanti** du canal temps réel : le backend
- * enregistre l'alerte avant de tenter la diffusion WebSocket, ce que cette liste rapporte donc
- * toujours, canal ouvert ou non.
+ * Alerts and notifications (#44, #45, #46). `GET /alertes/mes-notifications` is the guaranteed
+ * fallback of the real-time channel: the backend stores each alert before the WebSocket push.
  */
 export const alerteService = {
   /**
-   * #45 — les notifications du compte connecté, de la plus récente à la plus ancienne côté
-   * backend. `statut` omis : les deux statuts confondus.
-   *
-   * `type` et `dossierId` sont arrivés en Q-102 : avec dix-sept types d'alerte et des rappels à J-7,
-   * J-3 et J-1, la liste se remplit vite. Ils sont filtrés **par le serveur** — les rejouer ici
-   * n'aurait cherché que dans la page affichée, et le décompte aurait menti.
+   * #45: notifications of the current account, most recent first; omitted `statut` means both.
+   * `type` and `dossierId` are filtered server-side so that paging and totals stay correct.
    */
   mesNotifications: async (
     statut: StatutAlerte | null,
@@ -38,15 +31,15 @@ export const alerteService = {
     return data;
   },
 
-  /** #46 — **seul le destinataire** peut marquer sa notification traitée ; 403 sinon. */
+  /** #46: only the recipient can mark the notification as handled; 403 otherwise. */
   traiter: async (id: number): Promise<Alerte> => {
     const { data } = await apiClient.patch<Alerte>(`/alertes/${id}/traiter`);
     return data;
   },
 
   /**
-   * #44 — DJ. Un seul type est adossé à un seuil configurable (`CHARGE_MAX_AVOCAT`, RG-ALR-02) ;
-   * le backend refuse les autres. La réponse est la configuration mise à jour, pas une alerte.
+   * #44: DJ. Only one type has a configurable threshold (`CHARGE_MAX_AVOCAT`, RG-ALR-02); the
+   * backend rejects the others. Returns the updated configuration, not an alert.
    */
   modifierSeuil: async (type: TypeAlerte, seuil: number): Promise<ConfigurationSysteme> => {
     const { data } = await apiClient.put<ConfigurationSysteme>("/alertes/seuils", { type, seuil });
@@ -54,11 +47,8 @@ export const alerteService = {
   },
 
   /**
-   * #51 — DJ et DJA. Taux de délivrance du canal applicatif sur une fenêtre (backend Q-109).
-   *
-   * La fenêtre est **obligatoire** côté backend, et c'est délibéré : un taux cumulé depuis la mise
-   * en service masquerait une panne récente sous des mois de bon fonctionnement. Les dates sont au
-   * format ISO (`AAAA-MM-JJ`), bornes incluses.
+   * #51: DJ and DJA. In-app channel delivery rate over a window. The window is mandatory so that
+   * a recent outage is not hidden by a cumulative rate. ISO dates (`YYYY-MM-DD`), inclusive.
    */
   statistiquesDiffusion: async (
     dateDebut: string,

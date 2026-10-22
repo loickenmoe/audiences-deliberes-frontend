@@ -16,37 +16,31 @@ import type { Agence } from "@/types/domaine";
 
 const CHAMPS = ["code", "nom", "ville", "adresse", "telephone"] as const;
 
-/** `ERR-CONFLICT` est générique : seul un code déjà porté peut le produire ici. */
+/** `ERR-CONFLICT` is generic: here only an already used code can cause it. */
 const CONFLIT_SUR_CODE = { "ERR-CONFLICT": "code" } as const;
 
 /**
- * Création et correction d'une agence (métier, 2026-10-03, observation 2).
- *
- * **Le code est figé en correction.** Les dossiers le portent en clair, sans clé étrangère : le
- * changer les détacherait silencieusement de leur agence, et personne ne le verrait avant un
- * rapport annuel. Le backend refuse un code différent de celui enregistré ; le champ est donc
- * affiché mais inactif, plutôt que modifiable pour un refus. Une agence qui change de code est une
- * autre agence : on la crée, et on désactive l'ancienne.
- *
- * **La ville est obligatoire.** Deux agences portent le même nom - les deux « MBALLA II » - et sans
- * ville la liste de saisie les présenterait à l'identique.
+ * Branch creation and correction.
+ * The code is read-only when editing: cases store it in clear text without a foreign key, so
+ * changing it would silently detach them. A branch that changes code is a new branch.
+ * The city is required: two branches can share the same name.
  */
 export function FormulaireAgence({
   ouvert,
   onFermeture,
   agence,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
-  /** L'agence à corriger. Absente : le formulaire en crée une nouvelle. */
+  /** The branch to edit. When absent, the form creates a new one. */
   agence?: Agence;
-}) {
+}>) {
   const t = useTranslations("agences");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const edition = agence !== undefined;
-  // Identifiants propres à l'instance : création et correction coexistent sur l'écran, et un
-  // <dialog> fermé reste dans le DOM.
+  // Per-instance ids: creation and edit forms coexist on the screen, and a closed <dialog> stays in
+  // the DOM.
   const p = useId();
   const { creer, modifier } = useEcritureAgence();
   const mutation = edition ? modifier : creer;
@@ -84,7 +78,8 @@ export function FormulaireAgence({
   }
 
   const soumettre = handleSubmit(async (valeurs) => {
-    // Un champ vidé part en `null` : le backend le lit comme « inconnu », non comme chaîne vide.
+    // An emptied field is sent as `null`: the backend reads it as "unknown", not as an empty
+    // string.
     const corps = {
       code: valeurs.code,
       nom: valeurs.nom,
@@ -94,15 +89,15 @@ export function FormulaireAgence({
     };
     try {
       if (edition) {
-        // Le code n'est pas modifiable : on renvoie celui enregistré, que le backend compare.
+        // The code cannot be changed: send the stored one, which the backend compares.
         await modifier.mutateAsync({ id: agence.id, corps: { ...corps, code: agence.code } });
       } else {
         await creer.mutateAsync(corps);
       }
       fermer();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS, CONFLIT_SUR_CODE)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS, CONFLIT_SUR_CODE)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

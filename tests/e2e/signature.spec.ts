@@ -2,18 +2,11 @@ import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 /**
- * Ma signature enregistrée (écran 46) **contre le backend réel**.
+ * Saved signature (screen 46) against the real backend. Only a real browser upload to a real server
+ * catches multipart transport issues (missing boundary), which unit tests mock away.
  *
- * **Pourquoi ce parcours existe.** Le dépôt a échoué en 500 à la première mise entre des mains
- * réelles : le client déclare `application/json` par défaut, et sans type multipart déclaré le
- * navigateur n'écrit pas la frontière des parties - le serveur ne voyait aucun fichier. Les tests
- * unitaires ne pouvaient pas le voir : ils simulent le service, donc le transport. Seul un dépôt
- * par un vrai navigateur vers un vrai serveur le montre, et c'est ce que fait ce fichier.
- *
- * **Ce parcours rend les comptes comme il les a trouvés.** Une signature est une donnée que son
- * titulaire a déposée à la main ; l'écraser pour les besoins d'un test, c'est lui faire refaire le
- * travail - c'est arrivé une fois, cela ne doit plus. Chaque test qui dépose sauvegarde d'abord ce
- * qui était là et le remet ensuite, y compris quand il échoue.
+ * Accounts are left as found: each test that uploads saves the existing signature first and
+ * restores it afterwards, even on failure.
  */
 
 loadEnvConfig(process.cwd());
@@ -21,7 +14,7 @@ loadEnvConfig(process.cwd());
 const MOT_DE_PASSE = "Password1!";
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
-/** Un PNG valide, minuscule : ce parcours vérifie le transport, pas le dessin. */
+/** A tiny valid PNG: this journey checks transport, not the drawing. */
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64",
@@ -50,7 +43,7 @@ async function jeton(identifiant: string): Promise<string> {
 
 type Depot = { image: Buffer; type: string } | null;
 
-/** Ce qu'un compte porte aujourd'hui : son image et son type, ou rien du tout. */
+/** What an account currently holds: its image and type, or nothing. */
 async function signatureDe(acces: string): Promise<Depot> {
   const entetes = { Authorization: `Bearer ${acces}` };
   const etat = (await (await fetch(`${API}/utilisateurs/moi/signature`, { headers: entetes })).json()) as {
@@ -62,7 +55,7 @@ async function signatureDe(acces: string): Promise<Depot> {
   return { image: Buffer.from(await reponse.arrayBuffer()), type: etat.type ?? "image/png" };
 }
 
-/** Remet exactement ce qui était là - y compris l'absence, qui est un état comme un autre. */
+/** Restores exactly what was there, including the absence of a signature. */
 async function retablir(acces: string, origine: Depot): Promise<void> {
   const entetes = { Authorization: `Bearer ${acces}` };
   if (origine === null) {
@@ -85,21 +78,16 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-/** On y accède par son nom, en haut à droite : c'est là qu'on cherche son compte. */
 async function monCompte(page: Page) {
   await page.goto("/mon-compte");
   await expect(page.getByRole("heading", { name: "Ma signature" })).toBeVisible({ timeout: 60_000 });
 }
 
 test.setTimeout(180_000);
-// Les trois parcours touchent les mêmes comptes : en parallèle, ils se marcheraient dessus.
+// The journeys touch the same accounts: running them in parallel would make them interfere.
 test.describe.configure({ mode: "serial" });
 
-/**
- * Le parcours qui aurait attrapé le défaut : un dépôt réel, puis la relecture de ce qui a été
- * déposé. L'oeil compte autant que le dépôt - déposer une signature sans pouvoir la relire en
- * grand reviendrait à signer les yeux fermés.
- */
+/** A real upload, then reading back what was uploaded, thumbnail and full size. */
 test("le SH dépose sa signature, la voit, et l'ouvre en grand", async ({ browser }) => {
   const acces = await jeton("sh.test");
   const origine = await signatureDe(acces);
@@ -111,17 +99,17 @@ test("le SH dépose sa signature, la voit, et l'ouvre en grand", async ({ browse
       .setInputFiles({ name: "signature.png", mimeType: "image/png", buffer: PNG });
     await expect(sh.getByText("Signature enregistrée.")).toBeVisible({ timeout: 30_000 });
 
-    // La vignette, puis le plein format : l'image revient bien du serveur, et pas d'un cache local.
+    // Thumbnail, then full size: the image comes from the server, not a local cache.
     await expect(sh.getByAltText("Aperçu de ma signature")).toBeVisible({ timeout: 30_000 });
     await sh.getByRole("button", { name: "Aperçu", exact: true }).click();
     const apercu = sh.getByRole("dialog", { name: "Aperçu - signature.png" });
     await expect(apercu.getByRole("img")).toBeVisible({ timeout: 30_000 });
     await apercu.getByRole("button", { name: "Fermer" }).last().click();
 
-    // L'écran dit sa portée : qui croirait tenir là une garantie juridique s'appuierait sur du vide.
+    // The screen states its scope: it is not a legal guarantee.
     await expect(sh.getByText(/n’ajoute aucune valeur juridique/)).toBeVisible();
 
-    // Le retrait, et ce qu'il annonce : les lettres déjà signées ne changent pas.
+    // Removal, and what it announces: already signed letters do not change.
     await sh.getByRole("button", { name: "Retirer", exact: true }).click();
     const confirmation = sh.getByRole("dialog", { name: "Retirer votre signature ?" });
     await expect(confirmation.getByText(/Les lettres déjà signées ne changent pas/)).toBeVisible();
@@ -135,12 +123,9 @@ test("le SH dépose sa signature, la voit, et l'ouvre en grand", async ({ browse
 });
 
 /**
- * PDFBox lit le PNG et le JPEG. Un PDF produirait une lettre sans signature, vue à l'impression.
- *
- * C'est le champ de téléversement maison qui parle ici : il refuse sur l'**extension**, qui est la
- * règle du backend (Q-46), avant même que l'écran voie le fichier. Le contrôle du type MIME que
- * l'écran ajoute derrière rattrape le cas où l'extension ment, et c'est le serveur qui tranche en
- * dernier. Ce qui compte pour ce parcours : rien ne part, et l'utilisateur sait pourquoi.
+ * PDFBox reads PNG and JPEG; a PDF would produce a letter without a signature. The upload field
+ * refuses on the extension (the backend rule) before the screen sees the file; the MIME check
+ * catches a lying extension and the server decides last. Nothing is sent and the user knows why.
  */
 test("un PDF est refusé avant même de partir", async ({ browser }) => {
   const acces = await jeton("juriste.test");
@@ -154,7 +139,7 @@ test("un PDF est refusé avant même de partir", async ({ browser }) => {
     await expect(juriste.getByText(/Formats admis : PNG, JPG, JPEG/)).toBeVisible({ timeout: 30_000 });
     await expect(juriste.getByText("Signature enregistrée.")).toHaveCount(0);
 
-    // Rien n'est parti : le compte porte exactement ce qu'il portait, déposé ou vide.
+    // Nothing was sent: the account holds exactly what it held before.
     const apres = await signatureDe(acces);
     expect(apres === null).toBe(avant === null);
     if (avant !== null && apres !== null) expect(apres.image.equals(avant.image)).toBe(true);
@@ -164,12 +149,8 @@ test("un PDF est refusé avant même de partir", async ({ browser }) => {
 });
 
 /**
- * Chacun ne voit que la sienne. Une signature qu'un tiers détient ne vaut déjà plus rien : c'est la
- * raison d'être de l'écran, et elle se vérifie du dehors, pas seulement dans le code du serveur.
- *
- * Le parcours ne suppose **pas** que le juriste n'a rien déposé : les comptes de recette portent de
- * vraies signatures. Ce qu'il vérifie est plus fort - l'image servie au juriste n'est jamais celle
- * du SH, quoi que chacun ait déposé.
+ * Each user only sees their own signature, checked from the outside. Accounts may hold real
+ * signatures, so the test asserts that the image served to the legal officer is never the SH's.
  */
 test("la signature du SH reste invisible au juriste", async ({ browser }) => {
   const accesSh = await jeton("sh.test");
@@ -186,10 +167,10 @@ test("la signature du SH reste invisible au juriste", async ({ browser }) => {
     const vueParLeSh = await signatureDe(accesSh);
     const vueParLeJuriste = await signatureDe(accesJuriste);
     expect(vueParLeSh?.image.equals(PNG)).toBe(true);
-    // Le juriste reçoit la sienne, ou rien. Jamais celle du SH.
+    // The legal officer receives their own signature, or nothing. Never the SH's.
     expect(vueParLeJuriste?.image.equals(PNG) ?? false).toBe(false);
 
-    // Et à l'écran, le juriste ouvre son compte sans rien voir de celui du SH.
+    // On screen, the legal officer opens their account without seeing the SH's.
     const juriste = await pageConnectee(browser, "juriste.test");
     await monCompte(juriste);
     await expect(juriste.getByRole("heading", { name: "Ma signature" })).toBeVisible();

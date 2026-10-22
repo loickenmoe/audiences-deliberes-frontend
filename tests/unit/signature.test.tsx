@@ -6,17 +6,13 @@ import { MaSignature } from "@/components/modules/compte/ma-signature";
 import { rendre as render } from "../utils/rendu";
 
 /**
- * Ma signature enregistrée (N8, métier des 2026-10-03 et 2026-10-06).
- *
- * Ce que ces tests tiennent : l'écran **refuse avant d'envoyer** ce que la lettre ne saurait
- * apposer - un format ou un poids impossibles - et il **dit sa portée**. Un utilisateur qui croirait
- * tenir là une garantie juridique s'appuierait sur du vide, et c'est à l'écran de le dire, pas
- * seulement au code.
+ * My saved signature (N8). The screen **refuses before sending** what the letter cannot embed
+ * (unsupported format or size) and **states its scope**: the image carries no legal guarantee.
  */
 /*
- * Un contenu **stable** : TanStack Query rend la meme reference tant qu-il n-a pas refetche, et
- * l-ecran s-appuie dessus pour ne fabriquer qu-une adresse `blob:`. Un mock qui en rendrait un
- * neuf a chaque rendu ferait boucler l-effet sans fin - constate.
+ * **Stable** content: TanStack Query returns the same reference until it refetches, and the screen
+ * relies on that to create a single `blob:` URL. A mock returning a new one on each render would
+ * make the effect loop forever.
  */
 const IMAGE = new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" });
 
@@ -59,9 +55,8 @@ describe("MaSignature", () => {
   });
 
   /**
-   * PDFBox lit le PNG et le JPEG. Un PDF déposé ici produirait une lettre **sans** signature, et le
-   * défaut ne se verrait qu'à l'impression. L'écran refuse donc avant l'aller-retour - le serveur
-   * applique la même règle, il reste l'autorité.
+   * PDFBox reads PNG and JPEG. A PDF here would produce a letter **without** a signature, noticed
+   * only when printed. The screen refuses before the round trip; the server enforces the same rule.
    */
   it("refuse un format que la lettre ne saurait apposer, sans appeler le serveur", async () => {
     render(<MaSignature />);
@@ -81,7 +76,7 @@ describe("MaSignature", () => {
     await waitFor(() => expect(deposer).not.toHaveBeenCalled());
   });
 
-  /** L'absence n'est pas une erreur : la lettre part alors avec le nom, à signer à la main. */
+  /** No signature is not an error: the letter then carries the name, to be signed by hand. */
   it("explique ce qui se passe quand rien n'est déposé", () => {
     render(<MaSignature />);
 
@@ -99,8 +94,8 @@ describe("MaSignature", () => {
   });
 
   /**
-   * Le point qui compte le plus : l'écran **dit** que cette image n'ajoute aucune valeur juridique.
-   * C'est la seule protection contre un utilisateur qui s'appuierait dessus.
+   * The screen **states** that this image adds no legal value, the only protection against a user
+   * relying on it.
    */
   it("annonce que la signature n'ajoute aucune valeur juridique", () => {
     render(<MaSignature />);
@@ -109,7 +104,7 @@ describe("MaSignature", () => {
     expect(screen.getByText(/trace horodatée/)).toBeInTheDocument();
   });
 
-  /** Le retrait est destructif à l'échelle du compte : il se confirme, et la confirmation rassure. */
+  /** Removal is destructive for the account: it requires confirmation. */
   it("confirme le retrait en disant ce qu'il ne détruit pas", async () => {
     etat = { deposee: true, type: "image/png", deposeeLe: "2026-10-06T10:00:00" };
     render(<MaSignature />);

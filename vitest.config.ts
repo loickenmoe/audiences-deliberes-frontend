@@ -9,20 +9,32 @@ export default defineConfig({
     alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
   },
   /**
-   * `postcss.config.mjs` déclare ses greffons par nom, syntaxe propre à Next.js que Vite ne sait pas
-   * interpréter. Les tests ne rendent aucune feuille de style : on court-circuite la découverte de
-   * la configuration PostCSS plutôt que de dégrader celle de l'application.
+   * `postcss.config.mjs` declares plugins by name, a Next.js-specific syntax Vite cannot read. Tests
+   * render no stylesheet, so PostCSS config discovery is bypassed.
    */
   css: { postcss: { plugins: [] } },
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
-    // Playwright pilote tests/e2e ; Vitest ne doit pas tenter de les exécuter.
+    // Playwright runs tests/e2e; Vitest must not pick them up.
     include: ["tests/unit/**/*.test.{ts,tsx}"],
+    // Same scope as `sonar.sources`; lcov is the report SonarQube reads.
     coverage: {
-      reporter: ["text", "html"],
-      include: ["lib/**", "types/**", "components/**"],
+      provider: "v8",
+      reporter: ["text-summary", "html", "lcov"],
+      include: [
+        "app/**",
+        "components/**",
+        "hooks/**",
+        "i18n/**",
+        "lib/**",
+        "providers/**",
+        "services/**",
+        "types/**",
+        "middleware.ts",
+      ],
+      exclude: ["**/*.d.ts", "types/api.generated.ts"],
     },
   },
 });

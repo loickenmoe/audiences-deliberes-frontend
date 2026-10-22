@@ -18,21 +18,20 @@ import type { Intervenant } from "@/types/domaine";
 import { TypeIntervenant } from "@/types/enums";
 
 /**
- * Écran 42 — référentiel des intervenants.
+ * Screen 42 - third-party directory.
  *
- * **C'est l'écran qui débloque la suite** : `avocatsAffectes` est obligatoire à la création d'un
- * dossier, donc sans avocat ici, aucun dossier n'est créable. C'est pourquoi il arrive dès F5.
- *
- * La liste n'est pas paginée côté backend (#62, RF-05) : on affiche tout, sans pagination
- * artificielle qui laisserait croire à un découpage serveur.
+ * `avocatsAffectes` is mandatory when creating a case file, so no case file can be created
+ * without a lawyer registered here.
+ * The list is not paginated by the backend (RF-05): everything is displayed, without artificial
+ * client-side pagination.
  */
-export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
+export function ListeIntervenants({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("intervenants");
   const td = useTranslations("domaine");
   const [type, setType] = useState<TypeIntervenant | "">("");
   const { page, taille, definirPage, definirTaille } = useFiltresUrl({});
   const [creationOuverte, setCreationOuverte] = useState(false);
-  // Pas de fiche intervenant : la correction s'ouvre depuis sa ligne du référentiel (Q-117).
+  // No third-party detail page: editing opens from the directory row.
   const [enEdition, setEnEdition] = useState<Intervenant | null>(null);
 
   const requete = useIntervenants({ type: type || undefined, page, size: taille });
@@ -73,89 +72,15 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
         </Champ>
       </div>
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={5} />
-      ) : requete.error ? (
-        <EtatErreur
-          message={messageErreur(requete.error)}
-          action={
-            <button
-              type="button"
-              onClick={() => void requete.refetch()}
-              className="text-[length:var(--taille-sm)] font-medium underline underline-offset-4"
-            >
-              {t("titre")}
-            </button>
-          }
-        />
-      ) : (requete.data?.content ?? []).length === 0 ? (
-        <EtatVide
-          titre={t("aucunIntervenant")}
-          description={t("aucunIntervenantTexte")}
-          action={
-            peutCreer ? (
-              <Button onClick={() => setCreationOuverte(true)}>
-                <Plus size={15} aria-hidden />
-                {t("nouvelIntervenant")}
-              </Button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <TableWrapper>
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>{t("colonneNom")}</Th>
-                <Th>{t("colonneType")}</Th>
-                <Th>{t("colonneEmail")}</Th>
-                <Th>{t("colonneTelephone")}</Th>
-                <Th>{t("colonneCompte")}</Th>
-                {peutCreer ? (
-                  <Th>
-                    <span className="sr-only">{t("colonneActions")}</span>
-                  </Th>
-                ) : null}
-              </Tr>
-            </Thead>
-            <Tbody>
-              {(requete.data?.content ?? []).map((intervenant) => (
-                <Tr key={intervenant.id} className="hover:bg-surface-attenuee">
-                  <Td className="font-medium">{intervenant.nom}</Td>
-                  <Td>
-                    <StatutChip ton={intervenant.type === "AVOCAT" ? "info" : "neutre"}>
-                      {td(`TypeIntervenant.${intervenant.type}` as never)}
-                    </StatutChip>
-                  </Td>
-                  <Td>{intervenant.email ?? "—"}</Td>
-                  <Td>{intervenant.telephone ?? "—"}</Td>
-                  <Td>
-                    {intervenant.compteKeycloak ? (
-                      <span className="font-mono text-[length:var(--taille-xs)]">
-                        {intervenant.compteKeycloak}
-                      </span>
-                    ) : (
-                      <span className="text-texte-tertiaire">{t("sansCompte")}</span>
-                    )}
-                  </Td>
-                  {peutCreer ? (
-                    <Td className="text-right">
-                      <Button
-                        variante="secondaire"
-                        aria-label={t("modifierNomme", { nom: intervenant.nom })}
-                        onClick={() => setEnEdition(intervenant)}
-                      >
-                        <Pencil size={14} aria-hidden />
-                        {t("modifier")}
-                      </Button>
-                    </Td>
-                  ) : null}
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </TableWrapper>
-      )}
+      <ContenuIntervenants
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        intervenants={requete.data?.content ?? []}
+        peutCreer={peutCreer}
+        onReessayer={() => void requete.refetch()}
+        onCreer={() => setCreationOuverte(true)}
+        onModifier={setEnEdition}
+      />
 
       {requete.data ? (
         <Pagination
@@ -175,7 +100,7 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
         />
       ) : null}
 
-      {/* La clé remonte le formulaire à chaque intervenant : ses valeurs de départ sont les siennes. */}
+      {/* The key remounts the form for each third party so its initial values are that party's own. */}
       {enEdition ? (
         <FormulaireIntervenant
           key={enEdition.id}
@@ -185,5 +110,116 @@ export function ListeIntervenants({ roles }: { roles: readonly string[] }) {
         />
       ) : null}
     </div>
+  );
+}
+
+/** The directory: loading, error, empty (with a creation shortcut), or one row per third party. */
+function ContenuIntervenants({
+  enChargement,
+  erreur,
+  intervenants,
+  peutCreer,
+  onReessayer,
+  onCreer,
+  onModifier,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  intervenants: readonly Intervenant[];
+  peutCreer: boolean;
+  onReessayer: () => void;
+  onCreer: () => void;
+  onModifier: (intervenant: Intervenant) => void;
+}>) {
+  const t = useTranslations("intervenants");
+  const td = useTranslations("domaine");
+
+  if (enChargement) return <EtatChargement lignes={5} />;
+  if (erreur) {
+    return (
+      <EtatErreur
+        message={messageErreur(erreur)}
+        action={
+          <button
+            type="button"
+            onClick={onReessayer}
+            className="text-[length:var(--taille-sm)] font-medium underline underline-offset-4"
+          >
+            {t("titre")}
+          </button>
+        }
+      />
+    );
+  }
+  if (intervenants.length === 0) {
+    return (
+      <EtatVide
+        titre={t("aucunIntervenant")}
+        description={t("aucunIntervenantTexte")}
+        action={
+          peutCreer ? (
+            <Button onClick={onCreer}>
+              <Plus size={15} aria-hidden />
+              {t("nouvelIntervenant")}
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
+  return (
+    <TableWrapper>
+      <Table>
+        <Thead>
+          <Tr>
+            <Th>{t("colonneNom")}</Th>
+            <Th>{t("colonneType")}</Th>
+            <Th>{t("colonneEmail")}</Th>
+            <Th>{t("colonneTelephone")}</Th>
+            <Th>{t("colonneCompte")}</Th>
+            {peutCreer ? (
+              <Th>
+                <span className="sr-only">{t("colonneActions")}</span>
+              </Th>
+            ) : null}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {intervenants.map((intervenant) => (
+            <Tr key={intervenant.id} className="hover:bg-surface-attenuee">
+              <Td className="font-medium">{intervenant.nom}</Td>
+              <Td>
+                <StatutChip ton={intervenant.type === "AVOCAT" ? "info" : "neutre"}>
+                  {td(`TypeIntervenant.${intervenant.type}` as never)}
+                </StatutChip>
+              </Td>
+              <Td>{intervenant.email ?? "—"}</Td>
+              <Td>{intervenant.telephone ?? "—"}</Td>
+              <Td>
+                {intervenant.compteKeycloak ? (
+                  <span className="font-mono text-[length:var(--taille-xs)]">
+                    {intervenant.compteKeycloak}
+                  </span>
+                ) : (
+                  <span className="text-texte-tertiaire">{t("sansCompte")}</span>
+                )}
+              </Td>
+              {peutCreer ? (
+                <Td className="text-right">
+                  <Button
+                    variante="secondaire"
+                    aria-label={t("modifierNomme", { nom: intervenant.nom })}
+                    onClick={() => onModifier(intervenant)}
+                  >
+                    <Pencil size={14} aria-hidden />
+                    {t("modifier")}
+                  </Button>
+                </Td>
+              ) : null}
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </TableWrapper>
   );
 }

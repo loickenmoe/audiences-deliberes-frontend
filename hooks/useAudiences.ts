@@ -24,9 +24,8 @@ export function useAlarmesDossier(dossierId: number, page = 0, size = TAILLE_PAG
 }
 
 /**
- * Écran 44 — le journal d'une journée. La donnée précédente reste affichée pendant le chargement
- * d'une autre date : sans cela, changer de jour vide le tableau puis le remplit, ce qui donne
- * l'impression d'une journée sans audience.
+ * Screen 44: the hearing log for one day. Previous data stays displayed while another date loads,
+ * otherwise the day would briefly look like it had no hearings.
  */
 export function useJournalAudiences(date: string, page = 0, size = TAILLE_PAGE) {
   return useQuery({
@@ -37,7 +36,7 @@ export function useJournalAudiences(date: string, page = 0, size = TAILLE_PAGE) 
   });
 }
 
-/** Écran 44 — les comptes rendus qui manquent encore, sur une fenêtre choisie. */
+/** Screen 44: hearing reports still missing over a chosen window. */
 export function useComptesRendusAttendus(dateDebut: string, dateFin: string, page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.comptesRendusAttendus, dateDebut, dateFin, page, size],
@@ -51,16 +50,14 @@ export function useCalendrier(periode: PeriodeCalendrier, dateDebut: string) {
   return useQuery({
     queryKey: [CLES.calendrier, periode, dateDebut],
     queryFn: () => audienceService.calendrier(periode, dateDebut),
-    // Garder la période affichée pendant le chargement de la suivante : sans cela, l'écran clignote
-    // à chaque clic sur « suivante ».
+    // Keep the current period displayed while the next one loads, so the screen does not flicker.
     placeholderData: (precedent) => precedent,
   });
 }
 
 /**
- * Invalidation commune : une audience ou une alarme modifie la fiche (historique), sa liste, et le
- * calendrier. Les notifications de succès restent aux écrans — un `ERR-005` n'est pas un échec mais
- * une demande de confirmation, qu'un toast d'erreur présenterait à tort comme tel.
+ * Shared invalidation: a hearing or alarm changes the case record (history), its list and the
+ * calendar. Toasts are left to the screens: `ERR-005` is a confirmation request, not a failure.
  */
 function useInvalidation(dossierId: number, cleListe: string) {
   const client = useQueryClient();
@@ -80,7 +77,7 @@ export function usePlanifierAudience(dossierId: number) {
   });
 }
 
-/** QF-64 — la note destinée à l'avocat constitué. */
+/** The note addressed to the retained lawyer. */
 export function useModifierNoteAvocat(dossierId: number) {
   const invalider = useInvalidation(dossierId, CLES.audiencesDossier);
   return useMutation({

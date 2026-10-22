@@ -9,9 +9,9 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 05 — recherche de dossiers.
+ * Screen 05 - case search.
  *
- * La garde est côté serveur : `GET /dossiers` exige `ROLE_CONSULTATION`, que l'avocat ne porte pas.
+ * Server-side guard: `GET /dossiers` requires `ROLE_CONSULTATION`, which the lawyer does not hold.
  */
 export default async function PageDossiers() {
   const session = await exigerCapacite("consulterDossiers");

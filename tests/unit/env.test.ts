@@ -18,7 +18,7 @@ describe("getEnv", () => {
     expect(getEnv().NEXT_PUBLIC_API_URL).toBe("http://localhost:8080/api/v1");
   });
 
-  /** Le projet de référence se contentait d'un avertissement — on veut un arrêt franc. */
+  /** A missing variable must stop startup outright, not just log a warning. */
   it("échoue explicitement si une variable manque, en nommant laquelle", () => {
     delete process.env.NEXT_PUBLIC_API_URL;
     process.env.NEXT_PUBLIC_WS_URL = "http://localhost:8080/ws";

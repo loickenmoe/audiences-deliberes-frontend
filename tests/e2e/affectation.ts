@@ -1,16 +1,11 @@
 import { expect, type Page } from "@playwright/test";
 
 /**
- * Affecter un dossier dans le formulaire de création — au moins un juriste et un avocat.
+ * Assigns a case in the creation form: at least one legal officer and one lawyer.
  *
- * **Pourquoi une aide.** Les juristes se choisissent par cases à cocher, les avocats par une
- * recherche avec jetons (2026-09-22). Huit spécifications créaient un dossier en sélectionnant « le
- * premier de chaque liste » dans une liste native ; elles passent désormais toutes par ici, pour
- * changer de geste sans changer ce qu'elles vérifient.
- *
- * Le juriste connecté est coché d'office : l'aide ne coche le premier juriste que si aucun ne l'est
- * — ce qui arrive quand c'est le DJ qui crée le dossier. L'avocat est le premier proposé, ou celui
- * qu'on nomme : un parcours qui a besoin d'un avocat précis le désigne par son nom.
+ * Legal officers are picked with checkboxes, lawyers through a token search. The logged-in legal
+ * officer is pre-checked; the first one is checked only when none is (e.g. when the DJ creates the
+ * case). The lawyer is the first one offered, or the one named in `options.avocat`.
  */
 export async function affecterParDefaut(page: Page, options: { avocat?: string } = {}) {
   const juristes = page.getByRole("group", { name: "Juristes affectés" });
@@ -22,8 +17,8 @@ export async function affecterParDefaut(page: Page, options: { avocat?: string }
   const champ = page.getByRole("combobox", { name: "Avocats affectés" });
   await champ.click();
   if (options.avocat) await champ.fill(options.avocat);
-  // Dans la liste des avocats, et non dans la page : la première option de la page est celle,
-  // masquée, du sélecteur natif « Nature du dossier ».
+  // Search within the lawyer listbox, not the page: the first option on the page belongs to the
+  // hidden native "Nature du dossier" select.
   const liste = page.getByRole("listbox", { name: "Avocats affectés" });
   const option = options.avocat
     ? liste.getByRole("option", { name: options.avocat, exact: true })

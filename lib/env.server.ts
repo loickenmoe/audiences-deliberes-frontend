@@ -3,20 +3,18 @@ import "server-only";
 import { z } from "zod";
 
 /**
- * Configuration **serveur uniquement**. L'import de `server-only` fait échouer la compilation si un
- * composant client atteint ce module : le secret du client Keycloak ne doit jamais partir dans le
- * paquet navigateur.
+ * Server-only configuration. Importing `server-only` fails the build if a client component reaches
+ * this module: the Keycloak client secret must never reach the browser bundle.
  */
 const schema = z.object({
-  /** Clé de chiffrement de la session NextAuth. `openssl rand -base64 32`. */
+  /** NextAuth session encryption key. `openssl rand -base64 32`. */
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET doit faire au moins 32 caractères"),
-  /** Émetteur OIDC du realm. Ex. http://localhost:8081/realms/audiences-realm */
+  /** Realm OIDC issuer, e.g. http://localhost:8081/realms/audiences-realm */
   KEYCLOAK_ISSUER: z.string().url("KEYCLOAK_ISSUER doit être une URL absolue valide"),
   KEYCLOAK_CLIENT_ID: z.string().min(1),
   /**
-   * `audiences-api` est un client **confidentiel** : le secret est obligatoire. Vérifié en réel —
-   * une demande de jeton sans secret est refusée en `unauthorized_client`, contrairement à ce que
-   * laisse penser la commande du README du backend (QF-05).
+   * `audiences-api` is a confidential client: the secret is required (a token request without it is
+   * rejected with `unauthorized_client`).
    */
   KEYCLOAK_CLIENT_SECRET: z.string().min(1, "KEYCLOAK_CLIENT_SECRET est obligatoire"),
 });

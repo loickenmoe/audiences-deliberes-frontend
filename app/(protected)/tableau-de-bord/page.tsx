@@ -9,8 +9,8 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 39 — tableau de bord exécutif. Réservé au DJ et à la DJA (#50, backend Q-95) : les
- * indicateurs portent sur l'activité de toute la Direction Juridique, pas sur un portefeuille.
+ * Screen 39 - executive dashboard. Reserved to the DJ and DJA (#50): the indicators cover the
+ * activity of the whole Legal Department, not a single portfolio.
  */
 export default async function PageTableauDeBord() {
   const session = await exigerCapacite("consulterTableauDeBord");

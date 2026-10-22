@@ -3,15 +3,12 @@ import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { DemandeExplication } from "@/types/domaine";
 
 /**
- * Les demandes d'explication (N7 temps 2, observation 8).
- *
- * **Une seule route de lecture pour deux publics.** La direction y voit toutes les demandes,
- * l'avocat les siennes - et c'est le **serveur** qui décide lesquelles, sur l'identité de qui
- * appelle. Un paramètre de périmètre envoyé par l'écran suffirait à un avocat pour demander la
- * liste entière ; il n'y en a donc pas.
+ * Explanation requests. A single read route serves two audiences: management sees all requests,
+ * a lawyer only theirs. The server scopes by caller identity; there is deliberately no scope
+ * parameter, which would let a lawyer request the full list.
  */
 export const demandeExplicationService = {
-  /** `enAttente` ne vaut que pour la direction : un avocat voit les siennes, répondues ou non. */
+  /** `enAttente` only applies to management: a lawyer sees all of theirs, answered or not. */
   lister: async (
     enAttente = false,
     page = 0,
@@ -23,7 +20,7 @@ export const demandeExplicationService = {
     return data;
   },
 
-  /** DJ et DJA. 409 si une demande attend déjà sa réponse pour cet avocat. */
+  /** DJ and DJA. 409 if a request is already awaiting an answer from this lawyer. */
   demander: async (demande: {
     avocatId: number;
     dossierId?: number | null;
@@ -34,11 +31,8 @@ export const demandeExplicationService = {
   },
 
   /**
-   * L'avocat répond, une seule fois.
-   *
-   * `PUT` et non `POST` : on complète une demande existante. Le serveur refuse une réponse qui ne
-   * vous est pas adressée (403) et une seconde réponse (409) - une prise de position datée que la
-   * direction lira peut-être des mois plus tard ne se récrit pas.
+   * The lawyer answers, once only. `PUT` because it completes an existing request. The server
+   * rejects an answer to a request not addressed to the caller (403) and a second answer (409).
    */
   repondre: async (id: number, reponse: string): Promise<DemandeExplication> => {
     const { data } = await apiClient.put<DemandeExplication>(`/demandes-explication/${id}/reponse`, {

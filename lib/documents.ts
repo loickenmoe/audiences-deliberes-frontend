@@ -1,13 +1,11 @@
 import type { CategorieDossier } from "@/types/enums";
 
 /**
- * Types de pièces déposées en GED.
+ * Types of documents filed in the DMS.
  *
- * Le backend traite `typeDocument` comme un **texte libre** (Q-45) : rien n'empêche d'y écrire
- * « PV », « pv de transfert » ou « Procès-verbal ». On y envoie donc des **codes stables**,
- * traduits à l'affichage — sans quoi une même pièce porterait trois noms, et aucun ne serait
- * traduisible. Un type inconnu (déposé par un autre canal, comme la lettre de constitution que le
- * backend génère) s'affiche tel quel.
+ * The backend treats `typeDocument` as free text, so stable codes are sent and translated on
+ * display. An unknown type (filed through another channel, such as the backend-generated
+ * engagement letter) is displayed as is.
  */
 export const TypesDocument = [
   "DOSSIER_CREDIT",
@@ -19,12 +17,9 @@ export const TypesDocument = [
 export type TypeDocument = (typeof TypesDocument)[number];
 
 /**
- * Le type porté par une lettre de constitution signée, versée à la GED par le backend
- * (`ConstitutionService.TYPE_DOCUMENT_LETTRE`). C'est lui qui fait apparaître le tirage sur papier
- * préimprimé dans l'onglet « Documents ».
- *
- * `typeDocument` étant un texte libre côté serveur, l'alignement des deux côtés ne peut pas être
- * garanti par le typage : un parcours de bout en bout le vérifie contre le vrai backend.
+ * Type of a signed engagement letter filed by the backend
+ * (`ConstitutionService.TYPE_DOCUMENT_LETTRE`); it enables printing on pre-printed paper in the
+ * Documents tab. Being free text server-side, the match is checked by an end-to-end test.
  */
 export const TYPE_LETTRE_CONSTITUTION = "Lettre de constitution";
 
@@ -33,16 +28,11 @@ export function estTypeConnu(valeur: string | null | undefined): valeur is TypeD
 }
 
 /**
- * Pièces qu'exige la catégorie du dossier.
+ * Documents required by the case file category. The attached files are mandatory at creation; the
+ * references naming them are optional.
  *
- * **L'obligation a changé d'objet le 2026-09-29**, sur arbitrage du métier : « ce sont les pièces
- * jointes qui sont obligatoires, pas leur texte associé ». Ces deux fichiers sont donc exigés à la
- * création, et les références qui les nomment sont devenues facultatives — l'inverse exact de
- * Q-11. Le constat qui l'a motivé : sur 254 dossiers, les deux références étaient remplies partout
- * et 51 seulement portaient un document.
- *
- * **Seul l'écran tient cette règle** : une pièce se dépose en GED après la création, qui seule
- * produit l'identifiant du dossier. Le serveur ne peut pas exiger un fichier qu'il n'a pas reçu.
+ * Only the screen enforces this rule: documents are filed in the DMS after creation, which alone
+ * produces the case file id, so the server cannot require them.
  */
 export function piecesDeCategorie(categorie: CategorieDossier): TypeDocument[] {
   return categorie === "RECOUVREMENT"
@@ -53,15 +43,11 @@ export function piecesDeCategorie(categorie: CategorieDossier): TypeDocument[] {
 export type NatureApercu = "pdf" | "image" | "texte" | "word" | "word-ancien" | null;
 
 /**
- * Ce que le navigateur sait afficher. Dérivé de l'extension, comme le backend dérive le format
- * (Q-46). Un XLSX n'a pas d'aperçu possible dans un navigateur : il se télécharge.
+ * What the browser can preview, derived from the extension as the backend derives the format. XLSX
+ * has no preview and is downloaded.
  *
- * **Les deux formats Word ne se valent pas** (2026-10-02). Un `.docx` est une archive XML qu'une
- * bibliothèque sait rendre dans la page ; un `.doc` est le format binaire de Word 97-2003, qu'aucune
- * bibliothèque de navigateur ne lit. Les distinguer permet à l'écran de dire *pourquoi* il n'affiche
- * pas, au lieu du « format non pris en charge » indifférencié qu'il opposait à tout le reste : un
- * utilisateur à qui l'on explique que son fichier est à l'ancien format sait quoi faire — le
- * réenregistrer en `.docx` depuis Word.
+ * `.docx` (XML archive) can be rendered in the page; `.doc` (Word 97-2003 binary) cannot, so the
+ * screen can tell the user to re-save it as `.docx`.
  */
 export function natureApercu(nomFichier: string): NatureApercu {
   const extension = nomFichier.slice(nomFichier.lastIndexOf(".") + 1).toLowerCase();
@@ -74,12 +60,10 @@ export function natureApercu(nomFichier: string): NatureApercu {
 }
 
 /**
- * Déclenche l'enregistrement d'un contenu **sous son nom d'origine**.
+ * Saves content under its original file name.
  *
- * Un lien direct vers l'URL MinIO ne le permettrait pas : l'attribut `download` est ignoré sur une
- * autre origine, et le navigateur ouvrirait le fichier au lieu de l'enregistrer. Passer par un
- * `Blob` local lève la contrainte — c'est possible parce que MinIO autorise l'origine de
- * l'application (CORS vérifié le 2026-09-10, QF-06).
+ * A direct MinIO link would not work: `download` is ignored cross-origin. A local `Blob` avoids
+ * this, which requires MinIO CORS to allow the application origin.
  */
 export function telechargerBlob(contenu: Blob, nomFichier: string) {
   const url = URL.createObjectURL(contenu);
@@ -89,6 +73,6 @@ export function telechargerBlob(contenu: Blob, nomFichier: string) {
   document.body.appendChild(lien);
   lien.click();
   lien.remove();
-  // Laisser au navigateur le temps de démarrer l'enregistrement avant de libérer l'objet.
+  // Give the browser time to start the download before releasing the object.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

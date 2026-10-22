@@ -1,17 +1,13 @@
 /**
- * Empreintes SHA-256 côté navigateur (backend Q-114).
- *
- * **Pourquoi le calcul se fait ici.** Vérifier qu'un fichier correspond à une archive n'exige pas
- * d'envoyer le fichier : il suffit d'en comparer l'empreinte. Un document d'audit n'a aucune raison
- * de traverser le réseau pour être comparé à lui-même — il ne quitte jamais le poste.
+ * Browser-side SHA-256 fingerprints: checking a file against an archive only needs its hash, so the
+ * audit document never leaves the workstation.
  */
 
 /**
- * Calcule le SHA-256 d'un fichier, en hexadécimal minuscule.
+ * Computes a file's SHA-256 as lowercase hex.
  *
- * `crypto.subtle` n'existe qu'en **contexte sécurisé** — HTTPS, ou `localhost`. Sur une page servie
- * en HTTP simple, l'appel est absent et non pas en échec : on le signale explicitement plutôt que
- * de laisser une exception illisible remonter jusqu'à l'utilisateur.
+ * `crypto.subtle` only exists in a secure context (HTTPS or `localhost`); its absence is reported
+ * explicitly instead of letting an obscure exception surface.
  */
 export async function empreinteFichier(fichier: File): Promise<string> {
   if (typeof crypto === "undefined" || !crypto.subtle) {
@@ -24,13 +20,7 @@ export async function empreinteFichier(fichier: File): Promise<string> {
     .join("");
 }
 
-/**
- * Met une empreinte en blocs de huit, pour qu'elle se lise.
- *
- * Un humain ne compare jamais soixante-quatre caractères d'affilée : il compare les premiers et les
- * derniers. Les grouper est ce qui rend ce geste possible — et c'est l'usage constant partout où
- * l'on affiche une empreinte, des clés GPG aux adresses de portefeuille.
- */
+/** Splits a fingerprint into blocks of eight so a human can compare it. */
 export function grouperEmpreinte(empreinte: string, parLigne = 4): string[] {
   const blocs = empreinte.match(/.{1,8}/g) ?? [];
   const lignes: string[] = [];
@@ -40,7 +30,7 @@ export function grouperEmpreinte(empreinte: string, parLigne = 4): string[] {
   return lignes;
 }
 
-/** Vrai si la chaîne a bien la forme d'un SHA-256 hexadécimal. */
+/** True if the string looks like a hex SHA-256. */
 export function estUneEmpreinte(valeur: string): boolean {
   return /^[0-9a-f]{64}$/.test(valeur.trim().toLowerCase());
 }

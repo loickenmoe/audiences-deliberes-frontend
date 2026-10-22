@@ -12,13 +12,11 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 40 — rapport d'activité. `GET /rapports` est `hasRole('JURISTE')` (#49) : le juriste y
- * accède directement, le DJ et la DJA par leur composite `ROLE_JURISTE` (backend Q-81). C'est ce
- * qui rend le parcours de pilotage P9 jouable d'un bout à l'autre et ferme QF-04.
+ * Screen 40 - activity report. `GET /rapports` is `hasRole('JURISTE')` (#49): legal officers access it
+ * directly, the DJ and DJA through their composite `ROLE_JURISTE`.
  *
- * <p>**L'activité par personne (observation 14) y est jointe, mais pas pour tout le monde.** Elle
- * nomme des collègues : seuls le DJ et la DJA la voient, et le serveur le tient sur leurs rôles
- * propres - l'ouvrir par `ROLE_JURISTE`, composite, la donnerait à chaque juriste.
+ * Per-person activity names colleagues, so only the DJ and DJA see it, and the server checks their
+ * own roles: opening it through the composite `ROLE_JURISTE` would expose it to every legal officer.
  */
 export default async function PageRapports() {
   const session = await exigerCapacite("genererRapport");
@@ -27,9 +25,9 @@ export default async function PageRapports() {
       <FormulaireRapport />
       {peut(session.roles, "consulterRapportNominatif") ? <ActiviteParPersonne /> : null}
       {/*
-        Les avocats ont leur propre tableau (Q-136) : le précédent compte six natures de
-        production interne qu'un avocat n'accomplit jamais - il dépose, c'est le juriste qui
-        enregistre. Les réunir n'aurait affiché que des lignes de zéros.
+        Lawyers have their own table: the previous one counts six kinds of internal output a
+        lawyer never produces (they submit, legal officers record). Merging them would only
+        show rows of zeros.
       */}
       {peut(session.roles, "consulterRapportNominatif") ? <ActiviteDesAvocats /> : null}
     </div>

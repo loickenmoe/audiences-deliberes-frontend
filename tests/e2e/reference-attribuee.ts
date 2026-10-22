@@ -1,26 +1,21 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Lit la référence que le système vient d'attribuer.
+ * Reads the reference the system has just assigned (references are no longer entered by hand).
  *
- * <b>Pourquoi ce module existe.</b> Depuis le 2026-09-29 les références ne sont plus saisies : les
- * parcours ne peuvent plus choisir `DOS-DEL-4F2A` puis le rechercher. Ils créent, puis lisent ce qui
- * a été attribué.
- *
- * On la reconnaît à sa **forme** plutôt qu'à un `data-testid` : le format est une promesse du
- * système, vérifiée par ailleurs côté serveur, alors qu'un attribut posé pour les tests n'engage
- * personne et se retire sans que rien n'échoue. `.first()` prend celle de l'en-tête, qui précède
- * toute autre occurrence dans le DOM.
+ * The reference is recognised by its format rather than a `data-testid`: the format is a system
+ * guarantee checked server-side, whereas a test attribute can be removed silently. `.first()` takes
+ * the header one, which precedes any other occurrence in the DOM.
  */
 const FORME_DOSSIER = /^DOS-\d{4}-\d{4,}$/;
 const FORME_CLIENT = /^CLI-\d{4}-\d{4,}$/;
 
-/** La référence affichée sur la fiche du dossier qu'on vient d'ouvrir. */
+/** The reference shown on the case page that was just opened. */
 export async function referenceDuDossier(page: Page): Promise<string> {
   return lire(page.getByText(FORME_DOSSIER).first());
 }
 
-/** La référence d'un client, dans la portée donnée — la ligne du tableau, le plus souvent. */
+/** A client reference within the given scope (usually the table row). */
 export async function referenceDuClient(portee: Page | Locator): Promise<string> {
   return lire(portee.getByText(FORME_CLIENT).first());
 }

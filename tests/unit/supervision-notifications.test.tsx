@@ -70,13 +70,13 @@ beforeEach(() => {
 
 describe("taux d'aboutissement", () => {
   it("exclut du calcul les destinataires sans coordonnée", () => {
-    // 3 remises + 1 sans retour + 4 non joignables : 3 sur 4, les non joignables mis à part.
+    // 3 delivered + 1 without feedback + 4 unreachable: 3 out of 4, unreachable ones excluded.
     expect(tauxAboutissement(ligne({ canal: "SMS", remises: 3, sansRetour: 1, nonJoignables: 4 }))).toBe(75);
   });
 
   it("ne rend aucun taux pour un canal sans envoi", () => {
     expect(tauxAboutissement(ligne({ canal: "WHATSAPP" }))).toBeNull();
-    // Un canal qui n'a que des fiches incomplètes ne dit rien de lui-même non plus.
+    // A channel with only incomplete records yields no rate either.
     expect(tauxAboutissement(ligne({ canal: "SMS", nonJoignables: 3 }))).toBeNull();
   });
 
@@ -92,11 +92,11 @@ describe("SupervisionNotifications", () => {
     const tableau = screen.getByRole("table", { name: "Notifications par canal" });
     expect(tableau).toBeInTheDocument();
     const lignes = screen.getAllByRole("row");
-    // Quatre canaux, plus les deux en-têtes de tableau.
+    // Four channels plus the two table header rows.
     expect(lignes.length).toBeGreaterThanOrEqual(5);
     expect(screen.getByRole("cell", { name: "80 %" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "75 %" })).toBeInTheDocument();
-    // WhatsApp n'a rien envoyé : pas de taux inventé.
+    // WhatsApp sent nothing: no made-up rate.
     expect(screen.getAllByRole("cell", { name: "—" }).length).toBeGreaterThanOrEqual(1);
   });
 
@@ -126,7 +126,7 @@ describe("SupervisionNotifications", () => {
     expect(relancer.mock.calls[0]?.[0]).toBe(12);
   });
 
-  /** Sans coordonnée, relancer referait le même constat : le backend le refuse, l'écran aussi. */
+  /** Without contact details a retry would fail the same way: the backend refuses it, so does the screen. */
   it("n'offre pas de relance sans destinataire", () => {
     rendre(<SupervisionNotifications />);
     expect(screen.getAllByRole("button", { name: "Relancer" })[1]).toBeDisabled();

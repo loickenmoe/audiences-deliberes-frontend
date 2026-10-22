@@ -11,29 +11,24 @@ import { useLibelles } from "@/hooks/useLibelles";
 import { useLibellesHistorique } from "@/hooks/useLibellesHistorique";
 import { messageErreur } from "@/lib/api/errors";
 
-/** Rend une valeur de `details`, dont la forme varie d'une action à l'autre. */
+/** Renders a `details` value, whose shape varies from one action to another. */
 function valeurLisible(valeur: unknown): string {
   if (valeur === null || valeur === undefined || valeur === "") return "—";
   if (Array.isArray(valeur)) return valeur.join(", ");
   if (typeof valeur === "object") return JSON.stringify(valeur);
-  return String(valeur);
+  if (typeof valeur === "string") return valeur;
+  // What remains of a JSON value: a number or a boolean.
+  return typeof valeur === "number" || typeof valeur === "boolean" ? String(valeur) : "—";
 }
 
 /**
- * Écran 15 — historique du dossier, du plus récent au plus ancien (ordre du backend).
- *
- * **QF-24 est close depuis Q-112.** `action` reste une phrase française en base — c'est la trace
- * enregistrée au moment du fait, et une trace ne se retraduit pas rétroactivement — mais chaque
- * ligne porte désormais un **code typé** (Q-111) dont le libellé est traduit à l'affichage, tout
- * comme les clés de `details`. L'avertissement affiché aux anglophones n'a plus lieu d'être : il
- * s'excusait d'un défaut qu'on ne savait pas corriger.
- *
- * **Paginé depuis Q-100.** RG-DOS-06 historise chaque action : sur un dossier suivi plusieurs
- * années, l'historique atteint des centaines d'entrées, qui voyageaient toutes dans la réponse de la
- * fiche. Celle-ci n'en porte plus que les dix plus récentes ; cet onglet lit l'endpoint dédié, si
- * bien que **rien n'est perdu** — la suite est sur les pages suivantes.
+ * Screen 15 - case history, newest first (backend order).
+ * `action` is stored as a French sentence (the record made at the time is never retranslated), but
+ * each row also carries a typed code whose label is translated on display, like the `details` keys.
+ * Paginated: RG-DOS-06 logs every action, so a long-running case can reach hundreds of entries. The
+ * case page response only carries the ten most recent; this tab reads the dedicated endpoint.
  */
-export function OngletHistorique({ dossierId }: { dossierId: number }) {
+export function OngletHistorique({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("fiche");
   const { nomUtilisateur } = useLibelles();
   const { libelleAction, libelleDetail } = useLibellesHistorique();
@@ -61,7 +56,7 @@ export function OngletHistorique({ dossierId }: { dossierId: number }) {
               <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
                 <DateHeureValeur valeur={entree.dateAction} />
                 {" · "}
-                {entree.utilisateurId !== null ? nomUtilisateur(entree.utilisateurId) : t("historiqueSysteme")}
+                {entree.utilisateurId === null ? t("historiqueSysteme") : nomUtilisateur(entree.utilisateurId)}
               </span>
             </div>
 

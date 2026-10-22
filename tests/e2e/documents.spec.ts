@@ -4,10 +4,8 @@ import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Pièces d'un dossier (création, onglet Documents) **contre le backend réel et MinIO**.
- *
- * Les fichiers sont fabriqués en mémoire : un PDF minimal, une image PNG d'un pixel, un texte. Ce
- * sont de vrais fichiers aux yeux du backend, qui dérive leur format de l'extension.
+ * Case documents (creation, Documents tab) against the real backend and MinIO. Files are built in
+ * memory (minimal PDF, one-pixel PNG, text); the backend derives their format from the extension.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -37,17 +35,17 @@ async function pageConnectee(browser: Browser, identifiant: string) {
 }
 
 
-/** Remplit un dossier de recouvrement, sans l'envoyer. */
+/** Fills a debt-recovery case form without submitting it. */
 async function remplirDossier(page: Page) {
   await page.goto("/dossiers/nouveau");
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // Mandatory: at least one party on each side.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Mandatory: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DOC");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DOC");
@@ -77,7 +75,7 @@ test("une pièce jointe se lit avant la création, puis se retrouve sur la fiche
     buffer: PDF,
   });
 
-  // Lire avant de valider : l'aperçu est servi depuis le fichier local, rien n'est encore envoyé.
+  // Preview before submitting: served from the local file, nothing is uploaded yet.
   await page.getByRole("button", { name: "Aperçu - pv-transfert.pdf" }).click();
   const apercu = page.getByRole("dialog", { name: "Aperçu - pv-transfert.pdf" });
   await expect(apercu.locator("iframe")).toHaveAttribute("src", /^blob:/);
@@ -117,12 +115,12 @@ test("depuis la fiche : déposer, consulter et télécharger une pièce", async 
   await page.getByRole("button", { name: "Déposer" }).click();
   await expect(page.getByText("Pièce déposée.")).toBeVisible();
 
-  // Consulter : l'URL pré-signée est lue dans la page (CORS MinIO) et l'image s'affiche.
+  // View: the pre-signed URL is read in the page (MinIO CORS) and the image is displayed.
   await page.getByRole("button", { name: "Consulter - scan.png" }).click();
   await expect(page.getByRole("dialog", { name: "Aperçu - scan.png" }).getByRole("img", { name: "scan.png" })).toBeVisible();
   await page.getByRole("dialog", { name: "Aperçu - scan.png" }).getByRole("button", { name: "Fermer" }).first().click();
 
-  // Télécharger : le fichier garde son nom d'origine.
+  // Download: the file keeps its original name.
   const telechargement = page.waitForEvent("download");
   await page.getByRole("button", { name: "Télécharger - pv-transfert.pdf" }).click();
   expect((await telechargement).suggestedFilename()).toBe("pv-transfert.pdf");
@@ -133,14 +131,14 @@ test("un juriste demande la suppression ; le DJ supprime directement", async ({ 
   const url = await creerAvecPv(juriste);
   await juriste.getByRole("tab", { name: "Documents" }).click();
 
-  // Juriste auteur : une demande, le document reste visible (202).
+  // Author legal officer: a request, the document stays visible (202).
   await juriste.getByRole("button", { name: "Demander la suppression - pv-transfert.pdf" }).click();
   await juriste.getByRole("dialog").getByRole("button", { name: "Demander la suppression" }).click();
   await expect(juriste.getByText("Demande de suppression envoyée au DJ et au DJA.")).toBeVisible();
   await expect(juriste.getByRole("row", { name: /pv-transfert\.pdf/ })).toBeVisible();
   await juriste.context().close();
 
-  // DJ : suppression immédiate (200), la pièce disparaît.
+  // DJ: immediate deletion (200), the document disappears.
   const dj = await pageConnectee(browser, "dj.test");
   await dj.goto(`${url}?onglet=documents`);
   await dj.getByRole("button", { name: "Supprimer - pv-transfert.pdf" }).click();

@@ -3,47 +3,42 @@ import { getEnv } from "@/lib/env";
 import type { Alerte } from "@/types/domaine";
 
 /**
- * Canal temps réel des notifications (QF-11 — tranché en F14 : **push STOMP avec repli HTTP**).
+ * Real-time notification channel: STOMP push with HTTP fallback.
  *
- * Le backend publie chaque alerte sur une destination propre au destinataire et l'enregistre
- * **avant** de tenter la diffusion. Le canal n'est donc qu'un accélérateur : il fait apparaître la
- * notification sans rechargement, et `GET /alertes/mes-notifications` reste la source de vérité si
- * le navigateur est hors ligne, le courtier indisponible ou l'onglet rouvert plus tard.
+ * The backend stores each alert before pushing it to a recipient-specific destination, so the
+ * channel is only an accelerator; `GET /alertes/mes-notifications` remains the source of truth.
  *
- * Deux contraintes du backend dictent la forme du client :
- * - l'endpoint `/ws` n'est exposé qu'**en SockJS** (`registry.addEndpoint("/ws").withSockJS()`),
- *   une WebSocket native sur cette URL ne négocierait rien ;
- * - l'authentification se fait sur la trame STOMP `CONNECT`, pas sur la poignée de main HTTP —
- *   les transports de repli de SockJS ne permettent pas d'en-tête `Authorization`. Le jeton est
- *   relu **à chaque connexion** (`beforeConnect`) : après une rotation, la reconnexion repart avec
- *   le jeton courant et non avec celui capturé au montage.
+ * Backend constraints:
+ * - `/ws` is exposed through SockJS only (`registry.addEndpoint("/ws").withSockJS()`);
+ * - authentication happens on the STOMP `CONNECT` frame, since SockJS fallback transports allow no
+ *   `Authorization` header. The token is re-read on every connection (`beforeConnect`) so a
+ *   reconnection after rotation uses the current token.
  *
- * Les deux bibliothèques sont importées dynamiquement : `sockjs-client` touche des globales du
- * navigateur, et ce module est aussi lu côté serveur et sous Node par les tests.
+ * Both libraries are imported dynamically: `sockjs-client` touches browser globals, and this module
+ * is also loaded server-side and under Node by tests.
  */
 
-/** Destination personnelle : le préfixe `/user` est résolu par le courtier vers le seul destinataire. */
+/** Personal destination: the broker resolves the `/user` prefix to the sole recipient. */
 export const DESTINATION_ALERTES = "/user/queue/alertes";
 
-/** Reconnexion : assez court pour être transparent, assez long pour ne pas marteler un backend éteint. */
+/** Reconnection delay: short enough to be transparent, long enough not to hammer a down backend. */
 export const DELAI_RECONNEXION = 5_000;
 
 export interface CanalAlertes {
-  /** Ferme le canal et arrête les tentatives de reconnexion. */
+  /** Closes the channel and stops reconnection attempts. */
   arreter: () => void;
 }
 
 export interface OptionsCanalAlertes {
-  /** Appelé pour chaque alerte poussée. */
+  /** Called for each pushed alert. */
   surAlerte: (alerte: Alerte) => void;
-  /** Appelé à chaque changement d'état du canal — l'écran bascule sur le repli quand il est faux. */
+  /** Called on each channel state change; the screen switches to the fallback when false. */
   surEtat?: (connecte: boolean) => void;
 }
 
 /**
- * Lit le corps d'une trame. Une charge illisible est ignorée plutôt que propagée : une notification
- * manquée se rattrape au prochain rafraîchissement, une exception dans le gestionnaire STOMP
- * emporterait l'abonnement.
+ * Parses a frame body. An unreadable payload is ignored: a missed notification is caught up on the
+ * next refresh, while an exception in the STOMP handler would kill the subscription.
  */
 export function lireAlerte(corps: string): Alerte | null {
   try {
@@ -74,11 +69,8 @@ export async function ouvrirCanalAlertes(options: OptionsCanalAlertes): Promise<
     },
     onConnect: () => {
       /*
-       * S'abonner **avant** d'annoncer le canal ouvert. Un courtier STOMP ne conserve rien pour une
-       * destination sans abonné : une alerte poussée entre la connexion et l'abonnement serait
-       * définitivement perdue, alors que l'écran afficherait déjà « temps réel actif » — et que le
-       * repli, justement désactivé dans cet état, ne la rattraperait qu'au bout de plusieurs minutes.
-       * L'ordre inverse faisait échouer un parcours de bout en bout de façon intermittente.
+       * Subscribe before announcing the channel open: a STOMP broker keeps nothing for a destination
+       * without subscribers, and the fallback is disabled once the channel is reported active.
        */
       client.subscribe(DESTINATION_ALERTES, (message) => {
         const alerte = lireAlerte(message.body);

@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  *
- * Reporting (#49, #50) : ce qui part sur le fil, le traitement du **204** — une période sans
- * activité est un état vide, pas une erreur — et le calcul des bornes proposées par l'écran 40.
+ * Reporting (#49, #50): what goes over the wire, handling of **204** (a period without activity is
+ * an empty state, not an error), and the date bounds offered by screen 40.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,7 +24,7 @@ const BASE = "http://localhost:8080/api/v1";
 
 let derniere: { methode: string; url: URL } | null = null;
 
-/** Le backend répond 204 dès que la période demandée commence en 2000 — de quoi couvrir les deux cas. */
+/** The mock backend answers 204 when the requested period starts in 2000, to cover both cases. */
 const RAPPORT = {
   type: "MENSUEL",
   dateDebut: "2026-08-14",
@@ -33,8 +33,7 @@ const RAPPORT = {
   nbAudiencesTenues: 1,
   nbDemandesFraisDeposees: 2,
   nbDeliberesEnregistres: 0,
-  // Le taux est encore renvoyé par l'API ; l'écran et les exports portent les trois décomptes
-  // depuis le 2026-10-06 - « le métier veut les chiffres, pas les pourcentages ».
+  // The API still returns the rate, but the screen and exports show the three counts instead.
   tauxSuccesRecouvrement: 0.5,
   nbLitigesGagnes: 2,
   nbLitigesPerdus: 1,
@@ -43,9 +42,8 @@ const RAPPORT = {
 };
 
 /**
- * Deux lignes suffisent à poser ce qui compte dans le rapport nominatif (N6) : un délai mesurable,
- * et un délai **absent** parce que la personne n'a saisi aucun compte rendu. Zéro se lirait comme
- * une saisie le jour même, c'est-à-dire comme la meilleure performance possible.
+ * Two rows cover what matters in the per-person report (N6): a measurable delay, and an **absent**
+ * delay because the person entered no report. Zero would read as same-day entry, the best possible score.
  */
 const NOMINATIF = {
   dateDebut: "2026-09-01",
@@ -78,7 +76,7 @@ const NOMINATIF = {
   ],
 };
 
-/** Une fiche d'activité : deux natures accomplies, et un délai mesurable. */
+/** An activity sheet: two completed action types and a measurable delay. */
 const ACTIVITE = {
   utilisateurId: 7,
   nom: "Awa Ndiaye",
@@ -244,14 +242,13 @@ describe("tableau de bord", () => {
     expect(derniere?.url.search).toBe("");
     expect(donnees.nbDossiersActifs).toBe(12);
     /*
-     * Le taux reste dans la réponse, mais ce ne sont plus lui que les écrans affichent : depuis le
-     * 2026-10-06, le tableau de bord et le rapport portent les **nombres** qu'il résumait. Les
-     * trois se lisent ensemble, et aucun ne se déduit des autres.
+     * The rate stays in the response, but the dashboard and report show the **counts** it summarized.
+     * The three are read together, and none is derived from the others.
      */
     expect(donnees.nbLitigesGagnes).toBe(3);
     expect(donnees.nbLitigesPerdus).toBe(1);
     expect(donnees.nbLitigesMixtes).toBe(0);
-    // Les affaires vidées complètent les dossiers actifs : 5 + 12 font les dossiers ouverts.
+    // Disposed cases complement active case files: 5 + 12 make the open case files.
     expect(donnees.nbAffairesVidees).toBe(5);
   });
 });
@@ -275,7 +272,7 @@ describe("rapport d'activité", () => {
     expect(rapport?.nbNouveauxDossiers).toBe(3);
   });
 
-  /** RG-REP-02 : le 204 est un **état vide**, pas une erreur — il ne doit jamais remonter en exception. */
+  /** RG-REP-02: 204 is an **empty state**, not an error, and must never surface as an exception. */
   it("rend null sur une période sans activité, sans lever d'erreur", async () => {
     const rapport = await reportingService.genererRapport({ ...periode, dateDebut: "2000-01-01", dateFin: "2000-01-02" });
 
@@ -290,7 +287,7 @@ describe("rapport d'activité", () => {
     expect(await contenu!.text()).toContain("colonne");
   });
 
-  /** Pas de fichier à télécharger pour une période vide : l'export doit le dire, pas produire un fichier creux. */
+  /** No file for an empty period: the export must say so, not produce an empty file. */
   it("rend null à l'export d'une période sans activité", async () => {
     const contenu = await reportingService.exporterRapport(
       { ...periode, dateDebut: "2000-01-01", dateFin: "2000-01-02" },
@@ -302,9 +299,8 @@ describe("rapport d'activité", () => {
 });
 
 /**
- * L'activité par personne (observation 14, N6). Le service n'a qu'une responsabilité — poser les
- * deux bornes et traduire le 204 — mais c'est elle qui décide si l'écran affiche un état vide ou une
- * erreur, et une page de zéros laisserait croire que personne n'a rien fait.
+ * Activity per person (N6). The service sets both bounds and translates 204, which decides whether
+ * the screen shows an empty state or an error; a page of zeros would suggest nobody did anything.
  */
 describe("rapport nominatif", () => {
   it("n'envoie que les deux bornes, sans étiquette de période", async () => {
@@ -314,8 +310,8 @@ describe("rapport nominatif", () => {
     const params = derniere!.url.searchParams;
     expect(params.get("dateDebut")).toBe("2026-09-01");
     expect(params.get("dateFin")).toBe("2026-09-30");
-    // Contrairement à `GET /rapports`, il n'y a ni `type` ni `format` : le rapport n'existe qu'à
-    // l'écran, et son intervalle est libre.
+    // Unlike `GET /rapports`, there is no `type` or `format`: the report exists only on screen, and
+    // its range is free.
     expect(params.get("type")).toBeNull();
     expect(params.get("format")).toBeNull();
   });
@@ -331,12 +327,12 @@ describe("rapport nominatif", () => {
       comptesRendusSaisis: 5,
       delaiMoyenSaisieCompteRendu: 2.5,
     });
-    // Un compte retiré du référentiel laisse ses traces sans nom : l'écran les nomme « compte
-    // retiré », il ne les masque pas.
+    // An account removed from the directory leaves unnamed records: the screen labels them as
+    // removed accounts rather than hiding them.
     expect(lignes[1]).toMatchObject({ nom: null, delaiMoyenSaisieCompteRendu: null });
   });
 
-  /** Même règle que le rapport périodique : le 204 est un **état vide**, jamais une exception. */
+  /** Same rule as the periodic report: 204 is an **empty state**, never an exception. */
   it("rend null sur une période sans activité, sans lever d'erreur", async () => {
     const rapport = await reportingService.rapportNominatif("2000-01-01", "2000-01-02");
 
@@ -345,14 +341,12 @@ describe("rapport nominatif", () => {
 });
 
 /**
- * Le détail d'un bloc du tableau de bord (Q-137). Ce que le service doit garantir : qu'il demande le
- * bon indicateur, et qu'il rende le **total du serveur** - jamais une somme des lignes montrées, qui
- * contredirait le bloc d'où l'on vient dès la deuxième page.
+ * Dashboard block detail. The service must request the right indicator and return the **server
+ * total**, never a sum of the rows shown, which would contradict the source block from page two on.
  */
 /**
- * Le périmètre de catégories (Q-138). Ce que le service doit garantir : qu'« absent » signifie
- * vraiment les deux catégories - c'est-à-dire qu'il n'envoie **rien**, et laisse le serveur décider -
- * et que le détail reçoive le même périmètre que le bloc d'où l'on vient.
+ * Category scope. "Absent" really means both categories, so **nothing** is sent and the server
+ * decides; the detail receives the same scope as its source block.
  */
 describe("périmètre de catégories", () => {
   it("n'envoie aucune catégorie pour « toutes catégories »", async () => {
@@ -393,9 +387,8 @@ describe("périmètre de catégories", () => {
 });
 
 /**
- * Le nom du fichier porte le périmètre, et seulement quand il en est un : un rapport de
- * recouvrement et un rapport toutes catégories portent des chiffres différents sur la même période,
- * et deux fichiers nommés pareil se confondraient dans un dossier.
+ * The file name carries the scope, only when there is one: a debt recovery report and an
+ * all-categories report have different figures for the same period and must not share a name.
  */
 describe("nom du rapport exporté selon le périmètre", () => {
   it("ne nomme pas le périmètre quand il n'y en a pas", () => {
@@ -434,7 +427,7 @@ describe("détail d'un bloc du tableau de bord", () => {
     const page = await reportingService.detailTableauDeBord("DOSSIERS_ACTIFS", 0);
 
     expect(page.content).toHaveLength(2);
-    // 47 éléments sur 3 pages : c'est le total qui doit s'afficher, pas les 2 lignes reçues.
+    // 47 items over 3 pages: the total must be displayed, not the 2 rows received.
     expect(page.totalElements).toBe(47);
     expect(page.totalPages).toBe(3);
   });
@@ -443,17 +436,16 @@ describe("détail d'un bloc du tableau de bord", () => {
     const page = await reportingService.detailTableauDeBord("PROROGATIONS_ALERTE", 0);
 
     /*
-     * Une alerte sans dossier reste dans la liste : l'écarter ferait que le nombre de lignes ne
-     * tombe plus sur le nombre affiché par le bloc, et c'est cette concordance qui fait la
-     * crédibilité des deux chiffres.
+     * An alert without a case file stays in the list: dropping it would make the row count differ
+     * from the number shown by the block.
      */
     expect(page.content[1]).toMatchObject({ dossierId: null, referenceDossier: null });
   });
 });
 
 /**
- * Le tableau des avocats (Q-136). Ce qu'il doit garantir : qu'il existe **à part** du tableau
- * interne, et qu'une inscription retirée n'efface pas les dépôts.
+ * Lawyers table: it exists **separately** from the internal table, and a removed directory entry
+ * does not erase its submissions.
  */
 describe("activité des avocats", () => {
   it("se lit sur son propre chemin, distinct du tableau interne", async () => {
@@ -473,8 +465,8 @@ describe("activité des avocats", () => {
       explicationsFournies: 1,
     });
     /*
-     * Une inscription retirée du répertoire laisse ses dépôts : `avocatId` est nul, et l'écran
-     * ouvre alors la fiche par le compte. Les masquer ferait disparaître de l'activité réelle.
+     * A removed directory entry keeps its submissions: `avocatId` is null and the screen opens the
+     * sheet through the account. Hiding them would drop real activity.
      */
     expect(rapport?.lignes[1]).toMatchObject({ avocatId: null, comptesRendusDeposes: 2 });
   });
@@ -485,17 +477,16 @@ describe("activité des avocats", () => {
 });
 
 /**
- * La fiche d'activité (Q-133). Ce que le service doit garantir : que « moi » ne transporte aucun
- * identifiant, que le 204 reste un état vide, et que le nom du fichier téléchargé soit celui que le
- * serveur a construit de son côté.
+ * Activity sheet. "Me" carries no identifier, 204 stays an empty state, and the downloaded file name
+ * matches the one the server builds.
  */
 describe("fiche d'activité", () => {
   it("n'envoie aucun identifiant pour sa propre activité", async () => {
     await reportingService.rapportActivite("2026-09-01", "2026-09-30");
 
     expect(derniere?.url.pathname).toBe("/api/v1/rapports/activite");
-    // C'est le serveur qui sait qui je suis : transporter mon identifiant depuis l'écran
-    // ouvrirait la question de savoir ce qui se passe si j'en envoie un autre.
+    // The server knows who the user is: sending an id from the screen would invite sending someone
+    // else's.
     expect(derniere!.url.searchParams.has("utilisateurId")).toBe(false);
   });
 
@@ -506,15 +497,15 @@ describe("fiche d'activité", () => {
   });
 
   /**
-   * Un avocat se désigne par son **inscription au répertoire**, non par un compte : la direction le
-   * connaît par là, et l'identifiant d'utilisateur n'y figure pas (Q-135).
+   * A lawyer is identified by their **directory entry**, not by an account: the user id is not part
+   * of it.
    */
   it("désigne un avocat par son inscription, et non par un compte", async () => {
     await reportingService.rapportActivite("2026-09-01", "2026-09-30", { avocatId: 5 });
 
     const params = derniere!.url.searchParams;
     expect(params.get("avocatId")).toBe("5");
-    // Jamais les deux : le serveur les refuse ensemble, et l'écran ne doit pas les proposer.
+    // Never both: the server rejects them together, and the screen must not offer them.
     expect(params.has("utilisateurId")).toBe(false);
   });
 
@@ -561,16 +552,15 @@ describe("fiche d'activité", () => {
     expect(params.get("size")).toBe("20");
     expect(page.content).toHaveLength(2);
     expect(page.content[0]?.referenceDossier).toBe("DOS-2026-0042");
-    // Une action hors dossier reste dans la liste : la masquer ferait disparaître de l'activité
-    // réelle, et le décompte ne tomberait plus sur le nombre de lignes.
+    // An action outside any case file stays in the list: hiding it would drop real activity and
+    // break the match between count and rows.
     expect(page.content[1]?.dossierId).toBeNull();
   });
 });
 
 /**
- * Le nom du fichier est construit **deux fois** : par le serveur dans `Content-Disposition`, que
- * CORS n'expose pas, et par l'écran pour nommer le téléchargement. Ces assertions sont le seul
- * endroit où les deux règles se confrontent.
+ * The file name is built **twice**: by the server in `Content-Disposition` (not exposed by CORS),
+ * and by the screen to name the download. These assertions are where both rules are compared.
  */
 describe("nom de la fiche d'activité téléchargée", () => {
   it("porte la personne, la période et l'extension du format", () => {
@@ -579,14 +569,14 @@ describe("nom de la fiche d'activité téléchargée", () => {
     ).toBe("activite-awa-ndiaye-2026-09-01_2026-09-30.xlsx");
   });
 
-  /** Sans la passe de décomposition, « Hervé » donnait « herv- » : l'accent ne tombe pas dans [a-z0-9]. */
+  /** Without Unicode decomposition, "Hervé" would become "herv-": the accent is not in [a-z0-9]. */
   it("retire les accents avant de passer en minuscules", () => {
     expect(
       nomFichierActivite({ nom: "Hervé Épée", utilisateurId: 3 }, "2026-01-01", "2026-01-31", "PDF"),
     ).toBe("activite-herve-epee-2026-01-01_2026-01-31.pdf");
   });
 
-  /** Un compte retiré du référentiel n'a plus de nom : le fichier porte alors son identifiant. */
+  /** An account removed from the directory has no name: the file then carries its id. */
   it("se rabat sur l'identifiant quand le nom manque", () => {
     expect(nomFichierActivite({ nom: null, utilisateurId: 9 }, "2026-01-01", "2026-01-31", "CSV")).toBe(
       "activite-9-2026-01-01_2026-01-31.csv",
@@ -595,17 +585,9 @@ describe("nom de la fiche d'activité téléchargée", () => {
 });
 
 /**
- * Le clic d'une action mene a la fiche du dossier, **sur l'onglet correspondant**. Encore faut-il
- * que l'onglet existe.
- *
- * **Ce que ce test a attrape.** La premiere version de la carte envoyait les cinq natures de frais
- * sur un onglet `frais` qui n'existe pas : la fiche dossier n'en a pas, les demandes de frais vivant
- * sur leur propre ecran. Rien ne cassait - un onglet inconnu retombe silencieusement sur la synthese
- * - et le parcours e2e passait, parce qu'il verifiait seulement qu'on arrivait sur une fiche. La
- * promesse faite a l'utilisateur, elle, etait fausse.
- *
- * Les deux listes sont lues **dans le code qui les declare**, et non recopiees ici : une copie
- * vieillirait sans bruit, ce qui est exactement le defaut que ce test ferme.
+ * Clicking an action opens the case file **on the matching tab**, which must exist: an unknown tab
+ * silently falls back to the summary. Both lists are read **from the code that declares them**, not
+ * copied here, so they cannot drift.
  */
 describe("onglets vises par la fiche d'activité", () => {
   function sourceDe(chemin: string): string {
@@ -619,14 +601,12 @@ describe("onglets vises par la fiche d'activité", () => {
       declaration.indexOf("] as const;"),
     );
     const reels = new Set([...bloc.matchAll(/"([a-z]+)"/g)].map((trouve) => trouve[1]));
-    // Si la declaration changeait de forme, l'extraction rendrait un ensemble vide et ce test
-    // passerait sans rien garder. La borne basse le dit tout haut.
+    // If the declaration changed shape, extraction would return an empty set and this test would
+    // pass vacuously. The lower bound guards against that.
     expect(reels.size, "les onglets de la fiche dossier ne se lisent plus").toBeGreaterThan(5);
 
     /*
-     * **Les deux cartes**, et non la seule première. Une seconde est arrivée avec Q-137, pour le
-     * détail des blocs du tableau de bord : un garde-fou qui ne regarde qu'un fichier ne protège
-     * que lui, et c'est précisément le défaut qu'il est né pour fermer.
+     * **Both maps**: the second one serves dashboard block details.
      */
     const cartes = [
       "components/modules/reporting/fiche-activite.tsx",
@@ -643,7 +623,7 @@ describe("onglets vises par la fiche d'activité", () => {
 });
 
 describe("bornes proposées par l'écran", () => {
-  const fin = new Date(2026, 8, 14); // 14 septembre 2026, date locale
+  const fin = new Date(2026, 8, 14); // 14 September 2026, local date
 
   it("propose des bornes cohérentes avec l'étiquette choisie", () => {
     expect(periodeParDefaut("JOURNALIER", fin)).toEqual({
@@ -651,7 +631,7 @@ describe("bornes proposées par l'écran", () => {
       dateDebut: "2026-09-14",
       dateFin: "2026-09-14",
     });
-    // Sept jours au total, aujourd'hui compris.
+    // Seven days in total, today included.
     expect(periodeParDefaut("HEBDOMADAIRE", fin).dateDebut).toBe("2026-09-08");
     expect(periodeParDefaut("MENSUEL", fin).dateDebut).toBe("2026-08-14");
     expect(periodeParDefaut("TRIMESTRIEL", fin).dateDebut).toBe("2026-06-14");

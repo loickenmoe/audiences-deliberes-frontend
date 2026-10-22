@@ -9,47 +9,37 @@ import { useMesDossiers } from "@/hooks/usePortailAvocat";
 import { estCompteAvocatNonRattache } from "@/lib/api/errors";
 
 /**
- * Choix d'un dossier parmi ceux auxquels l'avocat est affecté.
+ * Selects a case file among those the lawyer is assigned to (user stories 4.1 and 5.1).
  *
- * C'est la pièce qui débloque tout le portail : jusqu'à Q-96, l'avocat devait fournir un
- * `dossierId` qu'aucun endpoint ne lui permettait de connaître (QF-01), alors que les stories 4.1
- * et 5.1 supposent qu'il le **choisisse**.
- *
- * **La recherche se fait sur le serveur** (2026-09-28). Le champ chargeait auparavant une page de
- * cent dossiers, les plus récents : un avocat qui en suit davantage ne voyait pas les autres, et
- * ne pouvait donc ni déposer de demande de frais ni de compte rendu pour ses dossiers anciens. Le
- * dossier existait, l'affectation aussi — seule la liste était tronquée, sans que rien ne le dise.
- * C'est le même piège que Q-105 sur l'annuaire des avocats, et la même réponse : interroger le
- * serveur au fil de la frappe plutôt que filtrer une page déjà réduite.
- *
- * Un avocat sans aucun dossier voit une explication plutôt qu'un sélecteur vide : il n'a rien à
- * corriger, c'est une affectation qui manque.
+ * Search is server-side, as the user types: loading a single page of recent case files would hide
+ * older ones and prevent submissions on them, without any warning.
+ * A lawyer with no case file sees an explanation rather than an empty selector: an assignment is
+ * missing, there is nothing for them to fix.
  */
 export function SelecteurDossier({
   valeur,
   onChangement,
   id = "dossier",
   obligatoire = true,
-}: {
+}: Readonly<{
   valeur: number | null;
   onChangement: (dossierId: number | null) => void;
   id?: string;
-  /** Faux là où le choix ne sert qu'à lire, comme dans « Mes dossiers » (QF-64) : un astérisque y mentirait. */
+  /** False where the choice is only for reading, as in "Mes dossiers": an asterisk would be misleading. */
   obligatoire?: boolean;
-}) {
+}>) {
   const t = useTranslations("portail");
   const [recherche, setRecherche] = useState("");
   const requete = useMesDossiers(recherche || undefined);
   const dossiers = requete.data?.content ?? [];
 
-  // Q-107 : distinguer « pas encore inscrit au répertoire » de « aucun dossier affecté ». Les deux
-  // sont des états légitimes, mais ils n'appellent pas la même action de l'avocat.
+  // Distinguish "not yet registered in the directory" from "no case file assigned": both are
+  // legitimate states, but they call for different actions from the lawyer.
   if (estCompteAvocatNonRattache(requete.error)) return <CompteAvocatNonRattache />;
 
   /*
-   * L'état « aucun dossier » ne se déduit que d'une liste **non filtrée** : une recherche sans
-   * résultat dit qu'aucun dossier ne porte cette référence, pas que l'avocat n'a pas de dossier.
-   * Confondre les deux lui ferait croire qu'on lui a retiré ses affectations.
+   * The "no case file" state is derived only from an unfiltered list: a search without results
+   * means no case file matches, not that the lawyer has none.
    */
   if (!requete.isLoading && dossiers.length === 0 && recherche === "") {
     return (

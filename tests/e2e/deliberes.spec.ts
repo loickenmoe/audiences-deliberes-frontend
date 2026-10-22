@@ -4,8 +4,8 @@ import { deposerPiecesDeCreation } from "./pieces-de-creation";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Délibérés (écrans 10, 26, 27) **contre le backend réel**, cycle Q-78 : mise en délibéré →
- * prorogation ou rabattement pendant l'attente → décision, qui vide le délibéré.
+ * Deliberations (screens 10, 26, 27) against the real backend: deliberation, then extension or
+ * cancellation while waiting, then a decision that empties the deliberation.
  */
 
 const MOT_DE_PASSE = "Password1!";
@@ -19,24 +19,24 @@ async function seConnecter(page: Page, identifiant: string) {
 }
 
 
-/** `YYYY-MM-DD` local, dans `jours` jours. */
+/** Local `YYYY-MM-DD`, `jours` days from now. */
 function dansJours(jours: number) {
   const date = new Date();
   date.setDate(date.getDate() + jours);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-/** Crée un dossier, fait passer son instance « En cours » puis « En délibéré », et ouvre l'onglet Délibérés. */
+/** Creates a case, moves its proceeding to "En cours" then "En délibéré", and opens the Délibérés tab. */
 async function dossierEnDelibere(page: Page) {
   await page.goto("/dossiers/nouveau");
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption("Assignation en paiement");
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // Mandatory: at least one party on each side.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Mandatory: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await page.getByLabel("Dossier de crédit d’origine", { exact: true }).fill("CRD-DEL");
   await page.getByLabel("PV de transfert", { exact: true }).fill("PV-DEL");
@@ -51,10 +51,8 @@ async function dossierEnDelibere(page: Page) {
   await expect(page.getByText("Statut de l’étape mis à jour.").first()).toBeVisible();
 
   /*
-   * Une audience tenue est **exigée** avant la mise en délibéré (règle du 2026-09-29,
-   * REC-NEG-028) : un délibéré sans audience n'a pas de sens, et le backend refuse la
-   * transition en 400. On en planifie donc une pour le jour même, et on saisit son compte
-   * rendu - c'est le compte rendu qui la rend « tenue ».
+   * A held hearing is required before deliberation (REC-NEG-028), otherwise the backend rejects the
+   * transition with a 400. Schedule one for today and enter its report, which marks it as held.
    */
   await page.getByRole("tab", { name: "Audiences" }).click();
   await page.getByRole("button", { name: "Planifier une audience" }).click();
@@ -75,7 +73,7 @@ async function dossierEnDelibere(page: Page) {
   await page.getByLabel("Faire passer à", { exact: true }).selectOption("EN_DELIBERE");
   await page.getByRole("button", { name: "Appliquer" }).click();
   await expect(page.getByText("Statut de l’étape mis à jour.").first()).toBeVisible();
-  // En délibéré, l'onglet Étapes renvoie vers l'onglet Délibérés.
+  // Under deliberation, the Étapes tab points to the Délibérés tab.
   await expect(page.getByText(/se gèrent dans l’onglet Délibérés/)).toBeVisible();
   await page.getByRole("tab", { name: "Délibérés" }).click();
 }
@@ -94,7 +92,7 @@ test("mettre en délibéré puis proroger : la date annoncée change et l'histor
   await mettreEnDelibere(page, dansJours(7));
 
   await expect(page.getByText("En attente de décision")).toBeVisible();
-  // Un seul délibéré en attente par étape : l'étape ne se remet pas en délibéré.
+  // Only one pending deliberation per step: the step cannot be put under deliberation again.
   await expect(page.getByRole("button", { name: "Mettre en délibéré" })).toBeDisabled();
 
   await page.getByRole("button", { name: /^Proroger le délibéré annoncé au / }).click();
@@ -121,7 +119,7 @@ test("rabattre : l'étape revient « En cours » et le délibéré reste tracé 
 
   await expect(page.getByText("Motif : Réouverture des débats")).toBeVisible();
   await expect(page.getByText("Rabattu", { exact: true })).toBeVisible();
-  // Plus aucune étape en délibéré : l'écran l'explique au lieu de proposer l'action.
+  // No step under deliberation: the screen explains it instead of offering the action.
   await expect(page.getByText(/Aucune étape n’est en délibéré/)).toBeVisible();
 });
 
@@ -134,14 +132,14 @@ test("décision défavorable : l'échéance de recours est exigée, puis suivie 
   const decision = page.getByRole("dialog", { name: "Enregistrer la décision" });
   await decision.getByLabel("Résultat", { exact: true }).selectOption("DEFAVORABLE");
   await decision.getByRole("button", { name: "Enregistrer" }).click();
-  // Sans échéance, rien ne part : la modale reste ouverte sur le champ manquant.
+  // Without a deadline, nothing is sent: the dialog stays open on the missing field.
   await expect(decision.getByLabel("Échéance du délai de recours", { exact: true })).toBeVisible();
 
   await decision.getByLabel("Échéance du délai de recours", { exact: true }).fill(`${dansJours(30)}T09:00`);
   await decision.getByRole("button", { name: "Enregistrer" }).click();
 
-  // Assertions sur la carte du délibéré : les listes « Résultat » des modales fermées restent dans
-  // la page, et leurs options portent les mêmes libellés.
+  // Assert on the deliberation card: the "Résultat" lists of closed dialogs stay in the page with
+  // the same option labels.
   const carte = page.getByRole("listitem").filter({ hasText: /^.*Décision du /s });
   await expect(carte.getByText("Vidé", { exact: true })).toBeVisible();
   await expect(carte.getByText("Défavorable", { exact: true })).toBeVisible();

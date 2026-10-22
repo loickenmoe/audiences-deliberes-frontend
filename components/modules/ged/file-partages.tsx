@@ -23,15 +23,12 @@ async function contenuPiece(documentId: number): Promise<Blob> {
 }
 
 /**
- * Les partages à valider (QF-64, backend Q-139).
+ * Document shares awaiting approval.
  *
- * Sur un dossier **sensible**, le partage d'une pièce avec l'avocat est réservé au DJ et à la DJA :
- * le juriste le propose, et rien n'est visible de l'avocat avant leur validation. Cette file est
- * l'endroit où ils trouvent les propositions, le plus ancien d'abord - comme celle des demandes de
- * suppression, dont elle reprend la forme.
- *
- * **La pièce se lit avant de décider** : l'œil l'ouvre sans quitter la file. On ne valide pas la
- * sortie d'un document qu'on n'a pas vu. Un rejet exige un motif, transmis au juriste.
+ * On a sensitive case file, sharing a document with the lawyer is reserved to the DJ and the DJA:
+ * the legal officer proposes it, and nothing is visible to the lawyer before approval. Oldest first,
+ * same layout as the deletion request queue.
+ * The document can be previewed before deciding; a rejection requires a reason, sent to the legal officer.
  */
 export function FilePartages() {
   const t = useTranslations("partages");
@@ -61,83 +58,20 @@ export function FilePartages() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={4} />
-      ) : requete.error ? (
-        <EtatErreur message={messageErreur(requete.error)} />
-      ) : partages.length === 0 ? (
-        <EtatVide titre={t("vide")} description={t("videTexte")} />
-      ) : (
-        <div className="overflow-x-auto rounded border border-bordure bg-surface">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonnePiece")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDossier")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonnePropose")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneDate")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">
-                  <span className="sr-only">{t("colonneActions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {partages.map((partage) => (
-                <tr key={partage.documentId}>
-                  <td className="px-4 py-2">{partage.nomFichier}</td>
-                  <td className="px-4 py-2">
-                    {/* Vers l'onglet Documents : c'est là que la pièce vit, avec ses voisines. */}
-                    <Link
-                      href={`/dossiers/${partage.dossierId}?onglet=documents`}
-                      className="font-mono underline underline-offset-2"
-                    >
-                      {partage.referenceDossier}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2">{partage.partageParNom ?? "-"}</td>
-                  <td className="px-4 py-2">
-                    <DateHeureValeur valeur={partage.partageLe} />
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variante="secondaire"
-                        taille="sm"
-                        onClick={() => setApercu(partage)}
-                        aria-label={`${tdoc("consulter")} - ${partage.nomFichier}`}
-                      >
-                        <Eye size={14} aria-hidden />
-                        {tdoc("consulter")}
-                      </Button>
-                      <Button
-                        taille="sm"
-                        onClick={() => setAValider(partage)}
-                        aria-label={t("validerAria", { nom: partage.nomFichier })}
-                      >
-                        <Check size={14} aria-hidden />
-                        {tdoc("validerPartage")}
-                      </Button>
-                      <Button
-                        variante="secondaire"
-                        taille="sm"
-                        onClick={() => setARejeter(partage)}
-                        aria-label={t("rejeterAria", { nom: partage.nomFichier })}
-                      >
-                        <X size={14} aria-hidden />
-                        {tdoc("rejeterPartage")}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TableauPartages
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        partages={partages}
+        onApercu={setApercu}
+        onValider={setAValider}
+        onRejeter={setARejeter}
+      />
 
       {requete.data ? (
         <Pagination
@@ -152,7 +86,9 @@ export function FilePartages() {
         ouvert={apercu !== null}
         onFermeture={() => setApercu(null)}
         nomFichier={apercu?.nomFichier ?? ""}
-        obtenir={() => (apercu ? contenuPiece(apercu.documentId) : Promise.reject(new Error("aucune pièce")))}
+        obtenir={() =>
+          apercu ? contenuPiece(apercu.documentId) : Promise.reject(new Error("aucune pièce"))
+        }
       />
 
       <DialogueConfirmation
@@ -166,9 +102,110 @@ export function FilePartages() {
       />
 
       <ModaleRejetPartage
-        piece={aRejeter ? { documentId: aRejeter.documentId, nomFichier: aRejeter.nomFichier } : null}
+        piece={
+          aRejeter ? { documentId: aRejeter.documentId, nomFichier: aRejeter.nomFichier } : null
+        }
         onFermeture={() => setARejeter(null)}
       />
+    </div>
+  );
+}
+
+/** The queue: loading, error, empty, or one row per proposed share. */
+function TableauPartages({
+  enChargement,
+  erreur,
+  partages,
+  onApercu,
+  onValider,
+  onRejeter,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  partages: readonly PartageAvocat[];
+  onApercu: (partage: PartageAvocat) => void;
+  onValider: (partage: PartageAvocat) => void;
+  onRejeter: (partage: PartageAvocat) => void;
+}>) {
+  const t = useTranslations("partages");
+  const tdoc = useTranslations("documents");
+
+  if (enChargement) return <EtatChargement lignes={4} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (partages.length === 0) return <EtatVide titre={t("vide")} description={t("videTexte")} />;
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonnePiece")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDossier")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonnePropose")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneDate")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              <span className="sr-only">{t("colonneActions")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {partages.map((partage) => (
+            <tr key={partage.documentId}>
+              <td className="px-4 py-2">{partage.nomFichier}</td>
+              <td className="px-4 py-2">
+                {/* Links to the Documents tab, where the document lives alongside the others. */}
+                <Link
+                  href={`/dossiers/${partage.dossierId}?onglet=documents`}
+                  className="font-mono underline underline-offset-2"
+                >
+                  {partage.referenceDossier}
+                </Link>
+              </td>
+              <td className="px-4 py-2">{partage.partageParNom ?? "-"}</td>
+              <td className="px-4 py-2">
+                <DateHeureValeur valeur={partage.partageLe} />
+              </td>
+              <td className="px-4 py-2">
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variante="secondaire"
+                    taille="sm"
+                    onClick={() => onApercu(partage)}
+                    aria-label={`${tdoc("consulter")} - ${partage.nomFichier}`}
+                  >
+                    <Eye size={14} aria-hidden />
+                    {tdoc("consulter")}
+                  </Button>
+                  <Button
+                    taille="sm"
+                    onClick={() => onValider(partage)}
+                    aria-label={t("validerAria", { nom: partage.nomFichier })}
+                  >
+                    <Check size={14} aria-hidden />
+                    {tdoc("validerPartage")}
+                  </Button>
+                  <Button
+                    variante="secondaire"
+                    taille="sm"
+                    onClick={() => onRejeter(partage)}
+                    aria-label={t("rejeterAria", { nom: partage.nomFichier })}
+                  >
+                    <X size={14} aria-hidden />
+                    {tdoc("rejeterPartage")}
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

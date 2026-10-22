@@ -6,10 +6,8 @@ import { AuthProvider } from "@/providers/session.provider";
 import { QueryProvider } from "@/providers/query.provider";
 
 /**
- * QF-10 tranché : **thème clair uniquement**. L'application interne de référence (GFA) est claire,
- * l'usage est bureautique et diurne, et un second thème doublerait la surface de vérification des
- * contrastes sans bénéfice métier. Les jetons restent structurés pour qu'un thème sombre puisse
- * être ajouté sans refonte.
+ * Light theme only, consistent with the bank's internal apps. Design tokens remain structured so a
+ * dark theme can be added without a redesign.
  */
 export function AppProvider({
   children,

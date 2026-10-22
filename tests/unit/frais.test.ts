@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  *
- * Frais d'avocats (#24 à #28, détail Q-82) : ce qui part sur le fil, et la file propre à chaque profil.
+ * Lawyer fees (#24 to #28): what goes over the wire, and each profile's own queue.
  */
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
@@ -47,7 +47,7 @@ describe("file des demandes", () => {
 
     expect(derniere?.url.searchParams.get("statut")).toBe("OPPORTUNITE");
     expect(derniere?.url.searchParams.get("page")).toBe("2");
-    // Dix depuis Q-100 : la taille de page des tableaux est décidée par `TAILLE_PAGE`.
+    // Table page size is set by `TAILLE_PAGE`.
     expect(derniere?.url.searchParams.get("size")).toBe("10");
   });
 

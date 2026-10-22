@@ -3,18 +3,15 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Vérification des contrastes du design system, **calculée sur les jetons réels** lus dans
- * `app/globals.css` — pas sur des valeurs recopiées dans le test. Si quelqu'un éclaircit une
- * couleur de texte, ce fichier échoue.
+ * Design system contrast checks, **computed on the real tokens** read from `app/globals.css`,
+ * not on values copied into the test. Lightening a text color makes this file fail.
  *
- * Seuils WCAG 2.1 : 4,5:1 pour le texte courant (AA), 3:1 pour le texte large et les indicateurs
- * d'interface.
+ * WCAG 2.1 thresholds: 4.5:1 for body text (AA), 3:1 for large text and UI indicators.
  */
 
-// `import.meta.url` n'est pas une URL `file:` sous jsdom : on part de la racine du projet.
+// `import.meta.url` is not a `file:` URL under jsdom: resolve from the project root.
 const CSS = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 
-/** Lit un jeton `--nom: #rrggbb;` dans la feuille de style. */
 function jeton(nom: string): string {
   const trouve = new RegExp(`--${nom}:\\s*(#[0-9a-fA-F]{6})`).exec(CSS);
   if (!trouve?.[1]) throw new Error(`Jeton --${nom} introuvable dans globals.css`);
@@ -43,8 +40,8 @@ describe("couleurs de marque", () => {
   });
 
   /**
-   * Le fait qui fonde toute la direction visuelle : le rouge de marque **ne peut pas** porter le
-   * texte de l'interface. Ce test documente la contrainte autant qu'il la vérifie.
+   * The brand red **cannot** carry interface text. This test documents the constraint as much as
+   * it checks it.
    */
   it("le rouge de marque reste sous le seuil AA pour le texte courant", () => {
     const ratio = contraste(jeton("afb-rouge"), BLANC);
@@ -53,7 +50,7 @@ describe("couleurs de marque", () => {
   });
 
   it("le rouge de marque dépasse le seuil des indicateurs d'interface (3:1)", () => {
-    // C'est ce qui l'autorise comme anneau de focus et comme filet d'identité.
+    // This is what allows it as a focus ring and identity stripe.
     expect(contraste(jeton("afb-rouge"), BLANC)).toBeGreaterThanOrEqual(3);
   });
 
@@ -94,9 +91,8 @@ describe("couleurs de statut", () => {
   });
 
   /**
-   * Le danger doit rester distinguable du rouge de marque : sans cela, dans une interface pleine
-   * de rejets et de suppressions, l'utilisateur ne sait plus si une couleur signale une erreur ou
-   * simplement l'identité de la banque.
+   * The danger color must stay distinguishable from the brand red, otherwise users cannot tell an
+   * error from the bank's identity color.
    */
   it("le danger se distingue visiblement du rouge de marque", () => {
     const ecart = Math.abs(luminance(jeton("danger")) - luminance(jeton("afb-rouge")));

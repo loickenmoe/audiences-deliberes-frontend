@@ -7,22 +7,16 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Boîte de dialogue modale, bâtie sur l'élément natif `<dialog>`.
+ * Modal dialog built on the native `<dialog>` element.
  *
- * Choix délibéré plutôt qu'une bibliothèque : `showModal()` fournit nativement le piégeage du focus,
- * la fermeture par Échap, l'inertie de l'arrière-plan et le rôle ARIA. Une dépendance de plus
- * n'apporterait rien ici et alourdirait le paquet.
+ * Deliberately no library: `showModal()` natively provides focus trapping, Escape to close,
+ * background inertness and the ARIA role.
  *
- * Le bouton de fermeture appelle `close()`. Il était auparavant un `<form method="dialog">`,
- * mécanisme natif qui fermait sans JavaScript ; mais une modale ne s'ouvre que par `showModal()`,
- * appelé après l'hydratation, et ne peut donc jamais être ouverte sans JavaScript. Ce formulaire
- * s'imbriquait en revanche dans celui du parent quand la modale y était rendue, ce qu'HTML interdit
- * (aperçu d'une pièce dans le formulaire du dossier, 2026-09-22).
+ * The close button calls `close()` rather than using a `<form method="dialog">`: the modal is often
+ * rendered inside a parent form, and nested forms are invalid HTML.
  *
- * **Identifiants uniques par instance (`useId`).** Un `<dialog>` fermé reste dans le DOM : la fiche
- * dossier en monte plusieurs à la fois. Avec un identifiant fixe, `aria-labelledby` de chacune
- * pointait vers le **premier** titre du document — la confirmation d'affectation s'annonçait
- * « Modifier l'affectation ». Découvert par un parcours e2e de F7, le 2026-09-10.
+ * **Ids are unique per instance (`useId`).** A closed `<dialog>` stays in the DOM and the case file
+ * mounts several at once; with a fixed id, every `aria-labelledby` would point to the **first** title.
  */
 export function Dialog({
   ouvert,
@@ -32,7 +26,7 @@ export function Dialog({
   children,
   pied,
   className,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
   titre: string;
@@ -40,7 +34,7 @@ export function Dialog({
   children?: ReactNode;
   pied?: ReactNode;
   className?: string;
-}) {
+}>) {
   const reference = useRef<HTMLDialogElement>(null);
   const t = useTranslations("commun");
   const idTitre = useId();
@@ -60,21 +54,18 @@ export function Dialog({
       aria-labelledby={idTitre}
       aria-describedby={description ? idDescription : undefined}
       /*
-       * `close` couvre Échap et le bouton de fermeture : une seule voie de sortie à gérer.
+       * `close` covers Escape and the close button: a single exit path to handle.
        *
-       * Mais le navigateur émet **aussi** `close` quand c'est le programme qui ferme — quand
-       * `ouvert` passe à faux. Relayer ce cas rappelait `onFermeture` en cascade : masquer une
-       * modale pour afficher sa confirmation refermait tout le parcours, confirmation comprise
-       * (ERR-003 de l'affectation, F7). Seule une fermeture décidée par l'utilisateur est relayée —
-       * c'est-à-dire pendant que le parent la croit encore ouverte.
+       * The browser **also** fires `close` when the program closes it (`ouvert` turns false).
+       * Relaying that would call `onFermeture` in cascade, e.g. hiding a modal to show its
+       * confirmation would close the whole flow. Only a user-initiated close is relayed, i.e. while
+       * the parent still considers it open.
        */
       onClose={(evenement) => {
         /*
-         * **Et seulement la fermeture de CETTE boîte** (QF-63). React relaie à ce gestionnaire le
-         * `close` d'une boîte **imbriquée** - l'aperçu d'un fichier rendu dans le formulaire qui le
-         * charge. La croix de l'aperçu emportait donc le formulaire entier, et toute la saisie avec
-         * lui, là où son bouton « Fermer » - qui passe par l'état React - ne refermait que l'aperçu.
-         * Deux voies de sortie pour un même geste, et une seule était juste.
+         * **And only the closing of THIS dialog.** React relays to this handler the `close` of a
+         * **nested** dialog (e.g. a file preview rendered inside the form that uploads it), which
+         * would otherwise close the whole form and lose its input.
          */
         if (evenement.target !== reference.current) return;
         if (ouvert) onFermeture();
@@ -100,11 +91,10 @@ export function Dialog({
         </div>
 
         {/*
-          Un simple bouton, et non un `<form method="dialog">` : la modale est souvent rendue dans
-          un formulaire (l'aperçu d'une pièce, dans celui du dossier), et un formulaire imbriqué est
-          interdit en HTML. Rendu par le serveur, le formulaire intérieur serait supprimé, et ce
-          bouton enverrait le formulaire parent. `close()` émet le même événement `close` : la
-          fermeture suit exactement la même voie qu'avant.
+          A plain button, not a `<form method="dialog">`: the modal is often rendered inside a
+          form (a document preview within the case form), and nested forms are invalid HTML. When
+          server-rendered, the inner form would be dropped and this button would submit the parent
+          form. `close()` fires the same `close` event, so closing follows the same path.
         */}
         <button
           type="button"

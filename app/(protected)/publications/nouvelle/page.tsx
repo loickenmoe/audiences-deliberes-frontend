@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("publicationTitre") };
 }
 
-/** Écran 33 — dépôt d'un compte rendu d'audience (#29) ou d'une autre publication (#31). */
+/** Screen 33 - submission of a hearing report (#29) or another publication (#31). */
 export default async function PageNouvellePublication() {
   await exigerCapacite("deposerPublication");
   return <FormulairePublication />;

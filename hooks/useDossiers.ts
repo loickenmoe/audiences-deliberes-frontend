@@ -19,12 +19,7 @@ import type {
 } from "@/types/domaine";
 import type { StatutCycleVie, StatutValidation, TypeEtape } from "@/types/enums";
 
-/**
- * Liste paginée des dossiers.
- *
- * Les filtres entrent dans la clé de cache : deux recherches différentes ne doivent pas se
- * recouvrir, sinon la seconde afficherait brièvement les résultats de la première.
- */
+/** Paginated case list. Filters are part of the cache key so that searches never overlap. */
 export function useDossiers(filtres: FiltresDossiers = {}) {
   return useQuery({
     queryKey: [CLES.dossiers, filtres],
@@ -40,7 +35,7 @@ export function useDossier(id: number) {
   });
 }
 
-/** Q-100 — l'historique paginé d'un dossier : la fiche n'en porte que la première page. */
+/** Paginated case history; the case record only carries the first page. */
 export function useHistoriqueDossier(dossierId: number, page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.dossier, dossierId, "historique", page, size],
@@ -61,21 +56,18 @@ export function useCreerDossier() {
   return useMutation({
     mutationFn: (dossier: CreerDossier) => dossierService.creer(dossier),
     onSuccess: (cree) => {
-      // Toutes les listes sont invalidées, quels que soient leurs filtres : le nouveau dossier peut
-      // apparaître dans plusieurs d'entre elles.
+      // Invalidate every list regardless of filters: the new case may appear in several.
       void client.invalidateQueries({ queryKey: [CLES.dossiers] });
-      // La vue consolidée du client gagne une ligne.
+      // The client's consolidated view gains a row.
       void client.invalidateQueries({ queryKey: [CLES.clientDossiers, cree.clientId] });
     },
   });
 }
 
 /**
- * Toute action sur la fiche rafraîchit la fiche **et** les listes : l'étape courante et le statut
- * de sensibilité y sont affichés, et deviendraient faux sans invalidation.
- *
- * Seul le succès est notifié ici. Les erreurs restent aux écrans : un `ERR-003` n'est pas un
- * échec mais une demande de confirmation, et un toast d'erreur le présenterait à tort comme tel.
+ * Any action on the case record refreshes the record and the lists, which show the current step
+ * and sensitivity status. Only success is notified here: `ERR-003` is a confirmation request, not
+ * a failure, so errors are left to the screens.
  */
 function useMutationFiche<TVariables, TResultat>(
   id: number,
@@ -89,7 +81,7 @@ function useMutationFiche<TVariables, TResultat>(
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: [CLES.dossier, id] });
       void client.invalidateQueries({ queryKey: [CLES.dossiers] });
-      // Une demande ou un arbitrage de dérogation modifie la file d'arbitrage du dossier.
+      // A derogation request or decision changes the case's arbitration queue.
       void client.invalidateQueries({ queryKey: [CLES.derogations, id] });
       toast.success(t(cleSucces as never));
     },
@@ -134,7 +126,7 @@ export function useValiderSensibilite(id: number) {
   );
 }
 
-/** Le juriste propose la diligence particulière sur un dossier déjà ouvert (N4). */
+/** The legal officer proposes special diligence on an already open case. */
 export function useProposerDiligence(id: number) {
   return useMutationFiche(
     id,
@@ -144,10 +136,8 @@ export function useProposerDiligence(id: number) {
 }
 
 /**
- * Le DJ ou la DJA pose ou lève la diligence directement (N4).
- *
- * Une seule mutation pour les deux sens : c'est un seul endpoint, et le message de succès se
- * déduit de ce qui a été demandé - l'écran sait lequel des deux il vient de faire.
+ * The DJ or DJA sets or lifts special diligence directly. One mutation for both directions, since
+ * it is a single endpoint.
  */
 export function useModifierDiligence(id: number) {
   return useMutationFiche(
@@ -157,7 +147,7 @@ export function useModifierDiligence(id: number) {
   );
 }
 
-/** File des demandes de seuil d'un dossier (Q-74). `actif` évite l'appel quand il est inutile. */
+/** Threshold derogation requests of a case. `actif` skips the call when it is not needed. */
 export function useDerogations(id: number, statut?: StatutValidation, actif = true) {
   return useQuery({
     queryKey: [CLES.derogations, id, statut ?? "toutes"],
@@ -176,9 +166,8 @@ export function useValiderDerogation(id: number) {
 }
 
 /**
- * Dépôt et suppression de pièces. Pas de notification ici : à la création d'un dossier, plusieurs
- * pièces partent d'affilée, et un toast par pièce noierait l'utilisateur. Les écrans notifient.
- * La fiche est rafraîchie aussi : chaque dépôt ou suppression entre dans l'historique.
+ * Document upload and deletion. No toast here, since case creation uploads several documents in a
+ * row; screens notify. The case record is refreshed too, as each action enters its history.
  */
 function useInvalidationDocuments(dossierId: number) {
   const client = useQueryClient();

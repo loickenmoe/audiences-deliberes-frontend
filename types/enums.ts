@@ -1,20 +1,13 @@
 /**
- * Les 28 énumérations du domaine **effectivement exposées par l'API**, relevées une par une dans le
- * code du backend et recoupées avec `contracts/openapi.json`.
+ * Domain enumerations exposed by the API, checked against the backend code and
+ * `contracts/openapi.json`.
  *
- * Le backend en définit 31 ; trois sont internes et ne franchissent jamais l'API (voir en fin de
- * fichier).
- *
- * **Ce fichier ne contient que le contrat — aucun libellé.** Le backend renvoie les valeurs brutes
- * (`EN_DELIBERE`, `DEPOSEE`, …) sans traduction ; les libellés vivent dans `messages/fr.json` et
- * `messages/en.json`, sous l'espace `domaine`, et se résolvent par `lib/libelles.ts`. C'est ce qui
- * rend l'application bilingue sans modification du backend.
- *
- * `tests/unit/messages.test.ts` vérifie que **chaque valeur ci-dessous a un libellé dans les deux
- * langues** : ajouter une valeur ici sans la traduire fait échouer la suite.
+ * Contract only, no labels: labels live in `messages/fr.json` and `messages/en.json` under the
+ * `domaine` namespace and are resolved by `lib/libelles.ts`. `tests/unit/messages.test.ts` checks
+ * that every value below has a label in both languages.
  */
 
-// ─────────────────────────────── Dossier ───────────────────────────────
+// Case files
 
 export const CategorieDossier = ["RECOUVREMENT", "EXPLOITATION_LITIGES"] as const;
 export type CategorieDossier = (typeof CategorieDossier)[number];
@@ -22,7 +15,7 @@ export type CategorieDossier = (typeof CategorieDossier)[number];
 export const TypeEtape = ["INSTANCE", "RECOURS_1", "RECOURS_2", "RECOURS_2_CCJA"] as const;
 export type TypeEtape = (typeof TypeEtape)[number];
 
-/** Cycle de vie d'une étape (RG-DOS-04). L'ordre du tableau est celui de la progression. */
+/** Stage lifecycle (RG-DOS-04). Array order is the progression order. */
 export const StatutCycleVie = [
   "OUVERTURE",
   "EN_COURS",
@@ -34,8 +27,8 @@ export const StatutCycleVie = [
 export type StatutCycleVie = (typeof StatutCycleVie)[number];
 
 /**
- * Les tris offerts sur la liste des dossiers. Vocabulaire fermé, miroir de l'énuméré serveur : le
- * navigateur ne nomme jamais une colonne, il choisit un tri.
+ * Sort options for the case file list. Closed vocabulary mirroring the server enum: the browser
+ * never names a column, it picks a sort.
  */
 export const TriDossiers = ["RECENT", "ANCIEN", "REFERENCE", "RISQUE"] as const;
 export type TriDossiers = (typeof TriDossiers)[number];
@@ -46,7 +39,7 @@ export type StatutValidation = (typeof StatutValidation)[number];
 export const SeuilOrigine = ["GLOBAL", "DEROGATION"] as const;
 export type SeuilOrigine = (typeof SeuilOrigine)[number];
 
-// ─────────────────────────────── Audience ───────────────────────────────
+// Hearings
 
 export const StatutAudience = ["PLANIFIEE", "TENUE", "ANNULEE"] as const;
 export type StatutAudience = (typeof StatutAudience)[number];
@@ -57,11 +50,11 @@ export type StatutAlarme = (typeof StatutAlarme)[number];
 export const PeriodeCalendrier = ["HEBDOMADAIRE", "MENSUELLE", "TRIMESTRIELLE"] as const;
 export type PeriodeCalendrier = (typeof PeriodeCalendrier)[number];
 
-/** Export du calendrier des audiences — pas de CSV, contrairement aux rapports. */
+/** Hearings calendar export: no CSV, unlike reports. */
 export const FormatExport = ["JSON", "PDF", "EXCEL"] as const;
 export type FormatExport = (typeof FormatExport)[number];
 
-// ─────────────────────────────── Délibéré ───────────────────────────────
+// Deliberations
 
 export const ResultatDelibere = ["FAVORABLE", "DEFAVORABLE", "MIXTE"] as const;
 export type ResultatDelibere = (typeof ResultatDelibere)[number];
@@ -69,11 +62,11 @@ export type ResultatDelibere = (typeof ResultatDelibere)[number];
 export const StatutExpedition = ["A_LEVER", "LEVEE"] as const;
 export type StatutExpedition = (typeof StatutExpedition)[number];
 
-/** Dérivé par le backend (Q-78), jamais stocké : en attente de décision, vidé, ou rabattu. */
+/** Derived by the backend, never stored: awaiting decision, delivered, or withdrawn. */
 export const EtatDelibere = ["EN_ATTENTE", "VIDE", "RABATTU"] as const;
 export type EtatDelibere = (typeof EtatDelibere)[number];
 
-// ─────────────────────────────── Frais ───────────────────────────────
+// Lawyer fees
 
 export const StatutCircuitFrais = [
   "DEPOSEE",
@@ -89,8 +82,8 @@ export const StatutPaiementFrais = ["EN_ATTENTE", "PAYEE"] as const;
 export type StatutPaiementFrais = (typeof StatutPaiementFrais)[number];
 
 /**
- * Décisions du circuit, exposées depuis Q-82 backend (`DemandeFraisResponse.validations`) : deux
- * contrôles individuels, puis les deux accords **distincts** de la validation conjointe (US 4.5).
+ * Workflow decisions (`DemandeFraisResponse.validations`): two individual checks, then the two
+ * separate approvals of the joint validation (US 4.5).
  */
 export const EtapeValidationFrais = ["CONFORMITE", "OPPORTUNITE", "CONJOINTE_DJ", "CONJOINTE_DJA"] as const;
 export type EtapeValidationFrais = (typeof EtapeValidationFrais)[number];
@@ -98,7 +91,7 @@ export type EtapeValidationFrais = (typeof EtapeValidationFrais)[number];
 export const DecisionValidationFrais = ["ACCORD", "REJET"] as const;
 export type DecisionValidationFrais = (typeof DecisionValidationFrais)[number];
 
-// ─────────────────────────────── Publications ───────────────────────────────
+// Publications
 
 export const TypePublication = ["CR_AUDIENCE", "AUTRE"] as const;
 export type TypePublication = (typeof TypePublication)[number];
@@ -109,7 +102,7 @@ export type TypeAutrePublication = (typeof TypeAutrePublication)[number];
 export const StatutPublication = ["DEPOSE", "VALIDE", "REJETE"] as const;
 export type StatutPublication = (typeof StatutPublication)[number];
 
-// ─────────────────────────────── Intervenants ───────────────────────────────
+// External parties
 
 export const TypeIntervenant = ["AVOCAT", "AUTRE_PRESTATAIRE"] as const;
 export type TypeIntervenant = (typeof TypeIntervenant)[number];
@@ -117,7 +110,7 @@ export type TypeIntervenant = (typeof TypeIntervenant)[number];
 export const StatutConstitution = ["EN_ATTENTE", "VALIDEE", "REJETEE"] as const;
 export type StatutConstitution = (typeof StatutConstitution)[number];
 
-// ─────────────────────────────── GED ───────────────────────────────
+// Document management
 
 export const FormatDocument = ["PDF", "PNG", "JPG", "TXT", "XLSX"] as const;
 export type FormatDocument = (typeof FormatDocument)[number];
@@ -125,7 +118,7 @@ export type FormatDocument = (typeof FormatDocument)[number];
 export const StatutSuppression = ["EN_ATTENTE", "APPROUVEE", "REJETEE"] as const;
 export type StatutSuppression = (typeof StatutSuppression)[number];
 
-// ─────────────────────────────── Alertes ───────────────────────────────
+// Alerts
 
 export const StatutAlerte = ["DECLENCHEE", "TRAITEE"] as const;
 export type StatutAlerte = (typeof StatutAlerte)[number];
@@ -133,16 +126,13 @@ export type StatutAlerte = (typeof StatutAlerte)[number];
 export const CanalAlerte = ["APPLICATIF", "OUTLOOK", "TEAMS"] as const;
 export type CanalAlerte = (typeof CanalAlerte)[number];
 
-/** Canaux externes des prestataires (backend Q-118) ; les internes passent par Outlook et Teams. */
+/** External channels for providers; internal users go through Outlook and Teams. */
 export const CanalPrestataire = ["COURRIEL_PERSONNEL", "SMS", "WHATSAPP"] as const;
 export type CanalPrestataire = (typeof CanalPrestataire)[number];
 
 /**
- * Les 12 événements notifiés aux prestataires par un canal externe (backend Q-118).
- *
- * **Cette liste est ce qui rend le garde-fou possible.** Le test « chaque valeur d'énumération a un
- * libellé » la parcourt : une valeur ajoutée au backend sans être ajoutée ici n'est vérifiée par
- * personne, et le code brut apparaît à l'écran. C'est arrivé avec `DEMANDE_EXPLICATION` (N7).
+ * Events notified to providers through an external channel. Must list every backend value: the
+ * label test iterates over it, so a missing value would show its raw code on screen.
  */
 export const EvenementPrestataire = [
   "CONSTITUTION_VALIDEE",
@@ -161,11 +151,9 @@ export const EvenementPrestataire = [
 export type EvenementPrestataire = (typeof EvenementPrestataire)[number];
 
 /**
- * Les 19 types d'alerte (arbitrage backend Q-22).
- *
- * `MANQUEMENT_COMPTE_RENDU` est arrive avec N7 (2026-10-07) : deux audiences consecutives sans
- * compte rendu remontent au Directeur Juridique. Cote backend, toute valeur ajoutee ici exige une
- * migration de `chk_alerte_type` - une contrainte fermee, qui ne se plaint qu'en production.
+ * Alert types. `MANQUEMENT_COMPTE_RENDU`: two consecutive hearings without a report are escalated to
+ * the Legal Director. Any value added here requires a backend migration of the `chk_alerte_type`
+ * constraint.
  */
 export const TypeAlerte = [
   "RAPPEL_AUDIENCE",
@@ -190,23 +178,21 @@ export const TypeAlerte = [
 ] as const;
 export type TypeAlerte = (typeof TypeAlerte)[number];
 
-// ─────────────────────────────── Configurations ───────────────────────────────
+// Configuration
 
 /**
- * Nature de la valeur attendue par une clé de configuration (backend Q-91). Le contrat décrit la
- * saisie — bornes d'un entier, valeurs acceptées d'une liste — au lieu de la faire redéclarer ici.
- *
- * Absente d'`ENUMERATIONS_TRADUITES` : elle ne s'affiche jamais. C'est un descripteur de contrat,
- * qui dit à l'écran 41 quel champ construire — pas un mot à montrer à l'utilisateur.
+ * Kind of value expected by a configuration key; the contract describes the input (integer bounds,
+ * accepted list values). Absent from `ENUMERATIONS_TRADUITES`: it tells the screen which input to
+ * build and is never displayed.
  */
 export const TypeValeurConfiguration = ["ENTIER", "LISTE"] as const;
 export type TypeValeurConfiguration = (typeof TypeValeurConfiguration)[number];
 
-// ─────────────────────────────── Décisions définitives ───────────────────────────────
+// Final decisions
 
 /*
- * `TypeDecisionDefinitive` n'est pas typée ici : c'est le discriminant de la hiérarchie JPA côté
- * backend. L'API expose deux réponses distinctes, jamais le discriminant lui-même.
+ * `TypeDecisionDefinitive` is not typed here: it is the backend JPA hierarchy discriminator. The API
+ * exposes two distinct responses, never the discriminator itself.
  */
 
 export const SensCondamnation = ["BANQUE_REDEVABLE", "TIERS_REDEVABLE"] as const;
@@ -218,7 +204,7 @@ export type StatutPaiementCondamnation = (typeof StatutPaiementCondamnation)[num
 export const TypeArchiveJurisprudence = ["EXTRAIT_MINUTE", "EXPEDITION", "GROSSE"] as const;
 export type TypeArchiveJurisprudence = (typeof TypeArchiveJurisprudence)[number];
 
-// ─────────────────────────────── Reporting ───────────────────────────────
+// Reporting
 
 export const TypeRapport = [
   "JOURNALIER",
@@ -229,17 +215,15 @@ export const TypeRapport = [
 ] as const;
 export type TypeRapport = (typeof TypeRapport)[number];
 
-/** Export d'un rapport — inclut CSV, contrairement au calendrier des audiences. */
+/** Report export: includes CSV, unlike the hearings calendar. */
 export const FormatRapport = ["JSON", "PDF", "EXCEL", "CSV"] as const;
 export type FormatRapport = (typeof FormatRapport)[number];
 
-// ─────────────────────────────── Rôles ───────────────────────────────
+// Roles
 
 /**
- * Rôles Keycloak. Un utilisateur en porte **plusieurs simultanément** : son profil métier, plus
- * `ROLE_CONSULTATION` (les 5 profils internes) et `ROLE_SAISIE` (composite).
- * Vérifié en réel : `juriste.test` → `["ROLE_JURISTE","ROLE_SAISIE","ROLE_CONSULTATION"]`,
- * `avocat.test` → `["ROLE_AVOCAT"]` seul.
+ * Keycloak roles. A user holds several at once: their business profile plus `ROLE_CONSULTATION`
+ * (the 5 internal profiles) and `ROLE_SAISIE` (composite). A lawyer holds `ROLE_AVOCAT` only.
  */
 export const Role = [
   "ROLE_JURISTE",
@@ -253,7 +237,7 @@ export const Role = [
 ] as const;
 export type Role = (typeof Role)[number];
 
-/** Profils métier, à l'exclusion des rôles transverses. Ordre d'affichage hiérarchique. */
+/** Business profiles, excluding cross-cutting roles, in hierarchical display order. */
 export const PROFILS_METIER = [
   "ROLE_DJ",
   "ROLE_DJA",
@@ -263,7 +247,7 @@ export const PROFILS_METIER = [
   "ROLE_AVOCAT",
 ] as const satisfies readonly Role[];
 
-/** Espaces de traduction des énumérations, sous `domaine` dans les fichiers de messages. */
+/** Enum translation namespaces, under `domaine` in the message files. */
 export const ENUMERATIONS_TRADUITES = {
   CategorieDossier,
   TypeEtape,

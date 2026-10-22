@@ -1,25 +1,23 @@
 import type { PeriodeCalendrier } from "@/types/enums";
 
 /**
- * Calcul des périodes du calendrier des audiences (écran 22).
+ * Period computations for the hearings calendar.
  *
- * Tout est fait en **dates locales** et sérialisé en `YYYY-MM-DD` sans passer par UTC :
- * `toISOString()` convertit en UTC et ferait reculer la date d'un jour dès que l'heure locale
- * précède minuit UTC. Le projet n'embarque pas de bibliothèque de dates ; ces quelques fonctions
- * suffisent.
+ * Everything uses local dates serialized as `YYYY-MM-DD` without going through UTC:
+ * `toISOString()` converts to UTC and could shift the date back by one day.
  */
 
-/** `YYYY-MM-DD` d'une date locale. */
+/** `YYYY-MM-DD` of a local date. */
 export function versIso(date: Date): string {
   const mois = String(date.getMonth() + 1).padStart(2, "0");
   const jour = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${mois}-${jour}`;
 }
 
-/** Date locale d'un `YYYY-MM-DD`. */
+/** Local date from a `YYYY-MM-DD`. */
 export function depuisIso(iso: string): Date {
   const [annee, mois, jour] = iso.split("-").map(Number);
-  return new Date(annee!, mois! - 1, jour!);
+  return new Date(annee!, mois! - 1, jour);
 }
 
 export function ajouterJours(date: Date, jours: number): Date {
@@ -30,56 +28,51 @@ export function ajouterJours(date: Date, jours: number): Date {
 
 export function ajouterMois(date: Date, mois: number): Date {
   const resultat = new Date(date.getFullYear(), date.getMonth() + mois, 1);
-  // Conserver le jour quand il existe dans le mois cible (31 janvier + 1 mois → 28/29 février).
+  // Keep the day when it exists in the target month (Jan 31 + 1 month -> Feb 28/29).
   const dernierJour = new Date(resultat.getFullYear(), resultat.getMonth() + 1, 0).getDate();
   resultat.setDate(Math.min(date.getDate(), dernierJour));
   return resultat;
 }
 
 /**
- * Premier jour de la période contenant `date` : lundi pour une semaine, le 1er pour un mois, le 1er
- * du trimestre civil pour un trimestre. Aligner sur ces bornes rend la navigation prévisible — une
- * « semaine » qui commencerait un jeudi n'aurait pas de sens pour un juriste.
+ * First day of the period containing `date`: Monday for a week, the 1st for a month, the 1st of the
+ * calendar quarter for a quarter.
  */
 export function debutDePeriode(periode: PeriodeCalendrier, date: Date): Date {
   if (periode === "HEBDOMADAIRE") {
-    const decalage = (date.getDay() + 6) % 7; // lundi = 0
+    const decalage = (date.getDay() + 6) % 7; // Monday = 0
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() - decalage);
   }
   if (periode === "MENSUELLE") return new Date(date.getFullYear(), date.getMonth(), 1);
   return new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1);
 }
 
-/** Période suivante (`sens = 1`) ou précédente (`sens = -1`). */
+/** Next (`sens = 1`) or previous (`sens = -1`) period. */
 export function decalerPeriode(periode: PeriodeCalendrier, debut: Date, sens: 1 | -1): Date {
   if (periode === "HEBDOMADAIRE") return ajouterJours(debut, 7 * sens);
   return ajouterMois(debut, (periode === "MENSUELLE" ? 1 : 3) * sens);
 }
 
 /**
- * Dernier jour **affiché** de la période : la veille de la période suivante.
- *
- * Le backend interroge `BETWEEN`, bornes incluses, et sa borne de fin s'arrête désormais elle aussi
- * la veille (QF-31, corrigé) — une semaine commençant un lundi ne ramène plus le lundi suivant.
- * L'écran doit annoncer exactement la période que l'export PDF/Excel contient : les deux calculs
- * restent donc alignés, ici comme dans `PeriodeCalendrier` côté serveur.
+ * Last displayed day of the period: the day before the next period. Must stay aligned with the
+ * backend `PeriodeCalendrier` (inclusive `BETWEEN`) so the screen matches the PDF/Excel export.
  */
 export function finDePeriode(periode: PeriodeCalendrier, debut: Date): Date {
   if (periode === "HEBDOMADAIRE") return ajouterJours(debut, 6);
   return ajouterJours(ajouterMois(debut, periode === "MENSUELLE" ? 1 : 3), -1);
 }
 
-/** Aujourd'hui, en `YYYY-MM-DD` local. */
+/** Today, as local `YYYY-MM-DD`. */
 export function aujourdhui(): string {
   return versIso(new Date());
 }
 
-/** Demain, en `YYYY-MM-DD` local — borne employée hors planification d'audience (RG-AUD-08). */
+/** Tomorrow, as local `YYYY-MM-DD`; bound used outside hearing scheduling (RG-AUD-08). */
 export function demain(): string {
   return versIso(ajouterJours(new Date(), 1));
 }
 
-/** Maintenant, au format d'un champ `datetime-local` (`YYYY-MM-DDTHH:mm`). */
+/** Now, in `datetime-local` input format (`YYYY-MM-DDTHH:mm`). */
 export function maintenantLocal(): string {
   const date = new Date();
   const heures = String(date.getHours()).padStart(2, "0");

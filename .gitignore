@@ -21,6 +21,7 @@ next-env.d.ts
 /playwright/.cache
 /test-results
 /blob-report
+/.scannerwork
 
 # Environnement — AUCUN secret ne doit être versionné (cf. RF-04).
 # Le backend a connu une fuite d'identifiants réels via un fichier d'environnement versionné (R-01).

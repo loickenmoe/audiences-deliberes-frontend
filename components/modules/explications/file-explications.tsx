@@ -18,18 +18,66 @@ import { peut } from "@/lib/rbac";
 import type { DemandeExplication } from "@/types/domaine";
 
 /**
- * Les demandes d'explication (N7 temps 2, observation 8).
- *
- * **Un seul écran pour deux publics.** La direction y voit les demandes qu'elle a écrites, l'avocat
- * celles qui lui sont adressées - et c'est le **serveur** qui décide lesquelles, sur l'identité de
- * qui appelle. L'écran n'envoie aucun paramètre de périmètre : il suffirait à un avocat pour
- * demander la liste entière.
- *
- * **Ce que l'écran montre avant tout, c'est l'attente.** Une demande sans réponse est ce sur quoi
- * quelqu'un doit agir - l'avocat pour répondre, la direction pour insister. Le reste est de
- * l'historique.
+ * Explanation requests, for two audiences: management sees the requests it wrote, a lawyer those
+ * addressed to them. The server decides which, from the caller's identity; the screen sends no scope
+ * parameter, otherwise a lawyer could request the whole list.
+ * Pending (unanswered) requests come first: they are what someone has to act on.
  */
-export function FileExplications({ roles }: { roles: string[] }) {
+
+function colonnesExplications(
+  t: ReturnType<typeof useTranslations<"explications">>,
+  peutRepondre: boolean,
+  onRepondre: (demande: DemandeExplication) => void,
+): ColumnDef<DemandeExplication, unknown>[] {
+  return [
+    { accessorKey: "avocatNom", header: t("colonneAvocat") },
+    {
+      id: "demande",
+      header: t("colonneDemande"),
+      cell: ({ row }) => (
+        <span className="flex flex-col gap-1">
+          <span className="max-w-prose">{row.original.contenu}</span>
+          <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+            {row.original.auteurNom ?? "-"} · <DateHeureValeur valeur={row.original.dateDemande} />
+            {row.original.referenceDossier ? ` · ${row.original.referenceDossier}` : ""}
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: "statut",
+      header: t("colonneStatut"),
+      cell: ({ row }) => (
+        <span className="flex flex-col items-start gap-1">
+          <StatutChip ton={row.original.enAttente ? "attention" : "succes"}>
+            {row.original.enAttente ? t("enAttente") : t("repondue")}
+          </StatutChip>
+          {/* The answer is shown in full under the status, so no row has to be opened to read it. */}
+          {row.original.reponse ? (
+            <span className="max-w-prose text-[length:var(--taille-xs)] text-texte-secondaire">
+              {row.original.reponse}
+            </span>
+          ) : null}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) =>
+        peutRepondre && row.original.enAttente ? (
+          <div className="flex justify-end">
+            <Button taille="sm" onClick={() => onRepondre(row.original)}>
+              <MessageSquare size={14} aria-hidden />
+              {t("repondre")}
+            </Button>
+          </div>
+        ) : null,
+    },
+  ];
+}
+
+export function FileExplications({ roles }: Readonly<{ roles: string[] }>) {
   const t = useTranslations("explications");
   const tc = useTranslations("commun");
   const { page, definirPage } = useFiltresUrl({});
@@ -55,73 +103,20 @@ export function FileExplications({ roles }: { roles: string[] }) {
     }
   }
 
-  const colonnes = useMemo<ColumnDef<DemandeExplication, unknown>[]>(
-    () => [
-      { accessorKey: "avocatNom", header: t("colonneAvocat") },
-      {
-        id: "demande",
-        header: t("colonneDemande"),
-        cell: ({ row }) => (
-          <span className="flex flex-col gap-1">
-            <span className="max-w-prose">{row.original.contenu}</span>
-            <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-              {row.original.auteurNom ?? "-"} · <DateHeureValeur valeur={row.original.dateDemande} />
-              {row.original.referenceDossier ? ` · ${row.original.referenceDossier}` : ""}
-            </span>
-          </span>
-        ),
-      },
-      {
-        id: "statut",
-        header: t("colonneStatut"),
-        cell: ({ row }) => (
-          <span className="flex flex-col items-start gap-1">
-            <StatutChip ton={row.original.enAttente ? "attention" : "succes"}>
-              {row.original.enAttente ? t("enAttente") : t("repondue")}
-            </StatutChip>
-            {/*
-              La réponse est ce que la direction attendait : elle s'affiche en entier, sous le
-              statut. La cacher derrière un clic obligerait à ouvrir chaque ligne pour savoir ce
-              qui a été dit.
-            */}
-            {row.original.reponse ? (
-              <span className="max-w-prose text-[length:var(--taille-xs)] text-texte-secondaire">
-                {row.original.reponse}
-              </span>
-            ) : null}
-          </span>
-        ),
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) =>
-          peutRepondre && row.original.enAttente ? (
-            <div className="flex justify-end">
-              <Button
-                taille="sm"
-                onClick={() => {
-                  setARepondre(row.original);
-                  setReponse("");
-                  setErreur("");
-                }}
-              >
-                <MessageSquare size={14} aria-hidden />
-                {t("repondre")}
-              </Button>
-            </div>
-          ) : null,
-      },
-    ],
+  function ouvrirReponse(demande: DemandeExplication) {
+    setARepondre(demande);
+    setReponse("");
+    setErreur("");
+  }
+
+  const colonnes = useMemo(
+    () => colonnesExplications(t, peutRepondre, ouvrirReponse),
     [t, peutRepondre],
   );
 
   return (
     <div className="flex flex-col gap-4">
-      {/*
-        Le filtre ne sert qu'à la direction : l'avocat voit les siennes, répondues ou non, et
-        c'est l'historique de ce qu'on lui a demandé.
-      */}
+      {/* Management only: a lawyer sees all of their requests, answered or not, as their history. */}
       {peut(roles, "demanderExplication") ? (
         <div className="flex gap-2">
           <Button
@@ -161,7 +156,11 @@ export function FileExplications({ roles }: { roles: string[] }) {
         description={t("repondreDescription")}
         pied={
           <>
-            <Button variante="secondaire" onClick={() => setARepondre(null)} disabled={repondre.isPending}>
+            <Button
+              variante="secondaire"
+              onClick={() => setARepondre(null)}
+              disabled={repondre.isPending}
+            >
               {tc("annuler")}
             </Button>
             <Button onClick={() => void envoyerLaReponse()} disabled={repondre.isPending}>
@@ -172,11 +171,16 @@ export function FileExplications({ roles }: { roles: string[] }) {
         }
       >
         <div className="flex flex-col gap-3">
-          {/* Ce qu'on lui reproche, sous les yeux : on ne répond pas de mémoire. */}
+          {/* The request is shown above the answer, so the lawyer does not answer from memory. */}
           <p className="max-w-prose rounded border border-bordure bg-surface-attenuee p-3 text-[length:var(--taille-sm)]">
             {aRepondre?.contenu}
           </p>
-          <Champ id="explication-reponse" label={t("champReponse")} obligatoire erreur={erreur || undefined}>
+          <Champ
+            id="explication-reponse"
+            label={t("champReponse")}
+            obligatoire
+            erreur={erreur || undefined}
+          >
             <Textarea
               id="explication-reponse"
               rows={6}
@@ -185,7 +189,9 @@ export function FileExplications({ roles }: { roles: string[] }) {
               onChange={(evenement) => setReponse(evenement.target.value)}
             />
           </Champ>
-          <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("reponseUnique")}</p>
+          <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+            {t("reponseUnique")}
+          </p>
         </div>
       </Dialog>
     </div>

@@ -2,32 +2,24 @@ import { TAILLE_PAGE } from "@/hooks/const";
 import { apiClient, type PageReponse } from "@/lib/api/client";
 import type { ArchiveAudit, PageAudit, VerificationArchive } from "@/types/domaine";
 
-/** Portée d'une consultation. Exclusives : `UN_DOSSIER` exige `dossierId`. */
+/** Scope of a query (mutually exclusive); `UN_DOSSIER` requires `dossierId`. */
 export type PerimetreAudit = "TOUT" | "HORS_DOSSIER" | "UN_DOSSIER";
 
-/** Filtres de l'audit. Tous facultatifs hormis la portée, qui vaut `TOUT` par défaut. */
+/** Audit filters, all optional; the scope defaults to `TOUT`. */
 export interface FiltresAudit {
   perimetre?: PerimetreAudit;
   dossierId?: number;
-  /** Auteur recherché — autorisé par NF-CONF-01 ; c'est lui qui rend l'écran utile, et traçable. */
+  /** Action author filter, allowed by NF-CONF-01. */
   utilisateurId?: number;
-  /** Code typé (backend Q-111), jamais un libellé : un texte libre ne se filtre pas sans mentir. */
+  /** Typed action code, never a label: free text cannot be filtered reliably. */
   code?: string;
   dateDebut?: string;
   dateFin?: string;
 }
 
 /**
- * Audit des actions historisées (backend Q-112) — DJ et DJA.
- *
- * **Ce qu'il apporte par rapport au journal qu'il remplace.** Celui-ci répondait à une question de
- * *couverture* : des lignes existaient sans point de lecture. Restait une question de *point
- * d'entrée* — « qu'a fait X le mois dernier ? », « toutes les suppressions du trimestre ? ». Aucune
- * ne part d'un dossier, aucune n'était donc possible.
- *
- * ⚠ **Toute consultation est historisée** côté serveur, avec ses critères. Ce n'est pas une
- * contrainte imposée à qui consulte : c'est ce qui lui permet de démontrer qu'il n'a regardé que ce
- * qu'il devait.
+ * Audit of logged actions (DJ and DJA), queryable across cases (e.g. "what did X do last month?").
+ * Every consultation is itself logged server-side with its criteria.
  */
 export const auditService = {
   consulter: async (filtres: FiltresAudit = {}, page = 0, size = TAILLE_PAGE): Promise<PageAudit> => {
@@ -47,14 +39,9 @@ export const auditService = {
   },
 
   /**
-   * Extraction vers un fichier scellé (backend Q-113).
-   *
-   * **La période est obligatoire ici**, alors qu'elle est facultative à la consultation : une
-   * archive sans période ne dit pas ce qu'elle contient, et son empreinte ne prouverait que son
-   * intégrité, jamais son exhaustivité.
-   *
-   * Le fichier revient en octets, accompagné de son empreinte dans l'en-tête `X-Empreinte-SHA256` :
-   * le destinataire peut la comparer sans avoir à interroger l'application.
+   * Export to a sealed file. The period is mandatory here so the archive states what it covers.
+   * The file comes back with its fingerprint in the `X-Empreinte-SHA256` header, so the recipient
+   * can verify it without querying the application.
    */
   exporter: async (
     filtres: FiltresAudit & { dateDebut: string; dateFin: string },
@@ -72,11 +59,7 @@ export const auditService = {
         format,
       },
     });
-    /*
-     * Le nom vient du serveur, qui y met la référence de l'archive (`aud-2026-0042-…`). Le
-     * reconstruire ici produirait un nom plausible mais différent de celui sous lequel la pièce est
-     * consignée — et c'est précisément ce nom qu'on citera dans un courrier.
-     */
+    // Use the server-provided name, which carries the archive reference under which it is recorded.
     const extension = format === "PDF" ? "pdf" : "xlsx";
     const disposition = String(reponse.headers["content-disposition"] ?? "");
     const annonce = /filename="([^"]+)"/.exec(disposition)?.[1];
@@ -88,7 +71,7 @@ export const auditService = {
     };
   },
 
-  /** Les archives déjà produites, de la plus récente à la plus ancienne, avec leur empreinte. */
+  /** Archives already produced, most recent first, with their fingerprint. */
   archives: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<ArchiveAudit>> => {
     const { data } = await apiClient.get<PageReponse<ArchiveAudit>>("/historique/exports", {
       params: { page, size },
@@ -97,10 +80,8 @@ export const auditService = {
   },
 
   /**
-   * Vérifie qu'un fichier correspond à une archive connue (backend Q-114).
-   *
-   * **Seule l'empreinte part**, jamais le fichier : elle est calculée par le navigateur. Un document
-   * d'audit n'a aucune raison de traverser le réseau pour être comparé à lui-même.
+   * Checks that a file matches a known archive. Only the browser-computed fingerprint is sent,
+   * never the file.
    */
   verifier: async (empreinte: string): Promise<VerificationArchive> => {
     const { data } = await apiClient.get<VerificationArchive>("/historique/exports/verification", {
@@ -110,8 +91,7 @@ export const auditService = {
   },
 
   /**
-   * URL de récupération d'une archive. **Chaque appel est tracé côté serveur** : puiser dans les
-   * archives ne doit pas être plus discret que consulter l'écran.
+   * Download URL of an archive. Each call is logged server-side, like any audit consultation.
    */
   urlArchive: async (id: number): Promise<string> => {
     const { data } = await apiClient.get<{ url: string }>(`/historique/exports/${id}/telechargement`);

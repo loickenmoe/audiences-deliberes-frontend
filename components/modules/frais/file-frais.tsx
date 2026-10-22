@@ -16,7 +16,7 @@ import { peut } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import type { DemandeFrais } from "@/types/domaine";
 
-/** Message d'une vue vide — ceux des UC-INT-02/03/04 (alt. 1-a). */
+/** Empty-view messages, from UC-INT-02/03/04 (alt. 1-a). */
 const VIDE: Record<CleVueFrais, string> = {
   aControler: "videControle",
   opportunite: "videControle",
@@ -25,99 +25,123 @@ const VIDE: Record<CleVueFrais, string> = {
   toutes: "vide",
 };
 
+function colonnesFrais(
+  t: ReturnType<typeof useTranslations<"frais">>,
+  td: ReturnType<typeof useTranslations<"domaine">>,
+  lienDossier: boolean,
+  roles: readonly string[],
+): ColumnDef<DemandeFrais, unknown>[] {
+  return [
+    {
+      id: "facture",
+      header: t("colonneFacture"),
+      cell: ({ row }) => (
+        <Link
+          href={`/frais/${row.original.id}`}
+          className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+        >
+          {row.original.referenceFacture}
+        </Link>
+      ),
+    },
+    {
+      id: "dossier",
+      header: t("colonneDossier"),
+      cell: ({ row }) =>
+        lienDossier ? (
+          <Link
+            href={`/dossiers/${row.original.dossierId}`}
+            className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+          >
+            {row.original.referenceDossier}
+          </Link>
+        ) : (
+          <span className="font-mono text-[length:var(--taille-xs)]">
+            {row.original.referenceDossier}
+          </span>
+        ),
+    },
+    { accessorKey: "avocatNom", header: t("colonneAvocat") },
+    {
+      id: "montant",
+      header: t("colonneMontant"),
+      cell: ({ row }) => <MontantFcfa valeur={row.original.montant} />,
+    },
+    {
+      id: "depot",
+      header: t("colonneDepot"),
+      cell: ({ row }) => <DateHeureValeur valeur={row.original.createdAt} />,
+    },
+    {
+      id: "statut",
+      header: t("colonneStatut"),
+      cell: ({ row }) => {
+        const demande = row.original;
+        const enCours =
+          demande.statutCircuit === "CONFORMITE" || demande.statutCircuit === "OPPORTUNITE";
+        return (
+          <span className="flex flex-col items-start gap-1">
+            <StatutChip ton={TON_STATUT_FRAIS[demande.statutCircuit]}>
+              {td(`StatutCircuitFrais.${demande.statutCircuit}` as never)}
+            </StatutChip>
+            {enCours && demande.validationConjointeRequise ? (
+              <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+                {t("conjointeRequise")}
+              </span>
+            ) : null}
+            {demande.statutCircuit === "OPPORTUNITE" && aDonneSonAccord(demande, roles) ? (
+              <span className="text-[length:var(--taille-xs)]">{t("votreAccordDonne")}</span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+  ];
+}
+
 /**
- * Écran 28 — file des demandes de frais. Elle s'ouvre sur ce qui attend l'utilisateur (voir
- * `vuesFrais`) : conformité puis paiement pour l'Assistante, opportunité puis validation conjointe
- * pour la DJA, validation conjointe pour le DJ. La vue vit dans l'URL, comme les filtres des autres
- * listes : un lien envoyé à un collègue ouvre la même file.
+ * Screen 28 - expense request queue. It opens on what awaits the user (see `vuesFrais`): compliance
+ * then payment for the Assistant, opportunity then joint approval for the DJA, joint approval for
+ * the DJ. The view lives in the URL, so a shared link opens the same queue.
  */
-export function FileFrais({ roles }: { roles: readonly string[] }) {
+export function FileFrais({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("frais");
   const td = useTranslations("domaine");
   const vues = useMemo(() => vuesFrais(roles), [roles]);
   const defauts = useMemo(() => ({ vue: vues[0].cle as string }), [vues]);
-  const { filtres, page, taille, definirTaille, definirFiltre, definirPage } = useFiltresUrl(defauts);
+  const { filtres, page, taille, definirTaille, definirFiltre, definirPage } =
+    useFiltresUrl(defauts);
   const vue = vues.find((v) => v.cle === filtres.vue) ?? vues[0];
   const requete = useDemandesFrais(vue.statut, page, taille);
-  // L'avocat ne consulte pas les dossiers (`ROLE_CONSULTATION`) : la référence reste un texte.
+  // Lawyers cannot view case files (`ROLE_CONSULTATION`): the reference stays plain text.
   const lienDossier = peut(roles, "consulterDossiers");
 
-
-  const colonnes = useMemo<ColumnDef<DemandeFrais, unknown>[]>(
-    () => [
-      {
-        id: "facture",
-        header: t("colonneFacture"),
-        cell: ({ row }) => (
-          <Link href={`/frais/${row.original.id}`} className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4">
-            {row.original.referenceFacture}
-          </Link>
-        ),
-      },
-      {
-        id: "dossier",
-        header: t("colonneDossier"),
-        cell: ({ row }) =>
-          lienDossier ? (
-            <Link href={`/dossiers/${row.original.dossierId}`} className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4">
-              {row.original.referenceDossier}
-            </Link>
-          ) : (
-            <span className="font-mono text-[length:var(--taille-xs)]">{row.original.referenceDossier}</span>
-          ),
-      },
-      { accessorKey: "avocatNom", header: t("colonneAvocat") },
-      {
-        id: "montant",
-        header: t("colonneMontant"),
-        cell: ({ row }) => <MontantFcfa valeur={row.original.montant} />,
-      },
-      {
-        id: "depot",
-        header: t("colonneDepot"),
-        cell: ({ row }) => <DateHeureValeur valeur={row.original.createdAt} />,
-      },
-      {
-        id: "statut",
-        header: t("colonneStatut"),
-        cell: ({ row }) => {
-          const demande = row.original;
-          const enCours = demande.statutCircuit === "CONFORMITE" || demande.statutCircuit === "OPPORTUNITE";
-          return (
-            <span className="flex flex-col items-start gap-1">
-              <StatutChip ton={TON_STATUT_FRAIS[demande.statutCircuit]}>
-                {td(`StatutCircuitFrais.${demande.statutCircuit}` as never)}
-              </StatutChip>
-              {enCours && demande.validationConjointeRequise ? (
-                <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("conjointeRequise")}</span>
-              ) : null}
-              {demande.statutCircuit === "OPPORTUNITE" && aDonneSonAccord(demande, roles) ? (
-                <span className="text-[length:var(--taille-xs)]">{t("votreAccordDonne")}</span>
-              ) : null}
-            </span>
-          );
-        },
-      },
-    ],
+  const colonnes = useMemo(
+    () => colonnesFrais(t, td, lienDossier, roles),
     [t, td, lienDossier, roles],
   );
 
   /*
-   * Q-107 : un avocat dont le compte n'est pas rattaché au référentiel n'a pas de demandes, et n'en
-   * aura pas tant qu'il n'y est pas inscrit. Ce n'est pas un échec de chargement. Le test vient
-   * **après** les hooks : un retour anticipé placé avant en changerait l'ordre d'un rendu à l'autre.
+   * A lawyer whose account is not linked to the directory has no requests: this is not a loading
+   * failure. The check comes after the hooks, since an early return before them would change the
+   * hook order between renders.
    */
   if (estCompteAvocatNonRattache(requete.error)) return <CompteAvocatNonRattache />;
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
       {vues.length > 1 ? (
-        <div role="group" aria-label={t("vue")} className="flex w-fit rounded border border-bordure-forte">
+        <fieldset
+                    aria-label={t("vue")}
+          className="flex w-fit rounded border border-bordure-forte"
+        >
           {vues.map((v) => (
             <button
               key={v.cle}
@@ -132,7 +156,7 @@ export function FileFrais({ roles }: { roles: readonly string[] }) {
               {t(`vues.${v.cle}` as never)}
             </button>
           ))}
-        </div>
+        </fieldset>
       ) : null}
 
       <TableDonnees

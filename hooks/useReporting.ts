@@ -7,16 +7,14 @@ import { reportingService, type PeriodeRapport } from "@/services/reportingServi
 import type { CategorieDossier } from "@/types/enums";
 
 /**
- * Le tableau de bord annonce des indicateurs « temps réel » (RG-REP-03). Les recalculer à chaque
- * montage ne suffit pas : l'écran reste ouvert. Un rafraîchissement périodique les tient à jour
- * sans que le DJ ait à recharger, et la fenêtre reprend la main au retour sur l'onglet.
+ * The dashboard shows "real-time" indicators (RG-REP-03). Since the screen stays open, a periodic
+ * refresh keeps them current, and returning to the tab also refetches.
  */
 export const CADENCE_TABLEAU_DE_BORD = 60 * 1000;
 
 export function useTableauDeBord(categorie?: CategorieDossier) {
   return useQuery({
-    // Le périmètre fait partie de la clé : sans lui, changer de catégorie afficherait les chiffres
-    // de la précédente jusqu'au prochain rafraîchissement.
+    // The scope is part of the key so that switching category never shows the previous figures.
     queryKey: [CLES.tableauDeBord, categorie ?? "TOUTES"],
     queryFn: () => reportingService.tableauDeBord(categorie),
     refetchInterval: CADENCE_TABLEAU_DE_BORD,
@@ -25,12 +23,8 @@ export function useTableauDeBord(categorie?: CategorieDossier) {
 }
 
 /**
- * Un rapport est une **action**, pas une lecture d'écran : il se demande pour une période choisie,
- * et rien ne doit partir avant que l'utilisateur ait cliqué. D'où une mutation plutôt qu'une
- * requête — la différence se voit à l'usage, une requête se relancerait à chaque changement de
- * borne.
- *
- * `null` en résultat signifie **204** : aucune activité sur la période.
+ * A report is an explicit action for a chosen period, hence a mutation rather than a query (which
+ * would refetch on every bound change). A `null` result means 204: no activity in the period.
  */
 export function useGenererRapport() {
   return useMutation({

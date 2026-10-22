@@ -17,36 +17,25 @@ import { gedService } from "@/services/gedService";
 import { portailAvocatService, type PieceJustificative } from "@/services/portailAvocatService";
 
 /**
- * Un montant saisi à la main, rendu comparable à un nombre (QF-56).
+ * Parses a manually typed amount into a number.
  *
- * **Pourquoi cette fonction existe.** Le champ refusait « 12 000 » : la validation exigeait des
- * chiffres collés, le bouton restait éteint, et rien ne disait pourquoi. Or on écrit un montant avec
- * des espaces - c'est même ce que fait l'application quand elle en affiche un. Lui demander de les
- * retirer, sans le dire, c'est lui demander de devinerautre chose que ce qu'il voit partout
- * ailleurs.
- *
- * Trois espaces sont retirés, et pas seulement celui du clavier : l'**insécable** (U+00A0) et
- * l'**insécable étroite** (U+202F) arrivent par copier-coller depuis un tableur ou depuis
- * l'application elle-même, et sont invisibles à l'œil.
- *
- * La **virgule décimale** est acceptée et traduite en point : c'est la séparation française, et
- * `Number("12,5")` vaut `NaN`.
+ * Users type amounts with spaces ("12 000"), as the application displays them. Three kinds of space
+ * are removed: regular, non-breaking (U+00A0) and narrow non-breaking (U+202F), the latter two
+ * arriving through copy-paste. A decimal comma is accepted and converted, since `Number("12,5")`
+ * is `NaN`.
  */
 export function normaliserMontant(saisie: string): string {
-  return saisie.replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
+  return saisie.replaceAll(/[\s\u00a0\u202f]/g, "").replace(",", ".");
 }
 
 /**
- * Écran 30 — dépôt d'une demande de frais par l'avocat (#23, US 4.1).
+ * Screen 30 - expense request submission by the lawyer (US 4.1).
  *
- * **Les pièces justificatives sont de vrais fichiers** (QF-26, corrigée par le backend Q-97) :
- * UC-INT-01 étape 4 dit que « l'avocat **charge** les pièces justificatives », et le dictionnaire
- * décrit `pieces_justificatives` comme des « chemins ou références ». Chaque fichier part dès qu'il
- * est choisi, et c'est sa **clé de stockage** qui accompagne la demande — l'Assistante peut ensuite
- * l'ouvrir pour contrôler la conformité (UC-INT-02 étape 3).
- *
- * `referenceFacture` est unique : un doublon revient en 409 `ERR-006` en nommant le champ, que l'on
- * repose sur le contrôle concerné au lieu d'un bandeau générique.
+ * Supporting documents are real files (UC-INT-01 step 4): each file is uploaded as soon as it is
+ * chosen and its storage key is sent with the request, so the Assistant can open it for the
+ * compliance check (UC-INT-02 step 3).
+ * `referenceFacture` is unique: a duplicate returns 409 `ERR-006` naming the field, shown on that
+ * field instead of a generic banner.
  */
 export function FormulaireFrais() {
   const t = useTranslations("portail");
@@ -61,29 +50,31 @@ export function FormulaireFrais() {
   const [apercu, setApercu] = useState<PieceJustificative | null>(null);
   const [envoiPiece, setEnvoiPiece] = useState(false);
   const [erreurChamp, setErreurChamp] = useState<{ champ: string; message: string } | null>(null);
-  /** Les champs restés vides ou illisibles, signalés après une tentative de dépôt (QF-56). */
+  /** Fields left empty or unreadable, reported after a submission attempt. */
   const [manques, setManques] = useState<Record<string, string>>({});
 
   const montantNormalise = normaliserMontant(montant);
   const montantValide = /^\d+(\.\d+)?$/.test(montantNormalise) && Number(montantNormalise) > 0;
 
-  /** La pièce que le téléversement affiche : c'est elle que l'œil voisin relit. */
-  const derniere = pieces.length > 0 ? pieces[pieces.length - 1]! : null;
+  /** The document shown by the upload component, which the adjacent preview button opens. */
+  const derniere = pieces.at(-1) ?? null;
 
   /**
-   * La croix du téléversement retire la pièce qu'il affiche.
-   *
-   * Elle appelait `onChangement(null)`, que le formulaire ignorait : le fichier disparaissait de
-   * l'écran et partait quand même avec la demande. Un retrait qui ne retire pas est pire qu'un
-   * bouton absent.
+   * The upload component's remove button removes the document it shows, so it is not sent with
+   * the request.
    */
   function retirerDerniere() {
     setPieces((precedentes) => precedentes.slice(0, -1));
   }
 
+  /** Removes an earlier document from the request. */
+  function retirerPiece(cle: string) {
+    setPieces((precedentes) => precedentes.filter((piece) => piece.cle !== cle));
+  }
+
   /**
-   * Chaque pièce part **dès qu'elle est choisie** : un envoi groupé à la soumission ferait tout
-   * reperdre si une seule échouait, et l'avocat ne saurait pas laquelle.
+   * Each document is uploaded as soon as it is chosen: a batch upload on submit would lose everything
+   * if one failed, without telling the lawyer which one.
    */
   async function ajouterPiece(fichier: File | null) {
     if (!fichier) return;
@@ -91,28 +82,24 @@ export function FormulaireFrais() {
     try {
       const piece = await portailAvocatService.deposerPieceJustificative(fichier);
       setPieces((precedentes) => [...precedentes, piece]);
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     } finally {
       setEnvoiPiece(false);
     }
   }
 
   /**
-   * Ce qui manque, nommé champ par champ (QF-56).
-   *
-   * **Le bouton n'est plus éteint par l'incomplétude**, et c'est le cœur de la correction. Un bouton
-   * mort sans explication laisse chercher : l'avocat voyait « Déposer » grisé sans savoir si c'était
-   * son montant, sa facture ou sa pièce. Le formulaire accepte la tentative et **pointe ce qui
-   * manque**, comme le fait déjà celui de création de dossier avec ses pièces attendues.
+   * What is missing, named field by field. The submit button is not disabled for incompleteness:
+   * the form accepts the attempt and points out what is missing, like the case file creation form.
    */
   function manquants(): Record<string, string> {
     const problemes: Record<string, string> = {};
     if (dossierId === null) problemes.dossierId = t("fraisDossierManquant");
     if (referenceFacture.trim() === "") problemes.referenceFacture = t("fraisReferenceManquante");
     if (montant.trim() === "") problemes.montant = t("fraisMontantManquant");
-    // Un montant saisi mais illisible est une autre erreur qu'un montant absent : le message le dit,
-    // et nomme ce qui est accepté plutôt que de refuser sans expliquer.
+    // An amount entered but unreadable is a different error from a missing one: the message says so
+    // and states the accepted format.
     else if (!montantValide) problemes.montant = t("fraisMontantInvalide");
     if (pieces.length === 0) problemes.pieces = t("fraisPiecesManquantes");
     return problemes;
@@ -140,8 +127,8 @@ export function FormulaireFrais() {
           router.push("/frais");
         },
         onError: (erreur) => {
-          // Le backend nomme le champ fautif quand il y en a un (QF-21) : le message va sous le
-          // contrôle concerné, pas dans un bandeau que l'avocat devrait interpréter.
+          // The backend names the faulty field when there is one: the message goes under that control,
+          // not in a banner.
           const champ = erreur instanceof ErreurApi ? erreur.champ : null;
           if (champ) setErreurChamp({ champ, message: messageErreur(erreur) });
           else toast.error(messageErreur(erreur));
@@ -150,12 +137,12 @@ export function FormulaireFrais() {
     );
   }
 
-  // `Champ` affiche le message ; c'est `Input` qui porte `aria-invalid` via `enErreur`. Les deux
-  // vont ensemble : la bordure rouge seule ne dit rien à un lecteur d'écran.
+  // `Champ` displays the message; `Input` carries `aria-invalid` through `enErreur`. Both are needed:
+  // a red border alone means nothing to a screen reader.
   const erreurDe = (champ: string) =>
     erreurChamp?.champ === champ ? erreurChamp.message : manques[champ];
 
-  /** Corriger un champ en efface le reproche : le laisser serait accuser après coup. */
+  /** Editing a field clears its error. */
   function oublier(champ: string) {
     setManques((precedents) => {
       if (!(champ in precedents)) return precedents;
@@ -168,7 +155,9 @@ export function FormulaireFrais() {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("fraisTitre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("fraisTitre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("fraisDescription")}</p>
       </header>
 
@@ -234,21 +223,14 @@ export function FormulaireFrais() {
         </Champ>
 
         {/*
-          `min-w-0` sur le fieldset, et ce n'est pas décoratif : la feuille de style des navigateurs
-          lui impose `min-inline-size: min-content`, si bien qu'il refuse d'être plus étroit que son
-          contenu. Avec une rangée qui ne passe plus à la ligne et un nom de fichier long, il restait
-          à 643 points dans un écran de 375 et faisait défiler toute la page horizontalement. Mesuré
-          en recette automatisée, pas supposé.
+          `min-w-0` on the fieldset is required: browsers give fieldsets `min-inline-size: min-content`,
+          so with a long file name it would overflow and scroll the whole page horizontally on mobile.
         */}
         <fieldset className="flex min-w-0 flex-col gap-2">
           {/*
-            L'astérisque manquait : rien ne disait qu'une pièce est obligatoire, et le bouton
-            s'éteignait sans l'expliquer (QF-56). Même patron que `Champ` : elle est **hors du texte**
-            de la légende, décorative et `aria-hidden`, pour ne pas devenir « Pièces justificatives* »
-            dans le nom accessible. L'information est portée pour qui écoute par le nom du champ de
-            fichier, qu'un `<input type="file">` masqué ne peut pas assortir d'un `required` sans
-            déclencher la validation du navigateur - c'est le parti déjà retenu à la création d'un
-            dossier.
+            The asterisk is outside the legend text, decorative and `aria-hidden`, like in `Champ`, so the
+            accessible name does not become "Pièces justificatives*". A hidden `<input type="file">` cannot
+            carry `required` without triggering native browser validation (same choice as case file creation).
           */}
           <legend className="flex items-center gap-0.5 text-[length:var(--taille-sm)] font-medium">
             {t("pieces")}
@@ -261,32 +243,20 @@ export function FormulaireFrais() {
           </p>
 
           {/*
-            **Le téléversement et les pièces chargées sur la même ligne** (QF-56), comme au
-            formulaire de création de dossier : l'œil d'aperçu s'affichait sur une ligne distincte,
-            au-dessus, et le lien entre le fichier choisi et le bouton qui le relit se perdait.
-            `flex-wrap` passe à la ligne de lui-même au-delà de deux ou trois pièces.
+            Upload and loaded documents on the same line, as in the case file creation form, so the preview
+            button stays next to the chosen file. `flex-wrap` wraps beyond two or three documents.
           */}
           {/*
-            **La rangée ne passe plus à la ligne** (QF-56, second passage). Elle le faisait dès
-            qu'un nom de fichier long élargissait le bloc de téléversement : mesuré, la rangée fait
-            638 points et le bloc en prenait jusqu'à 570 avec un nom long, ne laissant pas les 90
-            points du bouton d'aperçu. Désormais le bloc se **comprime** (`min-w-0 flex-1`), son nom
-            de fichier se tronque, et le bouton garde sa place (`shrink-0`). C'est le nom qui cède,
-            pas la disposition - il se lit en entier au survol et dans le nom accessible de
-            l'aperçu.
+            The row does not wrap: the upload block shrinks (`min-w-0 flex-1`) and truncates its file name,
+            while the preview button keeps its place (`shrink-0`). The full name is available on hover and
+            in the preview's accessible name.
           */}
           <div className="flex items-center gap-3">
             {/*
-              Le composant porte ses propres contrôles de format et de poids (RG-GED-08), **et
-              affiche lui-même le fichier choisi** : son nom, son poids, et une croix pour le
-              retirer. C'est ce qui permet de ne mettre qu'un bouton d'aperçu à côté de lui, comme
-              au formulaire de création de dossier - mesure faite, le bloc occupe 436 des 638 points
-              de la rangée, et une puce portant une seconde fois le nom du fichier n'y tenait pas.
-
-              **Sa croix retire vraiment la pièce.** Elle appelle `onChangement(null)`, qui ne
-              faisait rien jusqu'ici : l'avocat voyait le fichier disparaître de l'écran alors qu'il
-              partait quand même avec la demande. La pièce est déjà en GED dès qu'elle est choisie,
-              et c'est donc ici qu'il faut la retirer.
+              The component performs its own format and size checks (RG-GED-08) and shows the chosen file
+              (name, size, remove button), so only a preview button is needed next to it.
+              Its remove button really removes the document: the file is already in the DMS once chosen, so
+              it must be removed from the request here.
             */}
             <Televersement
               className="min-w-0 flex-1"
@@ -301,13 +271,9 @@ export function FormulaireFrais() {
             />
 
             {/*
-              L'œil, **sur la même ligne** que le téléversement (QF-56) : il s'affichait au-dessus,
-              sur une ligne distincte, et le lien entre le fichier choisi et le bouton qui le relit
-              se perdait. Il relit la dernière pièce déposée, celle que le téléversement affiche à
-              côté - les précédentes se relisent dans la liste en dessous.
-
-              Relire avant d'envoyer : une pièce chargée ne se vérifiait qu'après le dépôt, quand il
-              était trop tard pour la remplacer sans repasser par une demande.
+              Preview button on the same line as the upload. It opens the last uploaded document, the one
+              shown next to it; earlier ones are previewed in the list below. Reviewing before sending avoids
+              having to submit a new request to replace a wrong document.
             */}
             {derniere ? (
               <Button
@@ -324,9 +290,8 @@ export function FormulaireFrais() {
           </div>
 
           {/*
-            Les pièces déjà déposées avant la dernière. Le téléversement n'en affiche qu'une à la
-            fois ; sans cette liste, les précédentes partiraient avec la demande sans que l'avocat
-            puisse les revoir ni les retirer.
+            Documents uploaded before the last one. The upload component shows only one at a time; without
+            this list, earlier documents would be sent without the lawyer being able to review or remove them.
           */}
           {pieces.length > 1 ? (
             <ul className="flex flex-col gap-1">
@@ -335,7 +300,9 @@ export function FormulaireFrais() {
                   key={piece.cle}
                   className="flex items-center justify-between gap-2 rounded border border-bordure bg-fond px-3 py-1.5"
                 >
-                  <span className="truncate text-[length:var(--taille-sm)]">{piece.nomFichier}</span>
+                  <span className="truncate text-[length:var(--taille-sm)]">
+                    {piece.nomFichier}
+                  </span>
                   <span className="flex items-center gap-1">
                     <Button
                       variante="discrete"
@@ -349,7 +316,7 @@ export function FormulaireFrais() {
                       variante="discrete"
                       taille="sm"
                       aria-label={t("retirerPiece", { numero: index + 1 })}
-                      onClick={() => setPieces((precedentes) => precedentes.filter((p) => p.cle !== piece.cle))}
+                      onClick={() => retirerPiece(piece.cle)}
                     >
                       <X size={14} aria-hidden />
                     </Button>
@@ -371,14 +338,17 @@ export function FormulaireFrais() {
 
         <div className="flex items-center gap-2">
           {/*
-            **Désactivé seulement pendant un envoi**, et plus par l'incomplétude du formulaire
-            (QF-56) : un bouton mort sans explication laisse chercher lequel des quatre champs est en
-            cause. La tentative est acceptée, et ce qui manque est nommé champ par champ.
+            Disabled only while sending, not for incompleteness: the attempt is accepted and what is
+            missing is named field by field.
           */}
           <Button onClick={soumettre} disabled={deposer.isPending || envoiPiece}>
             {deposer.isPending ? t("envoiEnCours") : t("deposer")}
           </Button>
-          <Button variante="discrete" data-garde-saisie="ignorer" onClick={() => router.push("/frais")}>
+          <Button
+            variante="discrete"
+            data-garde-saisie="ignorer"
+            onClick={() => router.push("/frais")}
+          >
             {t("annuler")}
           </Button>
         </div>
@@ -393,7 +363,7 @@ export function FormulaireFrais() {
         />
       ) : null}
 
-      {/* Les pièces sont déjà téléversées : perdre l'écran perdrait le lien entre elles et la demande. */}
+      {/* Documents are already uploaded: leaving the screen would lose their link with the request. */}
       <GardeSaisie
         actif={
           !deposer.isPending &&

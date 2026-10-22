@@ -7,20 +7,13 @@ import { StatutCycleVie, type TypeEtape } from "@/types/enums";
 import { cn } from "@/lib/utils";
 
 /**
- * Frise du cycle de vie d'une étape de procédure (RG-DOS-04).
- *
- * C'est l'information la plus consultée de l'application : un juriste ouvre un dossier d'abord pour
- * savoir où en est la procédure. Elle apparaît donc à la fois dans la liste des dossiers (forme
- * compacte) et sur la fiche (forme détaillée).
- *
+ * Timeline of a procedure step's lifecycle (RG-DOS-04), shown compact in the case list and detailed
+ * on the case page.
  *   OUVERTURE → EN_COURS → EN_DELIBERE → DELIBERE_VIDE → CLOTURE → ARCHIVE
- *
- * Deux boucles, que la ligne droite ne montre pas et qui comptent autant que la progression :
- * · **prorogation** — l'étape reste `EN_DELIBERE`, un nombre illimité de fois ;
- * · **rabattement** — le juge rouvre les débats, retour à `EN_COURS`.
- *
- * L'étape courante est signalée par le rouge de marque **et** par un point plein **et** par
- * `aria-current` : jamais par la couleur seule.
+ * Two loops are not shown by the straight line: extension (the step stays `EN_DELIBERE`, unlimited
+ * times) and reopening of proceedings (back to `EN_COURS`).
+ * The current step is marked by the brand red, a filled dot and `aria-current`, never by color
+ * alone.
  */
 
 const ETATS = StatutCycleVie;
@@ -31,23 +24,20 @@ export function CycleEtape({
   nbProrogations,
   compact = false,
   className,
-}: {
+}: Readonly<{
   statut: StatutCycleVie;
   /**
-   * Affiché quand il est fourni : en surtitre dans la vue déployée, devant le statut en compact.
-   *
-   * <b>En compact, il n'était pas rendu du tout</b> — la colonne « Étape » de la liste des dossiers
-   * n'annonçait donc qu'un statut. Tant qu'une seule étape s'affichait, l'ambiguïté passait
-   * inaperçue ; depuis que les deux pourvois coexistent, la même colonne montrait « Ouverture »
-   * deux fois sans dire laquelle était la Cour Suprême et laquelle la CCJA.
+   * Shown when provided: as an overline in the expanded view, before the status in compact mode
+   * (needed to tell the Supreme Court and CCJA appeals apart in the case list).
    */
   type?: TypeEtape;
-  /** Compteur de prorogations, si l'étape en a connu. */
+  /** Number of extensions, if any. */
   nbProrogations?: number;
   compact?: boolean;
   className?: string;
-}) {
+}>) {
   const t = useTranslations("domaine");
+  const libelleType = type ? t(`TypeEtape.${type}` as never) : null;
   const tm = useTranslations("metier");
   const indexCourant = ETATS.indexOf(statut);
 
@@ -74,7 +64,7 @@ export function CycleEtape({
           })}
         </ol>
         <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
-          {type ? `${t(`TypeEtape.${type}` as never)} · ` : ""}
+          {libelleType ? `${libelleType} · ` : ""}
           {t(`StatutCycleVie.${statut}` as never)}
         </span>
       </div>

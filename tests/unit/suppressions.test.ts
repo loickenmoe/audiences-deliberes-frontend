@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  *
- * File des demandes de suppression (#63, #41) et rapport journalier (#42) : ce qui part sur le fil.
+ * Deletion request queue (#63, #41) and daily report (#42): what goes over the wire.
  */
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";

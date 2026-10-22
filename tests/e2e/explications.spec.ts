@@ -4,16 +4,10 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { avocatDeTest } from "./avocat-de-test";
 
 /**
- * Les demandes d'explication (écran 47, backend Q-130) **contre le backend réel**.
- *
- * **Ce que ce parcours tient.** La direction écrit, l'avocat répond, et ni l'un ni l'autre n'hérite
- * du geste de l'autre. Puis les trois refus qui font de cet échange une pièce et non une
- * conversation : une seule demande en attente, pas de réponse à la demande d'un autre, pas de
- * seconde réponse.
- *
- * **Ce qu'il ne tient pas, et pourquoi.** La suspension de la relance automatique dépend d'un
- * planificateur quotidien : la vérifier ici supposerait de faire tourner l'horloge. Elle est tenue
- * par trois tests unitaires côté backend, et par l'étape 12 de REC-E2E-035 en recette manuelle.
+ * Explanation requests (screen 47) against the real backend. Management writes, the lawyer replies,
+ * and neither can do the other's action. The server rejects a second pending request, a reply to
+ * someone else's request, and a second reply. Suspension of automatic reminders depends on a daily
+ * scheduler and is covered by backend unit tests and REC-E2E-035 step 12.
  */
 
 loadEnvConfig(process.cwd());
@@ -61,10 +55,8 @@ function menu(page: Page) {
 }
 
 /**
- * Rend le compte à l'état où on l'a trouvé.
- *
- * Une demande en attente suspend la relance automatique de l'avocat et interdit toute nouvelle
- * demande : la laisser derrière soi fausserait le parcours suivant comme la recette manuelle.
+ * Restores the account: a pending request suspends the lawyer's automatic reminders and blocks any
+ * new request, which would break the next test.
  */
 async function soldeLesDemandesEnAttente(avocatId: number) {
   const accesAvocat = await jeton("avocat.test");
@@ -80,8 +72,8 @@ async function soldeLesDemandesEnAttente(avocatId: number) {
 }
 
 test.setTimeout(180_000);
-// Les parcours touchent le même avocat : en parallèle, le « une seule demande en attente » les
-// ferait se refuser mutuellement.
+// Tests share the same lawyer: in parallel, the "single pending request" rule would make them
+// reject each other.
 test.describe.configure({ mode: "serial" });
 
 test("la direction demande, l'avocat répond, et chacun voit ce qui le concerne", async ({ browser }) => {
@@ -89,14 +81,14 @@ test("la direction demande, l'avocat répond, et chacun voit ce qui le concerne"
   await soldeLesDemandesEnAttente(avocat.id);
   const marque = `Explication ${Date.now()}`;
 
-  // ── La direction écrit ──────────────────────────────────────────────────────
+  // Management writes.
   const dj = await pageConnectee(browser, "dj.test");
   await menu(dj).getByRole("link", { name: "Explications" }).click();
   await dj.waitForURL(/\/demandes-explication/, { timeout: 60_000 });
   await dj.getByRole("button", { name: "Demander une explication" }).click();
 
   const modale = dj.getByRole("dialog", { name: "Demander une explication" });
-  // Dit avant l'envoi : sinon la direction verrait les rappels cesser sans savoir pourquoi.
+  // Stated before sending, otherwise management would see reminders stop without knowing why.
   await expect(modale.getByText(/la relance automatique de ses comptes rendus est suspendue/)).toBeVisible();
 
   const champAvocat = modale.getByRole("combobox", { name: "Avocat" });
@@ -105,15 +97,15 @@ test("la direction demande, l'avocat répond, et chacun voit ce qui le concerne"
   await modale.getByRole("option", { name: new RegExp(avocat.nom) }).first().click();
   await modale.getByLabel(/Ce que vous lui demandez/).fill(marque);
   await modale.getByRole("button", { name: "Envoyer" }).click();
-  // L'apostrophe du libellé est typographique : une expression régulière évite de la recopier.
+  // The label uses a typographic apostrophe: a regular expression avoids copying it.
   await expect(dj.getByText(/Demande d.explication envoyée/)).toBeVisible({ timeout: 30_000 });
 
   const ligneDj = dj.getByRole("row", { name: new RegExp(marque) });
   await expect(ligneDj).toContainText("En attente de réponse");
-  // La direction écrit, elle ne répond pas à sa propre demande.
+  // Management writes; it does not reply to its own request.
   await expect(ligneDj.getByRole("button", { name: "Répondre" })).toHaveCount(0);
 
-  // ── Une seconde demande est refusée tant que la première attend ─────────────
+  // A second request is rejected while the first one is pending.
   await dj.getByRole("button", { name: "Demander une explication" }).click();
   const seconde = dj.getByRole("dialog", { name: "Demander une explication" });
   const champ2 = seconde.getByRole("combobox", { name: "Avocat" });
@@ -126,31 +118,31 @@ test("la direction demande, l'avocat répond, et chacun voit ce qui le concerne"
   await seconde.getByRole("button", { name: "Annuler" }).click();
   await dj.context().close();
 
-  // ── L'avocat répond ─────────────────────────────────────────────────────────
+  // The lawyer replies.
   const avo = await pageConnectee(browser, "avocat.test");
   await menu(avo).getByRole("link", { name: "Explications" }).click();
   await avo.waitForURL(/\/demandes-explication/, { timeout: 60_000 });
-  // Il n'écrit pas : c'est la direction qui demande.
+  // He does not write: management asks.
   await expect(avo.getByRole("button", { name: "Demander une explication" })).toHaveCount(0);
 
   const ligneAvocat = avo.getByRole("row", { name: new RegExp(marque) });
   await ligneAvocat.getByRole("button", { name: "Répondre" }).click();
   const reponse = avo.getByRole("dialog", { name: "Répondre à la Direction Juridique" });
-  // Ce qu'on lui reproche est sous les yeux : on ne répond pas de mémoire.
+  // The request is shown while replying.
   await expect(reponse.getByText(marque)).toBeVisible();
-  // Et on le prévient avant qu'il écrive, pas après.
+  // And he is warned before writing, not after.
   await expect(reponse.getByText(/ne pourra plus être modifiée/)).toBeVisible();
   await reponse.getByLabel("Votre réponse").fill("Le greffe ne m'a pas transmis le plumitif.");
   await reponse.getByRole("button", { name: "Envoyer" }).click();
   await expect(avo.getByText("Réponse envoyée.")).toBeVisible({ timeout: 30_000 });
 
-  // L'échange est clos : la réponse s'affiche, et le bouton a disparu.
+  // The exchange is closed: the reply is shown and the button is gone.
   await expect(ligneAvocat).toContainText("Répondue");
   await expect(ligneAvocat).toContainText("Le greffe ne m'a pas transmis le plumitif.");
   await expect(ligneAvocat.getByRole("button", { name: "Répondre" })).toHaveCount(0);
   await avo.context().close();
 
-  // ── La direction relit, et voit la réponse sans ouvrir la ligne ─────────────
+  // Management sees the reply without opening the row.
   const relecture = await pageConnectee(browser, "dj.test");
   await relecture.goto("/demandes-explication");
   await expect(relecture.getByRole("row", { name: new RegExp(marque) }))
@@ -159,24 +151,21 @@ test("la direction demande, l'avocat répond, et chacun voit ce qui le concerne"
 });
 
 /**
- * Les refus que l'écran ne montre pas, et qui comptent autant.
- *
- * Cacher un bouton ne protège rien : c'est le serveur qui tient la règle, et c'est là qu'on la
- * vérifie.
+ * Server-side rejections: hiding a button protects nothing, the server enforces the rule.
  */
 test("un juriste n'écrit pas, et un avocat ne répond pas pour un autre (Q-130)", async () => {
   const avocat = await avocatDeTest();
   await soldeLesDemandesEnAttente(avocat.id);
 
-  // Le juriste n'écrit pas : le droit se lit sur le profil, jamais sur ROLE_JURISTE qui est
-  // composite - il vaudrait aussi pour le DJ et la DJA, et pour tous les juristes.
+  // The legal officer cannot write: the right depends on the profile, never on ROLE_JURISTE, which
+  // is composite and also held by the DJ and the DJA.
   const refusJuriste = await appel("/demandes-explication", await jeton("juriste.test"), {
     method: "POST",
     body: JSON.stringify({ avocatId: avocat.id, contenu: "Expliquez-vous." }),
   });
   expect(refusJuriste.status, "un juriste ne demande pas d'explication").toBe(403);
 
-  // La direction écrit, puis l'avocat répond une fois - la seconde est refusée.
+  // Management writes, then the lawyer replies once; the second reply is rejected.
   const creee = await appel("/demandes-explication", await jeton("dj.test"), {
     method: "POST",
     body: JSON.stringify({ avocatId: avocat.id, contenu: "Comptes rendus manquants." }),
