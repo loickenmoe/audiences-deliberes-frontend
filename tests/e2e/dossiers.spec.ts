@@ -5,15 +5,13 @@ import { referenceDuDossier } from "./reference-attribuee";
 import { choisirAgenceOrigine } from "./agence-de-creation";
 
 /**
- * Parcours des dossiers (écrans 05 et 06) **contre le backend réel**.
- *
- * Ces tests créent de vrais dossiers dans la base de développement. Chaque référence porte un
- * suffixe aléatoire pour qu'une exécution répétée ne se heurte pas à ses propres doublons.
+ * Case flows (screens 05 and 06) against the real backend. These tests create real cases in the
+ * development database.
  */
 
 const MOT_DE_PASSE = "Password1!";
 
-/** Nature de 71 caractères : elle était refusée par le backend avant la migration V7 (Q-71). */
+/** A 71-character nature (accepted since migration V7). */
 const NATURE_LONGUE = "Hypothèque judiciaire (inscription provisoire, définitive, réalisation)";
 const NATURE_LITIGE = "Civil et commercial";
 
@@ -30,20 +28,18 @@ function suffixe() {
 }
 
 /**
- * Remplit le tronc commun du formulaire, hors pièces conditionnelles.
- *
- * La référence n'en fait plus partie depuis le 2026-09-29 : le système l'attribue, et les parcours
- * la lisent après création avec `referenceDuDossier`.
+ * Fills the common part of the form, excluding conditional documents. The reference is assigned by
+ * the system and read after creation with `referenceDuDossier`.
  */
 async function remplirTroncCommun(page: Page, nature: string) {
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(nature);
   await page.getByLabel("Juridiction saisie", { exact: true }).fill("TGI Douala");
   await page.getByLabel("Client", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Risque encouru (FCFA)", { exact: true }).fill("5000000");
-  // Obligatoires depuis le 2026-10-05 : au moins une partie de chaque côté.
+  // Mandatory: at least one party on each side.
   await page.getByLabel("Demandeurs 1", { exact: true }).fill("AFRILAND FIRST BANK");
   await page.getByLabel("Défendeurs 1", { exact: true }).fill("Débiteur");
-  // Obligatoire depuis le 2026-10-05 (observation 2) : l'agence vient du référentiel.
+  // Mandatory: the branch comes from the reference data.
   await choisirAgenceOrigine(page);
   await affecterParDefaut(page);
 }
@@ -66,8 +62,8 @@ test("la catégorie est déduite de la nature et commande les pièces exigées",
 
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LONGUE);
 
-  // Recouvrement : le dossier de crédit d'origine et le PV de transfert. Depuis le 2026-09-29,
-  // ce sont leurs **fichiers** qui sont obligatoires ; ces références ne le sont plus (Q-11 amendée).
+  // Debt recovery: original credit file and transfer report. Their files are mandatory, their
+  // references are not.
   await expect(page.getByText("Recouvrement", { exact: true }).first()).toBeVisible({
     timeout: 30_000,
   });
@@ -75,8 +71,8 @@ test("la catégorie est déduite de la nature et commande les pièces exigées",
   await expect(page.getByLabel("PV de transfert", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Référence de l’incident de compte", { exact: true })).toHaveCount(0);
 
-  // Basculer sur un litige d'exploitation échange les deux paires : ce sont deux jeux distincts,
-  // et afficher les quatre laisserait croire qu'ils sont tous exigés.
+  // Switching to an operating dispute swaps the two pairs: they are distinct sets, and showing all
+  // four would imply they are all required.
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LITIGE);
   await expect(page.getByLabel("Référence de l’incident de compte", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Éléments justificatifs", { exact: true })).toBeVisible();
@@ -95,10 +91,8 @@ test("la sensibilité n'exige seuil et type qu'une fois cochée", async ({ page 
 });
 
 /*
- * Amendement de Q-11 (métier, 2026-09-29) : « ce sont les pièces jointes qui sont obligatoires, pas
- * leur texte associé ». Ce parcours vérifie les deux moitiés de la bascule — le refus sans fichier,
- * et l'acceptation sans référence — parce qu'une seule des deux laisserait passer une règle à
- * moitié appliquée.
+ * Attachments are mandatory, not their associated text. Both halves are checked: rejection without
+ * a file, and acceptance without a reference.
  */
 test("les pièces sont obligatoires, leurs références ne le sont plus", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -106,21 +100,21 @@ test("les pièces sont obligatoires, leurs références ne le sont plus", async 
 
   await remplirTroncCommun(page, NATURE_LONGUE);
 
-  // Ni fichiers ni références : l'écran doit refuser, et nommer la pièce en cause.
+  // Neither files nor references: the screen must reject and name the missing document.
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
   await expect(
     page.getByText("Cette pièce est obligatoire : joignez son fichier.").first(),
   ).toBeVisible({ timeout: 30_000 });
-  // Rien n'a été créé : on est toujours sur le formulaire.
+  // Nothing was created: still on the form.
   await expect(page).toHaveURL(/\/dossiers\/nouveau/);
 
-  // Les fichiers seuls suffisent : les références restent vides.
+  // Files alone are enough: references stay empty.
   await deposerPiecesDeCreation(page, { marque: "sans-references" });
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  // La référence est attribuée : le parcours vérifie sa forme, il ne la choisit plus.
+  // The reference is assigned: check its format.
   expect(await referenceDuDossier(page)).toMatch(/^DOS-\d{4}-\d{4,}$/);
 });
 
@@ -136,23 +130,17 @@ test("un juriste crée un dossier dont la nature dépasse 50 caractères", async
   await page.getByRole("button", { name: "Enregistrer" }).click();
 
   /*
-   * Cette nature fait 71 caractères. Avant la migration V7, le backend la refusait en 400 : trois
-   * des dix-sept natures de la taxonomie étaient ainsi inutilisables.
-   *
-   * La création mène à la fiche du dossier créé (écran 07, livré en F7 — levée de QF-22).
+   * This nature has 71 characters (accepted since migration V7).
+   * Creation leads to the created case page (screen 07).
    */
   await page.waitForURL(/\/dossiers\/\d+$/, { timeout: 60_000 });
-  // La référence est attribuée : le parcours vérifie sa forme, il ne la choisit plus.
+  // The reference is assigned: check its format.
   expect(await referenceDuDossier(page)).toMatch(/^DOS-\d{4}-\d{4,}$/);
 });
 
 /*
- * Le doublon de référence n'existe plus : depuis le 2026-09-29 le système attribue la référence, il
- * ne la reçoit pas. Ce parcours vérifie ce qui remplace la garantie perdue — deux dossiers créés à
- * la suite ne portent jamais le même numéro, et le second suit le premier.
- *
- * L'unicité elle-même est prouvée en base (GenerateurReferenceIntegrationTest, cinquante demandes
- * simultanées) ; ce qui se vérifie ici est que l'écran en rend compte fidèlement.
+ * The system assigns references: two cases created in a row never share a number, and the second
+ * follows the first. Uniqueness itself is proven in the database by GenerateurReferenceIntegrationTest.
  */
 test("deux dossiers créés à la suite reçoivent deux références distinctes", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -169,18 +157,14 @@ test("deux dossiers créés à la suite reçoivent deux références distinctes"
 
   expect(references[0]).not.toEqual(references[1]);
 
-  // Et elles se suivent : le compteur avance d'un, il ne saute pas et ne recule pas.
+  // They are consecutive: the counter moves by one, never skips or goes back.
   const numero = (reference: string) => Number(reference.split("-")[2]);
   expect(numero(references[1])).toEqual(numero(references[0]) + 1);
 });
 
 /**
- * La recherche par référence, **au fil de la frappe** (QF-57).
- *
- * **Ce parcours encodait le défaut.** Il remplissait le champ puis **cliquait sur le champ voisin**
- * pour provoquer le `blur` - et passait grâce à ce contournement, qui était exactement le geste
- * reproché en recette. L'assertion décisive est désormais que le champ **garde le focus** : le
- * filtre s'applique sans qu'on en sorte.
+ * Search by reference as you type. The key assertion is that the field keeps focus: the filter
+ * applies without leaving it.
  */
 test("la recherche par référence s'applique sans quitter le champ, et reste partageable", async ({
   page,
@@ -188,12 +172,10 @@ test("la recherche par référence s'applique sans quitter le champ, et reste pa
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers");
 
-  // Ce filtre n'existait pas côté backend avant M16 (QF-07) : la liste n'était filtrable que par
-  // nature, catégorie et juridiction.
   const champ = page.getByLabel("Référence", { exact: true });
   await champ.fill("DOS-E2E");
 
-  // Rien d'autre n'est touché : pas de clic ailleurs, pas de touche Entrée.
+  // Nothing else is touched: no click elsewhere, no Enter key.
   await expect(page).toHaveURL(/reference=DOS-E2E/, { timeout: 30_000 });
   await expect(champ, "le filtre a exigé de quitter le champ").toBeFocused();
   await expect(champ).toHaveValue("DOS-E2E");
@@ -211,9 +193,8 @@ test("la recherche par juridiction s'applique aussi au fil de la frappe", async 
 });
 
 /**
- * Le filtrage au fil de la frappe change la liste **sans action explicite**. Le nombre de résultats
- * est visible - la pagination le porte - mais dans un simple `<span>` : il changeait donc en silence
- * pour qui écoute. Une région vocale discrète l'annonce.
+ * Search-as-you-type changes the list without explicit action: a polite live region announces the
+ * result count, otherwise it would change silently for screen reader users.
  */
 test("le nombre de résultats est annoncé quand le filtre agit tout seul", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -224,15 +205,13 @@ test("le nombre de résultats est annoncé quand le filtre agit tout seul", asyn
 
   await page.getByLabel("Référence", { exact: true }).fill("ZZZ-INEXISTANT");
   await expect(page).toHaveURL(/reference=ZZZ-INEXISTANT/, { timeout: 30_000 });
-  // Aucun résultat se dit, au lieu de laisser deviner un tableau vide.
+  // "No results" is announced rather than leaving an empty table.
   await expect(annonce).toHaveText(/Aucun élément/, { timeout: 30_000 });
 });
 
 /**
- * La contrepartie du fil de la frappe, et la seule objection valable à `onChange` : **une requête
- * par pause, pas par caractère**. Le délai est éprouvé en test unitaire ; ce parcours vérifie qu'un
- * mot tapé d'un trait ne laisse qu'une seule écriture dans l'URL - sinon l'historique et le réseau
- * en porteraient une par lettre.
+ * Search-as-you-type sends one request per pause, not per character: a word typed in one go leaves
+ * a single URL update. The delay itself is unit-tested.
  */
 test("un mot tapé d'un trait ne produit qu'une écriture d'URL", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -240,14 +219,13 @@ test("un mot tapé d'un trait ne produit qu'une écriture d'URL", async ({ page 
 
   const champ = page.getByLabel("Référence", { exact: true });
   await champ.click();
-  // `pressSequentially` frappe lettre par lettre, contrairement à `fill`.
+  // `pressSequentially` types letter by letter, unlike `fill`.
   await champ.pressSequentially("DOS-2026", { delay: 30 });
 
   await expect(page).toHaveURL(/reference=DOS-2026/, { timeout: 30_000 });
   /*
-   * Les filtres s'écrivent avec `router.replace`, qui n'empile rien : un retour arrière doit donc
-   * quitter la liste, et non remonter les huit états intermédiaires. C'était la moitié de la
-   * justification d'origine du `onBlur`, et elle était déjà caduque.
+   * Filters are written with `router.replace`, which pushes nothing: going back must leave the
+   * list, not walk through the intermediate states.
    */
   await page.goBack();
   await expect(page).not.toHaveURL(/reference=DOS-202/, { timeout: 30_000 });
@@ -260,17 +238,15 @@ test("le filtre « mes dossiers » ne montre que le portefeuille de l'utilisateu
   await page.goto("/dossiers?mesDossiers=1");
 
   /*
-   * L'assistante n'est affectée à aucun dossier : le filtre se résolvant sur l'utilisateur
-   * authentifié côté backend, elle ne doit rien voir — c'est ce qui garantit qu'il ne permet pas
-   * de consulter le portefeuille d'un collègue.
+   * The assistant is assigned to no case. The filter resolves on the authenticated user backend-side,
+   * so she must see nothing: it cannot be used to view a colleague's portfolio.
    */
   await expect(page.getByText("Aucun dossier", { exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
 /*
- * Observation métier du 2026-09-25 : filtrer par étape et par période d'audience, et trier.
- * Ce parcours vérifie la chaîne écran → URL → requête, sans dépendre du jeu de données : que les
- * bons dossiers en ressortent est vérifié en base par `DossierFiltresIntegrationTest`.
+ * Filter by step and hearing period, and sort. Checks the screen -> URL -> request chain without
+ * depending on the data set; the results are checked by `DossierFiltresIntegrationTest`.
  */
 test("les filtres d'étape et de tri passent par l'URL et restent partageables", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -285,7 +261,7 @@ test("les filtres d'étape et de tri passent par l'URL et restent partageables",
   await page.getByLabel("Trier par", { exact: true }).selectOption("REFERENCE");
   await expect(page).toHaveURL(/tri=REFERENCE/, { timeout: 30_000 });
 
-  // `RECENT` est le défaut du serveur : le rechoisir doit retirer le paramètre, et non l'écrire.
+  // `RECENT` is the server default: selecting it again must remove the parameter, not write it.
   await page.getByLabel("Trier par", { exact: true }).selectOption("");
   await expect(page).not.toHaveURL(/tri=/, { timeout: 30_000 });
 });
@@ -325,8 +301,8 @@ test("les écrans dossiers sont traduits", async ({ page }) => {
   await expect(page.getByRole("link", { name: "New case" })).toBeVisible();
 
   await page.goto("/dossiers/nouveau");
-  // L'écran attend **cinq** requêtes avant de sortir de son état de chargement (natures, clients,
-  // juristes, avocats, types sensibles) : au premier accès à la route, c'est plus long qu'ailleurs.
+  // The screen waits for five requests before leaving its loading state (natures, clients, legal
+  // officers, lawyers, sensitive types): the first visit takes longer.
   await expect(page.getByRole("heading", { name: "Create a case", level: 1 })).toBeVisible({
     timeout: 60_000,
   });
@@ -334,11 +310,8 @@ test("les écrans dossiers sont traduits", async ({ page }) => {
 });
 
 /**
- * Garde contre la perte d'une saisie (piste 2 du recensement).
- *
- * Ce que ce test protège n'est pas le dialogue lui-même, c'est la **saisie** : on vérifie qu'après
- * avoir renoncé à partir, les champs sont toujours là. Un test qui s'arrêterait à l'apparition du
- * dialogue passerait encore si la garde laissait filer le formulaire derrière elle.
+ * Guard against losing form input. What matters is the input itself: after cancelling the
+ * navigation, the fields must still be filled.
  */
 test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -347,23 +320,23 @@ test("une saisie de dossier en cours ne se perd pas sur un clic de menu", async 
   const juridiction = `TGI GARDE ${suffixe()}`;
   await page.getByLabel("Juridiction saisie", { exact: true }).fill(juridiction);
 
-  // Un clic sur la navigation : la garde doit s'interposer.
+  // A click on the navigation: the guard must step in.
   await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
   const dialogue = page.getByRole("dialog", { name: "Quitter sans enregistrer ?" });
   await expect(dialogue).toBeVisible({ timeout: 10_000 });
 
-  // Renoncer : on reste sur le formulaire, et la saisie est intacte.
+  // Cancel: stay on the form with input intact.
   await dialogue.getByRole("button", { name: "Annuler" }).click();
   await expect(page).toHaveURL(/\/dossiers\/nouveau/);
   await expect(page.getByLabel("Juridiction saisie", { exact: true })).toHaveValue(juridiction);
 
-  // Confirmer : on part pour de bon.
+  // Confirm: leave for good.
   await page.getByRole("navigation").getByRole("link", { name: "Clients" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Quitter sans enregistrer" }).click();
   await page.waitForURL(/\/clients/, { timeout: 30_000 });
 });
 
-/** L'« Annuler » du formulaire exprime une intention explicite : il ne doit pas être doublé. */
+/** The form's "Annuler" is an explicit intent: it must not be double-confirmed. */
 test("l'Annuler du formulaire n'est pas intercepté par la garde", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
@@ -374,7 +347,7 @@ test("l'Annuler du formulaire n'est pas intercepté par la garde", async ({ page
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-/** Sans saisie, la garde reste muette : elle ne doit pas gêner une simple visite du formulaire. */
+/** Without input, the guard stays silent. */
 test("un formulaire vierge se quitte sans confirmation", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
@@ -384,11 +357,9 @@ test("un formulaire vierge se quitte sans confirmation", async ({ page }) => {
 });
 
 /**
- * La bascule de langue n'est ni un lien ni un déchargement de page : c'est une action serveur qui
- * pose un cookie et revalide la coquille. La garde ne l'intercepte donc pas, et `beforeunload` non
- * plus — la saisie ne survit que parce que le rafraîchissement **réconcilie** l'arbre au lieu de le
- * remonter. Rien ne garantit que cela reste vrai : un `redirect()` ajouté un jour à `changerLangue`
- * viderait le formulaire en silence, sans qu'aucun autre test ne s'en aperçoive.
+ * The language switch is a server action that sets a cookie and revalidates the shell; neither the
+ * guard nor `beforeunload` intercept it. Input survives only because the refresh reconciles the
+ * tree instead of remounting it: a `redirect()` added to `changerLangue` would silently clear the form.
  */
 test("changer de langue ne vide pas un formulaire en cours de saisie", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -403,11 +374,8 @@ test("changer de langue ne vide pas un formulaire en cours de saisie", async ({ 
 });
 
 /**
- * QF-44 — la règle des dix lignes, vérifiée là où l'utilisateur la voit.
- *
- * Ce test ne compte pas seulement dix lignes : il relève les références de la page 1, passe à la
- * page 2, et vérifie qu'elle en montre **d'autres**. Un tableau qui perdrait les lignes au-delà de
- * la dixième passerait un test qui se contenterait de compter.
+ * Ten rows per page: page 2 must show different references from page 1, so a table losing rows
+ * beyond the tenth would fail.
  */
 test("un tableau montre dix lignes, et la suite est sur la page suivante", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -416,30 +384,27 @@ test("un tableau montre dix lignes, et la suite est sur la page suivante", async
   const lignes = page.getByRole("main").getByRole("row");
   await expect(lignes.nth(1)).toBeVisible({ timeout: 30_000 });
 
-  // L'en-tête compte pour une ligne : dix lignes de données font onze au total.
+  // The header counts as a row: ten data rows make eleven in total.
   const nbPage1 = await lignes.count();
-  if (nbPage1 <= 2) return; // jeu de données trop petit pour que la règle s'observe
+  if (nbPage1 <= 2) return; // data set too small to observe the rule
 
   expect(nbPage1).toBeLessThanOrEqual(11);
   const referencesPage1 = await lignes.nth(1).innerText();
 
   const suivant = page.getByRole("button", { name: "Page suivante" });
-  if (await suivant.isDisabled()) return; // une seule page : rien à comparer
+  if (await suivant.isDisabled()) return; // single page: nothing to compare
 
   await suivant.click();
   await expect(page).toHaveURL(/page=1/);
 
-  /*
-   * `not.toHaveText` **réessaie** jusqu'à ce que la ligne change. Lire le texte juste après le clic
-   * attrapait encore l'ancienne page : le test échouait sur sa propre course, pas sur un défaut.
-   * C'est le cœur de l'exigence — la page suivante montre autre chose, rien n'est perdu.
-   */
+  // `not.toHaveText` retries until the row changes; reading right after the click would still see
+  // the previous page.
   await expect(page.getByRole("main").getByRole("row").nth(1)).not.toHaveText(referencesPage1, {
     timeout: 30_000,
   });
 });
 
-/** Le sélecteur de taille : dix pour lire, cinquante pour balayer. */
+/** Page size selector: ten to read, fifty to scan. */
 test("le sélecteur de taille change le nombre de lignes et vit dans l'URL", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers");
@@ -448,34 +413,26 @@ test("le sélecteur de taille change le nombre de lignes et vit dans l'URL", asy
   await page.getByLabel("Lignes par page").selectOption("50");
   await expect(page).toHaveURL(/taille=50/);
 
-  // Un lien partagé doit rouvrir la liste telle que son auteur la voyait.
+  // A shared link must reopen the list as its author saw it.
   await page.reload();
   await expect(page.getByLabel("Lignes par page")).toHaveValue("50");
 });
 
 /**
- * Les placeholders explicatifs du formulaire de création (N5, observation 4).
- *
- * **Ce que l'observation demandait, et que j'avais mal lu.** « Placeholders explicatifs » : le texte
- * va **dans** le champ, pas dessous. Les deux sélecteurs d'agence en portaient un depuis l'origine
- * - « Code, nom ou ville de l'agence… » - et c'était le modèle à suivre ; les dix champs libres le
- * portent désormais aussi.
- *
- * **Et la marque d'obligation.** L'astérisque du sélecteur cherchable vivait dans le `<label>` :
- * le nom accessible valait « Agence d'origine * », si bien qu'une recherche au mot près ne trouvait
- * pas le champ. C'est corrigé, et c'est ce que la première assertion tient.
+ * Explanatory placeholders in the creation form (N5): the hint goes inside the field.
+ * The searchable select's accessible name is the label alone, without the required asterisk.
  */
 test("les champs du formulaire de création portent leurs placeholders explicatifs", async ({ page }) => {
   await seConnecter(page, "juriste.test");
   await page.goto("/dossiers/nouveau");
 
-  // Le sélecteur cherchable : son nom accessible est le libellé **seul**, sans l'astérisque.
+  // Searchable select: its accessible name is the label only, without the asterisk.
   const agence = page.getByRole("combobox", { name: "Agence d’origine" });
   await expect(agence).toBeVisible({ timeout: 30_000 });
   await expect(agence).toHaveAttribute("aria-required", "true");
   await expect(agence).toHaveAttribute("placeholder", "Code, nom ou ville de l’agence…");
 
-  // Les champs libres : le texte est dans le champ, et disparaît dès qu'on écrit.
+  // Free fields: the hint is inside the field and disappears when typing.
   await expect(page.getByLabel("Juridiction saisie", { exact: true })).toHaveAttribute(
     "placeholder",
     "Le tribunal devant lequel l’affaire est portée",
@@ -485,14 +442,11 @@ test("les champs du formulaire de création portent leurs placeholders explicati
     "Ce que la banque peut perdre",
   );
 
-  // Une partie au procès : chaque ligne de la liste porte le même.
+  // A party: every row in the list has the same one.
   await expect(page.getByPlaceholder("Qui engage l’action")).toBeVisible();
   await expect(page.getByPlaceholder("Contre qui l’action est engagée")).toBeVisible();
 
-  /*
-   * Les références de pièces redisent la règle que les utilisateurs inversent le plus souvent :
-   * c'est le fichier qui est exigé, pas la référence.
-   */
+  // Document references restate the rule most often reversed: the file is required, not the reference.
   await page.getByLabel("Nature du dossier", { exact: true }).selectOption(NATURE_LONGUE);
   await expect(
     page.getByLabel("Dossier de crédit d’origine", { exact: true }),

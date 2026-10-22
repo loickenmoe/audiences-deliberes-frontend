@@ -9,8 +9,8 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 03 — mes notifications. Ouvert à tout compte authentifié, avocat compris : chacun n'y voit
- * que les alertes dont il est le destinataire, le backend s'en assure.
+ * Screen 03 - my notifications. Open to every authenticated account, lawyer included: the backend
+ * ensures each user only sees the alerts addressed to them.
  */
 export default async function PageNotifications() {
   const session = await exigerSession();

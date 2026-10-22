@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 36 — demandes de suppression de documents, réservé au DJ et à la DJA. */
+/** Screen 36 - document deletion requests, reserved to the DJ and DJA. */
 export default async function PageDemandesSuppression() {
   await exigerCapacite("arbitrerSuppressions");
   return <FileSuppressions />;

@@ -4,10 +4,9 @@ import { NAVIGATION } from "@/lib/navigation";
 import { CAPACITES, type Capacite, aRole, peut, profilPrincipal } from "@/lib/rbac";
 
 /**
- * Jeux de rôles **réels**, relevés dans les jetons émis par le Keycloak du projet — pas des
- * combinaisons théoriques. Relevé refait le **2026-09-14** : depuis Q-81, `ROLE_DJ` et `ROLE_DJA`
- * sont composites et portent aussi `ROLE_JURISTE`, ce que le relevé du 2026-09-08 ignorait. C'est ce
- * qui rend le parcours de pilotage P9 jouable par le DJ et ferme l'essentiel de QF-04.
+ * **Real** role sets, captured from tokens issued by the project's Keycloak, not theoretical
+ * combinations. `ROLE_DJ` and `ROLE_DJA` are composite and also carry `ROLE_JURISTE`, which makes
+ * the P9 management flow available to the DJ.
  */
 const JURISTE = ["ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
 const DJ = ["ROLE_DJ", "ROLE_JURISTE", "ROLE_SAISIE", "ROLE_CONSULTATION"];
@@ -52,7 +51,7 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     expect(peut(JURISTE, "creerDossier")).toBe(true);
   });
 
-  /** `GET /tableau-de-bord` est `hasAnyRole('DJ','DJA')` depuis Q-95 — la direction seule. */
+  /** `GET /tableau-de-bord` is `hasAnyRole('DJ','DJA')`: management only. */
   it("le tableau de bord est réservé au DJ et à la DJA", () => {
     expect(peut(DJ, "consulterTableauDeBord")).toBe(true);
     expect(peut(DJA, "consulterTableauDeBord")).toBe(true);
@@ -62,44 +61,62 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * `GET /rapports` est `hasRole('JURISTE')`. Le DJ et la DJA l'atteignent par leur composite
-   * (Q-81) : c'est ce qui rend le parcours P9 jouable et ferme QF-04.
+   * `GET /rapports` is open to the legal officer (and the DJ and DJA through their composite role),
+   * the Assistant and the SH since 2026-10-21. The avocat stays out.
    */
-  it("le juriste génère des rapports, le DJ et la DJA par leur composite", () => {
-    expect(peut(JURISTE, "genererRapport")).toBe(true);
-    expect(peut(DJ, "genererRapport")).toBe(true);
-    expect(peut(DJA, "genererRapport")).toBe(true);
-    expect(peut(ASSISTANTE, "genererRapport")).toBe(false);
+  it("les rapports s'ouvrent au juriste, à la direction, à l'Assistante et au SH", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(peut(profil, "genererRapport")).toBe(true);
+    }
+    expect(peut(AVOCAT, "genererRapport")).toBe(false);
   });
 
   /**
-   * `GET /audiences/calendrier` est `hasAnyRole('JURISTE','DJ')`. La DJA y accède **depuis Q-81**,
-   * par son composite — ce n'est pas une exception ajoutée ici, c'est ce que le backend autorise.
-   * L'Assistante, elle, ne porte pas `ROLE_JURISTE` et reste exclue.
+   * `GET /audiences/calendrier` is open to the legal officer, the DJ (the DJA through its composite
+   * role), the Assistant and the SH since 2026-10-21.
    */
-  it("le calendrier suit le composite : juriste, DJ et DJA, mais pas l'Assistante", () => {
-    expect(peut(JURISTE, "consulterCalendrier")).toBe(true);
-    expect(peut(DJ, "consulterCalendrier")).toBe(true);
-    expect(peut(DJA, "consulterCalendrier")).toBe(true);
-    expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
-    expect(peut(SH, "consulterCalendrier")).toBe(false);
+  it("le calendrier s'ouvre aux cinq profils internes, pas à l'avocat", () => {
+    for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {
+      expect(peut(profil, "consulterCalendrier")).toBe(true);
+    }
+    expect(peut(AVOCAT, "consulterCalendrier")).toBe(false);
   });
 
   /**
-   * `GET /repertoire/avocats` est `hasAnyRole('JURISTE','ASSISTANTE')`. La direction y accède elle
-   * aussi depuis Q-81 : le composite prime sur l'intention d'origine, et le backend est l'arbitre.
+   * `GET /repertoire/avocats` is `hasAnyRole('JURISTE','ASSISTANTE')`. Management reaches it too
+   * through the composite role; the backend is the authority.
    */
   it("le répertoire suit le composite : la direction y accède depuis Q-81", () => {
     expect(peut(ASSISTANTE, "consulterRepertoire")).toBe(true);
     expect(peut(JURISTE, "consulterRepertoire")).toBe(true);
     expect(peut(DJ, "consulterRepertoire")).toBe(true);
-    expect(peut(SH, "consulterRepertoire")).toBe(false);
+    expect(peut(SH, "consulterRepertoire")).toBe(true);
+    expect(peut(AVOCAT, "consulterRepertoire")).toBe(false);
   });
 
   /**
-   * `GET /rapports/nominatif` est `hasAnyRole('DJ','DJA')` (N6, observation 14). Le rapport **nomme
-   * des collègues** : il se tient sur les rôles propres de la direction, jamais sur `ROLE_JURISTE`,
-   * composite depuis Q-81 - l'y adosser le donnerait à chaque juriste, donc à tous les nommés.
+   * Since 2026-10-21 the Assistant and the SH also consult the hearings journal, publications and
+   * the daily DMS report. Consultation only: validating, commenting, sending the correspondence and
+   * the named activity reports stay with their owners.
+   */
+  it("l'Assistante et le SH consultent journal, publications et rapport journalier, sans les actions", () => {
+    for (const profil of [ASSISTANTE, SH]) {
+      expect(peut(profil, "consulterJournalAudiences")).toBe(true);
+      expect(peut(profil, "consulterPublications")).toBe(true);
+      expect(peut(profil, "consulterRapportJournalier")).toBe(true);
+      expect(peut(profil, "commenterPublication")).toBe(false);
+      expect(peut(profil, "transmettreCorrespondance")).toBe(false);
+      expect(peut(profil, "consulterRapportNominatif")).toBe(false);
+    }
+    expect(peut(ASSISTANTE, "validerPublication")).toBe(true);
+    expect(peut(SH, "validerPublication")).toBe(false);
+    expect(peut(AVOCAT, "consulterJournalAudiences")).toBe(false);
+  });
+
+  /**
+   * `GET /rapports/nominatif` is `hasAnyRole('DJ','DJA')` (N6). The report **names colleagues**: it
+   * relies on management's own roles, never on the composite `ROLE_JURISTE`, which would open it to
+   * every legal officer.
    */
   it("le rapport nominatif est réservé au DJ et à la DJA, sans fuite par le composite", () => {
     expect(peut(DJ, "consulterRapportNominatif")).toBe(true);
@@ -110,16 +127,9 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133), **avocat compris depuis
-   * Q-135**.
-   *
-   * C'est le pendant du test précédent, et la différence compte : lire l'activité **d'un collègue ou
-   * d'un avocat** reste à la direction, lire **la sienne** est à tout le monde.
-   *
-   * **Ce test affirmait l'inverse, et il avait tort.** J'avais exclu l'avocat en soutenant qu'il
-   * n'aurait rien à y lire : « aucune des natures comptées n'est la sienne ». C'était faux - il
-   * dépose ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond
-   * aux demandes d'explication. Corrigé le 2026-10-13 sur demande du métier.
+   * `GET /rapports/activite`: **one's own activity**, for everyone, **lawyers included** (they submit
+   * fee requests, hearing reports and other publications, and answer explanation requests).
+   * Reading **a colleague's or a lawyer's** activity remains with management.
    */
   it("chacun lit sa propre activité, avocat compris", () => {
     for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH, AVOCAT]) {
@@ -128,9 +138,8 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * Et la frontière, qui est tout l'enjeu : **sa** fiche, pas celle d'un autre. Le serveur l'arbitre
-   * (il refuse une cible qui n'est pas soi sans être DJ ni DJA) ; cette table dit seulement ce que
-   * l'écran propose, et elle ne doit pas proposer plus.
+   * The boundary: **one's own** sheet, not someone else's. The server enforces it (it rejects another
+   * target unless DJ or DJA); this table only states what the screen offers, and must not offer more.
    */
   it("l'activité d'autrui reste à la direction, pour les collègues comme pour les avocats", () => {
     expect(peut(DJ, "consulterRapportNominatif")).toBe(true);
@@ -141,16 +150,9 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * **Accueil et Notifications sont ouverts à tout compte, avocat compris** (QF-59).
-   *
-   * Le défaut signalé le 2026-10-14 : les deux entrées de navigation étaient adossées à
-   * `consulterReferentiels`, que l'avocat ne porte pas. Elles disparaissaient de son menu alors que
-   * les deux pages s'ouvraient parfaitement pour lui - il les atteignait par le logo de la banque et
-   * par la cloche, deux portes sans étiquette.
-   *
-   * La référence côté backend : `GET /alertes/mes-notifications` porte
-   * `@PreAuthorize("isAuthenticated()")`, et l'accueil est une racine unique pour tous les profils
-   * depuis QF-19.
+   * **Home and Notifications are open to every account, lawyers included.** They must not depend on
+   * `consulterReferentiels`, which lawyers do not hold. Backend: `GET /alertes/mes-notifications` is
+   * `@PreAuthorize("isAuthenticated()")`, and home is a single root for all profiles.
    */
   it("l'accueil et les notifications sont ouverts à tout compte, avocat compris", () => {
     for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH, AVOCAT]) {
@@ -159,7 +161,7 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
     }
   });
 
-  /** Et sans la correction, l'avocat en était écarté : c'est ce que ce rappel fixe. */
+  /** Lawyers must not be excluded from them. */
   it("l'avocat n'a toujours pas la lecture des référentiels, qui n'était pas la bonne capacité", () => {
     expect(peut(AVOCAT, "consulterReferentiels")).toBe(false);
   });
@@ -175,8 +177,8 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * Backend Q-108 — l'administration des paramètres est ouverte à la DJA, pour la continuité de
-   * service : le DJ absent, plus personne ne pouvait relever un seuil.
+   * Settings administration is open to the DJA for business continuity: when the DJ is absent,
+   * someone must still be able to raise a threshold.
    */
   it("l'administration des paramètres est ouverte au DJ et à la DJA, à eux seuls", () => {
     expect(peut(DJ, "administrerConfigurations")).toBe(true);
@@ -187,9 +189,9 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * Le pendant du test précédent. L'ouverture consentie à la DJA est **à sens unique** : le DJ ne
-   * rejoint pas la DJA sur le contrôle d'opportunité, sans quoi RG-INT-03 perdrait la séparation de
-   * ses deux étapes — le même profil préparerait l'avis puis voterait la validation conjointe.
+   * The opening granted to the DJA is **one-way**: the DJ does not join the DJA on the opportunity
+   * check, otherwise RG-INT-03 would lose the separation of its two steps (the same profile would
+   * prepare the opinion and then vote the joint validation).
    */
   it("DJ et DJA ne diffèrent plus que par le contrôle d'opportunité", () => {
     const ecarts = (Object.keys(CAPACITES) as Capacite[]).filter(
@@ -199,24 +201,19 @@ describe("capacités — miroir des @PreAuthorize du backend", () => {
   });
 
   /**
-   * `ROLE_DJ` et `ROLE_DJA` sont **tous deux** composites de `ROLE_JURISTE` dans Keycloak. Deux
-   * commentaires de la table affirmaient le contraire — corrigés avec Q-108. Ces assertions
-   * empêchent que la confusion revienne.
+   * `ROLE_DJ` and `ROLE_DJA` are **both** composites of `ROLE_JURISTE` in Keycloak.
    */
   it("le DJ et la DJA atteignent le calendrier et le répertoire par leur rôle juriste", () => {
     for (const profil of [DJ, DJA]) {
       expect(peut(profil, "consulterCalendrier")).toBe(true);
       expect(peut(profil, "consulterRepertoire")).toBe(true);
     }
-    expect(peut(ASSISTANTE, "consulterCalendrier")).toBe(false);
-    expect(peut(SH, "consulterRepertoire")).toBe(false);
   });
 });
 
 describe("périmètre du profil avocat (QF-01)", () => {
   /**
-   * L'avocat ne porte pas `ROLE_CONSULTATION` : il est exclu de tout ce qui en dépend. C'est la
-   * cause du report du portail avocat au jalon F16.
+   * Lawyers do not carry `ROLE_CONSULTATION`: they are excluded from everything that depends on it.
    */
   it("l'avocat ne consulte ni dossiers, ni clients, ni documents", () => {
     expect(peut(AVOCAT, "consulterDossiers")).toBe(false);
@@ -232,26 +229,14 @@ describe("périmètre du profil avocat (QF-01)", () => {
   });
 
   /**
-   * Le périmètre de l'avocat s'énumère, et ne s'élargit pas en silence.
-   *
-   * Deux sont arrivées avec N7 temps 2 (2026-10-07) : la direction lui demande de s'expliquer sur
-   * des comptes rendus manquants, il répond. Elles ne lui ouvrent rien du dossier - il lit les
-   * demandes **qui lui sont adressées**, le serveur décidant lesquelles, et ne répond qu'aux
-   * siennes.
-   *
-   * Une autre est arrivée le 2026-10-13 (Q-135) : il lit et télécharge **sa propre** activité. Elle
-   * ne lui ouvre rien de plus non plus - le serveur refuse toute autre personne, et son détail ne
-   * porte même pas de lien vers les dossiers, puisqu'il n'a pas d'écran de fiche dossier.
-   *
-   * Les **deux dernières** sont arrivées le 2026-10-14 (QF-59) : l'accueil et ses notifications.
-   * Elles n'élargissent rien - les deux pages lui étaient **déjà ouvertes**, et c'est tout le
-   * défaut : seules les entrées de navigation manquaient, adossées à `consulterReferentiels` qu'il
-   * ne porte pas. Il y arrivait par le logo de la banque et par la cloche, sans onglet pour le dire.
+   * The lawyer's scope is listed explicitly and never widens silently. It includes reading the
+   * explanation requests **addressed to them** (the server decides which) and answering their own,
+   * reading and downloading **their own** activity, and the home and notifications pages.
    */
   it("l'avocat n'accède qu'à une poignée de capacités", () => {
     const accordees = (Object.keys(CAPACITES) as Capacite[]).filter((c) => peut(AVOCAT, c));
-    // L'ordre est celui de la déclaration dans la table : « mon activité » a été ajoutée en
-    // dernier, à côté des autres capacités de reporting.
+    // Order follows the declaration in the table, where "my activity" sits with the other
+    // reporting capabilities.
     expect(accordees).toEqual([
       "consulterFrais",
       "deposerFrais",
@@ -266,17 +251,13 @@ describe("périmètre du profil avocat (QF-01)", () => {
 });
 
 /**
- * Ce que chaque profil **voit dans son menu** (QF-59).
- *
- * Ce bloc ne vérifie pas des capacités mais la **navigation**, et c'est lui qui aurait attrapé le
- * défaut signalé le 2026-10-14 : les capacités étaient justes, l'avocat pouvait bel et bien ouvrir
- * l'accueil et ses notifications ; c'étaient les **entrées de menu** qui citaient la mauvaise
- * capacité. Un test sur `CAPACITES` seul serait resté vert.
+ * What each profile **sees in its menu**. This block checks **navigation**, not capabilities: a menu
+ * entry citing the wrong capability would hide a page the user may open, and a test on
+ * `CAPACITES` alone would stay green.
  */
 /**
- * Le partage des pièces avec l'avocat (QF-64, backend Q-139), tel qu'arbitré le 2026-10-15 : tout
- * juriste partage - le DJ et la DJA par leur rôle composite -, la validation d'un dossier sensible
- * reste au DJ et à la DJA, et ni l'Assistante, ni le SH, ni l'avocat n'y touchent.
+ * Sharing documents with the lawyer: every legal officer shares (DJ and DJA through their composite
+ * role); validation on a sensitive case file stays with the DJ and DJA.
  */
 describe("partage des pièces avec l'avocat (QF-64)", () => {
   it("tout juriste partage et écrit la note à l'avocat, DJ et DJA compris", () => {
@@ -295,8 +276,8 @@ describe("partage des pièces avec l'avocat (QF-64)", () => {
   });
 
   /**
-   * QF-65 : le SH et l'Assistante partagent, « ils sont à la base des juristes ». La note à
-   * l'avocat, elle, reste au juriste : elle n'a pas été ouverte, et rien ne l'ouvre en silence.
+   * SH and the Assistant can share, like legal officers. The note to the lawyer stays with the legal
+   * officer and must not open up silently.
    */
   it("le SH et l'Assistante partagent aussi, sans écrire la note à l'avocat", () => {
     for (const profil of [SH, ASSISTANTE]) {
@@ -331,9 +312,8 @@ describe("navigation visible par profil (QF-59)", () => {
   });
 
   /**
-   * Le menu de l'avocat s'énumère en entier : une entrée qui s'y ajouterait en silence pourrait lui
-   * proposer un écran qu'il n'a pas le droit d'ouvrir - l'erreur contre laquelle met en garde le
-   * commentaire de « Mon compte » dans `lib/navigation.ts`.
+   * The lawyer's menu is listed in full: an entry added silently could offer a screen they may not
+   * open (see the "Mon compte" comment in `lib/navigation.ts`).
    */
   it("et rien d'autre ne s'est glissé dans le menu de l'avocat", () => {
     expect(menu(AVOCAT)).toEqual([
@@ -354,7 +334,7 @@ describe("navigation visible par profil (QF-59)", () => {
     }
   });
 
-  /** Et « Mon compte » reste hors de son menu : il ne signe aucune lettre de la banque (Q-135). */
+  /** "Mon compte" stays out of their menu: they sign no letter on behalf of the bank. */
   it("« Mon compte » reste réservé aux profils internes", () => {
     expect(menu(AVOCAT)).not.toContain("monCompte");
     for (const profil of [JURISTE, DJ, DJA, ASSISTANTE, SH]) {

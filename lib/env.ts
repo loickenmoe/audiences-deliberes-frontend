@@ -1,29 +1,21 @@
 import { z } from "zod";
 
 /**
- * Validation de la configuration au démarrage.
- *
- * Choix délibéré : **échec explicite** si une variable manque ou est malformée, là où le projet de
- * référence se contentait d'un avertissement en console. Une URL d'API absente doit arrêter
- * l'application au démarrage, pas produire des appels vers `undefined/api/v1/dossiers` découverts
- * en recette.
- *
- * Les variables d'authentification (Keycloak, NextAuth) seront ajoutées au jalon F2, quand le code
- * les consommera réellement — on ne valide que ce qui est utilisé.
+ * Public configuration validation. Fails explicitly if a variable is missing or malformed, rather
+ * than producing calls to `undefined/api/v1/...`. Authentication variables live in `env.server.ts`.
  */
 const schema = z.object({
-  /** Base de l'API backend, préfixe inclus. Ex. http://localhost:8080/api/v1 */
+  /** Backend API base URL, prefix included, e.g. http://localhost:8080/api/v1 */
   NEXT_PUBLIC_API_URL: z.string().url("NEXT_PUBLIC_API_URL doit être une URL absolue valide"),
-  /** Endpoint SockJS du canal temps réel. Consommé à partir du jalon F14. */
+  /** SockJS endpoint of the real-time channel. */
   NEXT_PUBLIC_WS_URL: z.string().url("NEXT_PUBLIC_WS_URL doit être une URL absolue valide"),
 });
 
 export type Env = z.infer<typeof schema>;
 
 /**
- * Next.js n'expose au navigateur que les variables littéralement référencées par
- * `process.env.NEXT_PUBLIC_*` à la compilation : elles doivent donc être écrites en toutes lettres,
- * jamais lues dynamiquement.
+ * Next.js only exposes to the browser variables literally referenced as `process.env.NEXT_PUBLIC_*`
+ * at build time: they must be spelled out, never read dynamically.
  */
 function read(): Env {
   const parsed = schema.safeParse({
@@ -46,13 +38,13 @@ function read(): Env {
 
 let cache: Env | null = null;
 
-/** Configuration validée. Lève une erreur explicite au premier appel si elle est incomplète. */
+/** Validated configuration. Throws an explicit error on first call if incomplete. */
 export function getEnv(): Env {
   cache ??= read();
   return cache;
 }
 
-/** Réinitialise le cache — réservé aux tests. */
+/** Resets the cache. Test-only. */
 export function resetEnvCache(): void {
   cache = null;
 }

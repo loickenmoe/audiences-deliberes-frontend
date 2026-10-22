@@ -9,22 +9,21 @@ import {
 
 const MINUTE = 60 * 1000;
 
-/** Durées **mesurées** sur le realm du projet le 2026-09-08 (RF-02). */
+/** Lifetimes **measured** on the project realm (RF-02). */
 const ACCES_MS = 3600 * 1000; // 60 min
 const REFRESH_MS = 1800 * 1000; // 30 min
 
 describe("prochainRafraichissement", () => {
   /**
-   * Le cœur de RF-02 : sur ce realm, c'est le refresh token qui contraint, pas l'access token.
-   * Se caler sur l'access token — le patron NextAuth le plus répandu — déconnecterait tout le monde
-   * au bout de 30 minutes.
+   * RF-02: on this realm the refresh token is the binding constraint, not the access token. Relying
+   * on the access token (the common NextAuth pattern) would log everyone out after 30 minutes.
    */
   it("se cale sur le refresh token quand il expire le premier", () => {
     const t0 = Date.now();
     const echeance = prochainRafraichissement(t0 + ACCES_MS, t0 + REFRESH_MS);
 
     expect(echeance).toBe(t0 + REFRESH_MS - MARGE_MS);
-    // 30 min − 5 min de marge = 25 min, et non 55 min.
+    // 30 min − 5 min margin = 25 min, not 55 min.
     expect(Math.round((echeance - t0) / MINUTE)).toBe(25);
   });
 
@@ -44,7 +43,7 @@ describe("doitRafraichir", () => {
 
   it("rafraîchit dès la marge atteinte, bien avant l'expiration de l'access token", () => {
     const t0 = Date.now();
-    // À 25 minutes, l'access token est encore valable 35 minutes — on rafraîchit quand même.
+    // At 25 minutes the access token is still valid for 35 minutes, but we refresh anyway.
     expect(doitRafraichir(t0 + 25 * MINUTE, t0 + ACCES_MS, t0 + REFRESH_MS)).toBe(true);
   });
 
@@ -54,23 +53,22 @@ describe("doitRafraichir", () => {
     expect(doitRafraichir(t0, t0 + ACCES_MS, undefined)).toBe(true);
   });
 
-  /** Garde-fou : la stratégie naïve échouerait ici. Ce test l'atteste. */
+  /** Safeguard: the naive strategy would fail here. */
   it("aurait laissé expirer le refresh token avec la stratégie naïve", () => {
     const t0 = Date.now();
-    const naive = t0 + ACCES_MS - MARGE_MS; // 55 min : le patron répandu
+    const naive = t0 + ACCES_MS - MARGE_MS; // 55 min: the common pattern
     const refreshMort = t0 + REFRESH_MS; // 30 min
 
     expect(naive).toBeGreaterThan(refreshMort);
-    // Notre politique, elle, déclenche avant.
+    // Our policy triggers before that.
     expect(prochainRafraichissement(t0 + ACCES_MS, refreshMort)).toBeLessThan(refreshMort);
   });
 });
 
 describe("sessionInutilisable", () => {
   /**
-   * Les deux marqueurs rendent la session inexploitable — le garde de route doit donc rediriger dans
-   * les deux cas. Ce qui les sépare n'est pas la conduite à tenir, c'est ce qu'on **dit** à
-   * l'utilisateur : se reconnecter d'un côté, patienter de l'autre.
+   * Both markers make the session unusable, so the route guard redirects in both cases. They differ
+   * in what the user is **told**: sign in again in one case, wait in the other.
    */
   it("reconnaît les deux causes d'échec", () => {
     expect(sessionInutilisable(ERREUR_RAFRAICHISSEMENT)).toBe(true);
@@ -83,9 +81,8 @@ describe("sessionInutilisable", () => {
   });
 
   /**
-   * Les deux marqueurs doivent rester **distincts** : c'est toute la correction. Les confondre
-   * ramènerait le message « votre session a expiré » sur une panne de Keycloak, avec une consigne —
-   * se reconnecter — que le service à terre rend impossible à suivre.
+   * The two markers must stay **distinct**: otherwise a Keycloak outage would show "your session has
+   * expired" with an instruction (sign in again) that cannot be followed while the service is down.
    */
   it("les deux marqueurs ne sont pas interchangeables", () => {
     expect(ERREUR_AUTH_INDISPONIBLE).not.toBe(ERREUR_RAFRAICHISSEMENT);

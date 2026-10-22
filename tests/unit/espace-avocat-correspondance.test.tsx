@@ -6,21 +6,16 @@ import type { Publication } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
 
 /**
- * La correspondance lue par l'avocat sur son espace (QF-58, signalé en recette le 2026-10-14).
+ * Correspondence read by the lawyer in their portal. When the DJ or DJA forwards correspondence on a
+ * publication, the lawyer is notified and this screen must show it.
  *
- * **Le défaut que ces tests protègent.** Quand le DJ ou la DJA transmet une correspondance sur une
- * publication, l'avocat en est notifié deux fois - une alerte et une notification prestataire. Mais
- * aucun écran ne l'affichait : une notification qui renvoie vers une page muette dit qu'il y a
- * quelque chose à lire sans le donner.
- *
- * **Et la règle que le dernier test garde.** Les commentaires des juristes ne sont pas pour lui. Le
- * juriste ne s'adresse jamais directement à l'avocat (Q-20, US 5.5, RG-INT-07) : il écrit pour le
- * DJ/DJA, qui tranche et transmet. Le backend les tient hors de la charge utile du portail ; si un
- * jour ils y entraient, cet écran ne doit toujours pas les montrer.
+ * Legal officers' comments are not for the lawyer (US 5.5, RG-INT-07): they write for the DJ/DJA,
+ * who decides and forwards. The backend keeps them out of the portal payload; this screen must not
+ * show them either.
  */
 /*
- * L'écran lit la page courante dans l'URL : sans routeur monté, `useFiltresUrl` échoue avant tout
- * rendu. Même mise en place que `explications.test.tsx`.
+ * The screen reads the current page from the URL: without a mounted router, `useFiltresUrl` fails
+ * before rendering. Same setup as `explications.test.tsx`.
  */
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -29,8 +24,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 /*
- * La section « Mes dossiers » (QF-64) a ses propres tests : elle est neutralisée ici, ce fichier ne
- * portant que sur la correspondance.
+ * The "My case files" section has its own tests: it is stubbed here, this file covering only
+ * correspondence.
  */
 vi.mock("@/components/modules/portail/mes-dossiers", () => ({ MesDossiers: () => null }));
 
@@ -84,16 +79,16 @@ describe("la correspondance sur l'espace de l'avocat", () => {
     afficher(publication({ correspondance: CORRESPONDANCE }));
 
     expect(screen.getByText("Merci de préciser la date de l'audience.")).toBeInTheDocument();
-    // Une lettre sans signature n'en est pas une : l'avocat doit savoir à qui il répond.
+    // A letter without a signature is not one: the lawyer must know who they are answering.
     const signature = screen.getByText(/Transmise par Loïc Kenmoe/);
     expect(signature).toBeInTheDocument();
-    // La date est portée par l'attribut machine : le format affiché suit la langue, pas ce test.
+    // The date is checked on the machine-readable attribute: the displayed format follows the locale.
     expect(signature.querySelector("time")).toHaveAttribute("datetime", "2026-10-14T09:00:00");
   });
 
   /**
-   * Le message est saisi dans une zone de texte : ses retours à la ligne font partie de ce que la
-   * Direction Juridique a écrit. Les aplatir changerait le texte reçu.
+   * The message is typed in a text area: its line breaks are part of what the legal department
+   * wrote. Flattening them would change the text.
    */
   it("conserve les retours à la ligne du message", () => {
     afficher(
@@ -106,8 +101,8 @@ describe("la correspondance sur l'espace de l'avocat", () => {
   });
 
   /**
-   * L'absence se dit. Une cellule vide laisserait croire à un affichage incomplet là où il n'y a
-   * simplement rien à lire : la plupart des publications n'appellent aucune correspondance.
+   * Absence is stated: an empty cell would look like an incomplete display, while most publications
+   * simply have no correspondence.
    */
   it("dit l'absence de correspondance plutôt que de laisser un vide", () => {
     afficher(publication());
@@ -123,7 +118,7 @@ describe("la correspondance sur l'espace de l'avocat", () => {
     ).toBeInTheDocument();
   });
 
-  /** Chaque publication porte la sienne : aucune ne doit hériter de celle d'une autre. */
+  /** Each publication carries its own: none inherits another's. */
   it("rattache chaque correspondance à sa propre publication", () => {
     afficher(
       publication({ id: 44, correspondance: CORRESPONDANCE }),
@@ -135,9 +130,8 @@ describe("la correspondance sur l'espace de l'avocat", () => {
   });
 
   /**
-   * **RG-INT-07.** Si un commentaire interne arrivait jusqu'ici - par un contrat élargi, par une
-   * erreur de mapping -, l'écran ne doit pas le montrer. La délibération entre le juriste et le
-   * DJ/DJA ne s'adresse pas à celui dont elle discute.
+   * **RG-INT-07.** If an internal comment ever reached this screen (wider contract, mapping error),
+   * it must not be shown: the discussion between the legal officer and the DJ/DJA is not for the lawyer.
    */
   it("ne montre jamais les commentaires internes des juristes", () => {
     afficher(

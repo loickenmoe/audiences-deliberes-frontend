@@ -13,13 +13,12 @@ import type {
 import type { PeriodeCalendrier } from "@/types/enums";
 
 /**
- * Audiences, alarmes et calendrier (#13 à #17, #56, #57) — miroir 1:1 des endpoints.
- *
- * Les règles (étape `EN_COURS`, date future, compte rendu après l'audience) sont celles du backend ;
- * l'interface les rejoue pour ne pas proposer une action vouée au refus, mais c'est lui qui arbitre.
+ * Hearings, alarms and calendar (#13 to #17, #56, #57): 1:1 mirror of the endpoints. The backend
+ * owns the rules (step `EN_COURS`, future date, report after the hearing); the UI replays them only
+ * to avoid offering actions bound to fail.
  */
 export const audienceService = {
-  /** #56 — audiences d'un dossier, la plus récente d'abord. */
+  /** #56: hearings of a case, most recent first. */
   listerAudiences: async (dossierId: number, page = 0, size = TAILLE_PAGE): Promise<PageReponse<Audience>> => {
     const { data } = await apiClient.get<PageReponse<Audience>>(`/dossiers/${dossierId}/audiences`, {
       params: { page, size },
@@ -28,8 +27,8 @@ export const audienceService = {
   },
 
   /**
-   * #13 — planification. Un doublon (même étape, même date) renvoie `ERR-005` : ce n'est pas un
-   * échec mais une demande de confirmation, rejouée avec `forcer` — le backend alerte alors le DJ.
+   * #13: scheduling. A duplicate (same step, same date) returns `ERR-005`, a confirmation request
+   * replayed with `forcer`; the backend then alerts the DJ.
    */
   planifier: async (dossierId: number, audience: PlanifierAudience, forcer = false): Promise<Audience> => {
     const { data } = await apiClient.post<Audience>(`/dossiers/${dossierId}/audiences`, audience, {
@@ -38,31 +37,28 @@ export const audienceService = {
     return data;
   },
 
-  /** #14 — compte rendu, recevable seulement le jour de l'audience ou après. */
-  /**
-   * QF-64 — la note destinée à l'avocat constitué, distincte du compte rendu interne. Vide, elle est
-   * effacée.
-   */
+  /** Note addressed to the retained lawyer, separate from the internal report. Empty clears it. */
   modifierNoteAvocat: async (audienceId: number, note: string): Promise<Audience> => {
     const { data } = await apiClient.put<Audience>(`/audiences/${audienceId}/note-avocat`, { note });
     return data;
   },
 
+  /** #14: hearing report, only accepted on or after the hearing date. */
   enregistrerCompteRendu: async (audienceId: number, compteRendu: string): Promise<Audience> => {
     const { data } = await apiClient.put<Audience>(`/audiences/${audienceId}/compte-rendu`, { compteRendu });
     return data;
   },
 
   /**
-   * 🆕 Q-76 — annulation motivée d'une audience planifiée (renvoi, date erronée — QF-30). Elle sort
-   * du calendrier, des exports et des rappels ; un report consiste à annuler, puis replanifier.
+   * Reasoned cancellation of a scheduled hearing (adjournment, wrong date). It leaves the calendar,
+   * exports and reminders; postponing means cancelling and rescheduling.
    */
   annuler: async (audienceId: number, motif: string): Promise<Audience> => {
     const { data } = await apiClient.patch<Audience>(`/audiences/${audienceId}/annulation`, { motif });
     return data;
   },
 
-  /** #57 — alarmes d'un dossier, échéance la plus proche d'abord. */
+  /** #57: alarms of a case, nearest due date first. */
   listerAlarmes: async (dossierId: number, page = 0, size = TAILLE_PAGE): Promise<PageReponse<Alarme>> => {
     const { data } = await apiClient.get<PageReponse<Alarme>>(`/dossiers/${dossierId}/alarmes`, {
       params: { page, size },
@@ -76,19 +72,19 @@ export const audienceService = {
     return data;
   },
 
-  /** #17 — clôt l'alarme et en crée une nouvelle ; c'est la **nouvelle** qui est renvoyée. */
+  /** #17: closes the alarm and creates a new one; the new one is returned. */
   reprogrammerAlarme: async (alarmeId: number, reprogrammation: ReprogrammerAlarme): Promise<Alarme> => {
     const { data } = await apiClient.put<Alarme>(`/alarmes/${alarmeId}/reprogrammer`, reprogrammation);
     return data;
   },
 
-  /** 🆕 Q-77 — clôt une alarme traitée **sans** la remplacer (QF-29). */
+  /** Closes a handled alarm without replacing it. */
   traiterAlarme: async (alarmeId: number): Promise<Alarme> => {
     const { data } = await apiClient.patch<Alarme>(`/alarmes/${alarmeId}/traiter`);
     return data;
   },
 
-  /** #15, format JSON — les audiences de la période hors annulées, sans pagination ni filtre par juriste. */
+  /** #15, JSON: non-cancelled hearings of the period, unpaginated and not filtered by legal officer. */
   calendrier: async (periode: PeriodeCalendrier, dateDebut: string): Promise<EntreeCalendrier[]> => {
     const { data } = await apiClient.get<EntreeCalendrier[]>("/audiences/calendrier", {
       params: { periode, dateDebut, format: "JSON" },
@@ -96,7 +92,7 @@ export const audienceService = {
     return data;
   },
 
-  /** Écran 44 — les audiences d'une journée, avec les deux comptes rendus. */
+  /** Screen 44: hearings of one day, with both reports. */
   journal: async (date: string, page = 0, size = TAILLE_PAGE): Promise<PageReponse<AudienceDuJour>> => {
     const { data } = await apiClient.get<PageReponse<AudienceDuJour>>("/audiences/journal", {
       params: { date, page, size },
@@ -105,11 +101,8 @@ export const audienceService = {
   },
 
   /**
-   * Écran 44 — les audiences passées dont le compte rendu du juriste manque.
-   *
-   * La fenêtre est explicite : sans bornes, la liste grossirait sans fin et cesserait d'être un
-   * outil de rappel. Le backend ramène de lui-même la borne haute à hier — une audience du jour
-   * n'est pas en retard, elle est en cours.
+   * Screen 44: past hearings missing the legal officer's report, over an explicit window. The
+   * backend caps the upper bound at yesterday, since today's hearings are not yet overdue.
    */
   comptesRendusAttendus: async (
     dateDebut: string,
@@ -124,10 +117,8 @@ export const audienceService = {
   },
 
   /**
-   * #15, format PDF ou Excel — le document lui-même, en binaire.
-   *
-   * En réponse binaire, une erreur arrive elle aussi en binaire : c'est l'intercepteur du client
-   * HTTP qui la relit, pour que le message du backend atteigne l'utilisateur.
+   * #15, PDF or Excel: the binary document. Errors also arrive as binary; the HTTP client
+   * interceptor decodes them so the backend message reaches the user.
    */
   exporterCalendrier: async (
     periode: PeriodeCalendrier,
@@ -138,8 +129,7 @@ export const audienceService = {
       params: { periode, dateDebut, format },
       responseType: "blob",
     });
-    // Un navigateur rend un `Blob` ; sous Node, axios rend un tampon. Normaliser ici évite que
-    // l'appelant dépende de l'environnement.
+    // Browsers return a `Blob` but axios returns a Buffer under Node; normalize for callers.
     return data instanceof Blob ? data : new Blob([data as BlobPart]);
   },
 };

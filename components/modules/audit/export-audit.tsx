@@ -14,34 +14,49 @@ import type { FiltresAudit } from "@/services/auditService";
 import { auditService } from "@/services/auditService";
 
 /**
- * Extraction de l'audit et archives déjà produites (backend Q-113).
- *
- * **Pourquoi une archive et pas seulement un téléchargement.** Un fichier remis à quelqu'un est un
- * fichier perdu, et un PDF se réédite en trois minutes : remis seul, il ne prouve rien. Chaque
- * extraction est donc scellée — déposée côté serveur, son **empreinte SHA-256 consignée**. On peut
- * alors démontrer, des années plus tard, que le fichier produit est bien celui qui a été scellé.
- *
- * **Les deux formats, jamais l'un ou l'autre** : le PDF produit une pièce figée qu'on remet à un
- * inspecteur, l'Excel une matière qu'on trie et recoupe. Retenir un seul format aurait obligé l'un
- * des deux usages à se contenter d'un outil qui ne lui convient pas.
- *
- * **Les six raccourcis pré-remplissent la période, ils ne la remplacent pas.** La période libre
- * reste : la première inspection qui demande « du 12 mars au 4 juin » ne rentre dans aucune case.
- * Chaque raccourci couvre l'unité calendaire **écoulée** et s'arrête aujourd'hui — « ce mois-ci » ne
- * va pas jusqu'au 31 si l'on est le 12, une archive ne devant pas prétendre couvrir des jours à venir.
+ * The download uses a temporary link rather than a navigation: the call carries the auth token,
+ * which `window.open` would not send.
+ */
+function remettre(fichier: Blob, nomFichier: string) {
+  const url = URL.createObjectURL(fichier);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = nomFichier;
+  lien.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Opens a sealed archive through a fresh pre-signed address. */
+async function recuperer(id: number) {
+  try {
+    const url = await auditService.urlArchive(id);
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch (error_) {
+    toast.error(messageErreur(error_));
+  }
+}
+
+/**
+ * Audit export and previously produced archives.
+ * Each export is sealed: stored on the server with its SHA-256 fingerprint recorded, so the file
+ * can later be proven to be the one that was sealed.
+ * Both formats are produced: the PDF as a fixed document, the Excel file for sorting and
+ * cross-checking.
+ * Shortcuts prefill the period without replacing the free period; each covers the elapsed calendar
+ * unit and stops today, as an archive must not claim to cover future days.
  */
 export function ExportAudit({
   filtres,
   debut,
   fin,
   onPeriode,
-}: {
+}: Readonly<{
   filtres: FiltresAudit;
   debut: string;
   fin: string;
-  /** Un raccourci renseigne les champs de période de l'écran : il ne lance pas d'export. */
+  /** A shortcut fills the screen's period fields: it does not start an export. */
   onPeriode: (periode: { debut: string; fin: string }) => void;
-}) {
+}>) {
   const t = useTranslations("audit");
   const { nomUtilisateur } = useLibelles();
   const exporter = useExporterAudit();
@@ -49,40 +64,19 @@ export function ExportAudit({
 
   const periodeManquante = !debut || !fin;
 
-  /**
-   * La remise au navigateur passe par un lien éphémère plutôt que par une navigation : l'appel
-   * porte le jeton d'authentification, qu'un `window.open` n'emporterait pas.
-   */
-  function remettre(fichier: Blob, nomFichier: string) {
-    const url = URL.createObjectURL(fichier);
-    const lien = document.createElement("a");
-    lien.href = url;
-    lien.download = nomFichier;
-    lien.click();
-    URL.revokeObjectURL(url);
-  }
-
   function lancer(format: "PDF" | "EXCEL") {
     exporter.mutate(
       { filtres: { ...filtres, dateDebut: debut, dateFin: fin }, format },
       {
         onSuccess: ({ fichier, nomFichier, empreinte }) => {
           remettre(fichier, nomFichier);
-          // L'empreinte est annoncée : elle voyage avec le fichier, et se recoupe avec la liste.
+          // The fingerprint is announced: it travels with the file and can be checked against the
+          // list.
           toast.success(t("exportReussi", { empreinte: empreinte.slice(0, 12) }));
         },
         onError: (erreur) => toast.error(messageErreur(erreur)),
       },
     );
-  }
-
-  async function recuperer(id: number) {
-    try {
-      const url = await auditService.urlArchive(id);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
-    }
   }
 
   const lignes = archives.data?.content ?? [];
@@ -127,9 +121,8 @@ export function ExportAudit({
           {t("exporterExcel")}
         </Button>
         {/*
-          La période est facultative pour consulter, obligatoire pour extraire : une archive sans
-          période ne dit pas ce qu'elle contient. On l'explique ici plutôt que de laisser le backend
-          renvoyer un 400 que l'utilisateur lirait comme une panne.
+          The period is optional to browse but required to export: an archive without a period does
+          not say what it contains. Explained here rather than letting the backend return a 400.
         */}
         {periodeManquante ? (
           <p role="alert" className="text-[length:var(--taille-sm)] text-danger">
@@ -148,8 +141,8 @@ export function ExportAudit({
               <li key={archive.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
                 <span className="flex flex-col gap-0.5 text-[length:var(--taille-sm)]">
                   {/*
-                    La référence vient en premier : c'est par elle qu'on désigne l'archive dans un
-                    courrier ou au téléphone, là où l'empreinte, elle, la prouve.
+                    The reference comes first: it is how the archive is referred to; the fingerprint
+                    proves it.
                   */}
                   <span className="font-medium">
                     <span className="font-mono">{archive.reference}</span>
@@ -164,14 +157,13 @@ export function ExportAudit({
                   <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
                     <DateHeureValeur valeur={archive.dateExport} />
                     {" · "}
-                    {archive.utilisateurId !== null ? nomUtilisateur(archive.utilisateurId) : "—"}
+                    {archive.utilisateurId === null ? "—" : nomUtilisateur(archive.utilisateurId)}
                     {" · "}
                     <PoidsFichier valeur={archive.tailleOctets} />
                   </span>
                   {/*
-                    L'empreinte est affichée en entier, mais **groupée** : tronquée elle ne servirait
-                    qu'à décorer, d'un seul tenant elle serait illisible. C'est elle qu'un contrôleur
-                    compare avec le fichier qu'on lui a remis.
+                    The fingerprint is shown in full but grouped: truncated it would be useless, in
+                    one block unreadable.
                   */}
                   <EmpreinteAffichee empreinte={archive.empreinte} />
                 </span>

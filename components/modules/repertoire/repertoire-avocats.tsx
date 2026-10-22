@@ -11,23 +11,24 @@ import { useRepertoire } from "@/hooks/useConstitutions";
 import { useFiltresUrl } from "@/hooks/useFiltresUrl";
 import { messageErreur } from "@/lib/api/errors";
 import { peut } from "@/lib/rbac";
+import type { AvocatRepertoire } from "@/types/domaine";
 
 const DEFAUTS = { nom: "" };
 
 /**
- * Écran 34 — répertoire des avocats (UC-INT-07), du moins chargé au plus chargé : c'est l'ordre
- * utile pour choisir à qui confier un dossier. La charge compte les dossiers actifs ; la performance,
- * la part des délibérés favorables sur ses dossiers (0 % tant qu'aucun n'est rendu).
+ * Screen 34 - lawyer directory (UC-INT-07), from least to most loaded: the useful order when choosing
+ * whom to entrust a case file to. Load counts active case files; performance is the share of
+ * favorable deliberations on their case files (0% until one is delivered).
  */
-export function RepertoireAvocats({ roles }: { roles: string[] }) {
+export function RepertoireAvocats({ roles }: Readonly<{ roles: string[] }>) {
   const t = useTranslations("repertoire");
   const { filtres, definirFiltre } = useFiltresUrl(DEFAUTS);
   const requete = useRepertoire(filtres.nom);
   const avocats = requete.data?.content ?? [];
   /*
-    L'activité d'un avocat **nomme une personne** : elle se tient sur les rôles propres du DJ et de
-    la DJA, jamais sur `ROLE_JURISTE`, composite depuis Q-81 - sans quoi chaque juriste, et
-    l'Assistante qui atteint aussi cet écran, liraient ce qu'elle protège.
+    A lawyer's activity names a person: it is restricted to the DJ and DJA's own roles, never to
+    `ROLE_JURISTE`, which is composite - otherwise every legal officer, and the Assistant who also
+    reaches this screen, could read it.
   */
   const peutLireLActivite = peut(roles, "consulterRapportNominatif");
   const [avocatOuvert, setAvocatOuvert] = useState<{ id: number; nom: string } | null>(null);
@@ -35,15 +36,13 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
-      {/*
-        **Au fil de la frappe** (QF-57), comme les filtres des dossiers et des clients. Le raccourci
-        Entrée est conservé par `ChampRecherche` : il existait ici avant, et le retirer aurait enlevé
-        une habitude à qui l'avait prise.
-      */}
+      {/* Filters as the user types, like the case file and client filters; `ChampRecherche` keeps the Enter shortcut. */}
       <ChampRecherche
         id="recherche-avocat"
         label={t("rechercheNom")}
@@ -53,86 +52,21 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
         className="w-64"
       />
 
-      {requete.isLoading ? (
-        <EtatChargement lignes={5} />
-      ) : requete.error ? (
-        <EtatErreur message={messageErreur(requete.error)} />
-      ) : avocats.length === 0 ? (
-        <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
-          {filtres.nom ? t("videRecherche") : t("vide")}
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded border border-bordure bg-surface">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneAvocat")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneCourriel")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneTelephone")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneCharge")}</th>
-                <th scope="col" className="px-4 py-2 font-medium" title={t("performanceAide")}>{t("colonnePerformance")}</th>
-                {/*
-                  Ajoutée **en dernier**, et c'est volontaire : deux parcours e2e visent la charge
-                  par son rang (4e colonne). Insérer au milieu les aurait fait échouer sans que le
-                  produit ait changé.
-                */}
-                {peutLireLActivite ? (
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneActivite")}</th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {avocats.map((avocat) => (
-                <tr key={avocat.id}>
-                  <td className="px-4 py-2 font-medium">{avocat.nom}</td>
-                  <td className="px-4 py-2">
-                    {avocat.email ? (
-                      <a href={`mailto:${avocat.email}`} className="underline underline-offset-4">{avocat.email}</a>
-                    ) : "—"}
-                  </td>
-                  <td className="px-4 py-2">{avocat.telephone ?? "—"}</td>
-                  <td className="px-4 py-2" data-nombres>{t("charge", { nombre: avocat.indicateurCharge })}</td>
-                  {/*
-                    Les chiffres, non le taux (métier, 2026-10-06). « 3 sur 4 » dit ce que « 75 % »
-                    résumait, **et sur combien d'affaires** : un taux de 100 % sur un délibéré
-                    unique ne vaut pas le même jugement qu'un taux de 70 % sur trente, et c'est
-                    pourtant le premier qui paraissait le meilleur.
-
-                    Aucun délibéré n'est pas une contre-performance : c'est l'absence de mesure, et
-                    l'écran le dit plutôt que d'afficher un zéro qui se lirait comme un échec.
-                  */}
-                  <td className="px-4 py-2" data-nombres>
-                    {avocat.deliberesTotal === 0
-                      ? t("aucunDelibere")
-                      : t("deliberesGagnes", {
-                          gagnes: avocat.deliberesFavorables,
-                          total: avocat.deliberesTotal,
-                        })}
-                  </td>
-                  {peutLireLActivite ? (
-                    <td className="px-4 py-2">
-                      <Button
-                        variante="discrete"
-                        onClick={() => setAvocatOuvert({ id: avocat.id, nom: avocat.nom })}
-                      >
-                        {t("voirActivite")}
-                      </Button>
-                    </td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TableauAvocats
+        enChargement={requete.isLoading}
+        erreur={requete.error}
+        avocats={avocats}
+        filtre={filtres.nom}
+        peutLireLActivite={peutLireLActivite}
+        onActivite={setAvocatOuvert}
+      />
       <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("performanceAide")}</p>
 
       {/*
-        La fiche s'ouvre **sous** le tableau et non en modale : on y choisit une période, on y
-        télécharge, et une modale rendrait tout cela étroit. `key` force un remontage au changement
-        d'avocat, sans quoi la période et le rapport déjà affichés resteraient ceux du précédent.
+        The detail opens below the table rather than in a modal: it has a period picker and downloads.
+        `key` forces a remount when the lawyer changes, otherwise the previous period and report would remain.
       */}
-      {avocatOuvert !== null ? (
+      {avocatOuvert === null ? null : (
         <div className="flex flex-col gap-2">
           <Button variante="discrete" className="self-start" onClick={() => setAvocatOuvert(null)}>
             {t("fermerActivite")}
@@ -143,7 +77,109 @@ export function RepertoireAvocats({ roles }: { roles: string[] }) {
             nomAffiche={avocatOuvert.nom}
           />
         </div>
-      ) : null}
+      )}
+    </div>
+  );
+}
+
+/** The directory: loading, error, empty (searched or not), or one row per lawyer. */
+function TableauAvocats({
+  enChargement,
+  erreur,
+  avocats,
+  filtre,
+  peutLireLActivite,
+  onActivite,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  avocats: readonly AvocatRepertoire[];
+  filtre: string;
+  peutLireLActivite: boolean;
+  onActivite: (avocat: { id: number; nom: string }) => void;
+}>) {
+  const t = useTranslations("repertoire");
+
+  if (enChargement) return <EtatChargement lignes={5} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (avocats.length === 0) {
+    return (
+      <div className="rounded border border-dashed border-bordure-forte px-6 py-10 text-center text-texte-secondaire">
+        {filtre ? t("videRecherche") : t("vide")}
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneAvocat")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneCourriel")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneTelephone")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneCharge")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium" title={t("performanceAide")}>
+              {t("colonnePerformance")}
+            </th>
+            {/* Added last on purpose: two e2e tests target the load column by its position (4th column). */}
+            {peutLireLActivite ? (
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneActivite")}
+              </th>
+            ) : null}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {avocats.map((avocat) => (
+            <tr key={avocat.id}>
+              <td className="px-4 py-2 font-medium">{avocat.nom}</td>
+              <td className="px-4 py-2">
+                {avocat.email ? (
+                  <a href={`mailto:${avocat.email}`} className="underline underline-offset-4">
+                    {avocat.email}
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </td>
+              <td className="px-4 py-2">{avocat.telephone ?? "—"}</td>
+              <td className="px-4 py-2" data-nombres>
+                {t("charge", { nombre: avocat.indicateurCharge })}
+              </td>
+              {/*
+                Counts, not a rate: "3 of 4" also says how many cases the figure is based on. No deliberation
+                means no measurement, not poor performance, so the screen says so instead of showing a zero.
+              */}
+              <td className="px-4 py-2" data-nombres>
+                {avocat.deliberesTotal === 0
+                  ? t("aucunDelibere")
+                  : t("deliberesGagnes", {
+                      gagnes: avocat.deliberesFavorables,
+                      total: avocat.deliberesTotal,
+                    })}
+              </td>
+              {peutLireLActivite ? (
+                <td className="px-4 py-2">
+                  <Button
+                    variante="discrete"
+                    onClick={() => onActivite({ id: avocat.id, nom: avocat.nom })}
+                  >
+                    {t("voirActivite")}
+                  </Button>
+                </td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

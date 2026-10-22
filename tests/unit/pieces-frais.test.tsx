@@ -8,13 +8,9 @@ import type { DemandeFrais } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
 
 /**
- * Les pièces justificatives d'une demande de frais (signalé en recette, 2026-09-28).
- *
- * **Ce que ces tests protègent.** L'écran n'affichait que le contenu brut de
- * `piecesJustificatives` — des chemins de stockage, illisibles et non cliquables — alors que le
- * backend rend depuis Q-97 le nom d'origine et une adresse signée. L'Assistante devait donc statuer
- * sur la conformité sans pouvoir ouvrir les documents, ce que le guide utilisateur promettait
- * pourtant : « le contrôle de conformité porte sur les documents, pas sur leurs noms ».
+ * Supporting documents of a fee request. The screen shows the original file name and a signed URL
+ * returned by the backend, never the raw storage paths of `piecesJustificatives`, so the Assistant
+ * can open the documents to check compliance.
  */
 const requete = vi.fn();
 
@@ -81,8 +77,7 @@ describe("pièces d'une demande de frais", () => {
   });
 
   /**
-   * Le chemin de stockage ne doit plus jamais s'afficher : c'est lui qu'on voyait à la place du
-   * document, et il ne dit rien à personne.
+   * The storage path must never be displayed: it means nothing to anyone.
    */
   it("n'affiche plus le chemin de stockage à la place du document", () => {
     const cle = "frais/8f3a2b1c-4d5e-6f70-8a9b-0c1d2e3f4a5b-facture.pdf";
@@ -103,9 +98,8 @@ describe("pièces d'une demande de frais", () => {
   });
 
   /**
-   * Les libellés saisis avant que le téléversement n'existe ne désignent aucun fichier. Les taire
-   * ferait croire qu'aucune pièce n'a été déclarée ; les rendre cliquables promettrait un document
-   * qui n'existe pas.
+   * Labels entered before uploads existed point to no file. Hiding them would suggest no document
+   * was declared; making them clickable would promise a document that does not exist.
    */
   it("affiche sans bouton les pièces déclarées qui n'ont pas de fichier", () => {
     requete.mockReturnValue({
@@ -128,26 +122,22 @@ describe("pièces d'une demande de frais", () => {
 });
 
 /**
- * La normalisation du montant (QF-56).
- *
- * **Le défaut, tel qu'il a été vécu en recette** : l'avocat écrit « 12 000 » - comme il l'écrit
- * partout, et comme l'application l'affiche elle-même -, le bouton « Déposer » reste éteint, et rien
- * ne dit pourquoi. La validation exigeait des chiffres collés.
+ * Amount normalization. A lawyer must be able to type "12 000" (with spaces, as the application
+ * itself displays it) and still submit.
  */
 describe("normalisation du montant", () => {
   it("accepte les espaces, y compris ceux qu'on ne voit pas", () => {
     expect(normaliserMontant("12 000")).toBe("12000");
     /*
-     * L'insécable (U+00A0) et l'insécable étroite (U+202F) arrivent par copier-coller depuis un
-     * tableur ou depuis l'application elle-même. Elles sont **invisibles à l'œil** : un refus sans
-     * message aurait été indéchiffrable.
+     * Non-breaking (U+00A0) and narrow non-breaking (U+202F) spaces come from copy-paste out of a
+     * spreadsheet or the application itself. They are **invisible**, so refusing them would be baffling.
      */
     expect(normaliserMontant("12\u00a0000")).toBe("12000");
     expect(normaliserMontant("1\u202f500\u202f000")).toBe("1500000");
   });
 
   it("traduit la virgule décimale en point", () => {
-    // `Number("12,5")` vaut NaN : sans cette traduction, le montant partait vide ou refusé.
+    // `Number("12,5")` is NaN: without this conversion the amount would be empty or rejected.
     expect(normaliserMontant("12,5")).toBe("12.5");
     expect(normaliserMontant("1 500,75")).toBe("1500.75");
   });
@@ -157,7 +147,7 @@ describe("normalisation du montant", () => {
     expect(normaliserMontant("12000.5")).toBe("12000.5");
   });
 
-  /** Elle normalise, elle ne valide pas : c'est au formulaire de refuser ce qui n'est pas un nombre. */
+  /** It normalizes, it does not validate: the form rejects what is not a number. */
   it("ne rend pas valide ce qui ne l'est pas", () => {
     expect(normaliserMontant("abc")).toBe("abc");
     expect(normaliserMontant("12 000 F")).toBe("12000F");

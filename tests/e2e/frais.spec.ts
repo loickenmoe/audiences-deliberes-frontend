@@ -2,8 +2,8 @@ import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 /**
- * Frais d'avocats (écrans 28 et 29) **contre le backend réel**, avec quatre comptes : l'avocat
- * dépose par l'API (son portail arrive en F16), l'Assistante, la DJA et le DJ décident à l'écran.
+ * Lawyer fees (screens 28 and 29) against the real backend, with four accounts: the lawyer files
+ * through the API, the Assistant, the DJA and the DJ decide on screen.
  */
 
 loadEnvConfig(process.cwd());
@@ -46,8 +46,8 @@ function suffixe() {
 }
 
 /**
- * L'avocat du référentiel rattaché au compte `avocat.test` — par son **identifiant de connexion**,
- * comme le saisit le DJ dans le formulaire des intervenants (Q-84 backend, QF-38).
+ * The reference-data lawyer linked to the `avocat.test` account, by its login identifier, as the
+ * DJ enters it in the participant form.
  */
 async function avocatDuCompteTest(): Promise<number> {
   const juriste = await jeton("juriste.test");
@@ -67,20 +67,15 @@ async function avocatDuCompteTest(): Promise<number> {
     body: JSON.stringify({ type: "AVOCAT", nom: "Me Claire Avocat", compteKeycloak: "avocat.test" }),
   });
   if (creation.ok) return ((await creation.json()) as { id: number }).id;
-  // 409 : un parcours parallèle vient de le créer — y compris quand les deux créations se croisent (Q-85).
+  // 409: a parallel test just created it, including when both creations overlap.
   const cree = await trouver();
   if (cree) return cree.id;
   throw new Error(`POST /intervenants → ${creation.status}`);
 }
 
 /**
- * Le seuil de validation conjointe, **lu dans la configuration** plutôt que supposé.
- *
- * `SEUIL_MONTANT_DEFAUT` (RG-INT-03) n’est pas une constante : le DJ le modifie à l’écran, et la
- * valeur posée par les migrations n’est qu’un point de départ. Un montant écrit en dur finit
- * donc par passer du mauvais côté du seuil — c’est arrivé le 2026-09-21, le test déposant
- * 60 000 000 sur une base où le seuil valait 100 000 000 : il échouait en mesurant la
- * configuration, pas le produit, et le bandeau qu’il réclamait avait raison de ne pas paraître.
+ * The joint validation threshold, read from the configuration rather than assumed:
+ * `SEUIL_MONTANT_DEFAUT` (RG-INT-03) can be changed on screen by the DJ.
  */
 async function seuilValidationConjointe(): Promise<number> {
   const configurations = await json<{ cle: string; valeur: string }[]>(
@@ -93,17 +88,14 @@ async function seuilValidationConjointe(): Promise<number> {
 }
 
 /**
- * Un montant franchement **sous** le seuil, calculé lui aussi à partir de la configuration.
- *
- * Symétrique du précédent, et pour la même raison : un petit montant écrit en dur passerait du
- * mauvais côté le jour où le seuil descendrait sous lui. Le dixième du seuil laisse une marge
- * large dans les deux sens.
+ * An amount well below the threshold, also derived from the configuration. A tenth of the threshold
+ * leaves a wide margin.
  */
 async function montantSousLeSeuil(): Promise<number> {
   return Math.max(1, Math.floor((await seuilValidationConjointe()) / 10));
 }
 
-/** Un dossier où `avocat.test` est affecté, et sa demande de frais déposée par l'API. */
+/** A case to which `avocat.test` is assigned, and its fee request filed through the API. */
 async function demandeDeposee(montant: number) {
   const juriste = await jeton("juriste.test");
   const avocatId = await avocatDuCompteTest();
@@ -120,9 +112,9 @@ async function demandeDeposee(montant: number) {
       pvTransfert: "PV-FRAIS",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocatId],
-      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      // Mandatory.
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur", "Caution"] },
-      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      // Mandatory: 00002 = Bonanjo.
       codeAgenceOrigine: "00002",
     }),
   });
@@ -136,8 +128,7 @@ async function demandeDeposee(montant: number) {
       referenceFacture: facture,
     }),
   });
-  // La référence est ATTRIBUÉE par le système (2026-09-29) : celle qu'on aurait
-  // envoyée n'existe nulle part. On lit celle que le serveur a donnée.
+  // The reference is assigned by the server: read the one it returned.
   return { id: demande.id, facture, reference: dossier.reference };
 }
 
@@ -156,7 +147,7 @@ async function pageConnectee(browser: Browser, identifiant: string) {
   return page;
 }
 
-/** Depuis la file, dans la vue ouverte par défaut pour ce profil. */
+/** From the queue, in the default view for this profile. */
 async function ouvrirDepuisLaFile(page: Page, facture: string) {
   await page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Frais d’avocats" }).click();
   await page.waitForURL(/\/frais/, { timeout: 60_000 });
@@ -190,7 +181,7 @@ test("circuit simple : conformité, opportunité par la DJA seule, paiement", as
   await assistante.getByRole("button", { name: "À payer" }).click();
   await assistante.getByRole("row", { name: new RegExp(facture) }).getByRole("link", { name: facture }).click();
   await confirmer(assistante, "Marquer comme payée", "Marquer la demande comme payée ?", "Paiement enregistré : l’avocat et la Direction Juridique sont notifiés.");
-  // Chaque décision du circuit est nommée, sans étape conjointe pour ce dossier.
+  // Each decision in the workflow is named, with no joint step for this case.
   const circuit = assistante.getByRole("region", { name: "Circuit de validation" });
   await expect(circuit.getByRole("listitem").filter({ hasText: "Contrôle de conformité" })).toContainText("Accord");
   await expect(circuit.getByRole("listitem").filter({ hasText: "Contrôle d’opportunité" })).toContainText("Accord");
@@ -200,7 +191,7 @@ test("circuit simple : conformité, opportunité par la DJA seule, paiement", as
 });
 
 test("validation conjointe : montant au-delà du seuil, deux accords, jamais deux votes du même profil", async ({ browser }) => {
-  // Franchement au-dessus du seuil courant, quel qu’il soit : c’est la condition que le test vérifie.
+  // Well above the current threshold, whatever it is: this is the condition under test.
   const { id, facture } = await demandeDeposee((await seuilValidationConjointe()) + 10_000_000);
   await json(`/frais/demandes/${id}/conformite`, await jeton("assistante.test"), {
     method: "PUT",
@@ -211,7 +202,7 @@ test("validation conjointe : montant au-delà du seuil, deux accords, jamais deu
   await ouvrirDepuisLaFile(dja, facture);
   await expect(dja.getByText("Validation conjointe du DJ et de la DJA requise")).toBeVisible();
   await dja.getByRole("region", { name: "Action attendue" }).getByRole("button", { name: "Valider" }).click();
-  // UC-INT-02 alt. 4-a : la DJA sait, avant de valider, que le DJ sera sollicité.
+  // UC-INT-02 alt. 4-a: the DJA knows before validating that the DJ will be asked.
   const validation = dja.getByRole("dialog", { name: "Valider la demande ?" });
   await expect(validation).toContainText("validation conjointe");
   await validation.getByRole("button", { name: "Valider" }).click();
@@ -223,7 +214,7 @@ test("validation conjointe : montant au-delà du seuil, deux accords, jamais deu
   await expect(actions.getByRole("button", { name: "Donner mon accord" })).toHaveCount(0);
   await dja.context().close();
 
-  // Et si l'interface le proposait quand même, le backend refuserait le second vote.
+  // And if the UI offered it anyway, the backend would reject the second vote.
   const secondVote = await appel(`/frais/demandes/${id}/validation-conjointe`, await jeton("dja.test"), {
     method: "POST",
     body: JSON.stringify({ accord: true }),

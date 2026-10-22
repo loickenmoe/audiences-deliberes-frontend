@@ -13,23 +13,20 @@ import { useRepertoire } from "@/hooks/useConstitutions";
 import { messageErreur } from "@/lib/api/errors";
 
 /**
- * La direction demande à un avocat de s'expliquer (N7 temps 2).
+ * Management asks a lawyer for an explanation.
  *
- * **Pourquoi l'avocat se cherche, et ne se choisit pas dans une liste.** Le répertoire grandit ;
- * une liste déroulante se tronquerait en silence, et l'avocat qu'on veut nommer n'y serait plus -
- * c'est le défaut que Q-105 a déjà corrigé ailleurs.
- *
- * **Le dossier n'est pas demandé.** La demande porte sur une conduite - des audiences manquées à
- * travers plusieurs affaires - et non sur l'une d'elles. Exiger un dossier obligerait à en choisir
- * un arbitrairement, et la demande se lirait comme un reproche sur ce dossier-là.
+ * The lawyer is searched server-side rather than picked from a dropdown: the directory grows and a
+ * dropdown would be silently truncated.
+ * No case file is required: the request concerns a conduct (e.g. missed hearings across several
+ * cases), not one specific case.
  */
 export function ModaleDemandeExplication({
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("explications");
   const tc = useTranslations("commun");
   const { demander } = useEcritureExplication();
@@ -103,7 +100,7 @@ export function ModaleDemandeExplication({
           />
         </Champ>
 
-        {/* Dit avant l'envoi : la machine se tait, et il faut le savoir pour ne pas s'en étonner. */}
+        {/* Stated before sending: no automatic notification is sent, so the user is not surprised. */}
         <p className="max-w-prose text-[length:var(--taille-xs)] text-texte-tertiaire">
           {t("suspensionRelance")}
         </p>

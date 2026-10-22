@@ -7,10 +7,9 @@ import { publicationService, type DecisionPublication } from "@/services/publica
 import type { StatutPublication } from "@/types/enums";
 
 /**
- * @param actif à passer à `false` quand l'appelant n'a pas la capacité `consulterPublications` —
- *              l'onglet « Audiences » est ouvert à tous les profils internes, la liste des
- *              publications ne l'est pas. Sans ce garde-fou, le SH verrait une erreur 403 sur un
- *              écran qui lui est pourtant permis.
+ * @param actif set to `false` when the caller lacks the `consulterPublications` capability: the
+ *              Hearings tab is open to all internal profiles but the publication list is not, so
+ *              without this guard the SH would get a 403 on a screen it is allowed to see.
  */
 export function usePublications(
   filtres: {
@@ -33,12 +32,12 @@ export function usePublication(id: number) {
     queryKey: [CLES.publication, id],
     queryFn: () => publicationService.consulter(id),
     enabled: Number.isFinite(id) && id > 0,
-    // 403 (accès restreint) et 404 (non validée) sont des réponses, pas des pannes : ne pas insister.
+    // 403 (restricted access) and 404 (not validated) are answers, not failures: do not retry.
     retry: false,
   });
 }
 
-/** Toute décision ou tout échange change le détail et la file : les deux sont rechargés. */
+/** Any decision or exchange changes both the detail and the queue, so both are reloaded. */
 function useRecharger() {
   const client = useQueryClient();
   return (id: number) => {

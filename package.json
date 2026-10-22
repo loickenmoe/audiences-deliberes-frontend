@@ -1,6 +1,6 @@
 {
   "name": "audiences-deliberes-frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Frontend de la plateforme Audiences et Délibérés — Direction Juridique, Afriland First Bank Cameroun",
   "scripts": {
@@ -12,12 +12,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "api:types": "openapi-typescript contracts/openapi.json -o types/api.generated.ts",
-    "api:fetch": "node scripts/fetch-openapi.mjs",
-    "garnir": "node scripts/garnir-base.mjs",
-    "smoke": "node scripts/smoke-backend.mjs"
+    "api:fetch": "node scripts/fetch-openapi.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -54,6 +53,7 @@
     "@types/react-dom": "^19.0.2",
     "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "2.1.9",
     "eslint": "^9.17.0",
     "eslint-config-next": "15.3.3",
     "jsdom": "^25.0.1",

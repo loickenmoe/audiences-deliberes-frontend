@@ -22,25 +22,13 @@ type Nature = "compteRendu" | "document";
 const NATURES: Nature[] = ["compteRendu", "document"];
 
 /**
- * Écran 33 — dépôt d'une publication par l'avocat (#29, #31).
+ * Screen 33 - publication submission by the lawyer.
  *
- * **Un seul formulaire, deux natures de dépôt.** Les deux onglets d'origine donnaient l'impression
- * de changer de page alors que le dossier restait le même en dessous ; et leurs libellés reprenaient
- * le défaut de l'écran 02 en miniature — « Pièce, décision, conclusion » énumérait les valeurs du
- * champ `typeDocument` affiché juste en dessous. Les deux natures sont désormais présentées côte à
- * côte, chacune avec la phrase qui la distingue, dans un formulaire continu.
- *
- * **Ce qui les sépare n'est plus le format mais l'objet du dépôt.** Depuis Q-98 le compte rendu
- * accepte lui aussi une pièce : ce n'est donc plus « du texte ou un fichier », c'est « je **relate**
- * une audience » contre « je **transmets** un document ». Le premier se rattache à une audience et
- * se valide comme un récit, le second au dossier.
- *
- * **Pourquoi deux objets et non un seul.** Un formulaire unique où le système devinerait la nature
- * — une audience choisie vaudrait compte rendu — remplacerait un choix explicite par une règle
- * cachée, et laisserait sans réponse trois des six combinaisons de champs que le modèle n'accepte
- * pas (un fichier seul rattaché à une audience, un texte seul sans audience, une audience avec un
- * type de document). La distinction existe côté métier ; l'écran la montre au lieu de la faire
- * deviner.
+ * One form, two kinds of submission, shown side by side with the sentence that distinguishes them.
+ * They differ by purpose, not format: a hearing report relates a hearing (linked to a hearing,
+ * validated as a narrative, optional attachment), a document is transmitted for the case file.
+ * The choice is explicit rather than inferred from the fields: inference would hide a rule and
+ * leave several invalid field combinations unexplained.
  */
 export function FormulairePublication() {
   const t = useTranslations("portail");
@@ -63,21 +51,21 @@ export function FormulairePublication() {
 
   function changerDossier(nouveau: number | null) {
     setDossierId(nouveau);
-    // L'audience appartient au dossier : la conserver en changeant de dossier produirait un 404.
+    // The hearing belongs to the case file: keeping it when changing case file would cause a 404.
     setAudienceId(null);
   }
 
   /*
-   * Chaque nature a son propre `Televersement`, avec son état interne : garder le fichier en
-   * changeant de nature laisserait le bouton actif alors que le champ affiché est vide. On repart
-   * donc d'un fichier nul — ce que le nouveau champ montre déjà.
+   * Each kind has its own `Televersement` with internal state: keeping the file when switching kind
+   * would leave the button enabled while the displayed field is empty. Reset to no file, which is
+   * what the new field already shows.
    */
   function changerNature(nouvelle: Nature) {
     setNature(nouvelle);
     setFichier(null);
   }
 
-  /** Le récit exige une audience et un texte ; le document, un fichier. La pièce du récit est libre. */
+  /** A hearing report requires a hearing and a text; a document requires a file. The report's attachment is optional. */
   const complet =
     dossierId !== null &&
     (nature === "compteRendu" ? audienceId !== null && contenu.trim() !== "" : fichier !== null);
@@ -86,9 +74,8 @@ export function FormulairePublication() {
     if (!complet || dossierId === null) return;
     const apres = {
       onSuccess: () => {
-        // Les deux natures ne suivent plus le même sort (RG-INT-06 amendée, 2026-10-05) : un
-        // compte rendu est lisible des juristes du dossier dès maintenant, un document attend sa
-        // validation. Un message unique en aurait trompé une moitié.
+        // The two kinds are handled differently (amended RG-INT-06): a hearing report is readable by the
+        // case file's legal officers immediately, a document awaits validation. Hence two messages.
         toast.success(t(nature === "compteRendu" ? "compteRenduDepose" : "publicationDeposee"));
         router.push("/portail");
       },
@@ -115,15 +102,15 @@ export function FormulairePublication() {
         <SelecteurDossier valeur={dossierId} onChangement={changerDossier} id="publication-dossier" />
 
         {/*
-          Deux choix décrits, et non deux onglets : l'avocat lit ce qui les sépare avant de choisir,
-          au lieu de le découvrir en basculant. `fieldset`/`legend` nomment le groupe, et chaque
-          description est reliée à son option par `aria-describedby`.
+          Two described options rather than two tabs: the lawyer reads what separates them before
+          choosing. `fieldset`/`legend` name the group and each description is linked to its option
+          through `aria-describedby`.
         */}
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[length:var(--taille-sm)] font-medium">{t("natureDepot")}</legend>
           <div className="flex flex-col gap-2">
             {NATURES.map((valeur) => (
-              <label
+              <label // NOSONAR - its text is the option title and help, in the spans below
                 key={valeur}
                 className={cn(
                   "flex cursor-pointer items-start gap-3 rounded border p-3 transition-colors",
@@ -202,22 +189,17 @@ export function FormulairePublication() {
               />
             </Champ>
 
-            {/* Q-98 : la pièce qui étaye le récit. Facultative — le compte rendu reste un texte. */}
+            {/* Optional document supporting the report; the report itself remains a text. */}
             <div className="flex min-w-0 flex-col gap-1">
               <p className="text-[length:var(--taille-sm)] font-medium">{t("pieceJointe")}</p>
               <p className="max-w-prose text-[length:var(--taille-xs)] text-texte-tertiaire">
                 {t("pieceJointeAide")}
               </p>
               {/*
-                **Le téléversement et la relecture sur une seule ligne** (QF-56), comme au dépôt de
-                frais : le bouton s'affichait en dessous, et le lien entre le fichier choisi et le
-                bouton qui le relit se perdait. Le bloc se comprime, son nom de fichier se tronque -
-                lisible au survol -, et le bouton garde sa place.
-
-                `min-w-0` sur la rangée **et** sur le bloc qui la contient : un élément de flex a
-                `min-width: auto` et refuse donc d'être plus étroit que son contenu. Sans cela, un
-                nom de fichier long fait défiler toute la page sur un téléphone - mesuré à 308 points
-                au premier passage de cette correction.
+                Upload and preview button on a single line, as in the expense form: the block shrinks and
+                truncates its file name (readable on hover) while the button keeps its place.
+                `min-w-0` on the row and on its container: a flex item has `min-width: auto` and would refuse to
+                shrink below its content, scrolling the page horizontally on a phone with a long file name.
               */}
               <div className="flex min-w-0 items-center gap-3">
                 <Televersement
@@ -250,7 +232,7 @@ export function FormulairePublication() {
               </Select>
             </Champ>
 
-            {/* Même disposition que pour la pièce du compte rendu ci-dessus (QF-56). */}
+            {/* Same layout as the hearing report's attachment above. */}
             <div className="flex min-w-0 items-center gap-3">
               <Televersement
                 className="min-w-0 flex-1"
@@ -275,9 +257,8 @@ export function FormulairePublication() {
       </div>
 
       {/*
-        Relire le fichier **avant** de déposer. Le fichier n'est pas encore parti : l'aperçu lit
-        directement celui que le navigateur tient en mémoire, sans aller-retour avec le serveur.
-        Une publication déposée ne se corrige pas — elle se redépose.
+        Review the file before submitting. It has not been sent yet: the preview reads it from browser
+        memory, without a server round trip. A submitted publication cannot be corrected, only resubmitted.
       */}
       {apercu && fichier ? (
         <ApercuFichier
@@ -288,7 +269,7 @@ export function FormulairePublication() {
         />
       ) : null}
 
-      {/* Un compte rendu d'audience est un récit : le reperdre, c'est le réécrire. */}
+      {/* A hearing report is a narrative: losing it means rewriting it. */}
       <GardeSaisie
         actif={!enCours && (dossierId !== null || contenu.trim() !== "" || fichier !== null)}
       />
@@ -297,22 +278,18 @@ export function FormulairePublication() {
 }
 
 /**
- * Le bouton de relecture : il n'apparaît que lorsqu'un fichier est effectivement choisi.
- *
- * **Il n'est plus enveloppé dans un `<div>`** (QF-56) : ce conteneur en faisait un bloc, qui prenait
- * toute la largeur et s'affichait donc sur la ligne suivante du téléversement. Il est désormais
- * rendu tel quel dans la rangée, avec `shrink-0` pour qu'un nom de fichier long ne le comprime pas -
- * c'est le nom qui doit céder.
+ * The preview button, shown only when a file is chosen. Rendered without a wrapping `<div>` so it
+ * stays on the upload row, with `shrink-0` so a long file name does not compress it.
  */
 function BoutonRelire({
   fichier,
   onOuverture,
   libelle,
-}: {
+}: Readonly<{
   fichier: File | null;
   onOuverture: () => void;
   libelle: string;
-}) {
+}>) {
   if (!fichier) return null;
   return (
     <Button

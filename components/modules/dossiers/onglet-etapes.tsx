@@ -20,30 +20,28 @@ import type { Dossier, EtapeProcedure } from "@/types/domaine";
 import { TypeEtape, type StatutCycleVie } from "@/types/enums";
 
 /**
- * Écran 08 — étapes de la procédure.
- *
- * Deux choix d'interface découlent directement des règles du backend :
- * · on ne propose **que** les transitions qu'il accepte (`lib/transitions.ts`), plutôt que les six
- *   statuts dont quatre mèneraient à un `ERR-004` ;
- * · les deux effets de bord silencieux du backend — ouverture automatique de l'étape suivante lors
- *   d'un recours, création d'étapes intermédiaires lors d'un positionnement direct — sont
- *   **annoncés avant** confirmation, pas découverts après.
+ * Screen 08 - procedure steps.
+ * Two UI choices follow directly from the backend rules:
+ * · only transitions it accepts are offered (`lib/transitions.ts`), rather than the six statuses of
+ *   which four would lead to `ERR-004`;
+ * · the backend's two silent side effects (automatic opening of the next step on an appeal,
+ *   creation of intermediate steps on a direct positioning) are **announced before** confirmation.
  */
-export function OngletEtapes({ dossier, roles }: { dossier: Dossier; roles: readonly string[] }) {
+export function OngletEtapes({ dossier, roles }: Readonly<{ dossier: Dossier; roles: readonly string[] }>) {
   const t = useTranslations("fiche");
   const tdom = useTranslations("domaine");
   const peutGerer = peut(roles, "gererEtapes");
 
-  // Tri dans l'ordre de la procédure : le backend trie par type, on ne s'y fie pas.
+  // Sorted in procedure order: the backend sorts by type, which is not relied upon.
   const etapes = [...dossier.etapes].sort(
     (a, b) => TypeEtape.indexOf(a.type) - TypeEtape.indexOf(b.type),
   );
 
   return (
     <div className="flex flex-col gap-5">
-      {!peutGerer ? (
+      {peutGerer ? null : (
         <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("lectureSeuleEtapes")}</p>
-      ) : null}
+      )}
 
       {etapes.length === 0 ? (
         <p className="text-[length:var(--taille-sm)] text-texte-tertiaire">{t("etapesAucune")}</p>
@@ -68,7 +66,7 @@ export function OngletEtapes({ dossier, roles }: { dossier: Dossier; roles: read
   );
 }
 
-function ChangementStatut({ dossierId, etape }: { dossierId: number; etape: EtapeProcedure }) {
+function ChangementStatut({ dossierId, etape }: Readonly<{ dossierId: number; etape: EtapeProcedure }>) {
   const t = useTranslations("fiche");
   const tdom = useTranslations("domaine");
   const modifier = useModifierStatutEtape(dossierId);
@@ -86,8 +84,8 @@ function ChangementStatut({ dossierId, etape }: { dossierId: number; etape: Etap
       setCible("");
       setConfirmation(false);
     } catch (e) {
-      // `ERR-004` porte un message précis (« Transition X -> Y non autorisée ») : on le montre tel
-      // quel, près du contrôle concerné.
+      // `ERR-004` carries a precise message naming the rejected transition: shown as is, next to
+      // the related control.
       setErreur(messageErreur(e));
       setConfirmation(false);
     }
@@ -153,10 +151,10 @@ function ChangementStatut({ dossierId, etape }: { dossierId: number; etape: Etap
 function Positionnement({
   dossierId,
   existantes,
-}: {
+}: Readonly<{
   dossierId: number;
   existantes: readonly TypeEtape[];
-}) {
+}>) {
   const t = useTranslations("fiche");
   const tdom = useTranslations("domaine");
   const creer = useCreerEtape(dossierId);

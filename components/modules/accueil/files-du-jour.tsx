@@ -18,25 +18,15 @@ import { peut, profilPrincipal, type Capacite } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
 /**
- * Files de travail de l'accueil (écran 02).
- *
- * **Ce que cet écran remplace.** Jusqu'ici, l'accueil affichait la liste des identifiants de
- * capacités en police à chasse fixe — une vue de mise au point, utile pendant la construction du
- * socle, sans valeur pour un juriste. Chaque profil trouve désormais ce qui **l'attend**, avec le
- * compte et le lien direct vers la file concernée.
- *
- * **Une carte par capacité, jamais par rôle.** Le DJ porte `ROLE_JURISTE` depuis Q-81 : raisonner
- * par rôle afficherait des files incohérentes. Les capacités viennent de `lib/rbac.ts`, dérivé des
- * `@PreAuthorize` du backend — la même source que la navigation.
- *
- * **Chaque carte interroge son propre compte**, sur une page d'un seul élément : `totalElements`
- * suffit, et une carte lente n'empêche pas les autres de s'afficher. Ce n'était vrai qu'en
- * intention jusqu'à Q-100 — quatre cartes rapatriaient en fait une page entière, soit jusqu'à vingt
- * lignes complètes chacune, pour n'afficher qu'un nombre. Les hooks de React interdisant
- * un appel conditionnel, chaque file est un composant distinct, monté seulement si la capacité est
- * accordée.
+ * Home screen work queues (screen 02): each profile sees what awaits it, with the count and a
+ * direct link to the queue.
+ * One card per capability, never per role; capabilities come from `lib/rbac.ts`, derived from the
+ * backend `@PreAuthorize` rules, like the navigation.
+ * Each card fetches its own count with a one-element page (`totalElements` is enough), so a slow
+ * card does not block the others. Since hooks cannot be called conditionally, each queue is a
+ * separate component, mounted only when the capability is granted.
  */
-export function FilesDuJour({ roles }: { roles: readonly string[] }) {
+export function FilesDuJour({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("accueil");
   const profil = profilPrincipal(roles);
 
@@ -64,9 +54,8 @@ export function FilesDuJour({ roles }: { roles: readonly string[] }) {
 }
 
 /**
- * Une file : un compte, un libellé, un lien. Le compte est mis en avant, parce que c'est lui qui
- * décide si l'on clique ; `attention` ne se déclenche qu'au-delà de zéro — un compteur à zéro est
- * une bonne nouvelle, pas une alerte.
+ * A queue: a count, a label, a link. `attention` only applies above zero: a zero count is good
+ * news, not an alert.
  */
 function Carte({
   icone: Icone,
@@ -75,14 +64,14 @@ function Carte({
   compte,
   chargement,
   href,
-}: {
+}: Readonly<{
   icone: LucideIcon;
   titre: string;
   aide: string;
   compte: number | undefined;
   chargement: boolean;
   href: string;
-}) {
+}>) {
   const aTraiter = (compte ?? 0) > 0;
   return (
     <li>
@@ -113,15 +102,19 @@ function Carte({
   );
 }
 
+/** The expense step each profile is responsible for. */
+function etapeFraisDe(profil: ReturnType<typeof profilPrincipal>) {
+  if (profil === "ROLE_ASSISTANTE") return "DEPOSEE";
+  return profil === "ROLE_DJA" ? "CONFORMITE" : "OPPORTUNITE";
+}
+
 /**
- * L'Assistante contrôle la conformité d'une demande déposée ; la DJA en contrôle l'opportunité ; le
- * DJ et la DJA valident conjointement. Chacun voit donc l'étape dont **il** a la charge — afficher
- * la même file à tout le monde aurait renvoyé chacun vers le travail d'un autre.
+ * The Assistant checks a request's compliance, the DJA its merits, and the DJ and DJA validate it
+ * jointly: each one sees only the step they are responsible for.
  */
-function FileFraisAControler({ roles }: { roles: readonly string[] }) {
+function FileFraisAControler({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("accueil");
-  const profil = profilPrincipal(roles);
-  const statut = profil === "ROLE_ASSISTANTE" ? "DEPOSEE" : profil === "ROLE_DJA" ? "CONFORMITE" : "OPPORTUNITE";
+  const statut = etapeFraisDe(profilPrincipal(roles));
   const requete = useDemandesFrais(statut, 0, TAILLE_COMPTEUR);
   return (
     <Carte
@@ -180,7 +173,7 @@ function FileSuppressions() {
   );
 }
 
-/** `mesDossiers` se résout sur l'utilisateur authentifié côté backend : aucun identifiant à passer. */
+/** `mesDossiers` resolves the authenticated user on the backend: no id to pass. */
 function FileMesDossiers() {
   const t = useTranslations("accueil");
   const requete = useDossiers({ mesDossiers: true, page: 0, size: TAILLE_COMPTEUR });
@@ -196,7 +189,7 @@ function FileMesDossiers() {
   );
 }
 
-/** Ouverte à tous, avocat compris : c'est le seul écran que chacun partage. */
+/** Open to everyone, lawyers included. */
 function FileNotifications() {
   const t = useTranslations("accueil");
   const requete = useNombreNotificationsATraiter();

@@ -9,10 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 19 — recherche de clients.
+ * Screen 19 - client search.
  *
- * La garde est ici, côté serveur : un profil sans `ROLE_CONSULTATION` — l'avocat — est renvoyé vers
- * l'écran de refus avant tout rendu.
+ * Server-side guard: a profile without `ROLE_CONSULTATION` (the lawyer) is redirected to the
+ * access-denied screen before any rendering.
  */
 export default async function PageClients() {
   const session = await exigerCapacite("consulterReferentiels");

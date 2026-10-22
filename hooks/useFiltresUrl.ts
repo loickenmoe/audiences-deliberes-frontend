@@ -6,15 +6,9 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { TAILLE_PAGE, TAILLES_PAGE } from "@/hooks/const";
 
 /**
- * Filtres et pagination synchronisés à l'URL.
- *
- * **Pourquoi l'URL plutôt qu'un état React** : un juriste doit pouvoir envoyer à un collègue le lien
- * de sa recherche filtrée, le mettre en favori, et retrouver sa liste après un retour arrière. Un
- * état local perdrait les trois.
- *
- * Tout changement de filtre **remet la pagination à la première page** : conserver la page 4 en
- * changeant de juridiction afficherait une page vide, ce que l'utilisateur lirait comme « aucun
- * résultat ».
+ * Filters and pagination synced to the URL, so a filtered search can be shared, bookmarked and
+ * restored after going back. Any filter change resets to the first page, which would otherwise
+ * possibly be empty.
  */
 export function useFiltresUrl<T extends Record<string, string | undefined>>(defauts: T) {
   const router = useRouter();
@@ -36,9 +30,8 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
   }, [parametres]);
 
   /**
-   * Taille de page, dans l'URL comme les filtres : un lien partagé montre la liste telle que son
-   * auteur la voyait. Une valeur hors de `TAILLES_PAGE` est ignorée — l'URL est saisissable à la
-   * main, et rien n'empêcherait d'y écrire `size=100000`.
+   * Page size, also kept in the URL. Values outside `TAILLES_PAGE` are ignored, since the URL can
+   * be edited by hand.
    */
   const taille = useMemo(() => {
     const brut = Number.parseInt(parametres.get("taille") ?? "", 10);
@@ -46,20 +39,14 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
   }, [parametres]);
 
   /**
-   * La dernière requête écrite, en attente d'être reflétée par l'URL.
-   *
-   * **Pourquoi elle est nécessaire.** `router.replace` est asynchrone : ni `parametres`, qui date du
-   * dernier rendu, ni `window.location.search`, que la navigation n'a pas encore mis à jour, ne
-   * disent ce qui vient d'être écrit. Deux filtres renseignés coup sur coup partaient donc du même
-   * état, et le second écrivait une URL où le premier avait disparu - l'utilisateur qui saisit une
-   * date de début puis une date de fin perdait la première, sans que rien ne le dise.
+   * Last written query, pending reflection in the URL. `router.replace` is asynchronous, so neither
+   * `parametres` nor `window.location.search` reflect it yet; without this, two filters set in quick
+   * succession would overwrite each other.
    */
   const derniereEcriture = useRef<string | null>(null);
 
-  /*
-   * L'URL a rattrapé son retard, ou elle a changé pour une autre raison - retour arrière, lien
-   * collé, navigation. Dans les deux cas le repère n'a plus lieu d'être : c'est l'URL qui fait foi.
-   */
+  // Once the URL catches up or changes for another reason (back, pasted link), the URL is the
+  // source of truth again.
   const requeteCourante = parametres.toString();
   useEffect(() => {
     derniereEcriture.current = null;
@@ -76,7 +63,7 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
 
       const requete = suivants.toString();
       derniereEcriture.current = requete;
-      // `scroll: false` : changer de page ne doit pas renvoyer l'utilisateur en haut de la liste.
+      // `scroll: false`: changing page must not scroll the user back to the top.
       router.replace(requete ? `${chemin}?${requete}` : chemin, { scroll: false });
     },
     [chemin, requeteCourante, router],
@@ -84,7 +71,6 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
 
   const definirFiltre = useCallback(
     (cle: keyof T, valeur: string | undefined) => {
-      // Un changement de filtre remet à la première page.
       ecrire({ [String(cle)]: valeur, page: undefined });
     },
     [ecrire],
@@ -95,7 +81,7 @@ export function useFiltresUrl<T extends Record<string, string | undefined>>(defa
     [ecrire],
   );
 
-  /** Changer de taille remet à la première page : la page 4 en 10 lignes n'existe pas en 50. */
+  /** Changing size resets to the first page, as the current page may not exist at the new size. */
   const definirTaille = useCallback(
     (suivante: number) =>
       ecrire({ taille: suivante === TAILLE_PAGE ? undefined : String(suivante), page: undefined }),

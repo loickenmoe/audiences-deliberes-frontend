@@ -4,8 +4,7 @@ import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { CodeErreur, ErreurApi, messageErreur, normaliserErreur, estCompteAvocatNonRattache } from "@/lib/api/errors";
 
 /**
- * Les corps d'erreur utilisés ici sont ceux **réellement renvoyés par le backend**, relevés le
- * 2026-09-08 sur l'instance locale — pas des exemples inventés.
+ * The error bodies used here are the ones **actually returned by the backend**, not made-up examples.
  */
 describe("normaliserErreur", () => {
   it("lit le corps { code, message, details } du backend", () => {
@@ -35,7 +34,7 @@ describe("normaliserErreur", () => {
       },
     });
 
-    // Message métier précis du backend, pas le générique « Vous n'avez pas les droits… ».
+    // The backend's precise business message, not the generic permission message.
     expect(erreur.message).toBe("Aucun avocat associé à cet utilisateur");
   });
 
@@ -63,8 +62,8 @@ describe("normaliserErreur", () => {
 
 describe("demandeConfirmation", () => {
   /**
-   * ERR-003 et ERR-005 ne sont pas des échecs : le backend attend une confirmation, rejouée avec
-   * `?forcer=true`. Les présenter comme des erreurs bloquerait deux parcours métier légitimes.
+   * ERR-003 and ERR-005 are not failures: the backend expects a confirmation, replayed with
+   * `?forcer=true`. Showing them as errors would block two legitimate business flows.
    */
   it.each([
     ["ERR-003", "doublon d'affectation"],
@@ -82,8 +81,8 @@ describe("demandeConfirmation", () => {
 
 describe("estCompteAvocatNonRattache", () => {
   /**
-   * QF-45 — le compte est bien celui d'un avocat, mais aucune fiche du référentiel ne lui est
-   * rattachée. Ce n'est pas un refus de droits : l'interface l'explique au lieu d'afficher un échec.
+   * The account belongs to a lawyer, but no directory record is linked to it. This is not a
+   * permission denial: the UI explains it instead of showing a failure.
    */
   it("reconnaît le code dédié", () => {
     const erreur = normaliserErreur({
@@ -93,9 +92,8 @@ describe("estCompteAvocatNonRattache", () => {
   });
 
   /**
-   * Le point qui justifie un code dédié : un **vrai** refus de droits ne doit pas être confondu avec
-   * lui, sans quoi un avocat forçant une URL interdite lirait « votre compte n'est pas rattaché » —
-   * un message faux, et qui l'enverrait déranger la Direction Juridique pour rien.
+   * A **real** permission denial must not be confused with it, otherwise a lawyer forcing a forbidden
+   * URL would read a wrong "account not linked" message.
    */
   it("ne confond pas un refus de droits ordinaire", () => {
     const erreur = normaliserErreur({
@@ -125,18 +123,16 @@ describe("messageErreur", () => {
 });
 
 /**
- * Corps relevés le 2026-09-09 sur l'instance locale, en provoquant les doublons pour de vrai :
- * une seconde création de client renvoie `409 ERR-CONFLICT`, **pas** `ERR-002` — ce dernier est
- * réservé aux références de dossier (`DossierService`). La distinction n'est pas cosmétique : c'est
- * elle qui décide si le message atterrit sur un champ ou dans un bandeau.
+ * Bodies captured by triggering real duplicates: a second client creation returns
+ * `409 ERR-CONFLICT`, **not** `ERR-002`, which is reserved for case file references
+ * (`DossierService`). This decides whether the message lands on a field or in a banner.
  */
 describe("appliquerErreurApi", () => {
   function espion() {
     const appels: { champ: string; message?: string }[] = [];
     /*
-     * `appliquerErreurApi` attend le `setError` de react-hook-form, dont le type complet est
-     * paramétré par la forme du formulaire. Seule sa signature à deux arguments nous sert : on la
-     * déclare, plutôt que de museler le linter avec un `any`.
+     * `appliquerErreurApi` expects react-hook-form's `setError`, whose full type depends on the form
+     * shape. Only its two-argument signature is needed, declared here instead of using `any`.
      */
     const setError = (champ: string, options: { message?: string }) => {
       appels.push({ champ, message: options.message });
@@ -180,7 +176,7 @@ describe("appliquerErreurApi", () => {
       ["reference", "nom"],
     );
 
-    // Le code couvre dix conflits différents : le deviner surlignerait le mauvais champ ailleurs.
+    // The code covers ten different conflicts: guessing would highlight the wrong field elsewhere.
     expect(place).toBe(false);
     expect(appels).toEqual([]);
   });
@@ -216,7 +212,7 @@ describe("appliquerErreurApi", () => {
       new ErreurApi({ code: "ERR-CONFLICT", message: "Compte déjà rattaché", champ: "compteKeycloak" }),
       setError,
       ["reference", "compteKeycloak"],
-      // Déclaration périmée : le backend, lui, sait de quel champ il parle.
+      // Stale mapping: the backend knows which field it means.
       { "ERR-CONFLICT": "reference" },
     );
 

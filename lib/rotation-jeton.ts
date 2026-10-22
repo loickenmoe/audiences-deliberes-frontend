@@ -1,54 +1,40 @@
 /**
- * Politique de rotation des jetons Keycloak.
- *
- * Isolée de `lib/auth.ts` — qui ne peut pas être importé hors serveur — pour rester vérifiable par
- * des tests unitaires. C'est la pièce la plus facile à se tromper de toute l'authentification.
+ * Keycloak token rotation policy, kept apart from the server-only `lib/auth.ts` so it can be unit
+ * tested.
  */
 
 /**
- * Marqueur porté par la session quand la rotation a définitivement échoué.
- *
- * Déclaré ici — et non dans `lib/auth.ts` — parce que le provider client doit le lire pour
- * déclencher la déconnexion : `lib/auth.ts` est un module serveur, l'importer depuis le navigateur
- * ferait échouer la compilation.
+ * Session flag set when rotation has definitively failed. Declared here because the client
+ * provider reads it, and `lib/auth.ts` is a server module.
  */
 export const ERREUR_RAFRAICHISSEMENT = "RafraichissementImpossible";
 
 /**
- * Marqueur posé quand le service d'authentification est **injoignable** — réseau coupé, Keycloak
- * arrêté, erreur serveur.
- *
- * <p>Le distinguer d'une session expirée n'est pas une nuance de vocabulaire. Les deux menaient au
- * même message, « Votre session a expiré, reconnectez-vous » : un diagnostic faux, et une consigne
- * **inapplicable** puisque se reconnecter suppose précisément que Keycloak réponde. L'utilisateur
- * cherchait une erreur de sa part là où le service était à terre.
+ * Flag set when the authentication service is unreachable (network, Keycloak down, server error).
+ * Distinct from an expired session: telling the user to log in again would be wrong, since logging
+ * in also requires Keycloak.
  */
 export const ERREUR_AUTH_INDISPONIBLE = "AuthentificationIndisponible";
 
-/** Vrai si la session est inutilisable, quelle qu'en soit la raison. */
+/** True if the session is unusable, whatever the reason. */
 export function sessionInutilisable(erreur: string | undefined): boolean {
   return erreur === ERREUR_RAFRAICHISSEMENT || erreur === ERREUR_AUTH_INDISPONIBLE;
 }
 
-/** Marge avant expiration : le rafraîchissement doit aboutir avant la limite, pas pile dessus. */
+/** Margin before expiry: the refresh must complete before the deadline. */
 export const MARGE_MS = 5 * 60 * 1000;
 
 /**
- * Instant du prochain rafraîchissement, en millisecondes epoch.
+ * Next refresh time, in epoch milliseconds.
  *
- * **Mesuré sur le realm réel (RF-02)** : le `refresh_token` vit **1800 s** quand l'`access_token`
- * en vit **3600 s**. Le patron le plus répandu — se caler sur l'expiration de l'access token —
- * échouerait donc systématiquement : à 55 minutes, le refresh token est mort depuis 25 minutes, et
- * l'utilisateur est déconnecté en pleine saisie.
- *
- * On retient donc **le premier des deux qui expire**, moins la marge. Chaque rotation renouvelle les
- * deux jetons et repousse la fenêtre.
+ * On this realm the `refresh_token` lives 1800 s while the `access_token` lives 3600 s, so relying
+ * on access token expiry would fail. The earliest of the two expiries is used, minus the margin.
  */
 export function prochainRafraichissement(expiresAt: number, refreshExpiresAt: number): number {
   return Math.min(expiresAt, refreshExpiresAt) - MARGE_MS;
 }
 
-/** Vrai si les jetons doivent être renouvelés maintenant. */
+/** True if the tokens must be renewed now. */
 export function doitRafraichir(
   maintenant: number,
   expiresAt: number | undefined,

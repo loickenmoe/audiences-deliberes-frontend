@@ -4,17 +4,13 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 /**
- * Ramène le contenu en haut à chaque changement d'écran (QF-47).
+ * Scrolls the content back to the top on every screen change.
  *
- * **Pourquoi c'est nécessaire.** Next remet la **fenêtre** à zéro en changeant de route. Depuis que
- * le contenu est devenu le conteneur de défilement sur grand écran, la fenêtre ne défile plus : sans
- * ce geste, on ouvrirait un nouvel écran déjà défilé, à la hauteur où l'on avait laissé le précédent.
- * Le symptôme est déroutant — un écran qui s'ouvre « au milieu », sans que rien ne l'explique.
+ * Next resets the **window** on route change, but on large screens the content container is what
+ * scrolls, so without this a new screen would open already scrolled to the previous position.
  *
- * **Le changement de page d'un tableau n'est pas concerné**, et c'est voulu : la pagination navigue
- * avec `scroll: false` pour ne pas renvoyer l'utilisateur en haut de la liste à chaque clic. Ce
- * composant n'écoute que le **chemin**, pas les paramètres de requête — changer de page, de filtre
- * ou de taille laisse donc la position intacte.
+ * Table pagination is deliberately unaffected: it navigates with `scroll: false`, and this component
+ * only listens to the **pathname**, not query parameters (page, filter, size).
  */
 export function RetourEnHaut() {
   const chemin = usePathname();

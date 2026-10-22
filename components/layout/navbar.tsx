@@ -9,12 +9,12 @@ export async function Navbar({
   prenom,
   email,
   roles,
-}: {
+}: Readonly<{
   nom?: string | null;
   prenom?: string | null;
   email?: string | null;
   roles: readonly string[];
-}) {
+}>) {
   const t = await getTranslations("commun");
 
   return (

@@ -18,46 +18,39 @@ import { TypeIntervenant } from "@/types/enums";
 
 const CHAMPS = ["type", "nom", "email", "telephone", "compteKeycloak", "notification"] as const;
 
-/** Cf. `lib/api/erreurs-formulaire.ts` : `ERR-CONFLICT` est générique, le champ vient de l'appelant. */
+/** See `lib/api/erreurs-formulaire.ts`: `ERR-CONFLICT` is generic, the field is provided by the caller. */
 const CONFLIT_SUR_COMPTE = { "ERR-CONFLICT": "compteKeycloak" } as const;
 
 /**
- * Création d'un intervenant.
+ * Creates or edits a third party (intervenant).
  *
- * Le formulaire **s'adapte au type**, parce que le backend applique deux règles opposées
- * (#61, RG-INT-01/02) :
- * · un `AVOCAT` **exige** un compte applicatif — 400 s'il manque, 409 s'il est déjà pris ;
- * · un `AUTRE_PRESTATAIRE` **refuse** tout compte.
+ * The form adapts to the type because the backend applies opposite rules (RG-INT-01/02):
+ * - an `AVOCAT` requires an application account (400 if missing, 409 if already taken);
+ * - an `AUTRE_PRESTATAIRE` refuses any account.
  *
- * Afficher le compte en permanence conduirait l'utilisateur à des refus incompréhensibles.
+ * Consent to external notifications (SMS, WhatsApp, personal email) applies to both: checked by
+ * default for a lawyer, unchecked for another provider (RG-INT-02).
  *
- * Le consentement aux notifications externes (Q-119), lui, vaut pour les deux : il autorise SMS,
- * WhatsApp et courriel personnel vers les coordonnées de la fiche. Il est **coché par défaut pour un
- * avocat**, en relation suivie avec la banque, et **décoché pour un autre prestataire** (RG-INT-02).
- *
- * Quand `intervenant` est fourni, le formulaire le **corrige** (Q-117). Le type et l'identifiant de
- * connexion sont alors affichés mais figés — l'identité se gère dans Keycloak, qui crée et authentifie
- * les comptes. C'est le type enregistré, non la liste désactivée qu'un champ inactif peut rendre vide,
- * qui décide des champs proposés.
+ * When `intervenant` is provided, the form edits it. Type and login are shown but read-only, since
+ * identity is managed in Keycloak; the saved type (not the disabled select) decides which fields show.
  */
 export function FormulaireIntervenant({
   ouvert,
   onFermeture,
   intervenant,
-}: {
+}: Readonly<{
   ouvert: boolean;
   onFermeture: () => void;
-  /** L'intervenant à corriger. Absent : le formulaire en crée un nouveau. */
+  /** The third party to edit. When absent, the form creates a new one. */
   intervenant?: Intervenant;
-}) {
+}>) {
   const t = useTranslations("intervenants");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
   const edition = intervenant !== undefined;
-  // Identifiants propres à l’instance : la modale de création et celle de correction coexistent
-  // sur l’écran 42, et un <dialog> fermé reste dans le DOM. Des « id » partagés reliaient les
-  // libellés de l’une aux champs de l’autre (même cause que le titre des modales, F7).
+  // Per-instance ids: the create and edit modals coexist on screen 42 and a closed <dialog> stays
+  // in the DOM, so shared ids would link one form's labels to the other's fields.
   const p = useId();
   const creer = useCreerIntervenant();
   const modifier = useModifierIntervenant(intervenant?.id ?? 0);
@@ -68,7 +61,7 @@ export function FormulaireIntervenant({
       type: edition ? z.enum(TypeIntervenant).optional() : z.enum(TypeIntervenant),
       nom: z.string().trim().min(1, tm("champObligatoire")).max(100),
       email: z.union([z.string().email(), z.literal("")]).optional(),
-      // Même règle que le backend : il refuserait la fiche, autant le dire ici (étape 11).
+      // Same rule as the backend, which would reject the record: report it here.
       telephone: z
         .string()
         .max(20)
@@ -77,7 +70,7 @@ export function FormulaireIntervenant({
       compteKeycloak: z.string().max(255).optional(),
       notification: z.boolean().optional(),
     })
-    // En édition l'identifiant est figé et n'est pas envoyé : l'exiger bloquerait la soumission.
+    // When editing, the login is read-only and not sent: requiring it would block submission.
     .refine((v) => edition || v.type !== "AVOCAT" || !!v.compteKeycloak?.trim(), {
       path: ["compteKeycloak"],
       message: tm("champObligatoire"),
@@ -114,7 +107,7 @@ export function FormulaireIntervenant({
   const soumettre = handleSubmit(async (valeurs) => {
     try {
       if (edition) {
-        // Un champ vidé part en `null` ; le consentement, lui, part toujours (Q-119).
+        // A cleared field is sent as `null`; consent is always sent.
         await modifier.mutateAsync({
           nom: valeurs.nom,
           email: valeurs.email || null,
@@ -125,22 +118,22 @@ export function FormulaireIntervenant({
         return;
       }
       await creer.mutateAsync({
-        // Exigé par le schéma en création : jamais absent ici.
+        // Required by the schema on creation: never absent here.
         type: valeurs.type ?? "AVOCAT",
         nom: valeurs.nom,
         email: valeurs.email || undefined,
         telephone: valeurs.telephone || undefined,
-        // Le backend refuse un compte sur un autre prestataire : ne rien envoyer plutôt qu'une
-        // chaîne vide, qu'il traiterait comme une valeur.
+        // The backend refuses an account on another provider: send nothing rather than an empty string,
+        // which it would treat as a value.
         compteKeycloak: estAvocat ? valeurs.compteKeycloak || undefined : undefined,
         notification: valeurs.notification,
       });
       fermer();
-    } catch (erreur) {
-      // Le seul conflit possible sur `POST /intervenants` est un compte déjà rattaché à un avocat
-      // (IntervenantService, RG-INT-01) : le signaler sur le champ, pas dans un bandeau.
-      if (!appliquerErreurApi(erreur, setError, CHAMPS, CONFLIT_SUR_COMPTE)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      // The only possible conflict on `POST /intervenants` is an account already linked to a lawyer
+      // (IntervenantService, RG-INT-01): report it on the field, not in a banner.
+      if (!appliquerErreurApi(error_, setError, CHAMPS, CONFLIT_SUR_COMPTE)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

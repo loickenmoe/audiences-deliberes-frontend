@@ -1,11 +1,9 @@
 /**
  * @vitest-environment node
  *
- * Audit des actions historisées (backend Q-112) : ce qui part sur le fil, et la garde de rôle.
- *
- * Ce qui compte ici n'est pas le filtrage — le backend s'en charge — mais **ce qu'on lui demande**.
- * Un filtre absent ne doit pas partir en paramètre vide, et la portée doit toujours être explicite :
- * une requête sans portée laisserait le serveur choisir, ce qui n'est pas à lui d'en décider.
+ * Audit of recorded actions: what goes over the wire, and the role guard. The backend filters; what
+ * matters is **what we ask**. A missing filter must not be sent as an empty parameter, and the scope
+ * must always be explicit rather than left to the server.
  */
 import { HttpResponse, http, type JsonBodyType } from "msw";
 import { setupServer } from "msw/node";
@@ -49,7 +47,7 @@ const serveur = setupServer(
     return new HttpResponse(new Blob(["fichier"]), {
       headers: {
         "Content-Type": "application/pdf",
-        // L'empreinte voyage avec le fichier : le destinataire la compare sans interroger l'app.
+        // The fingerprint travels with the file: the recipient compares it without querying the app.
         "X-Empreinte-SHA256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
       },
     });
@@ -83,7 +81,7 @@ describe("consultation de l'audit sur le fil", () => {
 
     expect(derniere?.methode).toBe("GET");
     expect(derniere?.url.pathname).toBe("/api/v1/historique");
-    // La portée n'est jamais laissée au serveur : c'est une décision de l'écran, pas un défaut.
+    // The scope is never left to the server: it is the screen's decision, not a default.
     expect(derniere?.url.searchParams.get("perimetre")).toBe("TOUT");
     expect(derniere?.url.searchParams.get("utilisateurId")).toBeNull();
     expect(derniere?.url.searchParams.get("code")).toBeNull();
@@ -116,8 +114,8 @@ describe("consultation de l'audit sur le fil", () => {
   it("rapporte les natures disponibles en code et libellé", async () => {
     const audit = await auditService.consulter();
 
-    // Le code part au serveur, le libellé s'affiche. La liste vient de la donnée, jamais d'une
-    // énumération recopiée côté écran : elle ne propose pas un choix qui ne renverrait rien.
+    // The code is sent, the label is displayed. The list comes from the data, never from an enum
+    // copied on the screen side, so it never offers a choice that would return nothing.
     expect(audit.actionsDisponibles[0]).toEqual({
       code: "CONFIGURATION_MODIFIEE",
       libelle: "Modification de la configuration",
@@ -136,8 +134,8 @@ describe("garde de l'audit", () => {
   });
 
   /**
-   * L'historique d'un dossier reste ouvert à tout profil interne : on y regarde un dossier. L'audit
-   * est agrégé et filtrable par auteur — même contenu, autre nature. Cette asymétrie est délibérée.
+   * A case file's history is open to every internal profile; the audit is aggregated and filterable
+   * by author. This asymmetry is deliberate.
    */
   it("est plus fermé que l'historique d'un dossier, délibérément", () => {
     expect(CAPACITES.consulterDocuments).toContain("ROLE_CONSULTATION");
@@ -145,10 +143,9 @@ describe("garde de l'audit", () => {
   });
 
   /**
-   * Capacité **distincte** de l'administration des paramètres et de la supervision des alertes,
-   * bien qu'elle porte les mêmes rôles : lire l'activité nommée d'un collègue n'est ni écrire un
-   * seuil ni lire un taux global. Les confondre ferait qu'un assouplissement de l'une déplacerait
-   * l'autre — et ici, ce serait un assouplissement sur des données personnelles.
+   * A capability **distinct** from settings administration and alert monitoring, though held by the
+   * same roles: reading a colleague's named activity involves personal data, so relaxing one must not
+   * relax the other.
    */
   it("ne se confond avec aucune autre capacité d'administration", () => {
     expect(CAPACITES.consulterAudit).not.toBe(CAPACITES.administrerConfigurations);
@@ -157,13 +154,11 @@ describe("garde de l'audit", () => {
 });
 
 /**
- * QF-24 — la traduction des libelles d'action et des cles de details.
- *
- * Ce que ces tests protegent : la **couverture**. Un code ajoute au backend sans traduction ici
- * s'afficherait en brut, et personne ne le verrait avant la recette anglaise.
+ * Translation of action labels and detail keys. These tests protect **coverage**: a code added to
+ * the backend without a translation would be displayed raw.
  */
 describe("libelles d'historique (QF-24)", () => {
-  /** Forme minimale des fichiers de messages, limitee a ce que ces tests interrogent. */
+  /** Minimal shape of the message files, limited to what these tests query. */
   interface Messages {
     fiche: Record<string, unknown>;
     historique: { actions: Record<string, string>; details: Record<string, string> };
@@ -178,14 +173,8 @@ describe("libelles d'historique (QF-24)", () => {
   const detailsEn = en.historique.details;
 
   /**
-   * Les valeurs de `TypeActionHistorique` (backend Q-111, enrichie au fil des jalons : AUDIT_CONSULTE
-   * en Q-112, LETTRE_CONSTITUTION_REDIGEE en Q-115 B2, CLIENT_MODIFIE avec PUT /clients,
-   * INTERVENANT_MODIFIE en Q-117, AUDIT_EXPORTE et ARCHIVE_TELECHARGEE avec l'extraction scellee).
-   *
-   * <b>Ce test ne compte plus.</b> Il figeait un nombre — 47 actions, 61 cles — qu'il fallait
-   * corriger a chaque ajout, sans que l'echec ne dise rien de la couverture reelle : deux codes
-   * ajoutes en francais et oublies en anglais l'auraient laisse vert. C'est la **parite** entre les
-   * deux langues qui protege, et elle ne se perime pas.
+   * The values of `TypeActionHistorique`. This test checks **parity** between both languages rather
+   * than a fixed count, which would not detect codes added in French but missing in English.
    */
   it("traduit les memes natures d'action dans les deux langues", () => {
     expect(Object.keys(actionsFr).sort()).toEqual(Object.keys(actionsEn).sort());
@@ -197,7 +186,7 @@ describe("libelles d'historique (QF-24)", () => {
     expect(Object.keys(detailsFr).length).toBeGreaterThanOrEqual(65);
   });
 
-  /** Les deux dernieres natures ajoutees : l'extraction d'audit et la reprise d'une archive. */
+  /** Audit export and archive download actions. */
   it("couvre l'extraction scellee de l'audit", () => {
     for (const messages of [actionsFr, actionsEn]) {
       expect(messages).toHaveProperty("AUDIT_EXPORTE");
@@ -209,7 +198,7 @@ describe("libelles d'historique (QF-24)", () => {
     }
   });
 
-  /** Une traduction vide serait pire qu'une absente : elle afficherait un blanc, sans repli. */
+  /** An empty translation is worse than a missing one: it would show a blank, with no fallback. */
   it("n'a aucun libelle vide", () => {
     for (const table of [actionsFr, actionsEn, detailsFr, detailsEn]) {
       for (const [cle, valeur] of Object.entries(table)) {
@@ -219,15 +208,15 @@ describe("libelles d'historique (QF-24)", () => {
   });
 
   /**
-   * Le francais et l'anglais doivent differer sur l'essentiel : deux tables identiques signaleraient
-   * une traduction oubliee, recopiee depuis le francais.
+   * French and English must mostly differ: identical tables would reveal a forgotten translation
+   * copied from French.
    */
   it("distingue reellement les deux langues", () => {
     const identiques = Object.keys(actionsFr).filter((cle) => actionsFr[cle] === actionsEn[cle]);
     expect(identiques).toHaveLength(0);
   });
 
-  /** La cle d'avertissement de QF-24 n'a plus de raison d'etre : elle s'excusait du defaut corrige. */
+  /** The obsolete warning key about untranslated labels must not exist. */
   it("ne conserve plus l'avertissement de langue", () => {
     expect(fr.fiche).not.toHaveProperty("historiqueLangue");
     expect(en.fiche).not.toHaveProperty("historiqueLangue");
@@ -235,11 +224,8 @@ describe("libelles d'historique (QF-24)", () => {
 });
 
 /**
- * Extraction de l'audit (backend Q-113).
- *
- * Ce qui compte ici n'est pas la mise en forme du fichier — le backend s'en charge et la teste —
- * mais **ce qu'on demande** et **ce qu'on rapporte** : la période part toujours, et l'empreinte
- * revient jusqu'a l'ecran, sans quoi elle ne servirait a rien.
+ * Audit export. The backend formats the file; what matters is **what we ask** and **what we
+ * return**: the period is always sent, and the fingerprint reaches the screen.
  */
 describe("extraction de l'audit", () => {
   it("transmet la période et le format, et reprend les filtres en cours", async () => {
@@ -258,7 +244,7 @@ describe("extraction de l'audit", () => {
     expect(derniere?.url.searchParams.get("format")).toBe("EXCEL");
     expect(derniere?.url.searchParams.get("dateDebut")).toBe("2026-09-01");
     expect(derniere?.url.searchParams.get("dateFin")).toBe("2026-09-30");
-    // Ce qu'on exporte est ce qu'on regarde : les filtres de l'écran suivent l'extraction.
+    // What is exported is what is viewed: the screen filters go with the export.
     expect(derniere?.url.searchParams.get("perimetre")).toBe("HORS_DOSSIER");
     expect(derniere?.url.searchParams.get("utilisateurId")).toBe("4");
     expect(derniere?.url.searchParams.get("code")).toBe("CONFIGURATION_MODIFIEE");
@@ -271,7 +257,7 @@ describe("extraction de l'audit", () => {
     );
 
     expect(nomFichier).toBe("audit-2026-09-01-2026-09-30.pdf");
-    // Sans l'empreinte remontée jusqu'à l'écran, l'archive ne serait qu'une copie de plus.
+    // Without the fingerprint reaching the screen, the archive would be just another copy.
     expect(empreinte).toHaveLength(64);
   });
 
@@ -279,7 +265,7 @@ describe("extraction de l'audit", () => {
     const url = await auditService.urlArchive(7);
 
     expect(url).toBe("https://minio/archive");
-    // Le chemin passe par l'application : c'est le seul endroit où la récupération est tracée.
+    // The path goes through the application, the only place where the download is logged.
     expect(derniere?.url.pathname).toBe("/api/v1/historique/exports/7/telechargement");
   });
 });

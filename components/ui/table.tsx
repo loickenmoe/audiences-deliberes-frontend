@@ -3,47 +3,49 @@ import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Primitives de tableau.
+ * Table primitives.
  *
- * Le conteneur porte `overflow-x-auto` : une table large défile **dans son propre cadre**, jamais en
- * poussant la page entière de côté. Les chiffres s'alignent (`tabular-nums` via `globals.css`).
+ * The container has `overflow-x-auto`: a wide table scrolls **within its own frame**, never pushing
+ * the whole page sideways. Numbers align (`tabular-nums` via `globals.css`).
  *
- * **`tabIndex={0}` n'est pas décoratif.** Une région qui défile doit être atteignable au clavier
- * (WCAG 2.1.1, règle axe `scrollable-region-focusable`) : sans cela, un utilisateur sans souris ne
- * peut pas faire défiler le tableau, et les colonnes de droite lui sont **inaccessibles**. Le
- * conteneur reçoit donc le focus, et les flèches le font défiler. Rien d'autre n'est ajouté : c'est
- * le `<table>` qu'il contient qui porte la sémantique, et un rôle de plus sur le cadre ne ferait
- * qu'annoncer un groupe sans nom.
+ * **`tabIndex={0}` is required.** A scrollable region must be keyboard-reachable (WCAG 2.1.1, axe rule
+ * `scrollable-region-focusable`), otherwise keyboard users cannot reach the right-hand columns.
+ * Nothing else is added: the inner `<table>` carries the semantics, and an extra role on the frame
+ * would only announce an unnamed group.
  */
-export function TableWrapper({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function TableWrapper({ className, ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
       className={cn("overflow-x-auto rounded-lg border border-bordure bg-surface", className)}
-      tabIndex={0}
+      tabIndex={0} // NOSONAR - a scrollable region must be keyboard-reachable (WCAG 2.1.1, see above)
       {...props}
     />
   );
 }
 
-export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
-  return <table className={cn("w-full border-collapse", className)} {...props} />;
+/**
+ * Generic primitive: the header row comes from the caller (`Thead` + `Th`), which every table of the
+ * application provides. typescript:S5256 cannot see through `children` (false positive).
+ */
+export function Table({ className, ...props }: Readonly<HTMLAttributes<HTMLTableElement>>) {
+  return <table className={cn("w-full border-collapse", className)} {...props} />; // NOSONAR
 }
 
-export function Thead({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
+export function Thead({ className, ...props }: Readonly<HTMLAttributes<HTMLTableSectionElement>>) {
   return <thead className={cn("bg-surface-attenuee", className)} {...props} />;
 }
 
-export function Tbody(props: HTMLAttributes<HTMLTableSectionElement>) {
+export function Tbody(props: Readonly<HTMLAttributes<HTMLTableSectionElement>>) {
   return <tbody {...props} />;
 }
 
-export function Tr({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
+export function Tr({ className, ...props }: Readonly<HTMLAttributes<HTMLTableRowElement>>) {
   return (
     <tr className={cn("border-b border-bordure last:border-b-0", className)} {...props} />
   );
 }
 
-export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
+export function Th({ className, ...props }: Readonly<ThHTMLAttributes<HTMLTableCellElement>>) {
   return (
     <th
       scope="col"
@@ -56,7 +58,7 @@ export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElemen
   );
 }
 
-export function Td({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
+export function Td({ className, ...props }: Readonly<TdHTMLAttributes<HTMLTableCellElement>>) {
   return (
     <td
       className={cn("px-4 py-2.5 align-top text-[length:var(--taille-sm)]", className)}

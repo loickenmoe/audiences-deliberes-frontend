@@ -6,7 +6,13 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { BarreFiltres, ChampRecherche, CycleEtape, MontantFcfa, TableDonnees } from "@/components/metier";
+import {
+  BarreFiltres,
+  ChampRecherche,
+  CycleEtape,
+  MontantFcfa,
+  TableDonnees,
+} from "@/components/metier";
 import { classesBouton } from "@/components/ui/button";
 import { Champ, Input, Select } from "@/components/ui/champ";
 import { useDossiers } from "@/hooks/useDossiers";
@@ -37,20 +43,89 @@ const DEFAUTS = {
   tri: "",
 };
 
+/** The reference is the natural entry point to the case page (screen 07). */
+function LienDossier({ dossier }: Readonly<{ dossier: Dossier }>) {
+  return (
+    <Link
+      href={`/dossiers/${dossier.id}`}
+      className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+    >
+      {dossier.reference}
+    </Link>
+  );
+}
+
 /**
- * Écran 05 — recherche de dossiers.
- *
- * Les filtres `reference` et « mes dossiers » n'existaient pas côté backend : ils ont été ajoutés
- * en M16 (QF-07). Sans eux, l'écran n'aurait offert que nature, catégorie et juridiction — trois
- * filtres qui ne permettent pas de retrouver *un* dossier précis. Et les rejouer côté navigateur
- * aurait menti : sur une liste paginée, la recherche n'aurait porté que sur la page affichée.
+ * The most advanced step (steps arrive sorted by type) **and** the CCJA appeal if any: both
+ * cassation appeals can run concurrently, and showing only one would hide half of the procedure.
  */
-export function ListeDossiers({ roles }: { roles: readonly string[] }) {
+function EtapesEnCours({ dossier }: Readonly<{ dossier: Dossier }>) {
+  const etapes = dossier.etapes;
+  const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
+  const principale = etapes.findLast((etape) => etape.type !== "RECOURS_2_CCJA");
+  const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
+  if (aMontrer.length === 0) return "—";
+  return (
+    <div className="flex flex-wrap gap-1">
+      {aMontrer.map((etape) => (
+        <CycleEtape key={etape.id} statut={etape.statutCycleVie} type={etape.type} compact />
+      ))}
+    </div>
+  );
+}
+
+function colonnesDossiers(
+  t: ReturnType<typeof useTranslations<"dossiers">>,
+): ColumnDef<Dossier, unknown>[] {
+  return [
+    {
+      accessorKey: "reference",
+      header: t("colonneReference"),
+      cell: ({ row }) => <LienDossier dossier={row.original} />,
+    },
+    {
+      accessorKey: "clientNom",
+      header: t("colonneClient"),
+      // The backend returns `clientNom`, but leaves it `null` on some projections.
+      cell: ({ row }) => row.original.clientNom ?? `#${row.original.clientId}`,
+    },
+    { accessorKey: "nature", header: t("colonneNature") },
+    {
+      accessorKey: "juridictionSaisie",
+      header: t("colonneJuridiction"),
+    },
+    {
+      accessorKey: "risqueEncouru",
+      header: t("colonneRisque"),
+      cell: ({ row }) => <MontantFcfa valeur={row.original.risqueEncouru} />,
+    },
+    {
+      id: "etape",
+      header: t("colonneEtape"),
+      cell: ({ row }) => <EtapesEnCours dossier={row.original} />,
+    },
+  ];
+}
+
+/**
+ * Screen 05 - case search.
+ * Filters run on the backend (including `reference` and "my cases"): filtering in the browser would
+ * only search the displayed page of a paginated list.
+ */
+export function ListeDossiers({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("dossiers");
   const tm = useTranslations("metier");
   const td = useTranslations("domaine");
-  const { filtres, page, taille, definirTaille, definirFiltre, definirPage, effacer, nbFiltresActifs } =
-    useFiltresUrl(DEFAUTS);
+  const {
+    filtres,
+    page,
+    taille,
+    definirTaille,
+    definirFiltre,
+    definirPage,
+    effacer,
+    nbFiltresActifs,
+  } = useFiltresUrl(DEFAUTS);
   const natures = useNaturesDossier(
     filtres.categorie ? (filtres.categorie as CategorieDossier) : undefined,
   );
@@ -72,65 +147,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
     page,
   });
 
-  const colonnes = useMemo<ColumnDef<Dossier, unknown>[]>(
-    () => [
-      {
-        accessorKey: "reference",
-        header: t("colonneReference"),
-        // La référence est le point d'entrée naturel vers la fiche (écran 07).
-        cell: ({ row }) => (
-          <Link
-            href={`/dossiers/${row.original.id}`}
-            className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-          >
-            {row.original.reference}
-          </Link>
-        ),
-      },
-      {
-        accessorKey: "clientNom",
-        header: t("colonneClient"),
-        // Le backend renvoie `clientNom`, mais le laisse à `null` sur certaines projections.
-        cell: ({ row }) => row.original.clientNom ?? `#${row.original.clientId}`,
-      },
-      { accessorKey: "nature", header: t("colonneNature") },
-      {
-        accessorKey: "juridictionSaisie",
-        header: t("colonneJuridiction"),
-      },
-      {
-        accessorKey: "risqueEncouru",
-        header: t("colonneRisque"),
-        cell: ({ row }) => <MontantFcfa valeur={row.original.risqueEncouru} />,
-      },
-      {
-        id: "etape",
-        header: t("colonneEtape"),
-        /*
-         * L'étape la plus avancée — les étapes arrivent triées par type — **et** le pourvoi CCJA
-         * s'il existe, car les deux cassations sont concurrentes : un dossier peut être devant la
-         * Cour Suprême et devant la CCJA en même temps, l'une en délibéré et l'autre clôturée.
-         * N'en montrer qu'une reviendrait à cacher la moitié de la procédure, et laquelle serait
-         * cachée dépendrait d'un ordre de tri.
-         */
-        cell: ({ row }) => {
-          const etapes = row.original.etapes;
-          const ccja = etapes.find((etape) => etape.type === "RECOURS_2_CCJA");
-          const principale = etapes.filter((etape) => etape.type !== "RECOURS_2_CCJA").at(-1);
-          const aMontrer = [principale, ccja].filter((etape) => etape !== undefined);
-          if (aMontrer.length === 0) return "—";
-          return (
-            <div className="flex flex-wrap gap-1">
-              {aMontrer.map((etape) => (
-                <CycleEtape key={etape.id} statut={etape.statutCycleVie} type={etape.type} compact />
-              ))}
-            </div>
-          );
-        },
-      },
-    ],
-    [t],
-  );
+  const colonnes = useMemo(() => colonnesDossiers(t), [t]);
 
   const peutCreer = peut(roles, "creerDossier");
 
@@ -145,8 +162,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </div>
 
         {peutCreer ? (
-          // Un lien, pas un bouton : la création est une navigation vers l'écran 06, et doit rester
-          // ouvrable dans un nouvel onglet.
+          // A link, not a button: creation navigates to screen 06 and must be openable in a new
+          // tab.
           <Link href="/dossiers/nouveau" className={classesBouton()}>
             <Plus size={15} aria-hidden />
             {t("nouveauDossier")}
@@ -156,10 +173,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
 
       <BarreFiltres nbFiltresActifs={nbFiltresActifs} onEffacer={effacer}>
         {/*
-          **Au fil de la frappe** (QF-57). Les deux champs se validaient sur `onBlur` : il fallait
-          quitter le champ pour voir le résultat, et rien ne disait que l'application avait compris.
-          `ChampRecherche` absorbe la frappe et ne propage qu'après une pause de 300 ms - une requête
-          par pause, pas par caractère, ce qui était la seule objection valable à `onChange`.
+          Filter as the user types: `ChampRecherche` debounces input and only propagates after a 300
+          ms pause, one request per pause.
         */}
         <ChampRecherche
           id="filtre-reference"
@@ -184,7 +199,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
             id="filtre-categorie"
             value={filtres.categorie}
             onChange={(evenement) => {
-              // Changer de catégorie invalide la nature choisie : elle appartenait à l'autre.
+              // Changing the category invalidates the selected nature, which belonged to the other
+              // one.
               definirFiltre("nature", undefined);
               definirFiltre("categorie", evenement.target.value || undefined);
             }}
@@ -206,7 +222,7 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           >
             <option value="">{t("toutesNatures")}</option>
             {(natures.data ?? []).map((nature) => (
-              // Le backend filtre sur le **libellé**, pas sur le code.
+              // The backend filters on the **label**, not the code.
               <option key={nature.id} value={nature.libelle}>
                 {nature.libelle}
               </option>
@@ -215,16 +231,16 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </Champ>
 
         {/*
-          Observation métier du 2026-09-25 — « trier les dossiers en fonction de leur étape et
-          pendant une période donnée ». Les deux critères d'étape portent sur une **même** étape :
-          choisir « Appel » et « En cours » donne les appels en cours, et non les dossiers ayant un
-          appel par ailleurs et autre chose en cours.
+          Both step criteria apply to the **same** step: "Appeal" and "In progress" give appeals in
+          progress, not cases with an appeal and something else in progress.
         */}
         <Champ id="filtre-type-etape" label={t("filtreTypeEtape")} className="w-48">
           <Select
             id="filtre-type-etape"
             value={filtres.typeEtape}
-            onChange={(evenement) => definirFiltre("typeEtape", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("typeEtape", evenement.target.value || undefined)
+            }
           >
             <option value="">{t("filtreTous")}</option>
             {TypeEtape.map((valeur) => (
@@ -239,7 +255,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
           <Select
             id="filtre-statut-etape"
             value={filtres.statutEtape}
-            onChange={(evenement) => definirFiltre("statutEtape", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("statutEtape", evenement.target.value || undefined)
+            }
           >
             <option value="">{t("filtreTous")}</option>
             {StatutCycleVie.map((valeur) => (
@@ -251,9 +269,8 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </Champ>
 
         {/*
-          La période porte sur les **audiences**, non sur l'ouverture du dossier : la question du
-          métier est « quels dossiers sont passés devant un juge entre ces deux dates ». Les
-          audiences annulées en sont exclues côté serveur — elles ne se sont pas tenues.
+          The period applies to **hearings**, not case opening: which cases went before a judge
+          between these two dates. Cancelled hearings are excluded server-side.
         */}
         <Champ id="filtre-date-debut" label={t("filtreAudienceDebut")} className="w-40">
           <Input
@@ -261,7 +278,9 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
             type="date"
             max={filtres.dateFin || undefined}
             value={filtres.dateDebut}
-            onChange={(evenement) => definirFiltre("dateDebut", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("dateDebut", evenement.target.value || undefined)
+            }
           />
         </Champ>
 
@@ -290,15 +309,16 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
         </Champ>
 
         {/*
-          Q-101 — filtrer les dossiers sensibles, demandé par le porteur du projet. Le statut de
-          validation ne relève pas du confort : `EN_ATTENTE` donne au DJ et à la DJA la file des
-          sensibilités qui les attendent, que rien n'exposait jusqu'ici.
+          Filter on sensitive cases. `EN_ATTENTE` gives the DJ and DJA the queue of sensitivity
+          proposals awaiting them.
         */}
         <Champ id="filtre-sensibilite" label={t("filtreSensibiliteStatut")} className="w-52">
           <Select
             id="filtre-sensibilite"
             value={filtres.sensibiliteStatut}
-            onChange={(evenement) => definirFiltre("sensibiliteStatut", evenement.target.value || undefined)}
+            onChange={(evenement) =>
+              definirFiltre("sensibiliteStatut", evenement.target.value || undefined)
+            }
           >
             <option value="">{t("filtreTous")}</option>
             {StatutValidation.map((valeur) => (
@@ -333,18 +353,14 @@ export function ListeDossiers({ roles }: { roles: readonly string[] }) {
       </BarreFiltres>
 
       {/*
-        **Le nombre de résultats, annoncé** (QF-57). Il est déjà visible - la pagination le porte -
-        mais dans un simple `<span>` : il changeait donc en silence pour qui écoute, alors que le
-        filtrage au fil de la frappe modifie la liste sans action explicite. Un filtre qui agit tout
-        seul doit dire ce qu'il a trouvé.
-
-        `sr-only` : le chiffre est déjà à l'écran, le répéter visuellement serait du bruit. Et il
-        n'est annoncé qu'une fois la requête terminée - pendant le chargement, l'état de la table
-        porte son propre `role="status"`.
+        Announces the result count: live filtering changes the list without explicit action, so the
+        change must be announced. `sr-only` since the number is already visible in the pagination;
+        announced only once the request completes (the table's loading state has its own
+        `role="status"`).
       */}
-      <p role="status" aria-live="polite" className="sr-only">
+      <output aria-live="polite" className="sr-only">
         {requete.isLoading ? "" : tm("elements", { nombre: requete.data?.totalElements ?? 0 })}
-      </p>
+      </output>
 
       <TableDonnees
         colonnes={colonnes}

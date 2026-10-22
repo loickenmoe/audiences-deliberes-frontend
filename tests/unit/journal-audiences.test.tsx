@@ -6,11 +6,8 @@ import type { AudienceDuJour, CompteRenduAttendu } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
 
 /**
- * Écran 44 — journal des audiences (observation métier du 2026-09-25).
- *
- * Ce que ces tests protègent : l'écran **distingue** un compte rendu absent d'un compte rendu
- * déposé par l'autre partie. C'est toute la valeur de l'écran — confondre les deux ferait
- * reprocher à un juriste une audience dont l'avocat a déjà rendu compte, ou l'inverse.
+ * Screen 44, hearing log. The screen must **distinguish** a missing report from one submitted by
+ * the other party; confusing them would blame a legal officer for a hearing already reported, or vice versa.
  */
 const journal = vi.fn();
 const attendus = vi.fn();
@@ -81,7 +78,7 @@ describe("journal des audiences", () => {
     expect(screen.getByText("Juriste 10")).toBeInTheDocument();
   });
 
-  /** Un compte rendu absent se signale ; il ne se confond pas avec un dépôt non fait de l'avocat. */
+  /** A missing report is flagged and not confused with a lawyer's missing submission. */
   it("distingue le compte rendu manquant du dépôt absent de l'avocat", () => {
     journal.mockReturnValue({
       data: {
@@ -106,9 +103,8 @@ describe("journal des audiences", () => {
   });
 
   /**
-   * Sur une page unique, la barre **reste affichée** : c'est elle qui porte le nombre total et le
-   * choix du nombre de lignes. Savoir qu'on voit « 1 élément » et non une liste tronquée fait
-   * partie de l'information. Seules les commandes de navigation sont alors inertes.
+   * On a single page the bar **stays visible**: it carries the total count and the rows-per-page
+   * choice. Only the navigation controls are inert.
    */
   it("garde la barre de pagination sur une page unique, mais sans navigation possible", () => {
     journal.mockReturnValue({
@@ -124,7 +120,7 @@ describe("journal des audiences", () => {
     expect(screen.getAllByLabelText("Lignes par page").length).toBeGreaterThan(0);
   });
 
-  /** La pièce que l'avocat joint — plumitif, note d'audience — se consulte depuis le journal. */
+  /** The document attached by the lawyer (court record, hearing note) can be opened from the log. */
   it("propose la pièce jointe au compte rendu de l'avocat", () => {
     journal.mockReturnValue({
       data: {
@@ -147,7 +143,7 @@ describe("journal des audiences", () => {
     expect(lien).toHaveAttribute("href", "https://stockage/plumitif.pdf?signature=abc");
   });
 
-  /** Sans pièce jointe, aucun lien n'est proposé : l'écran n'invente pas un document. */
+  /** Without an attachment no link is offered. */
   it("ne propose aucun lien quand l'avocat n'a rien joint", () => {
     journal.mockReturnValue({
       data: { content: [audience({ compteRenduAvocat: "Récit avocat" })], totalPages: 1, totalElements: 1 },
@@ -175,8 +171,8 @@ describe("journal des audiences", () => {
   });
 
   /**
-   * La pagination ne s'affiche que lorsqu'une page suivante existe : une liste tronquée sans le
-   * dire est pire qu'une liste longue, car rien n'avertit qu'il manque quelque chose.
+   * Pagination must show whenever a next page exists: a silently truncated list is worse than a
+   * long one.
    */
   it("pagine le journal dès qu'une seconde page existe", () => {
     journal.mockReturnValue({

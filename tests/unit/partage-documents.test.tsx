@@ -6,18 +6,15 @@ import type { DocumentDossier, StatutPartageAvocat } from "@/types/domaine";
 import { rendre } from "../utils/rendu";
 
 /**
- * Le partage d'une pièce avec l'avocat, depuis l'onglet Documents (QF-64, backend Q-139).
- *
- * **Les règles arbitrées le 2026-10-15, telles que l'écran doit les annoncer.** Tout juriste
- * partage ; sur un dossier **sensible**, son geste devient une **proposition** que le DJ ou la DJA
- * valide. L'écran ne décide rien - le serveur le fait - mais il doit proposer le bon geste, sous le
- * bon nom : un juriste qui lirait « Partager » sur un dossier sensible croirait la pièce partie.
+ * Sharing a document with the lawyer from the Documents tab. Any legal officer can share; on a
+ * **sensitive** case file the action becomes a **proposal** validated by the DJ or DJA. The server
+ * decides, but the screen must offer the right action under the right name.
  */
 const documents = vi.fn();
 const partager = vi.fn();
 const retirer = vi.fn();
 const arbitrer = vi.fn();
-/** QF-65 : un avocat affecté est-il constitué ? Par défaut oui, pour que le bandeau reste muet. */
+/** Whether an assigned lawyer is retained. Defaults to yes so the banner stays hidden. */
 const etat = vi.fn();
 
 vi.mock("@/hooks/useDossiers", () => ({
@@ -92,8 +89,8 @@ describe("le juriste partage, ou propose sur un dossier sensible", () => {
   });
 
   /**
-   * <b>La règle du dossier sensible, vue de l'écran.</b> Le geste du juriste ne partage pas : il
-   * propose. Le nommer « Partager » lui ferait croire la pièce partie chez l'avocat.
+   * <b>Sensitive case file rule.</b> The legal officer's action does not share, it proposes. Calling
+   * it "Share" would suggest the document has reached the lawyer.
    */
   it("dossier sensible : il propose, et ne lit jamais « Partager »", () => {
     afficher(JURISTE, "NON", true);
@@ -113,7 +110,7 @@ describe("le juriste partage, ou propose sur un dossier sensible", () => {
     await waitFor(() => expect(partager).toHaveBeenCalledWith(7));
   });
 
-  /** Le DJ qui partage lui-même n'a pas à se valider : sur un dossier sensible, il partage. */
+  /** The DJ does not validate their own share: on a sensitive case file, they share directly. */
   it("le DJ partage directement, même sur un dossier sensible", () => {
     afficher(DJ, "NON", true);
     expect(screen.getByRole("button", { name: "Partager avec l'avocat - assignation.pdf" })).toBeInTheDocument();
@@ -142,7 +139,7 @@ describe("la validation reste au DJ et à la DJA", () => {
     expect(screen.queryByRole("button", { name: /^Rejeter/ })).not.toBeInTheDocument();
   });
 
-  /** Un rejet exige un motif : le juriste qui a proposé doit savoir pourquoi la pièce ne part pas. */
+  /** A rejection requires a reason: the proposing legal officer must know why the document is not shared. */
   it("un rejet sans motif ne part pas", async () => {
     afficher(DJ, "PROPOSE", true);
     fireEvent.click(screen.getByRole("button", { name: "Rejeter - assignation.pdf" }));
@@ -156,8 +153,8 @@ describe("la validation reste au DJ et à la DJA", () => {
 });
 
 /**
- * **QF-65 : le SH et l'Assistante partagent**, « ils sont à la base des juristes ». Même principe
- * que le juriste : sur un dossier sensible, leur geste propose, et le DJ ou la DJA valide.
+ * **SH and Assistant can share**, like legal officers: on a sensitive case file their action
+ * proposes, and the DJ or DJA validates.
  */
 describe("le SH et l'Assistante partagent comme un juriste", () => {
   it.each([
@@ -170,14 +167,14 @@ describe("le SH et l'Assistante partagent comme un juriste", () => {
 
     afficher(roles, "NON", true);
     expect(screen.getByRole("button", { name: "Proposer le partage - assignation.pdf" })).toBeInTheDocument();
-    // Et la validation reste à la direction.
+    // Validation remains with management.
     expect(screen.queryByRole("button", { name: /^Valider le partage/ })).not.toBeInTheDocument();
   });
 });
 
 /**
- * **QF-65 : l'absence de constitution se dit.** Signalé en recette : le juriste partageait, lisait
- * « Partagé », et l'avocat ne voyait rien, faute de lettre signée.
+ * **A missing retainer is stated**: without a signed letter, the lawyer sees nothing even when the
+ * document shows as shared.
  */
 describe("aucun avocat constitué", () => {
   it("un bandeau le dit, au-dessus du tableau", () => {
@@ -202,7 +199,7 @@ describe("aucun avocat constitué", () => {
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
-  /** Tant que la réponse n'est pas arrivée, l'écran n'affirme rien. */
+  /** Until the response arrives, the screen asserts nothing. */
   it("l'état encore inconnu : aucun bandeau", () => {
     etat.mockReturnValue({ data: undefined });
     afficher(JURISTE, "NON");

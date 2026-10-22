@@ -6,8 +6,8 @@ import { useState } from "react";
 import { ErreurApi } from "@/lib/api/errors";
 
 /**
- * Le client est créé dans un état React, pas en module : en rendu serveur, un client global serait
- * partagé entre les requêtes de plusieurs utilisateurs — et donc leurs données.
+ * The client is created in React state, not at module level: during server rendering a global
+ * client would be shared across users' requests, and thus their data.
  */
 export function QueryProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [client] = useState(
@@ -16,10 +16,7 @@ export function QueryProvider({ children }: Readonly<{ children: React.ReactNode
         defaultOptions: {
           queries: {
             staleTime: 30_000,
-            /**
-             * Ne jamais réessayer une erreur d'autorisation ou de validation : le résultat sera
-             * identique et l'utilisateur attend pour rien.
-             */
+            /** Never retry 4xx errors: the result would be the same. */
             retry: (nbEchecs, erreur) => {
               if (erreur instanceof ErreurApi) {
                 const statut = erreur.statut ?? 0;

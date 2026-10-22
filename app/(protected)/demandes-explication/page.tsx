@@ -9,10 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 47 — les demandes d'explication (N7 temps 2).
+ * Screen 47 - requests for explanation.
  *
- * Ouvert à la direction **et à l'avocat** : c'est le même échange, lu des deux bouts. Le serveur
- * décide des lignes que chacun voit ; l'écran n'envoie aucun périmètre.
+ * Open to management **and to the lawyer**: the same exchange, read from both ends. The server
+ * decides which rows each user sees; the screen sends no scope.
  */
 export default async function PageDemandesExplication() {
   const session = await exigerCapacite("consulterExplications");

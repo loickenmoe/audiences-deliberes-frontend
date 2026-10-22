@@ -10,7 +10,7 @@ import {
 } from "@/services/constitutionService";
 import type { StatutConstitution } from "@/types/enums";
 
-/** `null` : tout l'historique. */
+/** `null`: full history. */
 export function useConstitutions(statut: StatutConstitution | null, page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.constitutions, statut ?? "toutes", page, size],
@@ -19,10 +19,8 @@ export function useConstitutions(statut: StatutConstitution | null, page = 0, si
 }
 
 /**
- * La lettre d'une demande (backend Q-115 B2).
- *
- * `enabled` laisse l'appelant n'ouvrir la requête qu'au moment où l'écran de rédaction s'affiche :
- * charger la lettre de chaque ligne d'une file de trente demandes serait trente appels pour rien.
+ * The letter of a request. Only fetched once the drafting screen opens, to avoid one call per
+ * queue row.
  */
 export function useLettreConstitution(demandeId: number | null) {
   return useQuery({
@@ -33,10 +31,8 @@ export function useLettreConstitution(demandeId: number | null) {
 }
 
 /**
- * Enregistre la rédaction du juriste.
- *
- * La file des constitutions est invalidée au passage : la date de modification y figure, et une
- * lettre rédigée à l'instant ne doit pas s'y afficher comme si elle ne l'avait jamais été.
+ * Saves the legal officer's draft. The constitution queue is invalidated because it shows the
+ * last modification date.
  */
 export function useRedigerLettre() {
   const client = useQueryClient();
@@ -55,7 +51,7 @@ export function useSolliciterConstitution() {
   });
 }
 
-/** Une signature dépose la lettre dans la GED du dossier : ses documents sont rechargés aussi. */
+/** Signing files the letter into the case's document store, so its documents are reloaded too. */
 export function useDeciderConstitution() {
   const client = useQueryClient();
   return useMutation({
@@ -71,7 +67,7 @@ export function useRepertoire(nom: string, page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.repertoire, nom, page, size],
     queryFn: () => constitutionService.repertoire(nom || undefined, page, size),
-    // Garder la liste affichée pendant la recherche suivante.
+    // Keep the current list displayed while the next search runs.
     placeholderData: (precedent) => precedent,
   });
 }

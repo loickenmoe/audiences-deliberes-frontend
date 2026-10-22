@@ -33,17 +33,117 @@ const VIDE: Record<CleVueNotifications, string> = {
   toutes: "videToutes",
 };
 
+/** The alert's case file: a link for internal profiles, plain text for lawyers, or "outside a case". */
+function DossierAlerte({
+  dossierId,
+  lienDossier,
+}: Readonly<{ dossierId: number | null; lienDossier: boolean }>) {
+  const t = useTranslations("notifications");
+  if (dossierId === null) {
+    return <span className="text-texte-tertiaire">{t("horsDossier")}</span>;
+  }
+  return lienDossier ? (
+    <Link
+      href={`/dossiers/${dossierId}`}
+      className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
+    >
+      #{dossierId}
+    </Link>
+  ) : (
+    <span className="font-mono text-[length:var(--taille-xs)]">#{dossierId}</span>
+  );
+}
+
+/** "Mark as handled" on an unread alert, otherwise when it was handled. */
+function ActionAlerte({
+  alerte,
+  enCours,
+  onTraiter,
+}: Readonly<{ alerte: Alerte; enCours: boolean; onTraiter: (id: number) => void }>) {
+  const t = useTranslations("notifications");
+  if (estATraiter(alerte)) {
+    return (
+      <Button
+        variante="secondaire"
+        taille="sm"
+        disabled={enCours}
+        onClick={() => onTraiter(alerte.id)}
+      >
+        {t("marquerTraitee")}
+      </Button>
+    );
+  }
+  return (
+    <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
+      {alerte.dateTraitement
+        ? t("traiteeLe", { date: new Date(alerte.dateTraitement).toLocaleDateString() })
+        : null}
+    </span>
+  );
+}
+
+function colonnesNotifications(
+  t: ReturnType<typeof useTranslations<"notifications">>,
+  td: ReturnType<typeof useTranslations<"domaine">>,
+  lienDossier: boolean,
+  enCours: boolean,
+  onTraiter: (id: number) => void,
+): ColumnDef<Alerte, unknown>[] {
+  return [
+    {
+      id: "type",
+      header: t("colonneType"),
+      cell: ({ row }) => (
+        <span className="font-medium">{td(`TypeAlerte.${row.original.type}` as never)}</span>
+      ),
+    },
+    {
+      id: "objet",
+      header: t("colonneObjet"),
+      cell: ({ row }) => (
+        <span className="block max-w-prose">{nettoyerDeclencheur(row.original.declencheur)}</span>
+      ),
+    },
+    {
+      id: "dossier",
+      header: t("colonneDossier"),
+      cell: ({ row }) => (
+        <DossierAlerte dossierId={row.original.dossierId} lienDossier={lienDossier} />
+      ),
+    },
+    {
+      id: "date",
+      header: t("colonneDate"),
+      cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDeclenchement} />,
+    },
+    {
+      id: "statut",
+      header: t("colonneStatut"),
+      cell: ({ row }) => (
+        <StatutChip ton={TON_STATUT_ALERTE[row.original.statut]}>
+          {td(`StatutAlerte.${row.original.statut}` as never)}
+        </StatutChip>
+      ),
+    },
+    {
+      id: "action",
+      header: t("colonneAction"),
+      cell: ({ row }) => (
+        <ActionAlerte alerte={row.original} enCours={enCours} onTraiter={onTraiter} />
+      ),
+    },
+  ];
+}
+
 /**
- * Écran 03 — mes notifications.
+ * Screen 03 - my notifications.
  *
- * La liste appartient au destinataire : le backend ne renvoie que ses alertes et n'accepte que de
- * lui qu'elles soient marquées traitées (403 sinon). Elle s'ouvre donc sur les non lues.
- *
- * L'état du canal temps réel est affiché : c'est la seule façon pour l'utilisateur de savoir s'il
- * regarde un flux vivant ou une liste rafraîchie toutes les 30 secondes. Dans les deux cas la
- * liste est complète — le backend enregistre l'alerte avant de tenter de la pousser.
+ * The list belongs to the recipient: the backend returns only their alerts and only lets them mark
+ * them as handled (403 otherwise). It opens on unread ones.
+ * The real-time channel status is shown so the user knows whether the feed is live or refreshed
+ * every 30 seconds. Either way the list is complete: the backend stores the alert before pushing it.
  */
-export function FileNotifications({ roles }: { roles: readonly string[] }) {
+export function FileNotifications({ roles }: Readonly<{ roles: readonly string[] }>) {
   const t = useTranslations("notifications");
   const td = useTranslations("domaine");
   const { connecte } = useCanalAlertes();
@@ -51,7 +151,7 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
     vue: "aTraiter",
     type: "",
   });
-  const vue = (VUES.find((cle) => cle === filtres.vue) ?? "aTraiter") as CleVueNotifications;
+  const vue: CleVueNotifications = VUES.find((cle) => cle === filtres.vue) ?? "aTraiter";
   const requete = useMesNotifications(
     VUES_NOTIFICATIONS[vue],
     page,
@@ -59,7 +159,7 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
     (filtres.type || undefined) as TypeAlerte | undefined,
   );
   const traiter = useTraiterAlerte();
-  // L'avocat n'accède pas aux dossiers : la référence resterait un lien mort.
+  // Lawyers cannot access case files: the reference would be a dead link.
   const lienDossier = peut(roles, "consulterDossiers");
 
   const marquerTraitee = (id: number) => {
@@ -69,79 +169,9 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
     });
   };
 
-  const colonnes = useMemo<ColumnDef<Alerte, unknown>[]>(
-    () => [
-      {
-        id: "type",
-        header: t("colonneType"),
-        cell: ({ row }) => (
-          <span className="font-medium">{td(`TypeAlerte.${row.original.type}` as never)}</span>
-        ),
-      },
-      {
-        id: "objet",
-        header: t("colonneObjet"),
-        cell: ({ row }) => (
-          <span className="block max-w-prose">{nettoyerDeclencheur(row.original.declencheur)}</span>
-        ),
-      },
-      {
-        id: "dossier",
-        header: t("colonneDossier"),
-        cell: ({ row }) => {
-          const dossierId = row.original.dossierId;
-          if (dossierId === null) {
-            return <span className="text-texte-tertiaire">{t("horsDossier")}</span>;
-          }
-          return lienDossier ? (
-            <Link
-              href={`/dossiers/${dossierId}`}
-              className="font-mono text-[length:var(--taille-xs)] underline underline-offset-4"
-            >
-              #{dossierId}
-            </Link>
-          ) : (
-            <span className="font-mono text-[length:var(--taille-xs)]">#{dossierId}</span>
-          );
-        },
-      },
-      {
-        id: "date",
-        header: t("colonneDate"),
-        cell: ({ row }) => <DateHeureValeur valeur={row.original.dateDeclenchement} />,
-      },
-      {
-        id: "statut",
-        header: t("colonneStatut"),
-        cell: ({ row }) => (
-          <StatutChip ton={TON_STATUT_ALERTE[row.original.statut]}>
-            {td(`StatutAlerte.${row.original.statut}` as never)}
-          </StatutChip>
-        ),
-      },
-      {
-        id: "action",
-        header: t("colonneAction"),
-        cell: ({ row }) =>
-          estATraiter(row.original) ? (
-            <Button
-              variante="secondaire"
-              taille="sm"
-              disabled={traiter.isPending}
-              onClick={() => marquerTraitee(row.original.id)}
-            >
-              {t("marquerTraitee")}
-            </Button>
-          ) : (
-            <span className="text-[length:var(--taille-xs)] text-texte-tertiaire">
-              {row.original.dateTraitement
-                ? t("traiteeLe", { date: new Date(row.original.dateTraitement).toLocaleDateString() })
-                : null}
-            </span>
-          ),
-      },
-    ],
-    // `marquerTraitee` est recréée à chaque rendu : la lister ici recalculerait les colonnes en boucle.
+  const colonnes = useMemo(
+    () => colonnesNotifications(t, td, lienDossier, traiter.isPending, marquerTraitee),
+    // `marquerTraitee` is recreated on every render: listing it here would recompute the columns endlessly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, td, lienDossier, traiter.isPending],
   );
@@ -149,12 +179,17 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">{t("titre")}</h1>
+        <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
+          {t("titre")}
+        </h1>
         <p className="max-w-prose text-texte-secondaire">{t("description")}</p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label={t("vue")} className="flex w-fit rounded border border-bordure-forte">
+        <fieldset
+                    aria-label={t("vue")}
+          className="flex w-fit rounded border border-bordure-forte"
+        >
           {VUES.map((cle) => (
             <button
               key={cle}
@@ -169,13 +204,12 @@ export function FileNotifications({ roles }: { roles: readonly string[] }) {
               {t(`vues.${cle}` as never)}
             </button>
           ))}
-        </div>
+        </fieldset>
 
         {/*
-          Q-102 — filtrer par type d'alerte. Dix-sept types existent, et les rappels d'audience se
-          déclenchent trois fois par audience (J-7, J-3, J-1) : sans ce filtre, une échéance de
-          recours se perd dans la masse. Le filtrage est **serveur** — le rejouer ici n'aurait
-          cherché que dans la page affichée.
+          Filter by alert type: there are seventeen types and hearing reminders fire three times per
+          hearing (D-7, D-3, D-1), so appeal deadlines would get lost. Filtering is server-side; doing it
+          here would only search the displayed page.
         */}
         <label className="flex items-center gap-2 text-[length:var(--taille-sm)]">
           {t("filtreType")}

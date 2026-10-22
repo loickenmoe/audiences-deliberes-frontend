@@ -7,22 +7,15 @@ import { useIntervenants } from "@/hooks/useIntervenants";
 import { useUtilisateurs } from "@/hooks/useReferentiels";
 
 /**
- * Résolution des identifiants numériques en noms lisibles.
- *
- * **Le backend ne renvoie jamais de nom.** Un dossier expose `juristesAffectes: [3, 7]`, une alerte
- * un `destinataireId`, un document un `auteurChargementId`. Sans cette résolution, l'interface
- * afficherait des numéros.
- *
- * Les deux annuaires étant petits, fermés et mis en cache longuement (30 min), les résoudre côté
- * client évite autant d'allers-retours que de lignes affichées.
- *
- * ⚠ Un juriste **jamais connecté** n'apparaît pas dans l'annuaire (QF-16, provisionnement
- * paresseux) : `nomUtilisateur` retombe alors sur l'identifiant, plutôt que sur un blanc qui
- * laisserait croire à un défaut d'affichage.
+ * Resolves numeric ids into display names: the backend never returns names (e.g.
+ * `juristesAffectes: [3, 7]`). Both directories are small and cached for 30 min, so resolving
+ * client-side avoids one round-trip per row.
+ * A user who has never logged in is not in the directory (lazy provisioning): `nomUtilisateur`
+ * then falls back to the id rather than a blank.
  */
 export function useLibelles() {
   const utilisateurs = useUtilisateurs();
-  // Table de correspondance : elle a besoin de l'annuaire entier, pas d'une page (cf. TAILLE_ANNUAIRE).
+  // The lookup table needs the whole directory, not a page (see TAILLE_ANNUAIRE).
   const intervenants = useIntervenants({ size: TAILLE_ANNUAIRE });
 
   const parUtilisateur = useMemo(() => {

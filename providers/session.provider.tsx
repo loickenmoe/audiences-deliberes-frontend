@@ -9,13 +9,9 @@ import { definirLectureDeSession, jetonCourant } from "@/lib/cache-jeton";
 import { ERREUR_AUTH_INDISPONIBLE, sessionInutilisable } from "@/lib/rotation-jeton";
 
 /**
- * Branche le jeton de session sur le client HTTP.
- *
- * **Via un cache, et non un `getSession()` par requête** (QF-42) : chaque lecture de
- * `/api/auth/session` repose le cookie de session, si bien qu'un écran lançant huit requêtes
- * réécrivait huit fois le cookie — et pouvait annuler une déconnexion simultanée. Le cache ne relit
- * la session qu'à l'approche de la rotation, fenêtre publiée par le serveur ; `getSession()`
- * déclenche alors la rotation comme avant, et le jeton remis reste donc toujours valide.
+ * Wires the session token into the HTTP client through a cache rather than one `getSession()` per
+ * request: each `/api/auth/session` read re-sets the session cookie and could undo a concurrent
+ * logout. The cache only re-reads the session near the server-published rotation time.
  */
 definirLectureDeSession(async () => {
   const session = await getSession();
@@ -24,15 +20,12 @@ definirLectureDeSession(async () => {
 definirFournisseurDeJeton(() => jetonCourant());
 
 /**
- * Amorçage de session.
+ * Session bootstrap.
  *
- * **QF-16 — provisionnement paresseux.** Le backend ne crée la ligne `utilisateur` qu'au premier
- * appel d'un endpoint qui résout l'utilisateur courant ; `GET /dossiers` et `GET /utilisateurs` ne
- * le déclenchent pas. Sans cet appel, l'utilisateur connecté n'existe pas en base : il resterait
- * absent de l'annuaire, donc inaffectable, et son identifiant numérique introuvable (QF-02).
- *
- * `GET /alertes/mes-notifications` est le bon véhicule : il provisionne le compte **et** rapporte
- * les notifications dont l'en-tête a besoin sur toutes les pages. Un seul appel, deux usages.
+ * The backend lazily creates the `utilisateur` row on the first call to an endpoint resolving the
+ * current user (`GET /dossiers` and `GET /utilisateurs` do not). Without it, the user would be
+ * missing from the directory and could not be assigned. `GET /alertes/mes-notifications` provisions
+ * the account and also returns the notifications the header needs.
  */
 function AmorcageSession() {
   const { data: session, status } = useSession();
@@ -42,10 +35,8 @@ function AmorcageSession() {
     if (status !== "authenticated") return;
 
     /*
-     * Rotation définitivement échouée : déconnexion nette plutôt qu'une avalanche de 401. Le motif
-     * transmis dit **laquelle** des deux causes, parce que l'utilisateur n'a pas la même chose à
-     * faire : se reconnecter quand son jeton est expiré, patienter quand c'est le service qui est à
-     * terre — auquel cas se reconnecter est de toute façon impossible.
+     * Rotation definitively failed: clean logout rather than a flood of 401s. The reason tells the
+     * user what to do: log in again if the token expired, wait if the service is down.
      */
     if (sessionInutilisable(session?.erreur)) {
       const motif =
@@ -58,7 +49,7 @@ function AmorcageSession() {
     amorce.current = true;
 
     apiClient.get("/alertes/mes-notifications", { params: { size: 1 } }).catch(() => {
-      // Sans conséquence bloquante : le provisionnement se refera au prochain appel utile.
+      // Non-blocking: provisioning will happen on the next relevant call.
     });
   }, [status, session?.erreur]);
 
@@ -66,10 +57,9 @@ function AmorcageSession() {
 }
 
 /**
- * `session` vient du rendu serveur : `SessionProvider` n'a donc rien à aller chercher au montage.
- * `refetchOnWindowFocus` est coupé pour la même raison (QF-42) — la fraîcheur du jeton est assurée
- * par le cache, qui relit la session à l'approche de la rotation, et par le rendu serveur de chaque
- * page. Il ne reste alors **aucune** lecture de session déclenchée par l'interface.
+ * `session` comes from server rendering, so `SessionProvider` fetches nothing on mount.
+ * `refetchOnWindowFocus` is off: token freshness is ensured by the token cache and by server
+ * rendering of each page, so the UI triggers no session read.
  */
 export function AuthProvider({
   children,

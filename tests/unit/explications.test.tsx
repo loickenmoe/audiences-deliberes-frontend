@@ -7,17 +7,14 @@ import { rendre as render } from "../utils/rendu";
 import type { DemandeExplication } from "@/types/domaine";
 
 /**
- * Les demandes d'explication, vues des deux bouts (N7 temps 2, observation 8).
- *
- * **Ce que ces tests tiennent.** Le même écran sert la direction et l'avocat, et chacun n'y voit
- * que ce qui le concerne : la direction écrit, l'avocat répond, et ni l'un ni l'autre n'hérite du
- * geste de l'autre. Plus ce que l'écran **dit** avant qu'on agisse - qu'une réponse ne se récrit
- * pas, et que la relance automatique se tait pendant l'échange.
+ * Explanation requests, from both sides (N7). The same screen serves management and the lawyer,
+ * each seeing only their own actions: management writes, the lawyer answers. The screen also
+ * **states** before acting that an answer cannot be rewritten, and that automatic reminders pause
+ * during the exchange.
  */
 /*
- * La liste pagine par l'URL, comme toutes les files de l'application : la page vit dans l'adresse,
- * et se partage. Hors d'un navigateur Next, le routeur n'existe pas - on lui donne le minimum,
- * plutôt que de retirer au composant une pagination qui est son comportement normal.
+ * The list paginates through the URL, like every queue in the application. Outside Next there is no
+ * router, so a minimal one is provided.
  */
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -89,7 +86,7 @@ describe("écran des demandes d'explication", () => {
     expect(screen.queryByRole("button", { name: "Demander une explication" })).not.toBeInTheDocument();
   });
 
-  /** Répondre est le geste de l'avocat : la direction ne répond pas à sa propre demande. */
+  /** Answering is the lawyer's action: management does not answer its own request. */
   it("seul l'avocat se voit proposer de répondre", () => {
     render(<EcranExplications roles={DIRECTION} />);
     expect(screen.queryByRole("button", { name: "Répondre" })).not.toBeInTheDocument();
@@ -99,7 +96,7 @@ describe("écran des demandes d'explication", () => {
     render(<EcranExplications roles={AVOCAT} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Répondre" }));
-    // Ce qu'on lui reproche est sous les yeux : on ne répond pas de mémoire.
+    // The request being answered stays visible: no answering from memory.
     expect(screen.getAllByText("Deux audiences sans compte rendu.").length).toBeGreaterThan(0);
 
     await userEvent.type(screen.getByLabelText("Votre réponse"), "Le greffe n'a rien transmis.");
@@ -110,10 +107,7 @@ describe("écran des demandes d'explication", () => {
   });
 
   /**
-   * Le point qui compte le plus dans cette modale : une réponse ne se récrit pas.
-   *
-   * C'est une prise de position datée, que la direction lira peut-être des mois plus tard. Le dire
-   * avant l'envoi vaut mieux que de le découvrir en voulant se reprendre.
+   * An answer cannot be rewritten: it is a dated statement, so the dialog says so before sending.
    */
   it("annonce qu'on ne répond qu'une fois", async () => {
     render(<EcranExplications roles={AVOCAT} />);
@@ -123,7 +117,7 @@ describe("écran des demandes d'explication", () => {
     expect(screen.getByText(/ne pourra plus être modifiée/)).toBeInTheDocument();
   });
 
-  /** Une demande déjà répondue n'offre plus le bouton, et montre ce qui a été dit. */
+  /** An answered request no longer offers the button and shows the answer. */
   it("une demande répondue affiche la réponse, sans proposer d'y revenir", () => {
     lignes = [REPONDUE];
     render(<EcranExplications roles={AVOCAT} />);
@@ -133,10 +127,8 @@ describe("écran des demandes d'explication", () => {
   });
 
   /**
-   * La suspension de la relance se dit **avant** l'envoi.
-   *
-   * Sans cela, la direction verrait les rappels automatiques cesser sans savoir pourquoi, et
-   * pourrait croire à une panne.
+   * The reminder pause is stated **before** sending, otherwise management would see reminders stop
+   * without knowing why.
    */
   it("prévient que la relance automatique se suspend", async () => {
     render(<EcranExplications roles={DIRECTION} />);

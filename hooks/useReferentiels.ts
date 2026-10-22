@@ -8,14 +8,9 @@ import type { AgenceEcriture } from "@/types/domaine";
 import type { CategorieDossier } from "@/types/enums";
 
 /**
- * Agences de la banque, **cherchées côté serveur** (métier, 2026-10-03, observation 2).
- *
- * `recherche` entre dans la clé de cache : chaque saisie a sa réponse, et revenir sur une saisie
- * déjà faite n'interroge pas le serveur. La fraîcheur longue des référentiels s'applique - une
- * agence ouvre ou ferme au rythme d'une décision de la direction, pas d'une session de travail.
- *
- * `actifSeulement` à faux n'a de sens que pour l'écran d'administration : ailleurs, proposer une
- * agence fermée ferait saisir un code que le backend refuse.
+ * Bank branches, searched server-side. `recherche` is part of the cache key, with the long
+ * reference-data freshness. `actifSeulement = false` is only meaningful for the admin screen:
+ * elsewhere a closed branch would yield a code the backend rejects.
  */
 export function useAgences(params?: {
   recherche?: string;
@@ -39,11 +34,8 @@ export function useAgences(params?: {
 }
 
 /**
- * Création, modification, fermeture et réouverture d'une agence (DJ/DJA).
- *
- * Les quatre invalident la même clé : la liste d'administration et les sélecteurs de saisie
- * lisent le même référentiel, et une agence créée ou rouverte doit être proposable sans
- * rechargement de page.
+ * Create, update, close and reopen a branch (DJ/DJA). All four invalidate the same key, since the
+ * admin list and input pickers read the same reference data.
  */
 export function useEcritureAgence() {
   const client = useQueryClient();
@@ -62,8 +54,8 @@ export function useEcritureAgence() {
     mutationFn: (id: number) => referentielService.desactiverAgence(id),
     onSuccess: invalider,
   });
-  // Fermer et rouvrir sont deux mutations, non un bascule : l'écran doit pouvoir désactiver l'une
-  // pendant que l'autre travaille, et nommer celle qui a échoué.
+  // Close and reopen are separate mutations, not a toggle, so the screen can track and report
+  // each one independently.
   const reactiver = useMutation({
     mutationFn: (id: number) => referentielService.reactiverAgence(id),
     onSuccess: invalider,
@@ -72,7 +64,7 @@ export function useEcritureAgence() {
   return { creer, modifier, desactiver, reactiver };
 }
 
-/** Natures de dossier, filtrables par catégorie — le formulaire s'adapte à la catégorie choisie. */
+/** Case natures, filterable by category so the form adapts to the selected category. */
 export function useNaturesDossier(categorie?: CategorieDossier) {
   return useQuery({
     queryKey: [CLES.naturesDossier, categorie ?? "toutes"],
@@ -89,7 +81,7 @@ export function useTypesClientSensible() {
   });
 }
 
-/** Annuaire interne. `profil` filtre par code de profil (`JURISTE`, `DJ`, …). */
+/** Internal user directory. `profil` filters by profile code (`JURISTE`, `DJ`, ...). */
 export function useUtilisateurs(profil?: string) {
   return useQuery({
     queryKey: [CLES.utilisateurs, profil ?? "tous"],

@@ -4,22 +4,15 @@ import type { CreerIntervenant, Intervenant, ModifierIntervenant } from "@/types
 import type { TypeIntervenant } from "@/types/enums";
 
 /**
- * Référentiel des intervenants (#61, #62).
- *
- * Écran indispensable au démarrage : **sans avocat en base, aucun dossier ne peut être créé** —
- * `avocatsAffectes` est obligatoire à la création (`@NotEmpty`).
- *
- * Ni modification ni suppression : le backend ne les expose pas, les user stories ne les demandent
- * pas.
+ * Stakeholder directory (#61, #62). Required at startup: without a lawyer, no case can be created
+ * (`avocatsAffectes` is mandatory). No deletion is exposed.
  */
 const BASE = "/intervenants";
 
 export const intervenantService = {
   /**
-   * #62 — `ROLE_CONSULTATION`. Sans filtre, retourne les deux types.
-   *
-   * **Paginé et cherchable depuis Q-100/Q-105.** `nom` porte la recherche au fil de la frappe des
-   * sélecteurs : ils n'ont plus besoin de détenir tout l'annuaire pour laisser choisir.
+   * #62: `ROLE_CONSULTATION`. Paginated; returns both types when unfiltered. `nom` drives the
+   * pickers' search-as-you-type.
    */
   lister: async (params: {
     type?: TypeIntervenant;
@@ -38,15 +31,15 @@ export const intervenantService = {
     return data;
   },
 
-  /** #61 — `ROLE_DJ`, `ROLE_DJA`. Voir les invariants sur {@link CreerIntervenant}. */
+  /** #61: `ROLE_DJ`, `ROLE_DJA`. See invariants on {@link CreerIntervenant}. */
   creer: async (corps: CreerIntervenant): Promise<Intervenant> => {
     const { data } = await apiClient.post<Intervenant>(BASE, corps);
     return data;
   },
 
   /**
-   * 🆕 `PUT /intervenants/{id}` (Q-117) — `ROLE_DJ`, `ROLE_DJA`. Le type et l'identifiant de connexion
-   * sont figés : seuls le nom, les coordonnées et la notification se corrigent.
+   * `ROLE_DJ`, `ROLE_DJA`. Type and login id are fixed: only name, contact details and
+   * notification settings can be changed.
    */
   modifier: async (id: number, corps: ModifierIntervenant): Promise<Intervenant> => {
     const { data } = await apiClient.put<Intervenant>(`${BASE}/${id}`, corps);

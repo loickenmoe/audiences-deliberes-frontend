@@ -18,21 +18,18 @@ import { messageErreur } from "@/lib/api/errors";
 import type { AuditSeuil } from "@/types/domaine";
 
 /**
- * Écran 17, volet arbitrage — les dérogations de seuil en attente, en tête de fiche.
- *
- * N'existe que depuis l'ajout de `GET /dossiers/{id}/seuil-derogation` au backend (Q-74) : sans
- * lui, l'identifiant de la demande n'était exposé nulle part et le DJ/DJA ne pouvait pas arbitrer
- * (QF-23). Affiché seulement sur un dossier sensible **validé** : avant, le seul audit en attente
- * est la proposition initiale, qui se tranche par la validation de sensibilité.
+ * Screen 17, arbitration panel: pending threshold derogations, at the top of the case page.
+ * Only shown on a sensitive case that is already validated: before that, the only pending item is
+ * the initial proposal, decided through sensitivity validation.
  */
-export function DerogationsEnAttente({ dossierId }: { dossierId: number }) {
+export function DerogationsEnAttente({ dossierId }: Readonly<{ dossierId: number }>) {
   const t = useTranslations("fiche");
   const requete = useDerogations(dossierId, "EN_ATTENTE");
   const { nomUtilisateur } = useLibelles();
   const [enCours, setEnCours] = useState<AuditSeuil | null>(null);
 
   const demandes = requete.data ?? [];
-  // Rien à arbitrer : pas de carte vide qui attirerait l'œil pour rien.
+  // Nothing to arbitrate: no empty card drawing attention for nothing.
   if (demandes.length === 0) return null;
 
   return (
@@ -61,7 +58,7 @@ export function DerogationsEnAttente({ dossierId }: { dossierId: number }) {
                 <div className="flex flex-col gap-0.5">
                   <dt className="text-[length:var(--taille-xs)] text-texte-tertiaire">{t("demandeePar")}</dt>
                   <dd>
-                    {demande.utilisateurId !== null ? nomUtilisateur(demande.utilisateurId) : "—"}
+                    {demande.utilisateurId === null ? "—" : nomUtilisateur(demande.utilisateurId)}
                     {" · "}
                     <DateHeureValeur valeur={demande.dateAction} />
                   </dd>
@@ -88,11 +85,11 @@ function ModaleArbitrage({
   dossierId,
   demande,
   onFermeture,
-}: {
+}: Readonly<{
   dossierId: number;
   demande: AuditSeuil | null;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("fiche");
   const tc = useTranslations("commun");
   const tm = useTranslations("metier");
@@ -103,7 +100,7 @@ function ModaleArbitrage({
       z
         .object({ statut: z.enum(["VALIDEE", "REJETEE"]), motif: z.string().max(255).optional() })
         .superRefine((valeurs, contexte) => {
-          // Le backend exige un motif en cas de rejet : le signaler avant l'envoi.
+          // The backend requires a reason for a rejection: flag it before sending.
           if (valeurs.statut === "REJETEE" && !valeurs.motif?.trim()) {
             contexte.addIssue({ code: "custom", path: ["motif"], message: tm("champObligatoire") });
           }
@@ -137,9 +134,9 @@ function ModaleArbitrage({
         decision: { statut: valeurs.statut, motif: valeurs.motif?.trim() || undefined },
       });
       onFermeture();
-    } catch (erreur) {
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });

@@ -9,17 +9,14 @@ import type {
 } from "@/types/domaine";
 import type { StatutPublication, TypeAutrePublication } from "@/types/enums";
 
-/** Validation, ou rejet toujours motivé (RG-INT-10). */
+/** Validation, or a rejection that always carries a reason (RG-INT-10). */
 export type DecisionPublication = { statut: "VALIDE" } | { statut: "REJETE"; motifRejet: string };
 
-/**
- * Publications : l'instruction côté interne (#30, #32, #33, #34, #59) et les **dépôts de l'avocat**
- * (#29, #31), livrés avec le portail en F16.
- */
+/** Publications: internal review (#30, #32, #33, #34, #59) and lawyer submissions (#29, #31). */
 export const publicationService = {
   /**
-   * #59 — liste paginée : `statut=DEPOSE` en ordre d'arrivée (la file de l'Assistante), sinon la
-   * plus récente d'abord (Q-86). Métadonnées seulement : la restriction d'accès ne s'y applique pas.
+   * #59: paginated list. `statut=DEPOSE` is in arrival order (the assistant's queue), otherwise
+   * most recent first. Metadata only, so access restriction does not apply.
    */
   lister: async (filtres: {
     dossierId?: number;
@@ -39,40 +36,37 @@ export const publicationService = {
   },
 
   /**
-   * #32 — détail, avec l'URL du fichier, les commentaires et la correspondance (Q-86). Une
-   * publication non validée n'est lisible que par l'Assistante (404 sinon) ; une restriction d'accès
-   * désignant un autre juriste rend **403 `ERR-009`** — un écran « accès restreint », pas une erreur.
+   * #32: detail with file URL, comments and correspondence. A non-validated publication is only
+   * readable by the assistant (404 otherwise); an access restriction naming another legal officer
+   * returns 403 `ERR-009`, shown as a "restricted access" screen rather than an error.
    */
   consulter: async (id: number): Promise<Publication> => {
     const { data } = await apiClient.get<Publication>(`/publications/${id}`);
     return data;
   },
 
-  /** #30 — Assistante, publication `DEPOSE` (409 sinon). */
+  /** #30: assistant, publication in `DEPOSE` (409 otherwise). */
   valider: async (id: number, decision: DecisionPublication): Promise<Publication> => {
     const { data } = await apiClient.put<Publication>(`/publications/${id}/validation`, decision);
     return data;
   },
 
-  /** #33 — juriste : le commentaire va au DJ et à la DJA, jamais à l'avocat (RG-INT-07). */
+  /** #33: legal officer; the comment goes to the DJ and DJA, never to the lawyer (RG-INT-07). */
   commenter: async (id: number, contenu: string): Promise<CommentairePublication> => {
     const { data } = await apiClient.post<CommentairePublication>(`/publications/${id}/commentaires`, { contenu });
     return data;
   },
 
-  /** #34 — DJ/DJA : correspondance **unique** à l'avocat (409 si déjà transmise). */
+  /** #34: DJ/DJA; a single correspondence to the lawyer (409 if already sent). */
   transmettreCorrespondance: async (id: number, contenu: string): Promise<CorrespondanceAvocat> => {
     const { data } = await apiClient.post<CorrespondanceAvocat>(`/publications/${id}/correspondance`, { contenu });
     return data;
   },
 
   /**
-   * #29 — **l'avocat dépose son compte rendu** (US 5.1, écran 33) : un récit rattaché à une audience
-   * de son dossier, accompagné d'une **pièce facultative** depuis Q-98 — le plumitif du greffe, une
-   * note d'audience. Le backend répond 404 si l'audience n'appartient pas au dossier.
-   *
-   * Multipart dans les deux cas : le texte est obligatoire, le fichier ne l'est pas. Envoyer
-   * systématiquement la même forme évite deux chemins d'appel pour un seul geste métier.
+   * #29: the lawyer submits a hearing report (US 5.1, screen 33), linked to a hearing of their case,
+   * with an optional attachment. 404 if the hearing does not belong to the case. Always multipart,
+   * with or without a file, to keep a single call path.
    */
   deposerCompteRendu: async (depot: DeposerCompteRendu, fichier?: File | null): Promise<Publication> => {
     const corps = new FormData();
@@ -84,17 +78,16 @@ export const publicationService = {
         contenu: depot.contenu,
         ...(depot.restrictionAcces ? { restrictionAcces: depot.restrictionAcces } : {}),
       },
-      // Sans ce type déclaré, axios sérialise le FormData en JSON et la partie disparaît.
+      // Without this header, axios serializes the FormData as JSON and the file part is lost.
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data;
   },
 
   /**
-   * #31 — **l'avocat dépose une pièce, une décision ou une conclusion** (US 5.3, écran 33).
-   * Multipart : les métadonnées en paramètres de requête, le seul fichier en partie — et le type
-   * multipart doit être déclaré, sinon axios convertit le `FormData` en JSON et le fichier ne part
-   * jamais.
+   * #31: the lawyer submits a document, decision or brief (US 5.3, screen 33). Metadata go in query
+   * parameters and the file in the multipart body; the multipart type must be declared or axios
+   * serializes the `FormData` as JSON.
    */
   deposerAutre: async (
     dossierId: number,
@@ -111,7 +104,7 @@ export const publicationService = {
     return data;
   },
 
-  /** Fichier d'une autre publication : URL pré-signée fraîche (elle ne vit que 10 minutes), puis le fichier. */
+  /** Fetches a fresh pre-signed URL (valid 10 minutes), then the file. */
   contenuFichier: async (id: number): Promise<Blob> => {
     const publication = await publicationService.consulter(id);
     if (!publication.urlTelechargement) throw new Error("URL de téléchargement absente");

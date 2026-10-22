@@ -7,14 +7,13 @@ import { alerteService } from "@/services/alerteService";
 import { configurationService } from "@/services/configurationService";
 
 /**
- * `CHARGE_MAX_AVOCAT` est un **seuil d'alerte** avant d'être une clé de configuration : le contrat
- * lui réserve `PUT /alertes/seuils` (#44, FR-ALR-01), rattaché au même écran 41. On emprunte donc
- * l'endpoint désigné plutôt que la voie générique — les deux aboutissent à la même ligne et à la
- * même validation côté backend, mais seul #44 porte la sémantique métier dans le journal d'audit.
+ * `CHARGE_MAX_AVOCAT` is an alert threshold: the contract assigns it `PUT /alertes/seuils` (#44,
+ * FR-ALR-01). That endpoint is used instead of the generic one; both update the same row with the
+ * same validation, but only #44 records the business meaning in the audit log.
  */
 const CLE_SEUIL_ALERTE = "CHARGE_MAX_AVOCAT";
 
-/** #47 — clés fixes (V2, V28) ; elles ne changent qu'à la suite d'une décision d'administration. */
+/** #47: fixed set of keys defined by backend migrations. */
 export function useConfigurations() {
   return useQuery({
     queryKey: [CLES.configurations],
@@ -23,9 +22,8 @@ export function useConfigurations() {
 }
 
 /**
- * #48 — DJ seul. Le backend renvoie la valeur **normalisée** : on remplace l'entrée par sa réponse
- * plutôt que par la saisie, sinon l'écran afficherait « pdf, xlsx » là où la base contient
- * « PDF,XLSX ».
+ * #48: DJ only. The backend returns the normalized value, so the screen shows the stored value
+ * (e.g. "PDF,XLSX") rather than the raw input.
  */
 export function useModifierConfiguration() {
   const client = useQueryClient();
@@ -36,12 +34,8 @@ export function useModifierConfiguration() {
         : configurationService.modifier(cle, valeur),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: [CLES.configurations] });
-      /*
-        * L'audit (Q-112) vient d'enregistrer cette modification, et l'écran des paramètres affiche
-        * désormais « modifié le … par … » sur chaque ligne. Sans cette invalidation, on
-        * enregistrerait un paramètre sans voir apparaître son propre nom — et l'on en conclurait
-        * que rien n'a été tracé. Défaut trouvé par un parcours de bout en bout, pas à la relecture.
-        */
+      // The audit just recorded this change and the settings screen shows "modified on ... by ..."
+      // per row, so the audit cache must be refreshed too.
       void client.invalidateQueries({ queryKey: [CLES.audit] });
     },
   });

@@ -16,7 +16,7 @@ import type { ConfigurationSysteme } from "@/types/domaine";
 import { EvenementPrestataire, TypeAlerte } from "@/types/enums";
 import { rendre } from "../utils/rendu";
 
-/** Le composant n'est jugé que sur ce qu'il demande d'enregistrer ; le fil HTTP est testé ailleurs. */
+/** The component is judged only on what it asks to save; the HTTP layer is tested elsewhere. */
 const mutateAsync = vi.fn();
 vi.mock("@/hooks/useConfigurations", () => ({
   useModifierConfiguration: () => ({ mutateAsync, isPending: false }),
@@ -116,7 +116,7 @@ describe("GrilleNotifications", () => {
 
   it("signale les canaux coupés sans masquer leur colonne", () => {
     rendreGrille(true);
-    // Teams (internes) et WhatsApp (prestataires) sont coupés par leur interrupteur.
+    // Teams (internal staff) and WhatsApp (providers) are turned off by their toggle.
     expect(screen.getAllByText("Canal coupé")).toHaveLength(2);
   });
 
@@ -152,14 +152,14 @@ describe("saisie d'un numéro de téléphone (étape 11)", () => {
     }
   });
 
-  /** Les mobiles Camtel commencent eux aussi par 6 : 620 XX XX XX. */
+  /** Camtel mobile numbers also start with 6: 620 XX XX XX. */
   it("accepte les mobiles Camtel", () => {
     for (const saisie of ["620228936", "6 20 22 89 36", "+237 6 20 22 89 36"]) {
       expect(telephoneValide(saisie)).toBe(true);
     }
   });
 
-  /** Les lignes fixes, en 2, ne reçoivent ni SMS ni WhatsApp. */
+  /** Landlines (starting with 2) receive neither SMS nor WhatsApp. */
   it("refuse les lignes fixes", () => {
     for (const saisie of ["222228936", "+237 2 22 22 89 36"]) {
       expect(telephoneValide(saisie)).toBe(false);
@@ -169,7 +169,7 @@ describe("saisie d'un numéro de téléphone (étape 11)", () => {
   it("accepte un numéro étranger, indicatif obligatoire", () => {
     expect(telephoneValide("+33 6 12 34 56 78")).toBe(true);
     expect(telephoneValide("+241 01 23 45 67")).toBe(true);
-    // Sans indicatif, il faudrait le deviner.
+    // Without a country code it would have to be guessed.
     expect(telephoneValide("33612345678")).toBe(false);
   });
 
@@ -179,7 +179,7 @@ describe("saisie d'un numéro de téléphone (étape 11)", () => {
     }
   });
 
-  /** Un prestataire sans téléphone reste permis : le champ n'est pas obligatoire. */
+  /** A provider without a phone number is allowed: the field is optional. */
   it("accepte l'absence de numéro", () => {
     expect(telephoneValide("")).toBe(true);
     expect(telephoneValide("   ")).toBe(true);

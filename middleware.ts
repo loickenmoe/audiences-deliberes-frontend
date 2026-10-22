@@ -7,18 +7,12 @@ import {
 } from "@/lib/marqueur-deconnexion";
 
 /**
- * Seul rôle de ce middleware : faire tenir la déconnexion (QF-42).
+ * This middleware's only role is to make logout stick.
  *
- * Il ne remplace pas les gardes de route — l'authentification et les droits restent vérifiés par
- * `exigerSession`/`exigerCapacite` dans les composants serveur, et par le backend. Il traite le seul
- * cas qu'un composant serveur ne **peut pas** traiter : effacer un cookie. Une session ressuscitée
- * après une déconnexion doit disparaître, et seul un middleware ou un gestionnaire de route peut
- * poser l'en-tête qui l'efface.
- *
- * Tant que le marqueur de déconnexion est présent, une requête de page qui porte encore un cookie de
- * session est renvoyée vers `/login`, cookie effacé. Le marqueur, lui, survit à ce nettoyage : une
- * seconde résurrection, plus tardive, doit être traitée de la même façon. C'est la connexion qui le
- * retire.
+ * Route guards (`exigerSession`/`exigerCapacite`) and the backend still check authentication and
+ * permissions. A server component cannot clear a cookie, so while the logout marker is present, a
+ * page request still carrying a session cookie is redirected to `/login` with the cookie cleared.
+ * The marker survives this cleanup to handle a later revival; logging in removes it.
  */
 export function middleware(requete: NextRequest) {
   if (!requete.cookies.has(MARQUEUR_DECONNEXION)) return NextResponse.next();
@@ -30,7 +24,7 @@ export function middleware(requete: NextRequest) {
   for (const cookie of cookiesDeSession) {
     reponse.cookies.delete(cookie.name);
   }
-  // Le marqueur est reposé pour ne pas perdre sa protection en le consommant.
+  // Re-set the marker so consuming it does not drop its protection.
   reponse.cookies.set(MARQUEUR_DECONNEXION, "1", {
     httpOnly: true,
     sameSite: "lax",
@@ -42,10 +36,8 @@ export function middleware(requete: NextRequest) {
 }
 
 /**
- * Pages uniquement. Les routes d'API sont volontairement hors champ : rediriger un appel `fetch`
- * vers `/login` masquerait l'erreur au lieu de la dire, et leur réponse ne peut de toute façon pas
- * ouvrir d'écran. `/api/auth/session` en particulier doit rester joignable — c'est lui qui répondra
- * « pas de session » une fois le cookie effacé.
+ * Pages only. API routes are deliberately excluded: redirecting a `fetch` to `/login` would hide the
+ * error, and `/api/auth/session` must stay reachable to answer "no session" once the cookie is gone.
  */
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|brand).*)"],

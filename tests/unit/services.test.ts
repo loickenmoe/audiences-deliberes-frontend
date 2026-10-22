@@ -8,19 +8,15 @@ import { intervenantService } from "@/services/intervenantService";
 import { referentielService } from "@/services/referentielService";
 
 /**
- * Vérification de la couche de services contre un backend simulé.
- *
- * Ce que ces tests couvrent et que `npm run smoke` ne couvre pas : la **forme des requêtes que nous
- * émettons** — verbe, chemin, paramètres — et la traduction des réponses d'erreur. Le smoke vérifie
- * l'inverse : que le vrai backend se comporte comme on le suppose.
- *
- * Les charges utiles reproduisent des réponses **réellement observées** sur l'instance locale.
+ * Service layer checks against a mocked backend: the **shape of the requests we send** (verb, path,
+ * parameters) and the translation of error responses. Payloads reproduce responses **actually
+ * observed** locally; the Playwright journeys check the real backend.
  */
 const BASE = "http://localhost:8080/api/v1";
 
-/** Mémorise la dernière requête reçue, pour vérifier ce que le service a réellement demandé. */
+/** Last request received, to check what the service actually asked for. */
 let derniereUrl: URL | null = null;
-/** Corps et verbe de la dernière écriture, pour les endpoints où la forme du corps est la règle. */
+/** Body and verb of the last write, for endpoints where the body shape is the rule. */
 let derniereEcriture: { methode: string; corps: unknown } | null = null;
 
 const serveur = setupServer(
@@ -90,7 +86,6 @@ const serveur = setupServer(
 
   http.get(`${BASE}/intervenants`, ({ request }) => {
     derniereUrl = new URL(request.url);
-    // Paginé depuis Q-100 : le référentiel était renvoyé en entier.
     return HttpResponse.json({
       content: [
         {
@@ -212,7 +207,7 @@ describe("clientService", () => {
     expect(page.content[0]?.reference).toBe("CLI-001");
   });
 
-  /** Un filtre vide ne doit pas partir : `?nom=` restreindrait la recherche côté backend. */
+  /** An empty filter must not be sent: `?nom=` would restrict the backend search. */
   it("n'envoie pas les filtres non renseignés", async () => {
     await clientService.rechercher({ page: 0 });
 
@@ -229,10 +224,8 @@ describe("clientService", () => {
   });
 
   /**
-   * `ERR-002` doit remonter comme `ErreurApi` typée, pas comme une erreur axios brute.
-   *
-   * La référence n'est plus envoyée depuis le 2026-09-29 — le serveur l'attribue — mais ce conflit
-   * reste possible si le compteur se désynchronise (V36), et sa normalisation doit tenir.
+   * `ERR-002` must surface as a typed `ErreurApi`, not a raw axios error. The server assigns the
+   * reference, but this conflict remains possible if the counter gets out of sync (V36).
    */
   it("normalise le refus de référence en doublon", async () => {
     await expect(clientService.creer({ nom: "Doublon" })).rejects.toSatisfy(
@@ -247,8 +240,8 @@ describe("clientService", () => {
 
 describe("clientService.modifier", () => {
   /**
-   * La référence est figée (décision du 2026-09-22) : elle ne doit pas partir dans le corps, et un
-   * champ vidé part en `null` pour que le backend l’enregistre comme absent.
+   * The reference is immutable: it must not be sent in the body, and a cleared field is sent as
+   * `null` so the backend stores it as absent.
    */
   it("envoie un PUT sans référence, les champs vidés en null", async () => {
     const client = await clientService.modifier(1, {
@@ -266,7 +259,7 @@ describe("clientService.modifier", () => {
 });
 
 describe("intervenantService.modifier", () => {
-  /** Le type et l'identifiant de connexion sont figés (Q-117) : ils ne partent pas dans le corps. */
+  /** Type and login id are immutable: they are not sent in the body. */
   it("envoie un PUT sans type ni identifiant de connexion", async () => {
     const intervenant = await intervenantService.modifier(7, {
       nom: "Me Fotso",
@@ -298,9 +291,8 @@ describe("intervenantService", () => {
   });
 
   /**
-   * Q-105 — la recherche au fil de la frappe. Ce qui compte n'est pas que le paramètre parte, mais
-   * qu'il **ne parte pas** quand il est vide : un `nom=` vide ferait chercher la chaîne vide et
-   * renverrait tout, en donnant l'illusion d'un filtre appliqué.
+   * Search as you type: the parameter must **not be sent** when empty, otherwise an empty `nom=`
+   * would return everything while looking like an applied filter.
    */
   it("transmet la recherche par nom, et l'omet quand elle est vide", async () => {
     await intervenantService.lister({ nom: "Fotso" });
@@ -310,7 +302,7 @@ describe("intervenantService", () => {
     expect(derniereUrl?.searchParams.has("nom")).toBe(false);
   });
 
-  /** Q-100 — la taille de page est toujours transmise : sans elle, le backend impose la sienne. */
+  /** The page size is always sent: otherwise the backend imposes its own. */
   it("transmet toujours une taille de page", async () => {
     await intervenantService.lister();
     expect(derniereUrl?.searchParams.get("size")).toBe("10");
@@ -322,9 +314,8 @@ describe("intervenantService", () => {
 
 describe("referentielService.agences", () => {
   /**
-   * La recherche au fil de la frappe (Q-105, observation 2). Ce qui compte est qu'une taille de
-   * page **parte toujours** : sans elle le backend impose la sienne, et la liste déroulante
-   * tronquerait le référentiel en silence - précisément ce que la recherche serveur supprimait.
+   * Search as you type: a page size is **always sent**, otherwise the backend imposes its own and
+   * the dropdown would silently truncate the directory.
    */
   it("transmet la recherche et une taille de page", async () => {
     const page = await referentielService.agences({ recherche: "bona" });
@@ -336,7 +327,7 @@ describe("referentielService.agences", () => {
     expect(page.content[0]?.ville).toBe("Douala");
   });
 
-  /** La saisie ne doit proposer que les agences ouvertes : le drapeau part explicitement. */
+  /** Input must offer only open branches: the flag is sent explicitly. */
   it("demande les agences ouvertes seules quand on le lui dit", async () => {
     await referentielService.agences({ actifSeulement: true });
     expect(derniereUrl?.searchParams.get("actifSeulement")).toBe("true");
@@ -360,9 +351,8 @@ describe("referentielService.agences", () => {
   });
 
   /**
-   * La fermeture est réversible (métier, 2026-10-06). `PATCH` et non `PUT` : on ne remplace pas
-   * l'agence, on change son seul état d'ouverture - et surtout **le code est conservé**, sans quoi
-   * il faudrait en inventer un autre pour rouvrir.
+   * Closing is reversible. `PATCH`, not `PUT`: only the open state changes, and **the code is kept**
+   * so the branch can be reopened.
    */
   it("rouvre une agence fermée sans toucher à son code", async () => {
     const agence = await referentielService.reactiverAgence(3);
@@ -374,9 +364,9 @@ describe("referentielService.agences", () => {
   });
 
   /**
-   * `DELETE` **désactive**, malgré le verbe : un dossier ouvert sous une agence fermée reste un
-   * dossier valide, et son code doit continuer de désigner quelque chose. Le service doit donc
-   * rendre l'agence, non `void` - l'écran affiche son nouvel état.
+   * `DELETE` **deactivates**, despite the verb: a case file opened under a closed branch stays valid
+   * and its code must still point to something. The service returns the branch, not `void`, so the
+   * screen can show its new state.
    */
   it("rend l'agence désactivée plutôt que rien", async () => {
     const agence = await referentielService.desactiverAgence(3);

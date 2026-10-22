@@ -13,8 +13,7 @@ export function useClients(params: { nom?: string; reference?: string; page: num
   return useQuery({
     queryKey: [CLES.clients, params],
     queryFn: () => clientService.rechercher(params),
-    // Garde la page précédente affichée pendant le chargement de la suivante : sans cela, la table
-    // clignote entre deux états vides à chaque changement de page.
+    // Keep the previous page displayed while the next one loads, so the table does not flicker.
     placeholderData: (precedent) => precedent,
   });
 }
@@ -46,9 +45,8 @@ export function useCreerClient() {
       toast.success(t("creationReussie"));
     },
     /**
-     * Pas de notification d'échec ici : les erreurs de validation se rapportent aux **champs** du
-     * formulaire (`appliquerErreurApi`). Un toast en doublon ferait lire deux fois la même chose,
-     * et à un endroit qui ne dit pas quoi corriger.
+     * No failure toast: validation errors are attached to the form fields (`appliquerErreurApi`),
+     * and a duplicate toast would not say what to fix.
      */
     onError: (erreur) => {
       const message = messageErreur(erreur);
@@ -64,12 +62,12 @@ export function useModifierClient(id: number) {
   return useMutation({
     mutationFn: (corps: ModifierClient) => clientService.modifier(id, corps),
     onSuccess: () => {
-      // La fiche et la liste affichent toutes deux le nom : les deux caches sont périmés.
+      // Both the record and the list display the name, so both caches are stale.
       void queryClient.invalidateQueries({ queryKey: [CLES.client, id] });
       void queryClient.invalidateQueries({ queryKey: [CLES.clients] });
       toast.success(t("modificationReussie"));
     },
-    // Même principe qu'à la création : l'erreur va au champ, pas dans un toast en doublon.
+    // Same as creation: the error goes to the field, not to a duplicate toast.
     onError: (erreur) => {
       const message = messageErreur(erreur);
       if (message) console.error("Modification de client refusée :", message);

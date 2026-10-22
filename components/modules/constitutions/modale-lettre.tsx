@@ -13,29 +13,22 @@ import { messageErreur } from "@/lib/api/errors";
 import type { LettreConstitution } from "@/types/domaine";
 
 /**
- * Rédaction de la lettre de constitution (backend Q-124, amendant Q-115 B2).
- *
- * **Deux plumes, et c'est voulu.** Le juriste rédige ; le supérieur hiérarchique corrige avant de
- * signer. Jusqu'au 2026-10-06 il ne pouvait que lire, pour que la seconde signature garde son sens
- * - le métier a tranché l'inverse : il corrige plutôt que de renvoyer. Ce que la séparation des
- * plumes garantissait, la **traçabilité** le garantit : la lettre porte qui l'a écrite en dernier,
- * et une reprise par le SH est nommée comme telle, en haut de cette modale.
- *
- * `modifiable` vient du serveur - l'écran ne le déduit pas d'un statut qu'il aurait pu mal lire.
- *
- * **Une lettre signée ne se réécrit pas**, ni par le juriste ni par le SH. Elle est partie chez un
- * huissier et figure dans la GED : la retoucher ferait mentir la pièce. Le formulaire passe alors
- * en lecture seule, et le dit.
+ * Representation letter editor.
+ * The lawyer drafts; the line manager (SH) may correct before signing. Traceability records who
+ * wrote the last version, and an SH revision is labelled as such at the top of this modal.
+ * `modifiable` comes from the server; the screen does not derive it from a status.
+ * A signed letter can no longer be edited by anyone (it has been sent and is stored in the DMS):
+ * the form becomes read-only and says so.
  */
 export function ModaleLettre({
   demandeId,
   ouvert,
   onFermeture,
-}: {
+}: Readonly<{
   demandeId: number | null;
   ouvert: boolean;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("constitutions");
   const tc = useTranslations("commun");
   const requete = useLettreConstitution(ouvert ? demandeId : null);
@@ -43,17 +36,15 @@ export function ModaleLettre({
   const [saisie, setSaisie] = useState<LettreConstitution | null>(null);
   const [erreur, setErreur] = useState("");
 
-  // La lettre arrive par le réseau : on la recopie dans l'état local pour pouvoir l'éditer sans
-  // écrire dans le cache de la requête, qui d'autres écrans partagent.
+  // The letter comes from the network: it is copied into local state so it can be edited without
+  // writing to the query cache shared by other screens.
   useEffect(() => {
     if (requete.data) setSaisie(requete.data);
   }, [requete.data]);
 
   /*
-   * `modifiable` dit « par moi », et vient du serveur (Q-126) : la lettre appartient à celui qui a
-   * sollicité la constitution, le SH la corrige avant de signer, et une lettre signée ne se
-   * retouche plus - pour personne. L'écran ne redouble pas la condition : une règle tenue à deux
-   * endroits finit par diverger, et c'est le serveur qui a le dernier mot de toute façon.
+   * `modifiable` means "by me" and comes from the server: the screen does not duplicate the rule,
+   * since a rule kept in two places ends up diverging and the server has the final say anyway.
    */
   const modifiable = saisie?.modifiable ?? false;
 
@@ -62,9 +53,8 @@ export function ModaleLettre({
   }
 
   /**
-   * Les segments du numéro sont édités séparément, comme la direction juridique l'a demandé : le
-   * serveur les stocke d'un bloc, l'écran les découpe. Leur nombre varie d'un service à l'autre —
-   * quatre sur le papier de la DRH, six sur celui du recouvrement.
+   * Number segments are edited separately: the server stores them as one block, the screen splits
+   * them. Their count varies by department (e.g. four or six).
    */
   const segments = (saisie?.suffixeNumero ?? "").split("/");
 
@@ -124,10 +114,8 @@ export function ModaleLettre({
       ) : (
         <div className="flex flex-col gap-4">
           {/*
-            Qui a écrit la dernière version (N8). Depuis que le SH peut corriger avant de signer,
-            le juriste doit le voir en ouvrant sa lettre - sans aller fouiller l'historique. La
-            correction du SH est nommée comme telle : c'est le seul cas où la séparation des plumes
-            a été franchie, et c'est ce que la traçabilité doit rendre visible.
+            Who wrote the last version, so the lawyer sees an SH correction when opening the letter
+            without digging into the history.
           */}
           {saisie.redigeParNom ? (
             <p className="text-[length:var(--taille-xs)] text-texte-tertiaire">
@@ -137,7 +125,6 @@ export function ModaleLettre({
             </p>
           ) : null}
 
-          {/* ── La ligne du numéro ─────────────────────────────────────────── */}
           <fieldset className="flex flex-col gap-2">
             <legend className="text-[length:var(--taille-sm)] font-medium">{t("lettreNumeroTitre")}</legend>
             <p className="text-[length:var(--taille-xs)] text-texte-secondaire">
@@ -158,7 +145,7 @@ export function ModaleLettre({
                 }
               />
               {segments.map((segment, index) => (
-                // eslint-disable-next-line react/no-array-index-key -- un segment n'a pas d'identité propre
+                // eslint-disable-next-line react/no-array-index-key -- a segment has no identity of its own
                 <span key={index} className="flex items-center gap-1">
                   <span aria-hidden className="text-texte-secondaire">/</span>
                   <Input
@@ -184,7 +171,6 @@ export function ModaleLettre({
             />
           </Champ>
 
-          {/* ── Le destinataire ────────────────────────────────────────────── */}
           <Champ id="lettre-destinataire" label={t("lettreDestinataire")}>
             <Input
               id="lettre-destinataire"

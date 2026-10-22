@@ -16,14 +16,12 @@ import { peut } from "@/lib/rbac";
 import type { Dossier } from "@/types/domaine";
 
 /**
- * Écran 20 — vue consolidée d'un client (US 8.6).
- *
- * Deux caractéristiques du backend structurent l'écran :
- * · les dossiers sont **déjà regroupés par catégorie** par l'endpoint, on n'en refait pas le tri ;
- * · la vue est **indépendante de l'affectation du juriste** : elle montre l'exposition totale de la
- *   banque sur ce client, y compris les dossiers que l'utilisateur ne suit pas.
+ * Screen 20 - consolidated client view (US 8.6).
+ * The endpoint already groups cases by category, so no re-sorting here. The view does not depend on
+ * the lawyer's assignment: it shows the bank's total exposure to this client, including cases the
+ * user does not follow.
  */
-export function VueClient({ clientId, roles }: { clientId: number; roles: readonly string[] }) {
+export function VueClient({ clientId, roles }: Readonly<{ clientId: number; roles: readonly string[] }>) {
   const t = useTranslations("clients");
   const tc = useTranslations("commun");
   const client = useClient(clientId);
@@ -65,8 +63,10 @@ export function VueClient({ clientId, roles }: { clientId: number; roles: readon
           <h1 className="text-[length:var(--taille-2xl)] font-semibold tracking-tight">
             {client.data?.nom}
           </h1>
-          {/* Les coordonnées sont visibles là où on les corrige : sans elles, une modification
-              d'e-mail ou de téléphone ne laisserait aucune trace à l'écran. */}
+          {/*
+            Contact details are shown where they are edited, so an email or phone change is visible
+            on screen.
+          */}
           <dl className="flex flex-wrap gap-x-6 gap-y-1 text-[length:var(--taille-sm)]">
             <div className="flex gap-1.5">
               <dt className="text-texte-tertiaire">{t("colonneEmail")}</dt>
@@ -117,9 +117,9 @@ export function VueClient({ clientId, roles }: { clientId: number; roles: readon
   );
 }
 
-function LigneDossier({ dossier }: { dossier: Dossier }) {
+function LigneDossier({ dossier }: Readonly<{ dossier: Dossier }>) {
   const t = useTranslations("clients");
-  // Une étape sur trois au plus ; on montre celle en cours, c'est-à-dire la dernière ouverte.
+  // At most one of three steps: show the current one, i.e. the last opened.
   const etapeCourante = dossier.etapes.at(-1);
 
   return (

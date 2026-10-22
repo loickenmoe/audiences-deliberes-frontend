@@ -2,18 +2,10 @@ import { loadEnvConfig } from "@next/env";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Cibles de performance du contrat : **NF-PERF-01** (« temps de réponse des requêtes courantes
- * < 2 secondes », dimensionné pour 50 utilisateurs simultanés) et **NF-PERF-02** (« temps de
- * génération d'un rapport < 10 secondes »).
- *
- * **Deux mesures, parce que l'exigence et le ressenti ne sont pas la même chose.**
- * 1. *Au niveau de l'API* : la durée de la requête elle-même, ce que NF-PERF-01 énonce à la lettre.
- * 2. *Au niveau de l'écran* : le délai entre la navigation et l'affichage des données. Il inclut
- *    l'aller-retour réseau, le rendu et l'hydratation — c'est ce que l'utilisateur subit.
- *
- * La mesure vaut pour **cette base de développement**, dont le volume a crû au fil des jalons
- * (plusieurs centaines de dossiers, un client en portant 355). Elle ne remplace pas un essai de
- * charge à 50 utilisateurs, qui relève de la recette d'infrastructure.
+ * Contract performance targets: NF-PERF-01 (common requests < 2 s, sized for 50 concurrent users)
+ * and NF-PERF-02 (report generation < 10 s). Measured at the API level (what NF-PERF-01 states) and
+ * at the screen level (network, rendering and hydration: what the user experiences). Measured on
+ * the development database; this is not a 50-user load test.
  */
 
 loadEnvConfig(process.cwd());
@@ -26,9 +18,8 @@ const BUDGET_REQUETE = 2_000;
 /** NF-PERF-02. */
 const BUDGET_RAPPORT = 10_000;
 /**
- * Budget de l'écran : la cible de 2 s porte sur la requête. L'affichage y ajoute le rendu serveur,
- * le transfert et l'hydratation ; 4 s est le seuil retenu pour ce jalon, et il est **mesuré**, non
- * supposé. Un écran qui le dépasse signale une régression, pas une fatalité.
+ * Screen budget: the 2 s target applies to the request; display adds server rendering, transfer
+ * and hydration. Exceeding 4 s signals a regression.
  */
 const BUDGET_ECRAN = 4_000;
 
@@ -49,7 +40,7 @@ async function jeton(identifiant: string): Promise<string> {
   return ((await reponse.json()) as { access_token: string }).access_token;
 }
 
-/** Mesure la durée d'un appel, une fois le cache chaud : on chronomètre le régime, pas le démarrage. */
+/** Times a call once the cache is warm: measures steady state, not startup. */
 async function mesurerApi(chemin: string, jetonAcces: string): Promise<number> {
   const appel = async () =>
     fetch(`${API}${chemin}`, { headers: { Authorization: `Bearer ${jetonAcces}` } });
@@ -90,14 +81,14 @@ test("NF-PERF-01 — les requêtes courantes répondent en moins de 2 secondes",
   ]) {
     mesures.push({ chemin, duree: await mesurerApi(chemin, juriste) });
   }
-  // `GET /frais/demandes` n'est pas ouvert au juriste (AVOCAT, ASSISTANTE, DJA, DJ) : mesuré avec
-  // le jeton du DJ, comme le tableau de bord.
+  // `GET /frais/demandes` is not open to the legal officer (AVOCAT, ASSISTANTE, DJA, DJ): measured
+  // with the DJ token, like the dashboard.
   for (const chemin of ["/frais/demandes?size=20", "/tableau-de-bord"]) {
     mesures.push({ chemin, duree: await mesurerApi(chemin, dj) });
   }
 
   const depassements = mesures.filter((m) => m.duree >= BUDGET_REQUETE);
-  // Le message nomme les endpoints et leur durée : « trop lent » seul n'aide personne à corriger.
+  // The message names the endpoints and their duration, so the failure is actionable.
   expect(
     depassements.map((m) => `${m.chemin} : ${m.duree} ms`),
     `NF-PERF-01 (< ${BUDGET_REQUETE} ms) dépassé`,
@@ -105,9 +96,8 @@ test("NF-PERF-01 — les requêtes courantes répondent en moins de 2 secondes",
 });
 
 /**
- * La vue consolidée d'un client est la requête la plus lourde du contrat : elle renvoie **tous** les
- * dossiers d'un client, sans pagination. Elle a dépassé 19 secondes avant Q-94 (N+1) ; ce contrôle
- * garde la correction fermée.
+ * The consolidated client view is the heaviest request: it returns all of a client's cases without
+ * pagination. This check guards against an N+1 regression.
  */
 test("NF-PERF-01 — la vue consolidée d'un client tient le budget malgré son volume", async () => {
   const juriste = await jeton("juriste.test");
@@ -135,14 +125,14 @@ test("les écrans courants affichent leurs données dans le budget", async ({ pa
     { chemin: "/notifications", attendu: "Mes notifications" },
     { chemin: "/tableau-de-bord", attendu: "Tableau de bord" },
   ]) {
-    // Une première visite amorce la route ; on mesure la seconde, comme pour l'API.
+    // A first visit warms up the route; the second one is measured, as for the API.
     await page.goto(chemin);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
 
     const debut = Date.now();
     await page.goto(chemin);
-    // Le titre attendu n'est pas toujours le `h1` : l'accueil ouvre sur une salutation nominative,
-    // et c'est le bloc des files qui prouve que les données sont là.
+    // The expected title is not always the `h1`: the home page opens on a personal greeting, and
+    // the work queues block proves the data has loaded.
     await expect(page.getByRole("heading", { name: new RegExp(attendu) }).first()).toBeVisible({
       timeout: BUDGET_ECRAN,
     });

@@ -9,13 +9,13 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 32 — une publication : `GET /publications/{id}` exige `ROLE_CONSULTATION`. */
-export default async function PagePublication({ params }: { params: Promise<{ id: string }> }) {
+/** Screen 32 - a publication: `GET /publications/{id}` requires `ROLE_CONSULTATION`. */
+export default async function PagePublication({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await exigerCapacite("consulterDossiers");
 
   const { id } = await params;
   const publicationId = Number.parseInt(id, 10);
-  // Une URL malformée ne doit pas produire un appel `/publications/NaN` au backend.
+  // A malformed URL must not trigger a `/publications/NaN` backend call.
   if (Number.isNaN(publicationId) || publicationId <= 0) notFound();
 
   return <DetailPublication publicationId={publicationId} roles={session.roles} />;

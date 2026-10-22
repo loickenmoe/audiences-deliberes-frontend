@@ -15,12 +15,11 @@ import type { DetailIndicateur, IndicateurTableauDeBord } from "@/types/domaine"
 import type { CategorieDossier } from "@/types/enums";
 
 /**
- * L'onglet de la fiche dossier où chaque indicateur se regarde.
+ * The case file tab where each indicator is viewed.
  *
- * Absent de cette carte, l'indicateur ouvre la **synthèse** du dossier - mieux vaut arriver sur le
- * bon dossier que ne pas pouvoir cliquer. Les onglets nommés ici sont ceux que `fiche-dossier.tsx`
- * déclare, et un test unitaire le vérifie : promettre un onglet qui n'existe pas retomberait
- * silencieusement sur la synthèse, et la promesse serait fausse sans que rien ne le dise.
+ * An indicator absent from this map opens the case file summary. The tabs named here are those
+ * declared in `fiche-dossier.tsx`, checked by a unit test: an unknown tab would silently fall back
+ * to the summary.
  */
 const ONGLET_PAR_INDICATEUR: Partial<Record<IndicateurTableauDeBord, string>> = {
   AUDIENCES_PLANIFIEES: "audiences",
@@ -32,11 +31,8 @@ const ONGLET_PAR_INDICATEUR: Partial<Record<IndicateurTableauDeBord, string>> = 
 };
 
 /**
- * Où mène une ligne du détail.
- *
- * **Les frais font exception** : la ligne est une demande de frais, qui a son propre écran. Y mener
- * vaut mieux que d'ouvrir le dossier, où il faudrait la retrouver - et la fiche dossier n'a pas
- * d'onglet Frais.
+ * Where a detail row leads. Expenses are the exception: the row is an expense request, which has its
+ * own screen (the case file has no Expenses tab).
  */
 function lienDeLaLigne(
   indicateur: IndicateurTableauDeBord,
@@ -49,39 +45,31 @@ function lienDeLaLigne(
 }
 
 /**
- * Le détail d'un bloc du tableau de bord (Q-137).
+ * Detail of a dashboard block: the list of what it counts, each row leading to its record.
  *
- * **Ce que le métier a demandé** le 2026-10-13 : qu'un clic sur un bloc ouvre la liste de ce qu'il
- * compte, et que chaque ligne mène à sa fiche. Même geste que sur la fiche d'activité, mécanique
- * différente : là tout venait de l'historique des actions, ici chaque indicateur a sa source.
- *
- * **Le total affiché est celui du serveur, jamais une somme des lignes montrées.** La liste est
- * paginée : additionner ce qu'on voit donnerait un chiffre plus petit dès la deuxième page, et ce
- * chiffre contredirait le bloc d'où l'on vient.
- *
- * **Deux précisions s'affichent quand elles s'appliquent**, parce qu'elles expliquent un écart que
- * la Direction remarquerait autrement : les trois indicateurs de litiges ne portent que sur le
- * recouvrement, et les prorogations comptent une ligne par alerte envoyée.
+ * The total shown is the server's, never a sum of the displayed rows: the list is paginated, and a
+ * sum of visible rows would contradict the block's figure.
+ * Explanatory notes are shown when they apply, to explain otherwise surprising differences.
  */
 export function DetailIndicateurModale({
   indicateur,
   libelle,
   categorie,
   onFermeture,
-}: {
-  /** `null` ferme la modale. Le composant reste monté : son état de page se réinitialise à l'ouverture. */
+}: Readonly<{
+  /** `null` closes the modal. The component stays mounted: its page state is reset on opening. */
   indicateur: IndicateurTableauDeBord | null;
   libelle: string;
-  /** Le périmètre du bloc d'où l'on vient (Q-138). Absent = les deux catégories. */
+  /** The scope of the originating block. Absent = both categories. */
   categorie?: CategorieDossier;
   onFermeture: () => void;
-}) {
+}>) {
   const t = useTranslations("detailIndicateur");
   const [page, setPage] = useState(0);
 
   const detail = useQuery({
-    // Le périmètre fait partie de la clé : sans lui, rouvrir un bloc après avoir changé de
-    // catégorie montrerait la liste de la précédente.
+    // The scope is part of the key: without it, reopening a block after changing category would show
+    // the previous category's list.
     queryKey: ["detail-indicateur", indicateur, categorie ?? "TOUTES", page],
     queryFn: () => reportingService.detailTableauDeBord(indicateur!, page, categorie),
     enabled: indicateur !== null,
@@ -89,15 +77,10 @@ export function DetailIndicateurModale({
 
   const lignes = detail.data?.content ?? [];
   const pages = detail.data?.totalPages ?? 0;
-  const avecMontant = lignes.some((ligne) => ligne.montant !== null);
-  const avecDate = lignes.some((ligne) => ligne.date !== null);
 
   /*
-   * **La phrase sur le recouvrement a disparu avec Q-138**, et c'est le signe que le problème est
-   * réglé à la source : les trois indicateurs de litiges ne sont plus figés sur une catégorie, ils
-   * suivent le périmètre choisi en tête d'écran. Ce qu'une note expliquait, le sélecteur le dit.
-   *
-   * Celle sur les alertes reste : elle ne parle pas de périmètre mais de ce qu'une ligne représente.
+   * The three litigation indicators follow the scope selected at the top of the screen, so they need
+   * no note. The alerts note remains: it explains what a row represents (one row per alert sent).
    */
   const restriction = indicateur === "PROROGATIONS_ALERTE" ? t("uneLigneParAlerte") : undefined;
 
@@ -115,98 +98,152 @@ export function DetailIndicateurModale({
       }
       className="max-w-3xl"
     >
-      {detail.isLoading ? (
-        <EtatChargement lignes={4} />
-      ) : detail.error ? (
-        <EtatErreur message={messageErreur(detail.error)} />
-      ) : lignes.length === 0 ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("vide")}</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[length:var(--taille-sm)]">
-              <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
-                <tr>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t("colonneIntitule")}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t("colonnePrecision")}</th>
+      <ContenuDetail
+        indicateur={indicateur}
+        enChargement={detail.isLoading}
+        erreur={detail.error}
+        lignes={lignes}
+        page={page}
+        pages={pages}
+        onPage={setPage}
+      />
+    </Dialog>
+  );
+}
+
+/** The modal body: loading, error, empty, or the paginated rows. */
+function ContenuDetail({
+  indicateur,
+  enChargement,
+  erreur,
+  lignes,
+  page,
+  pages,
+  onPage,
+}: Readonly<{
+  indicateur: IndicateurTableauDeBord | null;
+  enChargement: boolean;
+  erreur: unknown;
+  lignes: readonly DetailIndicateur[];
+  page: number;
+  pages: number;
+  onPage: (miseAJour: (courante: number) => number) => void;
+}>) {
+  const t = useTranslations("detailIndicateur");
+
+  if (enChargement) return <EtatChargement lignes={4} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (lignes.length === 0) {
+    return <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("vide")}</p>;
+  }
+  const avecMontant = lignes.some((ligne) => ligne.montant !== null);
+  const avecDate = lignes.some((ligne) => ligne.date !== null);
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-[length:var(--taille-sm)]">
+          <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
+            <tr>
+              <th scope="col" className="py-2 pr-4 font-medium">
+                {t("colonneIntitule")}
+              </th>
+              <th scope="col" className="py-2 pr-4 font-medium">
+                {t("colonnePrecision")}
+              </th>
+              {avecDate ? (
+                <th scope="col" className="py-2 pr-4 font-medium">
+                  {t("colonneDate")}
+                </th>
+              ) : null}
+              {avecMontant ? (
+                <th scope="col" className="py-2 pr-4 font-medium">
+                  {t("colonneMontant")}
+                </th>
+              ) : null}
+              <th scope="col" className="py-2 font-medium">
+                {t("colonneDossier")}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-bordure">
+            {lignes.map((ligne) => {
+              const lien = indicateur === null ? null : lienDeLaLigne(indicateur, ligne);
+              return (
+                <tr key={ligne.id}>
+                  <td className="py-2 pr-4 font-medium">{ligne.intitule ?? "—"}</td>
+                  <td className="py-2 pr-4">{ligne.precision ?? "—"}</td>
                   {avecDate ? (
-                    <th scope="col" className="py-2 pr-4 font-medium">{t("colonneDate")}</th>
+                    <td className="py-2 pr-4 whitespace-nowrap">{ligne.date ?? "—"}</td>
                   ) : null}
                   {avecMontant ? (
-                    <th scope="col" className="py-2 pr-4 font-medium">{t("colonneMontant")}</th>
+                    <td className="py-2 pr-4" data-nombres>
+                      {ligne.montant === null ? "—" : <MontantFcfa valeur={ligne.montant} />}
+                    </td>
                   ) : null}
-                  <th scope="col" className="py-2 font-medium">{t("colonneDossier")}</th>
+                  <td className="py-2">
+                    <CelluleDossier indicateur={indicateur} ligne={ligne} lien={lien} />
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-bordure">
-                {lignes.map((ligne) => {
-                  const lien = indicateur === null ? null : lienDeLaLigne(indicateur, ligne);
-                  return (
-                    <tr key={ligne.id}>
-                      <td className="py-2 pr-4 font-medium">{ligne.intitule ?? "—"}</td>
-                      <td className="py-2 pr-4">{ligne.precision ?? "—"}</td>
-                      {avecDate ? (
-                        <td className="py-2 pr-4 whitespace-nowrap">{ligne.date ?? "—"}</td>
-                      ) : null}
-                      {avecMontant ? (
-                        <td className="py-2 pr-4" data-nombres>
-                          {ligne.montant === null ? "—" : <MontantFcfa valeur={ligne.montant} />}
-                        </td>
-                      ) : null}
-                      <td className="py-2">
-                        {/*
-                          Trois états, et chacun dit autre chose : une ligne hors dossier n'a rien à
-                          ouvrir, un dossier supprimé depuis a existé, et le cas courant mène à la
-                          fiche - sur l'onglet qui correspond à l'indicateur.
-                        */}
-                        {lien === null ? (
-                          <span className="text-texte-tertiaire">{t("sansDossier")}</span>
-                        ) : ligne.referenceDossier === null && indicateur !== "FRAIS_EN_ATTENTE" ? (
-                          <span className="text-texte-tertiaire">{t("dossierSupprime")}</span>
-                        ) : (
-                          <Link
-                            href={lien}
-                            className="text-lien underline hover:no-underline"
-                            aria-label={
-                              indicateur === "FRAIS_EN_ATTENTE"
-                                ? t("ouvrirFrais")
-                                : t("ouvrirDossier", { reference: ligne.referenceDossier ?? "" })
-                            }
-                          >
-                            {ligne.referenceDossier ?? t("ouvrirFrais")}
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-          {pages > 1 ? (
-            <div className="flex items-center justify-between gap-3">
-              <Button
-                variante="secondaire"
-                onClick={() => setPage((courante) => Math.max(0, courante - 1))}
-                disabled={page === 0}
-              >
-                {t("pagePrecedente")}
-              </Button>
-              <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
-                {t("positionPage", { page: page + 1, total: pages })}
-              </span>
-              <Button
-                variante="secondaire"
-                onClick={() => setPage((courante) => courante + 1)}
-                disabled={page + 1 >= pages}
-              >
-                {t("pageSuivante")}
-              </Button>
-            </div>
-          ) : null}
+      {pages > 1 ? (
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variante="secondaire"
+            onClick={() => onPage((courante) => Math.max(0, courante - 1))}
+            disabled={page === 0}
+          >
+            {t("pagePrecedente")}
+          </Button>
+          <span className="text-[length:var(--taille-xs)] text-texte-secondaire">
+            {t("positionPage", { page: page + 1, total: pages })}
+          </span>
+          <Button
+            variante="secondaire"
+            onClick={() => onPage((courante) => courante + 1)}
+            disabled={page + 1 >= pages}
+          >
+            {t("pageSuivante")}
+          </Button>
         </div>
-      )}
-    </Dialog>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Three states: a row without a case file has nothing to open, a since-deleted case file did
+ * exist, and the usual case leads to the case file on the tab matching the indicator.
+ */
+function CelluleDossier({
+  indicateur,
+  ligne,
+  lien,
+}: Readonly<{
+  indicateur: IndicateurTableauDeBord | null;
+  ligne: DetailIndicateur;
+  lien: string | null;
+}>) {
+  const t = useTranslations("detailIndicateur");
+  const frais = indicateur === "FRAIS_EN_ATTENTE";
+
+  if (lien === null) return <span className="text-texte-tertiaire">{t("sansDossier")}</span>;
+  if (ligne.referenceDossier === null && !frais) {
+    return <span className="text-texte-tertiaire">{t("dossierSupprime")}</span>;
+  }
+  return (
+    <Link
+      href={lien}
+      className="text-lien underline hover:no-underline"
+      aria-label={
+        frais ? t("ouvrirFrais") : t("ouvrirDossier", { reference: ligne.referenceDossier ?? "" })
+      }
+    >
+      {ligne.referenceDossier ?? t("ouvrirFrais")}
+    </Link>
   );
 }

@@ -2,30 +2,20 @@ import { apiClient } from "@/lib/api/client";
 import type { Signature } from "@/types/domaine";
 
 /**
- * Ma signature enregistrée (N8, métier du 2026-10-06).
- *
- * **Toujours la mienne, jamais celle d'un autre.** Aucun appel ne prend d'identifiant : le serveur
- * travaille sur la session. C'est la seule forme où une signature garde un sens - celle qu'un tiers
- * détient ne vaut déjà plus rien. La lettre de constitution, elle, appose celle du signataire côté
- * serveur, sans que l'image transite par un écran.
- *
- * **Ce qu'elle est.** Un confort de présentation : la lettre part avec l'image au lieu d'un nom à
- * signer à la main. Elle n'apporte aucune valeur probante supplémentaire - ce qui fait preuve, c'est
- * la trace horodatée de qui a signé.
+ * The current user's stored signature. No call takes an id: the server works on the session, so a
+ * user can only ever manage their own. The constitution letter embeds the signer's image
+ * server-side. The image is presentational only; proof is the timestamped signing record.
  */
 export const signatureService = {
-  /** L'état : déposée ou non, et depuis quand. Pas l'image. */
+  /** State only (uploaded or not, and since when), not the image. */
   mienne: async (): Promise<Signature> => {
     const { data } = await apiClient.get<Signature>("/utilisateurs/moi/signature");
     return data;
   },
 
   /**
-   * L'image, pour l'aperçu.
-   *
-   * Rendue en `Blob` et non en adresse directe : l'appel porte le jeton, et une balise
-   * `<img src>` pointant sur l'API ne l'emporterait pas. C'est aussi ce qu'attend
-   * `ApercuFichier`, qui se charge lui-même de l'objet-URL et de sa libération.
+   * The image for preview, as a `Blob`: the call carries the token, which an `<img src>` pointing
+   * at the API would not. `ApercuFichier` manages the object URL itself.
    */
   monImage: async (): Promise<Blob> => {
     const { data } = await apiClient.get<Blob>("/utilisateurs/moi/signature/image", {
@@ -34,27 +24,18 @@ export const signatureService = {
     return data;
   },
 
-  /** Dépose ou remplace. PNG ou JPEG, 200 Ko au plus - ce que la lettre sait apposer. */
+  /** Uploads or replaces. PNG or JPEG, 200 KB max. */
   deposer: async (fichier: File): Promise<Signature> => {
     const corps = new FormData();
     corps.append("fichier", fichier);
     const { data } = await apiClient.put<Signature>("/utilisateurs/moi/signature", corps, {
-      /*
-       * Le client déclare `application/json` par défaut. Sans ce type, le navigateur n'écrit pas
-       * la frontière des parties et le serveur ne voit aucun fichier - le dépôt répondait 500.
-       * C'est la règle de tous les autres envois de fichier de l'application (GED, frais, CR).
-       */
+      // The client defaults to `application/json`; without this header the server receives no file.
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data;
   },
 
-  /**
-   * Retire ma signature.
-   *
-   * Les lettres déjà signées ne changent pas : leur PDF est produit et archivé. Et la preuve de la
-   * signature n'a jamais été cette image.
-   */
+  /** Removes the signature. Already signed letters are unaffected: their PDF is archived. */
   retirer: async (): Promise<void> => {
     await apiClient.delete("/utilisateurs/moi/signature");
   },

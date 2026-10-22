@@ -10,16 +10,13 @@ import type {
 } from "@/types/domaine";
 
 /**
- * GED — pièces d'un dossier (#38, #39, #40, #43), file des demandes de suppression du DJ/DJA (#63,
- * #41) et rapport journalier (#42).
+ * Document management - dossier documents (#38, #39, #40, #43), DJ/DJA deletion request queue
+ * (#63, #41) and daily report (#42).
  */
 export const gedService = {
   /**
-   * #43 — documents d'un dossier.
-   *
-   * C'est la **seule** source fiable : `DossierResponse.documents` est vide par construction
-   * (Q-67 backend). Les éléments de cette liste ne portent **pas** d'URL de téléchargement : on la
-   * demande au moment de l'ouverture (#39), et c'est tant mieux, elle ne vit que 10 minutes.
+   * #43 - documents of a dossier, the **only** reliable source (`DossierResponse.documents` is
+   * always empty). Items carry no download URL: it is requested on opening (#39) and lasts 10 minutes.
    */
   listerDocumentsDossier: async (
     dossierId: number,
@@ -33,9 +30,8 @@ export const gedService = {
   },
 
   /**
-   * #38 — dépôt d'une pièce. Exige `ROLE_SAISIE` et un dossier **déjà créé** : le dépôt se fait
-   * toujours après la création, jamais dans la même requête (le module dossier ne dépend pas de la
-   * GED, Q-67).
+   * #38 - uploads a document. Requires `ROLE_SAISIE` and an **existing** dossier: upload always
+   * follows creation, never in the same request.
    */
   deposer: async (dossierId: number, typeDocument: string, fichier: File): Promise<DocumentDossier> => {
     const corps = new FormData();
@@ -43,25 +39,24 @@ export const gedService = {
     const { data } = await apiClient.post<DocumentDossier>("/ged/documents", corps, {
       params: { dossierId, typeDocument },
       /*
-       * Le client déclare `application/json` par défaut. Avec ce type, axios 1.x **convertit un
-       * FormData en JSON** : le fichier ne partirait jamais. Déclarer multipart laisse le
-       * navigateur poser lui-même la frontière des parties.
+       * The client defaults to `application/json`, with which axios 1.x **converts FormData to
+       * JSON** and the file is never sent. Declaring multipart lets the browser set the boundary.
        */
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data;
   },
 
-  /** #39 — seule réponse qui porte `urlTelechargement`, pré-signée et valable 10 minutes. */
+  /** #39 - the only response carrying `urlTelechargement`, pre-signed and valid for 10 minutes. */
   consulter: async (id: number): Promise<DocumentDossier> => {
     const { data } = await apiClient.get<DocumentDossier>(`/ged/documents/${id}`);
     return data;
   },
 
   /**
-   * #40 — deux comportements, distingués par le **statut HTTP** et non par le corps :
-   * · 200 — DJ/DJA : suppression immédiate, le document supprimé est renvoyé ;
-   * · 202 — juriste auteur : une demande est créée, le document reste en place jusqu'à décision.
+   * #40 - two behaviours, distinguished by **HTTP status**, not by body:
+   * · 200 - DJ/DJA: immediate deletion, the deleted document is returned;
+   * · 202 - author legal officer: a request is created, the document stays until decided.
    */
   supprimer: async (id: number): Promise<ResultatSuppression> => {
     const reponse = await apiClient.delete<DocumentDossier | DemandeSuppression>(`/ged/documents/${id}`);
@@ -71,8 +66,8 @@ export const gedService = {
   },
 
   /**
-   * #63 — file du DJ/DJA. Avec `statut`, les demandes de ce statut, **la plus ancienne d'abord**
-   * (l'ordre de traitement) ; sans, tout l'historique, la plus récente d'abord.
+   * #63 - DJ/DJA queue. With `statut`, requests of that status, **oldest first** (processing
+   * order); without, the full history, most recent first.
    */
   listerDemandesSuppression: async (
     statut: StatutSuppression | null,
@@ -86,8 +81,8 @@ export const gedService = {
   },
 
   /**
-   * #41 — décision du DJ/DJA sur la demande en attente d'un document. Approuvée : le document est
-   * supprimé. Rejetée : il est conservé, et le motif — obligatoire — est transmis au juriste.
+   * #41 - DJ/DJA decision on a document's pending request. Approved: the document is deleted.
+   * Rejected: it is kept, and the mandatory reason is sent to the legal officer.
    */
   deciderSuppression: async (
     documentId: number,
@@ -101,9 +96,9 @@ export const gedService = {
   },
 
   /**
-   * QF-64 — partage une pièce avec l'avocat du dossier. Sur un dossier sensible, le geste d'un
-   * juriste devient une **proposition** que le DJ ou la DJA valide : c'est le serveur qui le
-   * décide, et la réponse dit lequel des deux a eu lieu. 409 si c'est déjà fait.
+   * Shares a document with the dossier's lawyer. On a sensitive dossier, a legal officer's action
+   * becomes a **proposal** validated by the DJ or DJA; the server decides and the response says
+   * which happened. 409 if already shared.
    */
   partagerAvecAvocat: async (documentId: number): Promise<PartageAvocat> => {
     const { data } = await apiClient.put<PartageAvocat>(`/ged/documents/${documentId}/partage-avocat`);
@@ -111,21 +106,21 @@ export const gedService = {
   },
 
   /**
-   * QF-65 — un avocat affecté à ce dossier y est-il constitué ? La règle même qui lui ouvre les
-   * pièces : celui qui partage doit savoir si son geste produira quelque chose chez l'avocat.
+   * Whether a lawyer assigned to this dossier is constituted on it - the rule that opens documents
+   * to them, so the sharer knows whether sharing will have any effect.
    */
   etatPartageDossier: async (dossierId: number): Promise<{ avocatConstitue: boolean }> => {
     const { data } = await apiClient.get<{ avocatConstitue: boolean }>(`/dossiers/${dossierId}/partage-avocat`);
     return data;
   },
 
-  /** QF-64 — retire le partage, ou annule une proposition. */
+  /** Removes the share, or cancels a proposal. */
   retirerPartageAvocat: async (documentId: number): Promise<PartageAvocat> => {
     const { data } = await apiClient.delete<PartageAvocat>(`/ged/documents/${documentId}/partage-avocat`);
     return data;
   },
 
-  /** QF-64 — DJ, DJA : valide ou rejette une proposition. Un rejet exige son motif (400 sinon). */
+  /** DJ, DJA: validates or rejects a proposal. A rejection requires a reason (400 otherwise). */
   arbitrerPartageAvocat: async (
     documentId: number,
     decision: { decision: "VALIDE" } | { decision: "REJETE"; motif: string },
@@ -137,24 +132,22 @@ export const gedService = {
     return data;
   },
 
-  /** QF-64 — DJ, DJA : la file des partages proposés, le plus ancien d'abord. */
+  /** DJ, DJA: queue of proposed shares, oldest first. */
   partagesAvocat: async (page = 0, size = TAILLE_PAGE): Promise<PageReponse<PartageAvocat>> => {
     const { data } = await apiClient.get<PageReponse<PartageAvocat>>("/ged/partages-avocat", { params: { page, size } });
     return data;
   },
 
-  /** #42 — activité documentaire d'une journée ; un jour sans activité rend des zéros, pas une erreur. */
+  /** #42 - document activity of one day; a day without activity returns zeros, not an error. */
   rapportJournalier: async (date: string): Promise<RapportJournalier> => {
     const { data } = await apiClient.get<RapportJournalier>("/ged/rapport-journalier", { params: { date } });
     return data;
   },
 
   /**
-   * Contenu d'un document, à partir de son URL pré-signée.
-   *
-   * Par `fetch` **nu**, surtout pas par `apiClient` : l'URL est déjà signée, et un en-tête
-   * `Authorization` ferait vérifier à MinIO notre jeton Keycloak à la place de la signature — il
-   * refuserait. MinIO autorise l'origine de l'application (CORS vérifié, QF-06).
+   * Content of a document from its pre-signed URL. Uses **bare** `fetch`, never `apiClient`: an
+   * `Authorization` header would make MinIO check our Keycloak token instead of the signature and
+   * refuse. MinIO allows the application origin through CORS.
    */
   recupererContenu: async (url: string): Promise<Blob> => {
     const reponse = await fetch(url);

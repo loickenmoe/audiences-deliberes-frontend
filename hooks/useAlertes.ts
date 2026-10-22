@@ -8,59 +8,50 @@ import { alerteService } from "@/services/alerteService";
 import type { StatutAlerte, TypeAlerte } from "@/types/enums";
 
 /**
- * Repli HTTP du canal temps réel (QF-11).
- *
- * Canal ouvert, la liste n'a pas à interroger le backend : chaque alerte poussée invalide déjà
- * cette requête. Le rafraîchissement qui subsiste couvre le cas où le canal **se croit** ouvert
- * alors que plus rien ne passe — un transport SockJS peut se figer sans se fermer, et l'écran
- * afficherait alors « temps réel actif » à tort. Ramené de cinq minutes à une (2026-09-14) : le
- * jalon garantit qu'aucune notification n'est perdue, et cinq minutes d'aveuglement après une
- * poussée manquée contredisaient cette promesse. Canal fermé, la cadence se resserre encore — c'est
- * le seul chemin restant.
+ * HTTP fallback for the real-time channel. When the channel is open, pushed alerts already
+ * invalidate the query; polling still covers a SockJS transport that freezes without closing, so
+ * no notification is missed for long. When the channel is closed, polling is the only path and
+ * runs faster.
  */
 export const CADENCE_CANAL_OUVERT = 60 * 1000;
 export const CADENCE_REPLI = 30 * 1000;
 
-export function cadenceRafraichissement(connecte: boolean): number {
-  return connecte ? CADENCE_CANAL_OUVERT : CADENCE_REPLI;
+export function cadenceRafraichissement(canal: { connecte: boolean }): number {
+  return canal.connecte ? CADENCE_CANAL_OUVERT : CADENCE_REPLI;
 }
 
-/** `null` : les deux statuts confondus. */
+/** `null`: both statuses. */
 export function useMesNotifications(
   statut: StatutAlerte | null,
   page = 0,
   size = TAILLE_PAGE,
   type?: TypeAlerte,
 ) {
-  const { connecte } = useCanalAlertes();
+  const canal = useCanalAlertes();
   return useQuery({
     queryKey: [CLES.notifications, statut ?? "toutes", page, size, type ?? "tous"],
     queryFn: () => alerteService.mesNotifications(statut, page, size, type),
-    refetchInterval: cadenceRafraichissement(connecte),
+    refetchInterval: cadenceRafraichissement(canal),
   });
 }
 
 /**
- * Compteur de l'en-tête : une page d'un seul élément suffit, `totalElements` porte le nombre.
- * Volontairement dissocié de la file — le badge suit l'utilisateur sur toutes les pages, la file
- * garde sa pagination.
+ * Header counter: a one-element page is enough since `totalElements` carries the count. Kept
+ * separate from the queue so the badge is independent of the queue's pagination.
  */
 export function useNombreNotificationsATraiter() {
-  const { connecte } = useCanalAlertes();
+  const canal = useCanalAlertes();
   return useQuery({
     queryKey: [CLES.notifications, "compteur"],
     queryFn: () => alerteService.mesNotifications("DECLENCHEE", 0, 1),
-    refetchInterval: cadenceRafraichissement(connecte),
+    refetchInterval: cadenceRafraichissement(canal),
     select: (page) => page.totalElements,
   });
 }
 
 /**
- * #51 — taux de délivrance du canal applicatif (backend Q-109, NF-ALR-02). DJ et DJA.
- *
- * **Pas de rafraîchissement automatique.** C'est une mesure d'exploitation que l'on consulte, pas
- * un compteur que l'on surveille du coin de l'œil : une fenêtre de trente jours ne bouge pas d'un
- * dixième de point en trente secondes, et une cadence inutile ne ferait qu'interroger un agrégat.
+ * #51: in-app channel delivery rate (NF-ALR-02), DJ and DJA. No automatic refresh: it is an
+ * operational metric over a multi-day window that does not change meaningfully in seconds.
  */
 export function useStatistiquesDiffusion(dateDebut: string, dateFin: string, actif = true) {
   return useQuery({
@@ -70,7 +61,7 @@ export function useStatistiquesDiffusion(dateDebut: string, dateFin: string, act
   });
 }
 
-/** #46 — le backend refuse (403) si l'appelant n'est pas le destinataire. */
+/** #46: the backend rejects (403) a caller who is not the recipient. */
 export function useTraiterAlerte() {
   const client = useQueryClient();
   return useMutation({

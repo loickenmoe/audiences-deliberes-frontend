@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("titre") };
 }
 
-/** Écran 37 — rapport journalier GED : juriste, DJ, DJA et Assistante (Q-80 backend). */
+/** Screen 37 - daily document management report: legal officers, DJ, DJA and assistant. */
 export default async function PageRapportJournalier() {
   await exigerCapacite("consulterRapportJournalier");
   return <RapportJournalierGed />;

@@ -12,45 +12,34 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran de connexion.
+ * Login screen.
  *
- * Composition reprise de **GFA**, application Afriland en production : carte blanche centrée sur
- * fond gris clair, lockup horizontal, formule de bienvenue, sous-titre développant l'intitulé,
- * action pleine largeur, pied de page de copyright.
+ * Layout borrowed from GFA, an Afriland application in production: centred white card on a light
+ * grey background, horizontal lockup, welcome line, full-width action, copyright footer.
  *
- * **Page non défilable** : `h-svh` avec `overflow-hidden`. Un écran de connexion tient dans une
- * fenêtre — le faire défiler donnerait l'impression qu'il manque quelque chose. Les espacements
- * sont resserrés en conséquence, pour que le contenu tienne sur les hauteurs d'écran courantes.
- *
- * Le sélecteur de langue est présent **avant** la connexion : un utilisateur anglophone doit
- * pouvoir basculer sans avoir à deviner le français.
+ * The page does not scroll (`h-svh` + `overflow-hidden`): a login screen fits in one window, so
+ * spacing is tightened to fit common screen heights. The language switcher is shown **before**
+ * login so an English speaker never has to guess the French.
  */
 export default async function PageConnexion({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<{ motif?: string }>;
-}) {
+}>) {
   const session = await auth();
   if (session?.user && !session.erreur) redirect("/");
 
   const t = await getTranslations("connexion");
   const tc = await getTranslations("commun");
   /*
-   * Le motif dit ce qui vient de se passer — un événement, pas un état de la page. Il est donc
-   * affiché puis **retiré de l'URL** par `MotifConsomme` : sans cela il survivait au rechargement et
-   * à la restauration d'onglets du navigateur, et annonçait une expiration à quelqu'un qui n'avait
-   * pas eu de session.
-   *
-   * Deux causes, deux messages : un jeton rejeté appelle une reconnexion ; un service
-   * d'authentification injoignable appelle de la patience — s'y reconnecter est impossible.
+   * The reason describes an event, not a page state: it is shown once, then **removed from the URL**
+   * by `MotifConsomme` so a reload or tab restore does not announce an expiry to someone who had no
+   * session. A rejected token calls for signing in again; an unreachable auth service calls for patience.
    */
   const { motif } = await searchParams;
-  const message =
-    motif === "session-expiree"
-      ? t("sessionExpiree")
-      : motif === "auth-indisponible"
-        ? t("authIndisponible")
-        : null;
+  let message: string | null = null;
+  if (motif === "session-expiree") message = t("sessionExpiree");
+  else if (motif === "auth-indisponible") message = t("authIndisponible");
 
   return (
     <div className="flex h-svh flex-col overflow-hidden">

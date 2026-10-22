@@ -7,10 +7,8 @@ import { dossierService } from "@/services/dossierService";
 import { gedService } from "@/services/gedService";
 
 /**
- * Appels de la fiche dossier (F7), contre un backend simulé.
- *
- * Comme pour la création, l'enjeu est la **requête émise** : verbe, chemin, corps, et surtout le
- * paramètre `forcer`, qui ne doit partir que sur confirmation explicite de l'utilisateur.
+ * Case file screen calls (F7) against a mocked backend. What matters is the **request sent**:
+ * verb, path, body, and above all the `forcer` parameter, sent only after explicit user confirmation.
  */
 const BASE = "http://localhost:8080/api/v1";
 
@@ -78,8 +76,8 @@ describe("affectation (#4)", () => {
     await dossierService.modifierAffectation(7, affectation);
 
     expect(derniereRequete?.methode).toBe("PUT");
-    // Forcer d'emblée court-circuiterait la confirmation exigée par RG-DOS-07 — et l'alerte au DJ
-    // partirait sans que l'utilisateur ait rien confirmé.
+    // Forcing upfront would bypass the confirmation required by RG-DOS-07, and the alert to the
+    // legal department would go out without any user confirmation.
     expect(derniereRequete?.url.searchParams.has("forcer")).toBe(false);
     expect(derniereRequete?.corps).toEqual(affectation);
   });
@@ -133,7 +131,7 @@ describe("dérogation et sensibilité (#6, #8)", () => {
   it("valide la sensibilité sans champ d'ajustement quand la proposition est conservée", async () => {
     await dossierService.validerSensibilite(7, { statut: "VALIDEE" });
 
-    // Un `seuilMontantAjuste: 0` écraserait le seuil proposé : les champs absents ne partent pas.
+    // A `seuilMontantAjuste: 0` would overwrite the proposed threshold: absent fields are not sent.
     expect(derniereRequete?.corps).toEqual({ statut: "VALIDEE" });
   });
 });

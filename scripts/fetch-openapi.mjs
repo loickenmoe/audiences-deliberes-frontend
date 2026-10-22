@@ -1,12 +1,11 @@
 /**
- * Fige le contrat d'API du backend dans `contracts/openapi.json`.
+ * Snapshots the backend API contract into `contracts/openapi.json`.
  *
- * La spécification est récupérée **manuellement**, jamais à l'exécution : `/v3/api-docs` est
- * accessible sans authentification côté backend (constat de sécurité R-08) et doit être fermé avant
- * la mise en production. Le frontend ne doit donc pas en dépendre pour fonctionner.
+ * The spec is fetched manually, never at runtime: `/v3/api-docs` is unauthenticated on the backend
+ * and must be closed before production, so the frontend must not depend on it.
  *
- *   node scripts/fetch-openapi.mjs        (backend démarré sur :8080)
- *   npm run api:types                     (régénère types/api.generated.ts)
+ *   node scripts/fetch-openapi.mjs        (backend running on :8080)
+ *   npm run api:types                     (regenerates types/api.generated.ts)
  */
 import { writeFile } from "node:fs/promises";
 

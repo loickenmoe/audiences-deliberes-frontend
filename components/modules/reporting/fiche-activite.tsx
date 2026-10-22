@@ -17,18 +17,13 @@ import { reportingService, type CibleActivite } from "@/services/reportingServic
 import type { ActionDetaillee, RapportActivite } from "@/types/domaine";
 
 /**
- * L'onglet de la fiche dossier ou chaque nature d'action se regarde.
+ * The case file tab where each action type is viewed.
  *
- * **Les neuf onglets sont ceux de `fiche-dossier.tsx`, et il n'y en a pas d'autres.** Une premiere
- * version de cette carte envoyait les cinq natures de frais sur un onglet « frais » qui **n'existe
- * pas** : la fiche dossier n'en a pas, les demandes de frais vivant sur leur propre ecran. Rien ne
- * cassait - l'onglet inconnu retombe sur la synthese - mais la promesse « sur l'onglet
- * correspondant » etait fausse, et aucun test ne le disait. D'ou l'assertion ci-dessous.
- *
- * Une nature **absente** de cette carte ouvre la **synthese** du dossier, et c'est voulu : mieux
- * vaut arriver sur le dossier concerne que ne pas pouvoir cliquer. C'est le cas des frais, dont
- * l'action ne porte que le dossier et non la demande, et de tout ce qui touche au dossier lui-meme
- * - affectation, sensibilite, derogation de seuil.
+ * The tabs are exactly those of `fiche-dossier.tsx` (there is no expenses tab: expense requests have
+ * their own screen); the assertion below enforces it, since an unknown tab silently falls back to the
+ * summary. A type absent from this map opens the case file summary on purpose: expenses (the action
+ * only carries the case file) and actions on the case file itself (assignment, sensitivity, threshold
+ * waiver).
  */
 const ONGLET_PAR_NATURE: Record<string, string> = {
   ETAPE_STATUT_MODIFIE: "etapes",
@@ -64,59 +59,52 @@ const ONGLET_PAR_NATURE: Record<string, string> = {
 };
 
 /**
- * Où mène un clic sur une action.
- *
- * **Une nature non cartographiée ouvre la synthèse du dossier**, et c'est volontaire : la liste
- * ci-dessus couvre les natures qui ont un onglet dédié, et les cinquante-trois codes évoluent. Mieux
- * vaut arriver sur le dossier concerné que ne pas pouvoir cliquer - et ouvrir un onglet inexistant
- * ramènerait de toute façon à la synthèse.
+ * Where a click on an action leads. An unmapped action type opens the case file summary on
+ * purpose: the map covers types with a dedicated tab, and action codes evolve.
  */
 function lienVers(action: ActionDetaillee, autorise: boolean): string | null {
   if (!autorise || action.dossierId === null) return null;
   const onglet = ONGLET_PAR_NATURE[action.code];
-  return onglet ? `/dossiers/${action.dossierId}?onglet=${onglet}` : `/dossiers/${action.dossierId}`;
+  return onglet
+    ? `/dossiers/${action.dossierId}?onglet=${onglet}`
+    : `/dossiers/${action.dossierId}`;
 }
 
 /**
- * La fiche d'activité d'une personne (Q-133).
+ * Field ids must be unique on the screen: the management table can show one's own sheet and a
+ * colleague's at the same time. "moi" when there is no target.
+ */
+function suffixeDe(cible: CibleActivite | undefined): string {
+  if (cible === undefined) return "moi";
+  return "utilisateurId" in cible ? `u${cible.utilisateurId}` : `a${cible.avocatId}`;
+}
+
+/**
+ * A person's activity sheet.
  *
- * **Deux demandes du métier du 2026-10-09 vivent ici.** « Chaque utilisateur doit être capable de
- * télécharger ses propres rapports, dépendamment de la période choisie » : d'où les trois formats,
- * sur la période que l'utilisateur fixe. Et « cliquer sur un élément doit directement le renvoyer
- * aux détails de la dite tâche » : d'où le décompte cliquable, qui ouvre les actions comptées, puis
- * le dossier concerné.
+ * Users can download their own reports for the chosen period (three formats), and clicking a count
+ * opens the counted actions, then the related case file.
+ * Exhaustive rather than comparable: the management table has six columns for comparison; this sheet
+ * shows every action type performed, since some profiles (Assistant, line manager) never open case files.
+ * No score and no total, like the named table. Also available to lawyers, whose submissions, hearing
+ * reports, publications and explanation answers are tracked under their account.
  *
- * **Fidèle, et non comparable.** Le tableau de la direction tient sur six colonnes pour que des
- * personnes se comparent ; cette fiche porte **toutes** les natures accomplies, parce qu'une
- * Assistante ou un supérieur hiérarchique n'ouvre pas de dossiers et qu'un tableau à six colonnes
- * les montrerait vides. C'est l'arbitrage du métier, qui a renversé le mien.
- *
- * **Ni note, ni total**, comme le tableau nominatif : additionner des gestes de natures différentes
- * fabriquerait un chiffre de mérite que rien ne justifie.
- *
- * **Ouverte aux avocats le 2026-10-13 (Q-135).** Un avocat dépose ses demandes de frais, ses
- * comptes rendus d'audience, ses autres publications, et répond aux demandes d'explication : quatre
- * natures, tracées sous son compte. J'avais écrit qu'il n'aurait rien à y lire ; c'était faux.
- *
- * @param cible            qui l'on regarde : un `utilisateurId` pour un collègue, un `avocatId` pour
- *                         un avocat du répertoire. **Absent, c'est soi-même** - le serveur sait qui
- *                         je suis, et il refuse de servir l'activité d'autrui à qui n'est ni DJ ni
- *                         DJA.
- * @param nomAffiche       le nom à afficher en titre, quand l'appelant le connaît déjà.
- * @param lienVersDossier  `false` retire les liens du détail et ne laisse que la référence du
- *                         dossier, en texte. C'est le cas de l'avocat : il n'a **aucun écran de
- *                         fiche dossier** (QF-01), et lui proposer un lien le mènerait à un refus de
- *                         droits - une invitation à se faire claquer la porte au nez.
+ * @param cible            whom we look at: a `utilisateurId` for a colleague, an `avocatId` for a
+ *                         lawyer from the directory. Absent means oneself; the server refuses
+ *                         another person's activity to anyone but the DJ and DJA.
+ * @param nomAffiche       the name to display as title, when the caller already knows it.
+ * @param lienVersDossier  `false` removes detail links and keeps the case file reference as text,
+ *                         for lawyers, who have no case file screen and would get an access denied.
  */
 export function FicheActivite({
   cible,
   nomAffiche,
   lienVersDossier = true,
-}: {
+}: Readonly<{
   cible?: CibleActivite;
   nomAffiche?: string;
   lienVersDossier?: boolean;
-}) {
+}>) {
   const t = useTranslations("activite");
   const tNatures = useTranslations("historique.actions");
   const defaut = periodeDe("mois");
@@ -125,21 +113,13 @@ export function FicheActivite({
   const [format, setFormat] = useState<keyof typeof EXTENSION_RAPPORT>("PDF");
   const [rapport, setRapport] = useState<RapportActivite | null>(null);
   const [affiche, setAffiche] = useState(false);
-  // La nature dont on regarde le détail. `null` quand la modale est fermée : garder la dernière
-  // ouverte ferait réapparaître un contenu périmé au prochain clic.
+  // The action type whose detail is open. `null` when the modal is closed: keeping the last one
+  // would show stale content on the next click.
   const [natureOuverte, setNatureOuverte] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
   const autre = cible !== undefined;
-  /*
-    Les identifiants des champs doivent être uniques sur l'écran : le tableau de la direction peut
-    afficher le sien et celui d'un collègue en même temps. « moi » quand il n'y a pas de cible.
-  */
-  const suffixe = cible === undefined
-    ? "moi"
-    : "utilisateurId" in cible
-      ? `u${cible.utilisateurId}`
-      : `a${cible.avocatId}`;
+  const suffixe = suffixeDe(cible);
   const valide = debut <= fin;
 
   const generer = useMutation({
@@ -154,8 +134,8 @@ export function FicheActivite({
     mutationFn: async () => {
       const contenu = await reportingService.exporterActivite(debut, fin, format, cible);
       if (contenu === null) return;
-      // Le nom vient d'ici : `Content-Disposition` n'est pas exposé en CORS, et le serveur applique
-      // la même règle de son côté (`nomFichierActivite`).
+      // The file name is built here: `Content-Disposition` is not exposed through CORS, and the server
+      // applies the same rule (`nomFichierActivite`).
       telechargerBlob(
         contenu,
         nomFichierActivite(
@@ -216,18 +196,10 @@ export function FicheActivite({
           {generer.isPending ? t("enCours") : t("afficher")}
         </Button>
 
-        {/*
-          Le téléchargement n'apparaît qu'une fois la fiche affichée. Proposer d'emporter un
-          document qu'on n'a pas vu invite à télécharger une période vide, puis à ouvrir un fichier
-          pour découvrir qu'il ne contient rien.
-        */}
-        {rapport !== null ? (
+        {/* Download appears only once the sheet is displayed, to avoid exporting an unseen, possibly empty period. */}
+        {rapport === null ? null : (
           <>
-            <Champ
-              id={`activite-format-${suffixe}`}
-              label={t("formatExport")}
-              className="w-32"
-            >
+            <Champ id={`activite-format-${suffixe}`} label={t("formatExport")} className="w-32">
               <Select
                 id={`activite-format-${suffixe}`}
                 value={format}
@@ -248,136 +220,201 @@ export function FicheActivite({
               {t("telecharger")}
             </Button>
           </>
-        ) : null}
+        )}
       </div>
 
       {generer.error ? <EtatErreur message={messageErreur(generer.error)} /> : null}
       {telecharger.error ? <EtatErreur message={t("telechargementEchoue")} /> : null}
 
-      {!affiche ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("avantGeneration")}</p>
-      ) : rapport === null ? (
-        <EtatVide titre={t("vide")} description={autre ? t("videTexteAutre") : t("videTexte")} />
+      {affiche ? (
+        <ResultatActivite rapport={rapport} autre={autre} onDetail={ouvrirDetail} />
       ) : (
-        <>
-          <div className="overflow-x-auto rounded border border-bordure bg-surface">
-            <table className="w-full text-left text-[length:var(--taille-sm)]">
-              <caption className="sr-only">
-                {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
-              </caption>
-              <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneNature")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneNombre")}</th>
-                  <th scope="col" className="px-4 py-2 font-medium">{t("colonneDetail")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-bordure">
-                {rapport.lignes.map((ligne) => {
-                  const nature = tNatures(ligne.code as never);
-                  return (
-                    <tr key={ligne.code}>
-                      <td className="px-4 py-2 font-medium">{nature}</td>
-                      <td className="px-4 py-2" data-nombres>{ligne.total}</td>
-                      <td className="px-4 py-2">
-                        {/*
-                          Le décompte lui-même n'est pas le bouton : un nombre cliquable ne se
-                          signale pas comme tel, et un lecteur d'écran annoncerait « 4 » sans dire
-                          ce qu'il ouvre. Le bouton porte la nature et le nombre.
-                        */}
-                        <button
-                          type="button"
-                          className="text-lien underline hover:no-underline"
-                          onClick={() => ouvrirDetail(ligne.code)}
-                        >
-                          {t("voirDetail", { nombre: ligne.total, nature })}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/*
-            Le délai moyen est hors du tableau : ce n'est pas un décompte d'actions, et le mêler aux
-            autres lignes laisserait croire qu'il s'additionne avec elles. Absent - et non à zéro -
-            quand aucun compte rendu n'a été saisi : zéro se lirait comme une saisie le jour même.
-          */}
-          {typeof rapport.delaiMoyenSaisieCompteRendu === "number" ? (
-            <p className="text-[length:var(--taille-sm)] text-texte-secondaire" title={t("delaiAide")}>
-              {t("delai")} :{" "}
-              <span data-nombres className="font-medium text-texte">
-                {t("delaiJours", { jours: rapport.delaiMoyenSaisieCompteRendu.toFixed(1) })}
-              </span>
-            </p>
-          ) : null}
-        </>
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("avantGeneration")}
+        </p>
       )}
 
       <Dialog
         ouvert={natureOuverte !== null}
         onFermeture={() => setNatureOuverte(null)}
-        titre={natureOuverte === null ? "" : t("detailTitre", { nature: tNatures(natureOuverte as never) })}
+        titre={
+          natureOuverte === null
+            ? ""
+            : t("detailTitre", { nature: tNatures(natureOuverte as never) })
+        }
         description={t("detailDescription", { debut, fin })}
       >
-        {detail.isLoading ? (
-          <EtatChargement lignes={3} />
-        ) : detail.error ? (
-          <EtatErreur message={messageErreur(detail.error)} />
-        ) : (detail.data?.content.length ?? 0) === 0 ? (
-          <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("detailVide")}</p>
-        ) : (
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="py-2 pr-4 font-medium">{t("detailColonneDate")}</th>
-                <th scope="col" className="py-2 pr-4 font-medium">{t("detailColonneAction")}</th>
-                <th scope="col" className="py-2 font-medium">{t("detailColonneDossier")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {detail.data?.content.map((action) => {
-                const lien = lienVers(action, lienVersDossier);
-                return (
-                  <tr key={action.id}>
-                    <td className="py-2 pr-4 whitespace-nowrap">{action.dateAction.slice(0, 10)}</td>
-                    <td className="py-2 pr-4">{action.action}</td>
-                    <td className="py-2">
-                      {/*
-                        Trois états, et chacun dit quelque chose de différent : une action hors
-                        dossier (une configuration, un référentiel) n'a rien à ouvrir ; un dossier
-                        supprimé depuis a existé ; et le cas courant mène à la fiche.
-                      */}
-                      {action.dossierId === null ? (
-                        <span className="text-texte-tertiaire">{t("detailHorsDossier")}</span>
-                      ) : action.referenceDossier === null ? (
-                        <span className="text-texte-tertiaire">{t("detailDossierSupprime")}</span>
-                      ) : lien === null ? (
-                        /*
-                          L'avocat voit la référence sans pouvoir l'ouvrir : il n'a pas d'écran de
-                          fiche dossier (QF-01). La référence seule lui suffit - c'est ainsi qu'il
-                          nomme ses affaires dans ses échanges avec la banque.
-                        */
-                        <span>{action.referenceDossier}</span>
-                      ) : (
-                        <Link
-                          href={lien}
-                          className="text-lien underline hover:no-underline"
-                          aria-label={t("detailOuvrir", { reference: action.referenceDossier })}
-                        >
-                          {action.referenceDossier}
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+        <DetailNature
+          enChargement={detail.isLoading}
+          erreur={detail.error}
+          actions={detail.data?.content ?? []}
+          lienVersDossier={lienVersDossier}
+        />
       </Dialog>
     </section>
+  );
+}
+
+/** The displayed sheet: one row per action type, then the average delay. */
+function ResultatActivite({
+  rapport,
+  autre,
+  onDetail,
+}: Readonly<{
+  rapport: RapportActivite | null;
+  autre: boolean;
+  onDetail: (code: string) => void;
+}>) {
+  const t = useTranslations("activite");
+  const tNatures = useTranslations("historique.actions");
+
+  if (rapport === null) {
+    return (
+      <EtatVide titre={t("vide")} description={autre ? t("videTexteAutre") : t("videTexte")} />
+    );
+  }
+  return (
+    <>
+      <div className="overflow-x-auto rounded border border-bordure bg-surface">
+        <table className="w-full text-left text-[length:var(--taille-sm)]">
+          <caption className="sr-only">
+            {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
+          </caption>
+          <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+            <tr>
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneNature")}
+              </th>
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneNombre")}
+              </th>
+              <th scope="col" className="px-4 py-2 font-medium">
+                {t("colonneDetail")}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-bordure">
+            {rapport.lignes.map((ligne) => {
+              const nature = tNatures(ligne.code as never);
+              return (
+                <tr key={ligne.code}>
+                  <td className="px-4 py-2 font-medium">{nature}</td>
+                  <td className="px-4 py-2" data-nombres>
+                    {ligne.total}
+                  </td>
+                  <td className="px-4 py-2">
+                    {/*
+                      The count itself is not the button: a screen reader would announce "4" without saying what it
+                      opens. The button carries the action type and the count.
+                    */}
+                    <button
+                      type="button"
+                      className="text-lien underline hover:no-underline"
+                      onClick={() => onDetail(ligne.code)}
+                    >
+                      {t("voirDetail", { nombre: ligne.total, nature })}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/*
+        The average delay is outside the table: it is not an action count and must not look summable.
+        Absent (not zero) when no hearing report was entered: zero would read as same-day entry.
+      */}
+      {typeof rapport.delaiMoyenSaisieCompteRendu === "number" ? (
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire" title={t("delaiAide")}>
+          {t("delai")} :{" "}
+          <span data-nombres className="font-medium text-texte">
+            {t("delaiJours", { jours: rapport.delaiMoyenSaisieCompteRendu.toFixed(1) })}
+          </span>
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+/** Content of the detail modal: the counted actions of one type. */
+function DetailNature({
+  enChargement,
+  erreur,
+  actions,
+  lienVersDossier,
+}: Readonly<{
+  enChargement: boolean;
+  erreur: unknown;
+  actions: readonly ActionDetaillee[];
+  lienVersDossier: boolean;
+}>) {
+  const t = useTranslations("activite");
+
+  if (enChargement) return <EtatChargement lignes={3} />;
+  if (erreur) return <EtatErreur message={messageErreur(erreur)} />;
+  if (actions.length === 0) {
+    return (
+      <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("detailVide")}</p>
+    );
+  }
+  return (
+    <table className="w-full text-left text-[length:var(--taille-sm)]">
+      <thead className="border-b border-bordure text-[length:var(--taille-xs)] text-texte-secondaire">
+        <tr>
+          <th scope="col" className="py-2 pr-4 font-medium">
+            {t("detailColonneDate")}
+          </th>
+          <th scope="col" className="py-2 pr-4 font-medium">
+            {t("detailColonneAction")}
+          </th>
+          <th scope="col" className="py-2 font-medium">
+            {t("detailColonneDossier")}
+          </th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-bordure">
+        {actions.map((action) => (
+          <tr key={action.id}>
+            <td className="py-2 pr-4 whitespace-nowrap">{action.dateAction.slice(0, 10)}</td>
+            <td className="py-2 pr-4">{action.action}</td>
+            <td className="py-2">
+              <DossierDeLAction action={action} lien={lienVers(action, lienVersDossier)} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * Three states: an action without a case file (a configuration, a reference data change) has
+ * nothing to open; a since-deleted case file did exist; the usual case leads to the case file.
+ */
+function DossierDeLAction({
+  action,
+  lien,
+}: Readonly<{ action: ActionDetaillee; lien: string | null }>) {
+  const t = useTranslations("activite");
+
+  if (action.dossierId === null) {
+    return <span className="text-texte-tertiaire">{t("detailHorsDossier")}</span>;
+  }
+  if (action.referenceDossier === null) {
+    return <span className="text-texte-tertiaire">{t("detailDossierSupprime")}</span>;
+  }
+  // The lawyer sees the reference without a link: they have no case file screen. The reference is
+  // how they name their cases with the bank.
+  if (lien === null) return <span>{action.referenceDossier}</span>;
+  return (
+    <Link
+      href={lien}
+      className="text-lien underline hover:no-underline"
+      aria-label={t("detailOuvrir", { reference: action.referenceDossier })}
+    >
+      {action.referenceDossier}
+    </Link>
   );
 }

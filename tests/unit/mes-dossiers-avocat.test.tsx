@@ -5,12 +5,10 @@ import { MesDossiers } from "@/components/modules/portail/mes-dossiers";
 import { rendre } from "../utils/rendu";
 
 /**
- * Ses dossiers, vus de l'avocat : audiences, note de la Direction Juridique, pièces partagées
- * (QF-64, backend Q-139).
- *
- * **Ce que ces tests gardent.** Les pièces et la note ne s'ouvrent qu'à l'avocat **constitué** - le
- * serveur le décide ; l'écran doit dire pourquoi une liste est vide, car « pas encore constitué » ne
- * se règle pas comme « aucune pièce ». Et le compte rendu interne n'a aucune place ici.
+ * The lawyer's view of their case files: hearings, legal department note, shared documents.
+ * Documents and the note are only open to a **retained** lawyer (decided by the server); the screen
+ * must say why a list is empty, since "not yet retained" is resolved differently from "no documents".
+ * The internal report has no place here.
  */
 const audiences = vi.fn();
 const pieces = vi.fn();
@@ -20,7 +18,7 @@ vi.mock("@/hooks/usePortailAvocat", () => ({
   usePiecesDeMonDossier: () => pieces(),
 }));
 
-// Le sélecteur interroge le serveur au fil de la frappe : il est remplacé par un choix direct.
+// The selector queries the server as the user types: replaced here by a direct choice.
 vi.mock("@/components/modules/portail/selecteur-dossier", () => ({
   SelecteurDossier: ({ onChangement }: { onChangement: (id: number) => void }) => (
     <button type="button" onClick={() => onChangement(3)}>
@@ -62,7 +60,7 @@ describe("les pièces du dossier", () => {
     expect(screen.queryByText("Pièces du dossier")).not.toBeInTheDocument();
   });
 
-  /** « Pas encore constitué » se règle par une signature, pas par une demande au juriste. */
+  /** "Not yet retained" is resolved by a signature, not by a request to the legal officer. */
   it("non constitué : la raison est dite, et non « aucune pièce »", () => {
     pieces.mockReturnValue({ data: { constitue: false, pieces: [] }, isLoading: false, error: null });
     choisir();
@@ -106,7 +104,7 @@ describe("la note de la Direction Juridique", () => {
     expect(screen.getByText("TGI Douala")).toBeInTheDocument();
   });
 
-  /** Le serveur renvoie la note nulle tant que l'avocat n'est pas constitué : l'écran n'invente rien. */
+  /** The server returns a null note until the lawyer is retained: the screen makes nothing up. */
   it("absente, elle ne laisse qu'un tiret", () => {
     choisir();
     expect(screen.getByRole("columnheader", { name: "Note de la Direction Juridique" })).toBeInTheDocument();

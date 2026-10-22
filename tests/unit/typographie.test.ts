@@ -1,19 +1,9 @@
 /**
  * @vitest-environment node
  *
- * Garde-fou typographique (QF-48).
+ * Typography guard: visible text uses the hyphen "-", never the em dash "—".
  *
- * **Pourquoi ce fichier existe.** En clôturant QF-48 — le remplacement du tiret cadratin « — » par
- * le trait d'union « - » dans tout le texte visible — j'avais écrit noir sur blanc : *« Reste sans
- * garde-fou : je réintroduirai des cadratins en rédigeant normalement. »* C'est arrivé le lendemain,
- * dans un libellé d'archive d'audit, et c'est le porteur du projet qui l'a vu en recette.
- *
- * Une décision de style que rien ne fait respecter n'est pas une décision, c'est un souhait. Ce test
- * est la partie qui manquait : il échoue **avant** la recette, pas pendant.
- *
- * **Ce qu'il ne couvre pas, et pourquoi.** Les commentaires de code et les fichiers `.md` gardent
- * leurs cadratins : ce ne sont pas l'interface, et les balayer noierait dans des milliers de lignes
- * les diffs qui comptent. C'est l'arbitrage rendu en QF-48, et ce test s'y tient.
+ * Code comments and `.md` files are out of scope: they are not part of the interface.
  */
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
@@ -23,13 +13,12 @@ import { describe, expect, it } from "vitest";
 const CADRATIN = "—";
 
 /**
- * La seule exception, documentée en QF-48 : le placeholder « valeur absente ». Dans une colonne
- * Montant ou Téléphone, un `-` isolé se lit comme un signe moins ou une valeur tronquée, là où le
- * cadratin dit sans ambiguïté « rien à afficher ».
+ * The only exception: the "missing value" placeholder. In an Amount or Phone column a lone `-` reads
+ * as a minus sign or a truncated value, whereas the em dash clearly means "nothing to show".
  */
 const EXCEPTION_PLACEHOLDER = /"aucuneValeur":\s*"—"/;
 
-/** Les fichiers suivis par git, hors tests : c'est là que vit le texte visible. */
+/** Git-tracked files, excluding tests: that is where visible text lives. */
 function sourcesVisibles(): string[] {
   return execSync('git ls-files -- "*.ts" "*.tsx"', { encoding: "utf8" })
     .split("\n")
@@ -38,11 +27,8 @@ function sourcesVisibles(): string[] {
 }
 
 /**
- * Lignes d'un fichier qui ne sont ni un commentaire ni dans un bloc de commentaire.
- *
- * Le suivi des blocs est nécessaire : une heuristique « la ligne commence par `*` » classait en
- * code les lignes de continuation des commentaires JSX, et avait déjà produit un faux inventaire
- * lors de QF-48.
+ * Lines of a file that are neither a comment nor inside a comment block. Block tracking is needed:
+ * a "line starts with `*`" heuristic would classify JSX comment continuation lines as code.
  */
 function lignesDeCode(contenu: string): { numero: number; texte: string }[] {
   const resultat: { numero: number; texte: string }[] = [];
@@ -78,9 +64,8 @@ describe("typographie du texte visible (QF-48)", () => {
   );
 
   /**
-   * Les séparateurs de libellés dans le code — « {reference} — {nom} » — étaient la seconde moitié
-   * de QF-48. Un cadratin entouré d'espaces sur une ligne de code est presque toujours un texte
-   * affiché ; les commentaires, eux, sont exclus.
+   * Label separators in code ("{reference} — {nom}"): an em dash surrounded by spaces on a code
+   * line is almost always displayed text. Comments are excluded.
    */
   it("aucun séparateur en cadratin dans les chaînes du code", () => {
     const fautifs: string[] = [];

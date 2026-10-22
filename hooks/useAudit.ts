@@ -6,15 +6,9 @@ import { CLES, TAILLE_PAGE } from "@/hooks/const";
 import { auditService, type FiltresAudit } from "@/services/auditService";
 
 /**
- * Consultation de l'audit (backend Q-112). DJ et DJA.
- *
- * **Pas de rafraîchissement automatique**, et ici la raison n'est pas seulement l'utilité : chaque
- * lecture de la première page est **historisée** côté serveur. Une cadence de fond produirait une
- * trace de consultations que personne n'a demandées, et noierait celles qui comptent.
- *
- * `placeholderData` conserve la page précédente pendant le chargement de la suivante : les filtres
- * changent souvent, et un tableau qui se vide entre deux lectures fait sauter la hauteur de la page
- * sous le curseur.
+ * Audit log consultation (DJ and DJA). No automatic refresh: each read of the first page is itself
+ * logged server-side, so background polling would pollute the trail.
+ * `placeholderData` keeps the previous page while the next one loads to avoid layout jumps.
  */
 export function useAudit(filtres: FiltresAudit, page = 0, size = TAILLE_PAGE) {
   return useQuery({
@@ -34,7 +28,7 @@ export function useAudit(filtres: FiltresAudit, page = 0, size = TAILLE_PAGE) {
   });
 }
 
-/** Les archives déjà produites (backend Q-113), avec leur empreinte. */
+/** Archives already produced, with their fingerprint. */
 export function useArchivesAudit(page = 0, size = TAILLE_PAGE) {
   return useQuery({
     queryKey: [CLES.audit, "archives", page, size],
@@ -43,11 +37,8 @@ export function useArchivesAudit(page = 0, size = TAILLE_PAGE) {
 }
 
 /**
- * Produit une extraction et la remet à l'utilisateur (backend Q-113).
- *
- * **Le succès invalide la liste des archives** : l'export vient d'en créer une, et voir la liste
- * l'ignorer ferait croire que rien n'a été scellé — le même défaut que celui trouvé en Q-110 sur le
- * journal qui ne se rafraîchissait pas après un enregistrement.
+ * Produces an export and hands it to the user. Success invalidates the archive list, since the
+ * export has just created a new archive.
  */
 export function useExporterAudit() {
   const client = useQueryClient();

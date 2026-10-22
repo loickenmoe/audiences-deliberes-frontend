@@ -7,13 +7,8 @@ import { Champ, Select } from "@/components/ui/champ";
 import { Button } from "@/components/ui/button";
 
 /**
- * Choix d'un format d'export.
- *
- * Les formats **diffèrent selon l'endpoint** : le calendrier des audiences propose JSON, PDF et
- * Excel ; un rapport y ajoute CSV. Le composant ne présume donc rien et reçoit la liste.
- *
- * `JSON` signifie « à l'écran » : c'est la réponse exploitable par l'interface, les trois autres
- * reviennent en binaire et déclenchent un téléchargement.
+ * Export format picker. Formats depend on the endpoint, so the list is passed in.
+ * `JSON` means "on screen"; the other formats come back as binary and trigger a download.
  */
 export function MenuExport<T extends string>({
   formats,
@@ -22,14 +17,14 @@ export function MenuExport<T extends string>({
   onExport,
   enCours = false,
   id = "format-export",
-}: {
+}: Readonly<{
   formats: readonly T[];
   valeur: T;
   onChangement: (format: T) => void;
   onExport: () => void;
   enCours?: boolean;
   id?: string;
-}) {
+}>) {
   const t = useTranslations("metier");
   const td = useTranslations("domaine");
 

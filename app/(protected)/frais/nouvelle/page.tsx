@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return { title: t("fraisTitre") };
 }
 
-/** Écran 30 — dépôt d'une demande de frais par l'avocat (#23, US 4.1). */
+/** Screen 30 - expense request submission by the lawyer (#23, US 4.1). */
 export default async function PageNouvelleDemandeFrais() {
   await exigerCapacite("deposerFrais");
   return <FormulaireFrais />;

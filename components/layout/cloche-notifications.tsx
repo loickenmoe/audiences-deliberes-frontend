@@ -7,11 +7,11 @@ import Link from "next/link";
 import { useNombreNotificationsATraiter } from "@/hooks/useAlertes";
 
 /**
- * Compteur de notifications non lues, présent sur tous les écrans authentifiés.
+ * Unread notification counter, shown on every authenticated screen.
  *
- * Il ne tient aucun état propre : le canal temps réel invalide le cache, la requête se rejoue, le
- * nombre suit. Une pastille locale incrémentée à la main divergerait dès la première notification
- * traitée depuis un autre onglet.
+ * It holds no state of its own: the real-time channel invalidates the cache, the query re-runs and
+ * the count follows. A locally incremented badge would diverge as soon as a notification was handled
+ * in another tab.
  */
 export function ClocheNotifications() {
   const t = useTranslations("notifications");
@@ -25,9 +25,9 @@ export function ClocheNotifications() {
     >
       <BellRing aria-hidden className="size-5" />
       {/*
-        Rouge de marque lisible (#B3141B, 6,92:1 sur blanc) : la règle « l'action principale est
-        anthracite » vise les boutons, pas un indicateur non cliquable dont c'est précisément le
-        rôle d'attirer l'œil. Le nombre double la couleur — la pastille n'informe jamais seule.
+        Readable brand red (#B3141B, 6.92:1 on white): the "primary action is charcoal" rule targets
+        buttons, not a non-clickable indicator whose role is to catch the eye. The number doubles
+        the colour, so the badge never informs by colour alone.
       */}
       {nombre > 0 ? (
         <span

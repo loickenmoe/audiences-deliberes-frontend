@@ -1,23 +1,18 @@
 import type { Role } from "@/types/enums";
 
 /**
- * Contrôle d'accès du frontend.
+ * Frontend access control.
  *
- * **Cette table est dérivée des `@PreAuthorize` du backend, jamais inventée.** Le backend reste
- * l'arbitre : chaque appel non autorisé est refusé côté serveur et remonte en `ERR-FORBIDDEN`.
- * Ce que l'on fait ici relève de l'ergonomie — ne pas proposer une action qui sera refusée — et non
- * de la sécurité. **Masquer n'est pas sécuriser.**
- *
- * Toute divergence entre cette table et un `@PreAuthorize` est un défaut : la référence est
- * `API_INTEGRATION_STATUS.md`, lui-même relevé endpoint par endpoint dans le code du backend.
+ * This table is derived from the backend `@PreAuthorize` rules. The backend remains the authority
+ * (unauthorized calls fail with `ERR-FORBIDDEN`); this is UX, not security: hiding is not securing.
+ * Any divergence from a `@PreAuthorize` is a bug.
  */
 
 /**
- * Les cinq profils internes. Tous portent `ROLE_CONSULTATION` et `ROLE_SAISIE` (composite).
+ * The five internal profiles. All hold `ROLE_CONSULTATION` and `ROLE_SAISIE` (composite).
  *
- * Depuis Q-81, `ROLE_DJ` et `ROLE_DJA` incluent aussi `ROLE_JURISTE` (composite) : leur jeton porte
- * les deux, si bien que toute capacité « juriste » ci-dessous leur est ouverte **sans** qu'ils y
- * soient listés. `profilPrincipal` garde le DJ et la DJA en tête, pour l'affichage.
+ * `ROLE_DJ` and `ROLE_DJA` also include `ROLE_JURISTE` (composite), so every legal-officer
+ * capability below is open to them without being listed. `profilPrincipal` ranks DJ and DJA first.
  */
 export const ROLES_INTERNES = [
   "ROLE_JURISTE",
@@ -27,13 +22,13 @@ export const ROLES_INTERNES = [
   "ROLE_SH",
 ] as const satisfies readonly Role[];
 
-/** Un utilisateur porte plusieurs rôles simultanément : toujours raisonner en ensemble. */
+/** A user holds several roles at once: always reason on the set. */
 export function aRole(roles: readonly string[] | undefined, ...attendus: readonly Role[]): boolean {
   if (!roles?.length) return false;
   return attendus.some((role) => roles.includes(role));
 }
 
-/** Profil métier principal, à l'exclusion des rôles transverses. Sert à l'affichage. */
+/** Main business profile, excluding cross-cutting roles. Used for display. */
 export function profilPrincipal(roles: readonly string[] | undefined): Role | null {
   const ordre: readonly Role[] = [
     "ROLE_DJ",
@@ -47,11 +42,11 @@ export function profilPrincipal(roles: readonly string[] | undefined): Role | nu
 }
 
 /**
- * Capacités de l'interface. Chaque entrée cite le ou les endpoints dont elle reflète le
- * `@PreAuthorize`, pour que la correspondance reste vérifiable.
+ * UI capabilities. Each entry cites the endpoints whose `@PreAuthorize` it mirrors, so the mapping
+ * stays verifiable.
  */
 export const CAPACITES = {
-  // ── Dossiers ──────────────────────────────────────────────────────────────
+  // Case files
   /** `GET /dossiers`, `GET /dossiers/{id}` — ROLE_CONSULTATION */
   consulterDossiers: ["ROLE_CONSULTATION"],
   /** `POST /dossiers` — ROLE_SAISIE */
@@ -63,50 +58,42 @@ export const CAPACITES = {
   /** `POST /dossiers/{id}/seuil-derogation` — ROLE_SAISIE */
   demanderDerogationSeuil: ["ROLE_SAISIE"],
   /**
-   * `POST /dossiers/{id}/sensibilite/proposition` - SAISIE (N4, observation 5).
-   *
-   * Même rôle que la demande de dérogation, et pour la même raison : le juriste **propose**,
-   * il ne décide pas. La pose et le retrait directs relèvent d'`arbitrerDossier`.
+   * `POST /dossiers/{id}/sensibilite/proposition` - SAISIE. Like the threshold waiver, the legal
+   * officer only proposes; setting or removing directly belongs to `arbitrerDossier`.
    */
   proposerDiligence: ["ROLE_SAISIE"],
   /** `PUT .../seuil-derogation/{auditId}`, `POST .../sensibilite/validation` — DJ, DJA */
   arbitrerDossier: ["ROLE_DJ", "ROLE_DJA"],
 
-  // ── Clients et référentiels ───────────────────────────────────────────────
+  // Clients and reference data
   /** `GET /clients`, `GET /referentiels/*`, `GET /utilisateurs`, `GET /intervenants` — CONSULTATION */
   consulterReferentiels: ["ROLE_CONSULTATION"],
   /** `POST /clients` — ROLE_SAISIE */
   creerClient: ["ROLE_SAISIE"],
-  /** `PUT /clients/{id}` — ROLE_SAISIE : qui peut créer un client peut en corriger une coquille. */
+  /** `PUT /clients/{id}` — ROLE_SAISIE: whoever can create a client can fix a typo in it. */
   modifierClient: ["ROLE_SAISIE"],
   /** `POST /intervenants` — DJ, DJA */
   administrerIntervenants: ["ROLE_DJ", "ROLE_DJA"],
 
-  // ── Audiences et délibérés ────────────────────────────────────────────────
-  /** `POST .../audiences`, `PUT /audiences/{id}/compte-rendu`, alarmes — JURISTE */
+  // Hearings and deliberations
+  /** `POST .../audiences`, `PUT /audiences/{id}/compte-rendu`, alarms — JURISTE */
   gererAudiences: ["ROLE_JURISTE"],
   /**
-   * `GET /audiences/calendrier` — JURISTE, DJ. **L'Assistante n'y a pas accès ; la DJA, si** — par
-   * son `ROLE_JURISTE` composite, comme le DJ. Le commentaire disait auparavant « ni DJA ni
-   * Assistante » : c'était faux, et vérifié faux en exécution. La liste ci-dessous n'a jamais changé.
+   * `GET /audiences/calendrier` — JURISTE, DJ, ASSISTANTE, SH. The DJA has access through her
+   * composite `ROLE_JURISTE`. Opened to the Assistant and the SH on 2026-10-21.
    */
-  consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ"],
+  consulterCalendrier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_ASSISTANTE", "ROLE_SH"],
 
   /**
-   * Écran 44 — journal des audiences et comptes rendus attendus.
-   *
-   * Ouvert aux **juristes** comme à la direction (arbitrage du porteur du projet, 2026-09-28).
-   * D'abord réservé au DJ et à la DJA par prudence — l'écran nomme des personnes et mesure ce
-   * qu'elles ont rapporté, et NF-CONF-01 reste « à définir avec la DRH » —, il s'est avéré que les
-   * juristes en ont l'usage quotidien : savoir ce qui s'est dit aux audiences du jour fait partie
-   * de leur métier, et le compte rendu attendu est le leur.
+   * Hearing log and expected hearing reports. Open to legal officers, management, the Assistant and
+   * the SH (since 2026-10-21); the expected reports remain the legal officers' to write.
    */
-  consulterJournalAudiences: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
-  /** `POST .../deliberes`, prorogations, rabattement, expédition, recours — JURISTE */
+  consulterJournalAudiences: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE", "ROLE_SH"],
+  /** `POST .../deliberes`, extensions, withdrawal, certified copy, appeals — JURISTE */
   gererDeliberes: ["ROLE_JURISTE"],
 
-  // ── Frais ─────────────────────────────────────────────────────────────────
-  /** `GET /frais/demandes`, `GET /frais/demandes/{id}` (Q-82) — AVOCAT, ASSISTANTE, DJA, DJ */
+  // Lawyer fees
+  /** `GET /frais/demandes`, `GET /frais/demandes/{id}` — AVOCAT, ASSISTANTE, DJA, DJ */
   consulterFrais: ["ROLE_AVOCAT", "ROLE_ASSISTANTE", "ROLE_DJA", "ROLE_DJ"],
   /** `POST /frais/demandes` — AVOCAT */
   deposerFrais: ["ROLE_AVOCAT"],
@@ -116,12 +103,12 @@ export const CAPACITES = {
   enregistrerPaiementFrais: ["ROLE_ASSISTANTE"],
   /** `PUT .../opportunite` — DJA */
   controlerOpportuniteFrais: ["ROLE_DJA"],
-  /** `POST .../validation-conjointe` — DJ et DJA */
+  /** `POST .../validation-conjointe` — DJ and DJA */
   validerConjointementFrais: ["ROLE_DJ", "ROLE_DJA"],
 
-  // ── Publications et intervenants ──────────────────────────────────────────
-  /** `GET /publications` — ASSISTANTE, JURISTE, DJ, DJA */
-  consulterPublications: ["ROLE_ASSISTANTE", "ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA"],
+  // Publications and external parties
+  /** `GET /publications` — ASSISTANTE, JURISTE, DJ, DJA, SH (consultation only for the SH) */
+  consulterPublications: ["ROLE_ASSISTANTE", "ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_SH"],
   /** `PUT /publications/{id}/validation` — ASSISTANTE */
   validerPublication: ["ROLE_ASSISTANTE"],
   /** `POST /publications/{id}/commentaires` — JURISTE */
@@ -131,98 +118,65 @@ export const CAPACITES = {
   /** `POST /publications/cr-audience`, `POST /publications/autres` — AVOCAT */
   deposerPublication: ["ROLE_AVOCAT"],
   /**
-   * `GET /repertoire/avocats` — JURISTE, ASSISTANTE. **Le DJ et la DJA y accèdent aussi**, par leur
-   * `ROLE_JURISTE` composite : mesuré, l'endpoint leur répond 200. Le commentaire disait « ni DJ ni
-   * DJA » ; seuls le SH et l'avocat en sont écartés.
+   * `GET /repertoire/avocats` — JURISTE, ASSISTANTE, SH. The DJ and the DJA also have access through
+   * their composite `ROLE_JURISTE`; only lawyers are excluded.
    */
-  consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
-  /** `GET /constitutions/prestataires` — SH, JURISTE, **ASSISTANTE** (2026-10-07) */
+  consulterRepertoire: ["ROLE_JURISTE", "ROLE_ASSISTANTE", "ROLE_SH"],
+  /** `GET /constitutions/prestataires` — SH, JURISTE, ASSISTANTE */
   consulterConstitutions: ["ROLE_SH", "ROLE_JURISTE", "ROLE_ASSISTANTE"],
-  /** `POST /constitutions/prestataires` — JURISTE, **ASSISTANTE** (métier, 2026-10-07) */
+  /** `POST /constitutions/prestataires` — JURISTE, ASSISTANTE */
   solliciterConstitution: ["ROLE_JURISTE", "ROLE_ASSISTANTE"],
   /** `PUT /constitutions/prestataires/{id}/validation` — SH */
   signerConstitution: ["ROLE_SH"],
   /**
    * `PUT /constitutions/prestataires/{id}/lettre` — JURISTE, SH, ASSISTANTE.
    *
-   * **Ce rôle ne suffit pas, et c'est voulu.** Depuis Q-126 (2026-10-07) la lettre appartient au
-   * demandeur de la constitution : lui seul y écrit, et le SH la corrige avant de la signer. Un
-   * rôle ne peut pas dire cela - il ne connaît pas qui a demandé quoi, et `ROLE_JURISTE` étant
-   * composite (Q-81), il vaudrait aussi pour le DJ et la DJA. C'est le **serveur** qui tranche,
-   * ligne par ligne, par `redactionPossible`. Cette capacité ne sert donc qu'à ouvrir l'écran.
+   * The role is deliberately not enough: the letter belongs to the requester, and the SH corrects it
+   * before signing. The server decides per row through `redactionPossible`; this capability only
+   * opens the screen.
    */
   redigerLettre: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
 
   /**
-   * `GET /demandes-explication` — DJ, DJA et AVOCAT (N7 temps 2).
-   *
-   * Le même écran sert deux publics, et c'est le **serveur** qui décide lesquelles chacun voit :
-   * la direction les siennes toutes, l'avocat celles qui lui sont adressées. L'écran n'envoie
-   * aucun paramètre de périmètre - il suffirait à un avocat pour demander la liste entière.
+   * `GET /demandes-explication` — DJ, DJA and AVOCAT. The server decides what each sees (management
+   * all of theirs, a lawyer those addressed to them); the screen sends no scope parameter.
    */
   consulterExplications: ["ROLE_DJ", "ROLE_DJA", "ROLE_AVOCAT"],
-  /** `POST /demandes-explication` — DJ et DJA seuls : c'est la direction qui écrit. */
+  /** `POST /demandes-explication` — DJ and DJA only: management writes. */
   demanderExplication: ["ROLE_DJ", "ROLE_DJA"],
-  /** `PUT /demandes-explication/{id}/reponse` — l'avocat, et seulement pour la sienne (403). */
+  /** `PUT /demandes-explication/{id}/reponse` — the lawyer, only for their own (403 otherwise). */
   repondreExplication: ["ROLE_AVOCAT"],
 
   /**
-   * `GET /rapports/nominatif` — DJ et DJA seuls (observation 14, N6).
-   *
-   * Ce rapport **nomme des personnes**. Il est lu sur leurs rôles propres, jamais par
-   * `ROLE_JURISTE` qui est composite (Q-81) : chaque juriste y lirait l'activité de ses collègues.
+   * `GET /rapports/nominatif` — DJ and DJA only. This report names people, so it relies on their own
+   * roles, never on the composite `ROLE_JURISTE` (every legal officer would see colleagues' activity).
    */
   consulterRapportNominatif: ["ROLE_DJ", "ROLE_DJA"],
 
   /**
-   * `GET /rapports/activite` — **sa propre activité**, pour chacun (Q-133).
-   *
-   * **L'avocat y est, et j'avais écrit l'inverse.** J'ai soutenu qu'« aucune des natures comptées
-   * n'est celle d'un avocat - sa fiche serait vide par construction ». C'était **faux** : il dépose
-   * ses demandes de frais, ses comptes rendus d'audience, ses autres publications, et répond aux
-   * demandes d'explication. Les quatre sont tracées sous son propre compte. Corrigé le 2026-10-13
-   * (backend Q-135), sur demande du métier.
-   *
-   * `ROLE_CONSULTATION` couvre les cinq profils internes, `ROLE_AVOCAT` l'avocat qui ne le porte
-   * pas (QF-01). Deux rôles plutôt que sept profils : ce qui est énuméré ici doit rester court.
-   *
-   * C'est le **serveur** qui décide de quelle personne il s'agit : lire l'activité d'un collègue ou
-   * d'un avocat demande d'être DJ ou DJA, et se tient sur [[consulterRapportNominatif]].
+   * `GET /rapports/activite` — one's own activity, for everyone, lawyers included (fee requests,
+   * hearing reports, other publications, explanation answers). `ROLE_CONSULTATION` covers the five
+   * internal profiles, `ROLE_AVOCAT` the lawyer. The server decides whose activity is read; reading
+   * someone else's requires [[consulterRapportNominatif]].
    */
   consulterMonActivite: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
 
-  // ── Écrans ouverts à tout compte ──────────────────────────────────────────
+  // Screens open to every account
   /**
-   * L'**accueil**, `/` — ouvert à tout compte authentifié, avocat compris.
-   *
-   * Aucun endpoint ne la gouverne : c'est un écran, et depuis QF-19 une **racine unique pour tous
-   * les profils**, dont le contenu s'adapte plutôt que de rediriger. La capacité existe donc pour
-   * que l'entrée de navigation en ait une, et non pour refléter un `@PreAuthorize`.
-   *
-   * **Elle était adossée à [[consulterReferentiels]], et c'était un défaut** (QF-59) : l'avocat ne
-   * porte pas `ROLE_CONSULTATION`, si bien que l'entrée disparaissait de son menu alors que la page
-   * s'ouvrait parfaitement pour lui. Sa seule porte était le logo de la banque - une porte sans
-   * étiquette, qui ne dit pas où elle mène et ne marque pas l'onglet de la page où l'on est.
-   *
-   * `ROLE_CONSULTATION` couvre les cinq profils internes, `ROLE_AVOCAT` l'avocat qui ne le porte
-   * pas (QF-01) : les deux réunis sont la population entière, et deux rôles valent mieux que sept
-   * profils énumérés.
+   * Home page `/`, open to every authenticated account, lawyers included. No endpoint governs it: a
+   * single root for all profiles whose content adapts. The capability exists so the navigation entry
+   * has one. `ROLE_CONSULTATION` plus `ROLE_AVOCAT` covers the whole population.
    */
   consulterAccueil: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
   /**
-   * Ses **notifications**, `GET /alertes/mes-notifications` — `@PreAuthorize("isAuthenticated()")`.
+   * Own notifications, `GET /alertes/mes-notifications` — `@PreAuthorize("isAuthenticated()")`.
    *
-   * <b>Distincte de [[consulterAccueil]]</b>, bien qu'elle porte aujourd'hui les mêmes rôles :
-   * celle-ci reflète un endpoint, l'autre un écran sans endpoint. Les confondre ferait suivre à
-   * l'une tout resserrement futur de l'autre.
-   *
-   * C'est le **serveur** qui décide desquelles il s'agit : le destinataire est résolu sur le jeton,
-   * il n'est pas un paramètre. Chacun n'y voit donc que les alertes qui lui sont adressées, et
-   * l'écran n'a aucun périmètre à demander.
+   * Kept separate from [[consulterAccueil]] despite identical roles: this one mirrors an endpoint,
+   * the other a screen. The server resolves the recipient from the token.
    */
   consulterSesNotifications: ["ROLE_CONSULTATION", "ROLE_AVOCAT"],
 
-  // ── Gestion documentaire ──────────────────────────────────────────────────
+  // Document management
   /** `POST /ged/documents` — ROLE_SAISIE */
   deposerDocument: ["ROLE_SAISIE"],
   /** `GET /ged/documents/{id}`, `GET /dossiers/{id}/documents` — CONSULTATION */
@@ -232,85 +186,68 @@ export const CAPACITES = {
   /** `GET /ged/demandes-suppression`, `PUT .../approbation-suppression` — DJ, DJA */
   arbitrerSuppressions: ["ROLE_DJ", "ROLE_DJA"],
   /**
-   * `PUT`, `DELETE /ged/documents/{id}/partage-avocat` — JURISTE (QF-64, backend Q-139). Le DJ et la
-   * DJA l'atteignent par leur `ROLE_JURISTE` composite (Q-81). « Tout juriste partage, sans
-   * validation du DJ » : arbitré par le porteur du projet le 2026-10-15. Sur un dossier sensible,
-   * c'est le **serveur** qui fait du geste une proposition.
-   *
-   * **Le SH et l'Assistante partagent aussi depuis QF-65** - « ils sont à la base des juristes ».
-   * Ils ne portent pas `ROLE_JURISTE` : ils sont donc nommés. Sur un dossier sensible, leur geste
-   * propose, comme celui du juriste ; seuls le DJ et la DJA partagent directement.
+   * `PUT`, `DELETE /ged/documents/{id}/partage-avocat` — JURISTE, SH, ASSISTANTE (the DJ and the DJA
+   * through their composite `ROLE_JURISTE`). Any of them shares without DJ approval; on a sensitive
+   * case file the server turns the action into a proposal, except for the DJ and the DJA.
    */
   partagerDocument: ["ROLE_JURISTE", "ROLE_SH", "ROLE_ASSISTANTE"],
   /**
-   * `PUT .../partage-avocat/arbitrage`, `GET /ged/partages-avocat` — DJ, DJA (QF-64).
+   * `PUT .../partage-avocat/arbitrage`, `GET /ged/partages-avocat` — DJ, DJA.
    *
-   * **Distincte d'`arbitrerSuppressions`**, bien qu'elle porte aujourd'hui les mêmes rôles : l'une
-   * décide qu'une pièce disparaît, l'autre qu'elle sort de la banque. Les confondre ferait suivre à
-   * l'une tout assouplissement futur de l'autre.
+   * Kept separate from `arbitrerSuppressions` despite identical roles: one decides a document is
+   * deleted, the other that it leaves the bank.
    */
   arbitrerPartages: ["ROLE_DJ", "ROLE_DJA"],
-  /** `PUT /audiences/{id}/note-avocat` — JURISTE (QF-64) : la note destinée à l'avocat constitué. */
+  /** `PUT /audiences/{id}/note-avocat` — JURISTE: the note for the appointed lawyer. */
   ecrireNoteAvocat: ["ROLE_JURISTE"],
-  /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE (Q-80 backend) */
-  consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE"],
+  /** `GET /ged/rapport-journalier` — JURISTE, DJ, DJA, ASSISTANTE, SH */
+  consulterRapportJournalier: ["ROLE_JURISTE", "ROLE_DJ", "ROLE_DJA", "ROLE_ASSISTANTE", "ROLE_SH"],
 
-  // ── Décisions définitives ─────────────────────────────────────────────────
-  /** adjudications, condamnations, jurisprudences (écriture) — JURISTE */
+  // Final decisions
+  /** adjudications, convictions, case law (write) — JURISTE */
   gererDecisions: ["ROLE_JURISTE"],
   /** `GET /jurisprudences` — CONSULTATION */
   consulterJurisprudence: ["ROLE_CONSULTATION"],
 
-  // ── Pilotage et administration ────────────────────────────────────────────
-  /** `GET /tableau-de-bord` — DJ et **DJA** (backend Q-95 ; US 8.5 ne nommait que le DJ) */
+  // Steering and administration
+  /** `GET /tableau-de-bord` — DJ and DJA (US 8.5) */
   consulterTableauDeBord: ["ROLE_DJ", "ROLE_DJA"],
-  /** `GET /rapports` — JURISTE ; le DJ l'atteint par son `ROLE_JURISTE` composite (Q-81, QF-04) */
-  genererRapport: ["ROLE_JURISTE"],
+  /**
+   * `GET /rapports` — JURISTE, ASSISTANTE, SH; the DJ and the DJA reach it through their composite
+   * `ROLE_JURISTE`. The named activity reports stay with `consulterRapportNominatif`.
+   */
+  genererRapport: ["ROLE_JURISTE", "ROLE_ASSISTANTE", "ROLE_SH"],
   /** `GET /configurations` — CONSULTATION */
   consulterConfigurations: ["ROLE_CONSULTATION"],
   /**
-   * `PUT /configurations/{cle}`, `PUT /alertes/seuils` — DJ **et DJA** (backend Q-108).
-   *
-   * Ouvert à la DJA sur décision du porteur du projet, pour la **continuité de service** : le DJ
-   * absent, plus personne ne pouvait relever un seuil. L'ouverture est **à sens unique** — le
-   * contrôle d'opportunité reste réservé à la DJA, sans quoi RG-INT-03 perdrait la séparation de ses
-   * deux étapes.
+   * `PUT /configurations/{cle}`, `PUT /alertes/seuils` — DJ and DJA, for service continuity when the
+   * DJ is absent. One-way only: the appropriateness check stays reserved to the DJA, otherwise
+   * RG-INT-03 would lose the separation of its two steps.
    */
   administrerConfigurations: ["ROLE_DJ", "ROLE_DJA"],
   /**
-   * `POST`, `PUT`, `DELETE /referentiels/agences` - DJ, DJA (backend, observation 2).
+   * `POST`, `PUT`, `DELETE /referentiels/agences` - DJ, DJA.
    *
-   * **Distincte d'`administrerConfigurations`**, bien qu'elle porte aujourd'hui les mêmes
-   * rôles : un seuil se règle, une agence engage les dossiers qui portent son code. Les
-   * confondre ferait suivre à l'une tout assouplissement futur de l'autre.
-   *
-   * La **lecture** du référentiel relève de `consulterReferentiels` : elle explique ce que
-   * propose le formulaire de création, la cacher n'aiderait personne.
+   * Kept separate from `administrerConfigurations` despite identical roles: a threshold is tuned,
+   * whereas a branch affects every case file carrying its code. Reading falls under
+   * `consulterReferentiels`.
    */
   administrerAgences: ["ROLE_DJ", "ROLE_DJA"],
   /**
-   * `GET /alertes/statistiques-diffusion` — DJ, DJA (backend Q-109).
-   *
-   * Distincte d'`administrerConfigurations` bien qu'elle porte aujourd'hui les mêmes rôles : c'est
-   * une **lecture** de supervision, pas une écriture d'administration. Les confondre ferait qu'un
-   * assouplissement futur de l'une déplacerait l'autre sans qu'on l'ait voulu.
+   * `GET /alertes/statistiques-diffusion` — DJ, DJA. Kept separate from `administrerConfigurations`:
+   * a supervision read, not an administration write.
    */
   superviserAlertes: ["ROLE_DJ", "ROLE_DJA"],
   /**
-   * `GET /historique` — DJ, DJA (backend Q-112).
-   *
-   * **Distincte d'`administrerConfigurations` et de `superviserAlertes`**, bien qu'elle porte
-   * aujourd'hui les mêmes rôles : lire l'activité nommée d'un collègue n'est ni écrire un seuil ni
-   * lire un taux global. Les confondre ferait qu'un assouplissement futur de l'une déplacerait
-   * l'autre sans qu'on l'ait voulu — et ici, ce serait un assouplissement sur des données
-   * personnelles (NF-CONF-01).
+   * `GET /historique` — DJ, DJA. Kept separate from `administrerConfigurations` and
+   * `superviserAlertes`: reading a colleague's named activity concerns personal data (NF-CONF-01).
    */
   consulterAudit: ["ROLE_DJ", "ROLE_DJA"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Capacite = keyof typeof CAPACITES;
 
-/** Vrai si les rôles de l'utilisateur autorisent cette capacité. */
+/** True if the user's roles grant this capability. */
 export function peut(roles: readonly string[] | undefined, capacite: Capacite): boolean {
   return aRole(roles, ...CAPACITES[capacite]);
 }

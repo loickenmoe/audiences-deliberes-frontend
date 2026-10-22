@@ -9,12 +9,11 @@ import { AppProvider } from "@/providers";
 import "./globals.css";
 
 /**
- * QF-09 (révisé) : **français et anglais**, les deux langues officielles du Cameroun. La langue
- * active vient d'un cookie ; l'URL ne porte aucun préfixe, afin que les liens profonds des
- * notifications restent valables d'un utilisateur à l'autre.
+ * French and English, Cameroon's two official languages. The active language comes from a cookie;
+ * URLs carry no prefix so notification deep links stay valid from one user to another.
  *
- * Typographie sans empattement, conformément à l'usage des applications internes de la banque.
- * Le mono sert aux données alignées : références de dossier, montants, codes d'erreur.
+ * Sans-serif typography, as in the bank's internal applications. Monospace is for aligned data:
+ * case references, amounts, error codes.
  */
 const sans = IBM_Plex_Sans({
   variable: "--font-sans",
@@ -40,12 +39,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * La session est lue **ici**, côté serveur, et transmise au fournisseur (QF-42).
+ * The session is read **here**, server side, and passed to the provider.
  *
- * Sans elle, `SessionProvider` interroge `/api/auth/session` au montage de chaque page — et chaque
- * lecture **repose le cookie de session**. Une déconnexion tombant pendant l'une d'elles était
- * annulée : la réponse revenait après et réécrivait le cookie qu'elle venait d'effacer. La session
- * étant déjà résolue par le rendu serveur, cet aller-retour n'apportait rien.
+ * Otherwise `SessionProvider` queries `/api/auth/session` on every page mount, and each read
+ * **re-sets the session cookie**: a read in flight during logout could rewrite the cookie logout
+ * had just cleared.
  */
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [locale, session] = await Promise.all([getLocale(), auth()]);

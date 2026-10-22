@@ -3,19 +3,14 @@ import { twMerge } from "tailwind-merge";
 
 import { LOCALE_INTL, type Langue } from "@/i18n/config";
 
-/** Fusionne des classes Tailwind en résolvant les conflits (convention shadcn/ui). */
+/** Merges Tailwind classes, resolving conflicts (shadcn/ui convention). */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 const SANS_VALEUR = "—";
 
-/**
- * Formate un montant en francs CFA.
- *
- * Les montants du domaine sont importants — le seuil par défaut de validation conjointe est de
- * 50 000 000 FCFA — et toujours entiers : aucune décimale n'est affichée.
- */
+/** Formats an amount in CFA francs. Domain amounts are always whole numbers: no decimals. */
 export function formaterFcfa(montant: number | null | undefined, langue: Langue = "fr"): string {
   if (montant === null || montant === undefined || Number.isNaN(montant)) return SANS_VALEUR;
   return new Intl.NumberFormat(LOCALE_INTL[langue], {
@@ -25,14 +20,14 @@ export function formaterFcfa(montant: number | null | undefined, langue: Langue 
   }).format(montant);
 }
 
-/** Formate une date ISO `YYYY-MM-DD` renvoyée par le backend. */
+/** Formats an ISO `YYYY-MM-DD` date returned by the backend. */
 export function formaterDate(iso: string | null | undefined, langue: Langue = "fr"): string {
   const date = enDate(iso);
   if (!date) return SANS_VALEUR;
   return new Intl.DateTimeFormat(LOCALE_INTL[langue], { dateStyle: "long" }).format(date);
 }
 
-/** Formate un horodatage ISO, pour l'historique et les journaux d'action. */
+/** Formats an ISO timestamp, for history and action logs. */
 export function formaterDateHeure(iso: string | null | undefined, langue: Langue = "fr"): string {
   const date = enDate(iso);
   if (!date) return SANS_VALEUR;
@@ -42,7 +37,7 @@ export function formaterDateHeure(iso: string | null | undefined, langue: Langue
   }).format(date);
 }
 
-/** Formate un poids de fichier. Le plafond de la GED est de 10 Mo (RG-GED-08). */
+/** Formats a file size. The DMS limit is 10 MB (RG-GED-08). */
 export function formaterOctets(octets: number | null | undefined, langue: Langue = "fr"): string {
   if (octets === null || octets === undefined || Number.isNaN(octets)) return SANS_VALEUR;
   const unites = ["o", "ko", "Mo", "Go"];
@@ -59,12 +54,11 @@ export function formaterOctets(octets: number | null | undefined, langue: Langue
 }
 
 /**
- * Lit une valeur de date du backend.
+ * Parses a backend date value.
  *
- * Une date **seule** (`LocalDate` : `2026-09-10`) doit être lue en heure locale : `new Date(iso)` la
- * traite comme minuit UTC, ce qui l'affiche la **veille** partout à l'ouest de Greenwich. Invisible
- * à Douala (UTC+1), mais une date d'audience décalée d'un jour n'est pas une imprécision : c'est une
- * audience manquée. Les horodatages (`LocalDateTime`, sans fuseau) sont déjà lus en heure locale.
+ * A date-only value (`LocalDate`: `2026-09-10`) must be read in local time: `new Date(iso)` treats it
+ * as UTC midnight, showing the previous day west of Greenwich. Timestamps (`LocalDateTime`, no zone)
+ * are already read in local time.
  */
 function enDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;

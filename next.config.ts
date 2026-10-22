@@ -2,40 +2,29 @@ import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 
 /**
- * Les documents de la GED sont servis par des URL MinIO pré-signées (cf. RF-01 / QF-06).
- * L'hôte est déclaré ici pour que next/image puisse les afficher ; le contrôle CORS côté
- * MinIO reste à vérifier au jalon F10.
- */
-/**
- * En-têtes de sécurité (revue F17).
+ * Security headers covering the risks the frontend can handle on its own.
  *
- * Aucun n'était posé : l'application pouvait être encadrée dans une page tierce, et le navigateur
- * était libre de deviner le type des réponses. Ces quatre en-têtes couvrent les risques que le
- * frontend peut traiter seul, sans dépendre du déploiement.
- *
- * **Ce qui n'est délibérément pas fait ici.** Une politique de sécurité du contenu (CSP) complète
- * suppose un `nonce` par requête, donc un middleware, et casserait silencieusement l'hydratation si
- * elle était posée à l'aveugle. Seule la directive `frame-ancestors` est déclarée — elle ne dépend
- * d'aucun script en ligne. La CSP complète et `Strict-Transport-Security` relèvent de la mise en
- * production sous TLS, avec la DSI : les poser ici, sur un déploiement en clair, donnerait
- * l'illusion d'une protection sans l'apporter.
+ * A full Content Security Policy needs a per-request `nonce` (hence middleware) and would silently
+ * break hydration if set blindly; only `frame-ancestors` is declared. The full CSP and
+ * `Strict-Transport-Security` belong to the TLS production deployment.
  */
 const ENTETES_SECURITE = [
-  // Encadrement dans une page tierce : la seule défense contre le détournement de clic.
+  // Framing by a third-party page: the defence against clickjacking.
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
-  // Le navigateur n'invente pas le type d'une réponse — un document mal typé ne devient pas script.
+  // No MIME sniffing: a mistyped document cannot become a script.
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Une référence de dossier ne doit pas fuiter dans l'URL de référence d'un site externe.
+  // A case file reference must not leak through the referrer to an external site.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // L'application n'a besoin ni de caméra, ni de micro, ni de position.
+  // The application needs no camera, microphone or location.
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  /** L'en-tête `X-Powered-By` annonce la pile au premier venu : sans valeur, et informatif pour qui cherche. */
+  /** Do not advertise the stack through `X-Powered-By`. */
   poweredByHeader: false,
+  // DMS documents are served through pre-signed MinIO URLs; hosts declared for next/image.
   images: {
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "9000" },

@@ -2,8 +2,8 @@ import { loadEnvConfig } from "@next/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 /**
- * Décisions définitives et base jurisprudentielle (écrans 14 et 38) **contre le backend réel et
- * MinIO**. Les dossiers et l'étape clôturée qu'exige une adjudication sont préparés par l'API.
+ * Final decisions and case-law base (screens 14 and 38) against the real backend and MinIO. Cases
+ * and the closed step an adjudication requires are prepared through the API.
  */
 
 loadEnvConfig(process.cwd());
@@ -55,11 +55,11 @@ function aujourdhui() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** Un dossier et l'identifiant de son instance, encore « Ouverture ». */
+/** A case and the id of its proceeding, still "Ouverture". */
 async function dossierCree(): Promise<{ id: number; reference: string; etapeId: number }> {
   const juriste = await jeton("juriste.test");
   const juristes = await json<{ id: number }[]>("/utilisateurs?profil=JURISTE", juriste);
-  // Q-100 : réponse paginée ; `size` explicite parce qu'on cherche dans tout l'annuaire.
+  // Paginated response; explicit `size` because the whole directory is searched.
   const avocats = (
     await json<{ content: { id: number }[] }>("/intervenants?type=AVOCAT&size=200", juriste)
   ).content;
@@ -75,9 +75,9 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
       pvTransfert: "PV-DEF",
       juristesAffectes: [juristes[0]!.id],
       avocatsAffectes: [avocats[0]!.id],
-      // Obligatoires depuis le 2026-10-05 (observations 1 et 3).
+      // Mandatory.
       parties: { demandeurs: ["AFRILAND FIRST BANK"], defendeurs: ["Débiteur"] },
-      // Obligatoire depuis le 2026-10-05 (observation 2) : 00002 = Bonanjo.
+      // Mandatory: 00002 = Bonanjo.
       codeAgenceOrigine: "00002",
     }),
   });
@@ -86,8 +86,8 @@ async function dossierCree(): Promise<{ id: number; reference: string; etapeId: 
 }
 
 /**
- * L'étape parcourt son cycle jusqu'à « Clôturée » : en cours, en délibéré, délibéré vidé par une
- * décision favorable (seule voie vers « Délibéré vidé », RG-DEL-01), puis clôturée.
+ * Moves the step to "Clôturée": in progress, under deliberation, deliberation emptied by a
+ * favorable decision (the only way to "Délibéré vidé", RG-DEL-01), then closed.
  */
 async function etapeCloturee(dossierId: number, etapeId: number) {
   const juriste = await jeton("juriste.test");
@@ -99,9 +99,8 @@ async function etapeCloturee(dossierId: number, etapeId: number) {
   await statut("EN_COURS");
 
   /*
-   * Une audience **tenue** est exigee avant la mise en delibere (regle du 2026-09-29,
-   * REC-NEG-028) : un delibere sans audience n'a pas de sens, et le backend refuse la
-   * transition en 400. C'est le compte rendu du juriste qui rend l'audience tenue.
+   * A held hearing is required before deliberation (REC-NEG-028), otherwise the backend rejects the
+   * transition with a 400. The legal officer's report marks the hearing as held.
    */
   const audience = await json<{ id: number }>(`/dossiers/${dossierId}/audiences`, juriste, {
     method: "POST",
@@ -153,7 +152,7 @@ test.setTimeout(240_000);
 test("adjudication : refusée hors étape clôturée, reliquat négatif refusé, puis enregistrée", async ({ browser }) => {
   const juriste = await jeton("juriste.test");
   const ouvert = await dossierCree();
-  // Le backend refuse une adjudication sur une étape qui n'est pas clôturée (RG-DEF-01).
+  // The backend rejects an adjudication on a step that is not closed (RG-DEF-01).
   const refus = await appel(`/dossiers/${ouvert.id}/adjudications`, juriste, { method: "POST", body: adjudication(ouvert.etapeId, 0) });
   expect(refus.status).toBe(400);
 
@@ -163,7 +162,7 @@ test("adjudication : refusée hors étape clôturée, reliquat négatif refusé,
   expect(negatif.status).toBe(400);
 
   const page = await pageConnectee(browser, "juriste.test");
-  // Sans étape clôturée, l'action n'est pas proposée et l'écran dit pourquoi.
+  // Without a closed step, the action is not offered and the screen says why.
   await page.goto(`/dossiers/${ouvert.id}?onglet=decisions`);
   await expect(page.getByRole("button", { name: "Enregistrer une adjudication" })).toBeDisabled();
   await expect(page.getByText(/aucune étape de ce dossier n’est encore clôturée/)).toBeVisible();
@@ -188,7 +187,7 @@ test("adjudication : refusée hors étape clôturée, reliquat négatif refusé,
 
 test("condamnation : suivie, son statut mis à jour puis relu après rechargement ; lecture seule pour l'Assistante", async ({ browser }) => {
   const { id, etapeId } = await dossierCree();
-  // QF-66 : une condamnation se suit sur une étape clôturée, comme l'adjudication.
+  // A conviction is followed on a closed step, like an adjudication.
   await etapeCloturee(id, etapeId);
 
   const juriste = await pageConnectee(browser, "juriste.test");
@@ -206,7 +205,7 @@ test("condamnation : suivie, son statut mis à jour puis relu après rechargemen
   await statut.selectOption("PAYE");
   await juriste.getByRole("row", { name: /Frais de procédure/ }).getByRole("button", { name: "Mettre à jour" }).click();
   await expect(juriste.getByText("Statut de paiement mis à jour.")).toBeVisible();
-  // Relu du backend après rechargement : c'est ce que QF-03 rendait impossible.
+  // Read back from the backend after reload.
   await juriste.reload();
   await expect(juriste.getByLabel("Statut de paiement - Frais de procédure")).toHaveValue("PAYE");
   await juriste.context().close();
@@ -229,7 +228,7 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
   await page.getByRole("button", { name: "Archiver une décision" }).click();
   const modale = page.getByRole("dialog", { name: "Archiver une décision" });
   await modale.getByRole("button", { name: "Archiver une décision" }).click();
-  // Indexation incomplète : rien ne part (RG-DEF-05).
+  // Incomplete indexing: nothing is sent (RG-DEF-05).
   await expect(modale.getByText("Chargez la décision en PDF.")).toBeVisible();
   await modale.locator('input[name="fichier-jurisprudence"]').setInputFiles({ name: `arret-${marque}.pdf`, mimeType: "application/pdf", buffer: PDF });
   await modale.getByLabel("Type d’archive", { exact: true }).selectOption({ label: "Grosse" });
@@ -240,8 +239,8 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
   await modale.getByRole("button", { name: "Archiver une décision" }).click();
   await expect(page.getByText("Décision archivée dans la base jurisprudentielle.")).toBeVisible();
 
-  // Un fragment du mot-clé, en minuscules, suffit (Q-89). Les filtres sont visés par leur identifiant :
-  // la modale fermée reste dans le DOM, et son champ « Juridiction » porte le même libellé.
+  // A lowercase keyword fragment is enough. Filters are targeted by id: the closed dialog stays in
+  // the DOM and its "Juridiction" field has the same label.
   const motCle = page.locator("#filtre-motCle");
   await motCle.fill(marque.toLowerCase());
   await motCle.press("Enter");
@@ -255,9 +254,9 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
   await ligne.getByRole("button", { name: "Consulter - Arrêt, Cour d’appel du Littoral" }).click();
   const apercu = page.getByRole("dialog", { name: /Arrêt-2026-06-30\.pdf/ });
   await expect(apercu.locator("iframe")).toBeVisible();
-  // Le bouton ne s'active qu'une fois le fichier récupéré depuis MinIO.
+  // The button is enabled only once the file is fetched from MinIO.
   await expect(apercu.getByRole("button", { name: "Télécharger" })).toBeEnabled();
-  // Deux boutons « Fermer » : la croix de l'en-tête et celui du pied — on ferme par le pied.
+  // Two "Fermer" buttons (header cross and footer): close with the footer one.
   await apercu.getByRole("button", { name: "Fermer" }).last().click();
 
   await motCle.fill("aucune-decision-ne-porte-ce-mot");
@@ -268,17 +267,15 @@ test("base jurisprudentielle : indexation incomplète refusée, archivage PDF, r
 test("une décision archivée depuis la fiche y reste listée", async ({ page }) => {
   const { id, etapeId } = await dossierCree();
   /*
-   * L'étape doit être **clôturée** avant l'archivage : depuis la fiche, une décision ne rejoint la
-   * base jurisprudentielle qu'une fois définitive, tous recours épuisés (REC-NEG-034). Un dossier
-   * tout juste créé porte une étape ouverte, et le refus était donc fondé.
+   * The step must be closed before archiving: a decision joins the case-law base only once final,
+   * all appeals exhausted (REC-NEG-034).
    */
   await etapeCloturee(id, etapeId);
   await seConnecter(page, "juriste.test");
   await page.goto(`/dossiers/${id}?onglet=decisions`);
   await expect(page.getByText("Aucune décision archivée sur ce dossier.")).toBeVisible();
 
-  // Le bouton dit « Archiver à la jurisprudence » : c'est la base jurisprudentielle qu'on
-  // alimente, pas un classement interne au dossier.
+  // "Archiver à la jurisprudence": it feeds the case-law base, not an internal case filing.
   await page.getByRole("button", { name: "Archiver à la jurisprudence" }).click();
   const modale = page.getByRole("dialog", { name: "Archiver une décision" });
   await modale.locator('input[name="fichier-jurisprudence"]').setInputFiles({ name: "jugement.pdf", mimeType: "application/pdf", buffer: PDF });
@@ -295,11 +292,8 @@ test("une décision archivée depuis la fiche y reste listée", async ({ page })
 });
 
 /**
- * Le fil de la frappe sur la **base jurisprudentielle** (QF-57).
- *
- * Ses trois filtres se validaient au `blur` **ou sur Entrée**. Le raccourci est conservé - il
- * existait, et le retirer aurait enlevé une habitude à qui l'avait prise -, mais il n'est plus
- * nécessaire : la recherche part d'elle-même après une pause.
+ * Search-as-you-type on the case-law base: the three filters search by themselves after a pause.
+ * Enter still searches immediately.
  */
 test("les filtres de la base jurisprudentielle cherchent au fil de la frappe", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -310,12 +304,8 @@ test("les filtres de la base jurisprudentielle cherchent au fil de la frappe", a
   await expect(page).toHaveURL(/motCle=bail/, { timeout: 30_000 });
   await expect(motCle, "le filtre a exigé de quitter le champ").toBeFocused();
 
-  /*
-   * Par son identifiant, et non par son libellé : la modale d'archivage porte elle aussi un champ
-   * « Juridiction », et un `<dialog>` fermé reste dans le DOM - deux éléments répondent donc au même
-   * libellé. C'est le même piège qu'en QF-52, sur les deux modales de l'écran 42.
-   */
-  // Et la touche Entrée cherche sans attendre la pause, comme avant QF-57.
+  // By id, not label: the closed archiving `<dialog>` stays in the DOM with its own "Juridiction" field.
+  // Enter searches without waiting for the pause.
   const juridiction = page.locator("#filtre-juridiction");
   await juridiction.fill("TPI");
   await juridiction.press("Enter");
@@ -325,15 +315,8 @@ test("les filtres de la base jurisprudentielle cherchent au fil de la frappe", a
 });
 
 /**
- * **La décision se relit avant d'être archivée** (QF-62, signalé le 2026-10-14).
- *
- * L'œil d'aperçu manquait sur le formulaire d'archivage. Une première correction a posé la seule
- * propriété `surUneLigne` du téléversement : elle ne règle que la **mise en page**, ce composant ne
- * rendant aucun bouton d'aperçu - ce sont ses appelants qui le placent à côté. L'œil manquait donc
- * toujours, et c'est le porteur du projet qui l'a constaté à l'écran.
- *
- * Une décision archivée fait jurisprudence et ne se corrige pas : relire avant de valider évite
- * d'archiver la mauvaise pièce.
+ * The decision can be previewed before archiving: an archived decision becomes case law and cannot
+ * be corrected, so reviewing it avoids archiving the wrong document.
  */
 test("la décision chargée se relit avant d'être archivée", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -341,7 +324,7 @@ test("la décision chargée se relit avant d'être archivée", async ({ page }) 
   await page.getByRole("button", { name: "Archiver une décision" }).click();
 
   const modale = page.getByRole("dialog", { name: "Archiver une décision" });
-  // Tant qu'aucun fichier n'est chargé, il n'y a rien à relire : pas de bouton mort.
+  // No file loaded, nothing to preview: no dead button.
   await expect(modale.getByRole("button", { name: /^Consulter - / })).toHaveCount(0);
 
   const nom = "arret-cour-appel-douala-chambre-civile-septembre-2026.pdf";
@@ -354,19 +337,19 @@ test("la décision chargée se relit avant d'être archivée", async ({ page }) 
     timeout: 30_000,
   });
 
-  // Il est **sur la même ligne** que le téléversement, nom long compris (QF-56).
+  // It is on the same line as the upload, long file name included.
   const hauteurTeleversement = await modale.locator('input[name="fichier-jurisprudence"]')
     .evaluate((entree) => entree.closest("div")?.getBoundingClientRect().height ?? 0);
   const boiteOeil = await oeil.boundingBox();
   const boiteNom = await modale.getByText(nom).first().boundingBox();
   expect(boiteOeil, "l'œil n'est pas rendu").not.toBeNull();
   expect(boiteNom, "le nom du fichier n'est pas rendu").not.toBeNull();
-  // Deux éléments sur la même ligne se recouvrent verticalement.
+  // Two elements on the same line overlap vertically.
   const memeLigne =
     boiteOeil!.y < boiteNom!.y + boiteNom!.height && boiteNom!.y < boiteOeil!.y + boiteOeil!.height;
   expect(memeLigne, `l'œil est passé à la ligne (hauteur ${hauteurTeleversement} px)`).toBe(true);
 
-  // Et il ouvre bien la décision, sans quitter le formulaire ni l'avoir envoyée.
+  // It opens the decision without leaving or submitting the form.
   await oeil.click();
   await expect(page.getByRole("dialog", { name: `Aperçu - ${nom}` })).toBeVisible({ timeout: 30_000 });
 
@@ -374,11 +357,8 @@ test("la décision chargée se relit avant d'être archivée", async ({ page }) 
 });
 
 /**
- * **La croix de l'aperçu ne ferme que l'aperçu** (QF-63, signalé le 2026-10-14).
- *
- * Le bouton « Fermer » passait par l'état React et ne refermait que l'aperçu ; la croix appelait
- * `dialog.close()` et emportait **aussi** le formulaire d'archivage, perdant toute l'indexation
- * déjà saisie. Deux voies de sortie pour un même geste, et une seule était juste.
+ * The preview's close cross closes only the preview, not the archiving form (which would lose the
+ * indexing already entered).
  */
 test("la croix de l'aperçu laisse le formulaire d'archivage ouvert", async ({ page }) => {
   await seConnecter(page, "juriste.test");
@@ -391,15 +371,14 @@ test("la croix de l'aperçu laisse le formulaire d'archivage ouvert", async ({ p
     .locator('input[name="fichier-jurisprudence"]')
     .setInputFiles({ name: nom, mimeType: "application/pdf", buffer: PDF });
 
-  // Une indexation en cours : c'est elle que la croix faisait perdre.
+  // Indexing in progress: this is what must not be lost.
   await archivage.getByLabel("Juridiction", { exact: true }).fill("Cour d’appel de Douala");
 
   await archivage.getByRole("button", { name: `Consulter - ${nom}` }).click();
   const apercu = page.getByRole("dialog", { name: `Aperçu - ${nom}` });
   await expect(apercu).toBeVisible({ timeout: 30_000 });
 
-  // **La croix**, qui est la première dans la boîte - le bouton « Fermer » du pied est la seconde,
-  // et c'est lui qui fonctionnait déjà.
+  // The cross is the first button in the dialog; the footer "Fermer" button is the second.
   await apercu.getByRole("button", { name: "Fermer" }).first().click();
 
   await expect(apercu).toBeHidden({ timeout: 30_000 });
@@ -410,12 +389,9 @@ test("la croix de l'aperçu laisse le formulaire d'archivage ouvert", async ({ p
 });
 
 /**
- * **Un dossier tout juste ouvert ne porte aucune décision** (QF-66, demandé le 2026-10-15).
- *
- * Signalé : à l'étape Ouverture, l'onglet Décisions proposait de suivre une condamnation et
- * d'archiver à la jurisprudence. La condamnation suit désormais la règle de l'adjudication (une
- * étape clôturée) ; la jurisprudence, la garde que le serveur appliquait déjà (le dossier clos).
- * L'écran le dit, et le serveur le refuse.
+ * A newly opened case has no decision: following a conviction requires a closed step (like an
+ * adjudication), and archiving to case law requires a closed case. The screen says so and the
+ * server rejects it.
  */
 test("à l'étape Ouverture, ni condamnation à suivre ni décision à archiver", async ({ browser }) => {
   const { id } = await dossierCree();
@@ -428,7 +404,7 @@ test("à l'étape Ouverture, ni condamnation à suivre ni décision à archiver"
   await expect(juriste.getByText(/toutes les étapes de ce dossier doivent être clôturées/)).toBeVisible();
   await juriste.context().close();
 
-  // Et le serveur refuse, même si l'écran était contourné.
+  // And the server rejects it, even if the screen is bypassed.
   const refus = await appel(`/dossiers/${id}/condamnations`, await jeton("juriste.test"), {
     method: "POST",
     body: JSON.stringify({ sens: "TIERS_REDEVABLE", naturePaiement: "Frais", dateDecision: "2026-10-15" }),

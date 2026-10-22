@@ -7,8 +7,8 @@ import { formaterDate } from "@/lib/utils";
 import type { Publication } from "@/types/domaine";
 
 /**
- * Ce qu'est une publication, en quelques mots : « Compte rendu d'audience du 12 sept. 2026 » ou
- * « Pièce — releve.pdf ». Partagé par la file, l'onglet de la fiche et le détail.
+ * Short description of a publication, e.g. "Compte rendu d'audience du 12 sept. 2026" or
+ * "Pièce — releve.pdf". Shared by the queue, the case file tab and the detail screen.
  */
 export function useLibellePublication() {
   const t = useTranslations("publications");

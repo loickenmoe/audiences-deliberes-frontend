@@ -7,13 +7,9 @@ import type { Dossier } from "@/types/domaine";
 import { rendre as render } from "../utils/rendu";
 
 /**
- * N4 — la diligence particulière se révise après l'ouverture du dossier (métier, 2026-10-03,
- * observation 5 ; les deux sens arrêtés le 2026-10-06).
- *
- * Ce que ces tests tiennent : **ce qui est exigé change avec l'intention**. Proposer et poser
- * demandent un seuil et un type, retirer les efface ; le motif est obligatoire pour proposer et
- * pour retirer, facultatif pour le DJ qui pose. Une modale unique servant trois gestes, c'est
- * exactement là qu'une confusion passerait inaperçue.
+ * N4: special diligence can be revised after the case file is opened. **Required fields depend on
+ * the intent**: proposing and setting need a threshold and a type, removing clears them; the reason
+ * is mandatory to propose and to remove, optional for the legal director who sets it.
  */
 const proposer = vi.fn();
 const modifier = vi.fn();
@@ -74,8 +70,8 @@ describe("ModaleDiligence", () => {
   });
 
   /**
-   * Proposer sans dire ce qui a changé n'a pas de sens : le dossier vivait sans diligence, et le
-   * DJ arbitre sur ce motif. Le backend applique la même règle.
+   * A proposal must state what changed: the legal director decides based on that reason. The
+   * backend applies the same rule.
    */
   it("refuse une proposition sans motif, et n'appelle pas le serveur", async () => {
     render(
@@ -90,7 +86,7 @@ describe("ModaleDiligence", () => {
     expect(proposer).not.toHaveBeenCalled();
   });
 
-  /** Le DJ pose sans arbitrage : le motif l'aide, il ne le contraint pas. */
+  /** The legal director sets it without arbitration: the reason is optional. */
   it("pose la diligence directement, motif facultatif", async () => {
     render(<ModaleDiligence dossier={DOSSIER} intention="poser" ouvert onFermeture={() => {}} />);
 
@@ -109,8 +105,8 @@ describe("ModaleDiligence", () => {
   });
 
   /**
-   * Le retrait n'a besoin ni de seuil ni de type - il les efface. Les afficher aurait laissé croire
-   * qu'il faut les renseigner pour retirer.
+   * Removal needs neither threshold nor type (it clears them); showing them would suggest they are
+   * required.
    */
   it("retire la diligence sans demander de seuil ni de type", async () => {
     const sensible = { ...DOSSIER, estSensible: true, sensibiliteStatut: "VALIDEE" } as Dossier;
@@ -133,7 +129,7 @@ describe("ModaleDiligence", () => {
     );
   });
 
-  /** Lever la diligence sort le dossier du circuit de double validation : l'audit demandera pourquoi. */
+  /** Lifting diligence takes the case file out of double validation: the audit will ask why. */
   it("refuse un retrait sans motif", async () => {
     const sensible = { ...DOSSIER, estSensible: true, sensibiliteStatut: "VALIDEE" } as Dossier;
     render(<ModaleDiligence dossier={sensible} intention="retirer" ouvert onFermeture={() => {}} />);
@@ -144,7 +140,7 @@ describe("ModaleDiligence", () => {
     expect(modifier).not.toHaveBeenCalled();
   });
 
-  /** Le retrait est destructif à l'échelle du dossier : son bouton le dit. */
+  /** Removal is destructive for the case file: its button says so. */
   it("annonce le retrait comme une action à part", () => {
     const sensible = { ...DOSSIER, estSensible: true, sensibiliteStatut: "VALIDEE" } as Dossier;
     render(<ModaleDiligence dossier={sensible} intention="retirer" ouvert onFermeture={() => {}} />);

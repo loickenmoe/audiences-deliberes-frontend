@@ -15,20 +15,14 @@ import type { CibleActivite } from "@/services/reportingService";
 import type { RapportAvocats } from "@/types/domaine";
 
 /**
- * L'activité des avocats sur une période (Q-136) — DJ et DJA.
+ * Lawyers' activity over a period - DJ and DJA only.
  *
- * **Pourquoi un second tableau, et non quatre colonnes de plus.** Le porteur du projet l'a relevé le
- * 2026-10-13 : « Activité par personne » ne montrait que les profils internes. C'était exact, et ce
- * n'était pas réparable en y ajoutant les avocats - ce tableau-là compte six natures de **production
- * interne** - ouvrir un dossier, planifier une audience, enregistrer un compte rendu, un délibéré,
- * rédiger une lettre, contrôler des frais - dont un avocat n'accomplit **aucune**. Il **dépose** ;
- * c'est le juriste qui enregistre. L'y faire figurer n'aurait affiché qu'une ligne de zéros, soit
- * exactement ce que la conception refuse.
+ * A separate table rather than extra columns in "Activité par personne": that table counts internal
+ * production (opening case files, scheduling hearings, recording reports and deliberations, drafting
+ * letters, checking expenses) which lawyers never perform - they submit, legal officers record.
  *
- * **Deux populations, deux jeux d'indicateurs, une même règle.** Les avocats se comparent entre eux
- * sur ce qu'ils font réellement. Ni note, ni classement par volume, ni total : les lignes suivent
- * l'ordre des **noms** - un avocat chargé n'est pas un avocat méritant, c'est la banque qui lui
- * confie ses dossiers.
+ * Same rule as for internal profiles: no score, no volume ranking, no total. Rows are sorted by name,
+ * since a heavily loaded lawyer is not a more deserving one.
  */
 export function ActiviteDesAvocats() {
   const t = useTranslations("avocatsActivite");
@@ -80,7 +74,7 @@ export function ActiviteDesAvocats() {
             onChange={(evenement) => setFin(evenement.target.value)}
           />
         </Champ>
-        {/* Même raison que pour le tableau des internes : le nom accessible dit lequel. */}
+        {/* Same reason as for the internal profiles table: the accessible name says which table. */}
         <Button
           onClick={() => generer.mutate()}
           disabled={!valide || generer.isPending}
@@ -92,81 +86,108 @@ export function ActiviteDesAvocats() {
 
       {generer.error ? <EtatErreur message={messageErreur(generer.error)} /> : null}
 
-      {!affiche ? (
-        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">{t("avantGeneration")}</p>
-      ) : rapport === null ? (
-        <EtatVide titre={t("vide")} description={t("videTexte")} />
+      {affiche ? (
+        <ResultatAvocats rapport={rapport} onOuvrir={setOuvert} />
       ) : (
-        <div className="overflow-x-auto rounded border border-bordure bg-surface">
-          <table className="w-full text-left text-[length:var(--taille-sm)]">
-            <caption className="sr-only">
-              {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
-            </caption>
-            <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
-              <tr>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneAvocat")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneComptesRendus")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneFrais")}</th>
-                <th scope="col" className="px-4 py-2 font-medium">{t("colonneAutresDepots")}</th>
-                <th scope="col" className="px-4 py-2 font-medium" title={t("explicationsAide")}>
-                  {t("colonneExplications")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-bordure">
-              {rapport.lignes.map((ligne) => (
-                <tr key={ligne.utilisateurId}>
-                  <td className="px-4 py-2 font-medium">
-                    {/*
-                      Le nom ouvre sa fiche complète. L'avocat est désigné par son **inscription**
-                      quand il en a une - c'est ainsi que la direction le connaît - et par son
-                      compte si elle a été retirée depuis : ses dépôts restent comptés, et il faut
-                      bien pouvoir les regarder.
-                    */}
-                    <button
-                      type="button"
-                      className="text-left text-lien underline hover:no-underline"
-                      onClick={() =>
-                        setOuvert({
-                          cible:
-                            ligne.avocatId === null
-                              ? { utilisateurId: ligne.utilisateurId }
-                              : { avocatId: ligne.avocatId },
-                          nom: ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId }),
-                        })
-                      }
-                    >
-                      {ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId })}
-                    </button>
-                    {ligne.avocatId === null ? (
-                      <span className="block text-[length:var(--taille-xs)] font-normal text-texte-tertiaire">
-                        {t("horsRepertoire")}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-2" data-nombres>{ligne.comptesRendusDeposes}</td>
-                  <td className="px-4 py-2" data-nombres>{ligne.demandesFraisDeposees}</td>
-                  <td className="px-4 py-2" data-nombres>{ligne.autresPublicationsDeposees}</td>
-                  <td className="px-4 py-2" data-nombres>{ligne.explicationsFournies}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
+          {t("avantGeneration")}
+        </p>
       )}
 
-      {ouvert !== null ? (
+      {ouvert === null ? null : (
         <div className="flex flex-col gap-2">
           <Button variante="discrete" className="self-start" onClick={() => setOuvert(null)}>
             {t("fermerFiche")}
           </Button>
-          <FicheActivite
-            key={ouvert.nom}
-            cible={ouvert.cible}
-            nomAffiche={ouvert.nom}
-          />
+          <FicheActivite key={ouvert.nom} cible={ouvert.cible} nomAffiche={ouvert.nom} />
         </div>
-      ) : null}
+      )}
     </section>
+  );
+}
+
+/** The displayed table, one row per lawyer; a name opens that lawyer's sheet. */
+function ResultatAvocats({
+  rapport,
+  onOuvrir,
+}: Readonly<{
+  rapport: RapportAvocats | null;
+  onOuvrir: (ouvert: { cible: CibleActivite; nom: string }) => void;
+}>) {
+  const t = useTranslations("avocatsActivite");
+
+  if (rapport === null) return <EtatVide titre={t("vide")} description={t("videTexte")} />;
+  return (
+    <div className="overflow-x-auto rounded border border-bordure bg-surface">
+      <table className="w-full text-left text-[length:var(--taille-sm)]">
+        <caption className="sr-only">
+          {t("legende", { debut: rapport.dateDebut, fin: rapport.dateFin })}
+        </caption>
+        <thead className="border-b border-bordure bg-surface-attenuee text-[length:var(--taille-xs)] text-texte-secondaire">
+          <tr>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneAvocat")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneComptesRendus")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneFrais")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium">
+              {t("colonneAutresDepots")}
+            </th>
+            <th scope="col" className="px-4 py-2 font-medium" title={t("explicationsAide")}>
+              {t("colonneExplications")}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-bordure">
+          {rapport.lignes.map((ligne) => (
+            <tr key={ligne.utilisateurId}>
+              <td className="px-4 py-2 font-medium">
+                {/*
+                      The name opens their full activity sheet. The lawyer is designated by their directory record
+                      when they have one, otherwise by their account if the record was removed: their submissions
+                      remain counted and must stay viewable.
+                    */}
+                <button
+                  type="button"
+                  className="text-left text-lien underline hover:no-underline"
+                  onClick={() =>
+                    onOuvrir({
+                      cible:
+                        ligne.avocatId === null
+                          ? { utilisateurId: ligne.utilisateurId }
+                          : { avocatId: ligne.avocatId },
+                      nom: ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId }),
+                    })
+                  }
+                >
+                  {ligne.nom ?? t("avocatSansNom", { identifiant: ligne.utilisateurId })}
+                </button>
+                {ligne.avocatId === null ? (
+                  <span className="block text-[length:var(--taille-xs)] font-normal text-texte-tertiaire">
+                    {t("horsRepertoire")}
+                  </span>
+                ) : null}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.comptesRendusDeposes}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.demandesFraisDeposees}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.autresPublicationsDeposees}
+              </td>
+              <td className="px-4 py-2" data-nombres>
+                {ligne.explicationsFournies}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

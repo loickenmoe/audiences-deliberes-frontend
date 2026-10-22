@@ -11,34 +11,40 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { EtatChargement, EtatErreur } from "@/components/global";
-import { CasesACocher, GardeSaisie, SelecteurAgence, SelecteurCherchable } from "@/components/metier";
+import {
+  CasesACocher,
+  GardeSaisie,
+  SelecteurAgence,
+  SelecteurCherchable,
+} from "@/components/metier";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Champ, Input, Select, Textarea } from "@/components/ui/champ";
 import { useClients } from "@/hooks/useClients";
 import { useCreerDossier } from "@/hooks/useDossiers";
 import { useIntervenants } from "@/hooks/useIntervenants";
-import { useNaturesDossier, useTypesClientSensible, useUtilisateurs } from "@/hooks/useReferentiels";
+import {
+  useNaturesDossier,
+  useTypesClientSensible,
+  useUtilisateurs,
+} from "@/hooks/useReferentiels";
 import { appliquerErreurApi } from "@/lib/api/erreurs-formulaire";
 import { messageErreur } from "@/lib/api/errors";
 import { ListeParties } from "@/components/modules/dossiers/liste-parties";
 import { PiecesAJoindre, type PieceAJoindre } from "@/components/modules/dossiers/pieces-a-joindre";
 import { piecesDeCategorie, type TypeDocument } from "@/lib/documents";
 import { gedService } from "@/services/gedService";
+import type { CreerDossier } from "@/types/domaine";
+import type { CategorieDossier } from "@/types/enums";
 
 /**
- * Écran 06 — création d'un dossier (US 1.1, FR-DOS-01).
- *
- * **Le formulaire s'adapte à la nature choisie, pas à une catégorie saisie.** Le backend déduit la
- * catégorie du référentiel (RG-DOS-02) et refuse une catégorie divergente ; la demander à
- * l'utilisateur créerait une contradiction possible pour aucun gain. Elle est donc dérivée ici et
- * seulement affichée.
- *
- * Cette dérivation décide des pièces exigées, en **ET** et non en OU (Q-11) :
- * · `RECOUVREMENT` → dossier de crédit d'origine **et** PV de transfert ;
- * · `EXPLOITATION_LITIGES` → référence d'incident de compte **et** éléments justificatifs.
- *
- * Le contrôle reste côté backend ; le rejouer ici évite un aller-retour pour une omission visible.
+ * Screen 06 - case creation (US 1.1, FR-DOS-01).
+ * The form adapts to the selected nature: the backend derives the category from the reference data
+ * (RG-DOS-02) and rejects a mismatch, so the category is derived and only displayed here.
+ * The category decides the required documents (both, not either):
+ * · `RECOUVREMENT` → original credit file and transfer report;
+ * · `EXPLOITATION_LITIGES` → account incident reference and supporting evidence.
+ * The backend still checks; repeating it here avoids a round trip for a visible omission.
  */
 const CHAMPS = [
   "nature",
@@ -55,10 +61,122 @@ const CHAMPS = [
   "avocatsAffectes",
 ] as const;
 
+function schemaDossier(obligatoire: string) {
+  return z
+    .object({
+      nature: z.string().min(1, obligatoire),
+      juridictionSaisie: z.string().trim().min(1, obligatoire).max(100),
+      clientId: z.coerce.number().int().positive(obligatoire),
+      // At least one of each, several allowed.
+      demandeurs: z
+        .array(z.object({ nom: z.string().trim().min(1, obligatoire).max(255) }))
+        .min(1, obligatoire),
+      defendeurs: z
+        .array(z.object({ nom: z.string().trim().min(1, obligatoire).max(255) }))
+        .min(1, obligatoire),
+      risqueEncouru: z.coerce.number().min(0, obligatoire),
+      recoursExerces: z.string().optional(),
+      motifRenvoi: z.string().max(255).optional(),
+      // Required: the code comes from the branch reference list and is no longer typed in. The
+      // litigation branch code stays optional, since a case is not always transferred.
+      codeAgenceOrigine: z.string().min(1, obligatoire).max(20),
+      codeAgenceContentieuse: z.string().max(20).optional(),
+      dossierCreditOrigine: z.string().max(50).optional(),
+      pvTransfert: z.string().max(255).optional(),
+      incidentCompteReference: z.string().max(50).optional(),
+      elementsJustificatifs: z.string().optional(),
+      estSensible: z.boolean().optional(),
+      seuilMontant: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
+      typeClientSensible: z.string().optional(),
+      juristesAffectes: z.array(z.coerce.number()).min(1, obligatoire),
+      avocatsAffectes: z.array(z.coerce.number()).min(1, obligatoire),
+    })
+    .superRefine((valeurs, contexte) => {
+      /*
+       * Conditional references are not required: the attached files are. That check is done on
+       * the files at save time, outside this schema, since files are not form fields.
+       */
+
+      // A sensitive case is a proposal: it only makes sense with the two elements the DJ will
+      // arbitrate.
+      if (!valeurs.estSensible) return;
+      if (valeurs.seuilMontant === "" || valeurs.seuilMontant === undefined) {
+        contexte.addIssue({ code: "custom", path: ["seuilMontant"], message: obligatoire });
+      }
+      if (!valeurs.typeClientSensible) {
+        contexte.addIssue({ code: "custom", path: ["typeClientSensible"], message: obligatoire });
+      }
+    });
+}
+
+type ValeursDossier = z.input<ReturnType<typeof schemaDossier>>;
+
+/** Keeps a value only for the category it belongs to; empty text is not sent. */
+function siCategorie(
+  valeur: string | undefined,
+  attendue: CategorieDossier,
+  categorie?: CategorieDossier,
+) {
+  return categorie === attendue ? valeur || undefined : undefined;
+}
+
+/** The creation request, built from the form values. */
+function corpsCreation(valeurs: ValeursDossier, categorie?: CategorieDossier): CreerDossier {
+  return {
+    nature: valeurs.nature,
+    juridictionSaisie: valeurs.juridictionSaisie,
+    clientId: Number(valeurs.clientId),
+    parties: {
+      demandeurs: valeurs.demandeurs.map((partie) => partie.nom.trim()),
+      defendeurs: valeurs.defendeurs.map((partie) => partie.nom.trim()),
+    },
+    risqueEncouru: Number(valeurs.risqueEncouru),
+    recoursExerces: valeurs.recoursExerces || undefined,
+    motifRenvoi: valeurs.motifRenvoi || undefined,
+    codeAgenceOrigine: valeurs.codeAgenceOrigine,
+    codeAgenceContentieuse: valeurs.codeAgenceContentieuse || undefined,
+    // Only send the documents of the relevant category: the others are meaningless here and would
+    // be stored for nothing.
+    dossierCreditOrigine: siCategorie(valeurs.dossierCreditOrigine, "RECOUVREMENT", categorie),
+    pvTransfert: siCategorie(valeurs.pvTransfert, "RECOUVREMENT", categorie),
+    incidentCompteReference: siCategorie(
+      valeurs.incidentCompteReference,
+      "EXPLOITATION_LITIGES",
+      categorie,
+    ),
+    elementsJustificatifs: siCategorie(
+      valeurs.elementsJustificatifs,
+      "EXPLOITATION_LITIGES",
+      categorie,
+    ),
+    estSensible: valeurs.estSensible ?? false,
+    seuilMontant: valeurs.estSensible ? Number(valeurs.seuilMontant) : undefined,
+    typeClientSensible: valeurs.estSensible ? valeurs.typeClientSensible || undefined : undefined,
+    juristesAffectes: valeurs.juristesAffectes.map(Number),
+    avocatsAffectes: valeurs.avocatsAffectes.map(Number),
+  };
+}
+
+/** Files every document it can and returns the names of those that failed. */
+async function deposerLesPieces(
+  dossierId: number,
+  pieces: readonly PieceAJoindre[],
+): Promise<string[]> {
+  const echecs: string[] = [];
+  for (const piece of pieces) {
+    try {
+      await gedService.deposer(dossierId, piece.type, piece.fichier);
+    } catch {
+      echecs.push(piece.fichier.name);
+    }
+  }
+  return echecs;
+}
+
 export function FormulaireDossier({
   courrielUtilisateur = null,
 }: {
-  /** Courriel de l'utilisateur connecté : sert à le cocher d'office s'il est juriste. */
+  /** Email of the logged-in user: used to pre-check them if they are a lawyer. */
   courrielUtilisateur?: string | null;
 } = {}) {
   const t = useTranslations("dossiers");
@@ -69,8 +187,8 @@ export function FormulaireDossier({
   const routeur = useRouter();
   const [pieces, setPieces] = useState<PieceAJoindre[]>([]);
   /*
-   * Les pièces attendues restées sans fichier. Signalées **après** une tentative d'enregistrement,
-   * pas avant : un formulaire qui crie au rouge avant qu'on l'ait rempli ne se lit plus.
+   * Expected documents still missing a file. Flagged only after a save attempt, not before: a form
+   * that is all red before being filled in is unreadable.
    */
   const [piecesManquantes, setPiecesManquantes] = useState<readonly TypeDocument[]>([]);
   const [envoiPieces, setEnvoiPieces] = useState(false);
@@ -80,76 +198,19 @@ export function FormulaireDossier({
   const typesSensibles = useTypesClientSensible();
   const juristes = useUtilisateurs("JURISTE");
   /*
-   * Q-105 — la recherche remplace le « charger une grande page » : le champ n'affiche que ce que le
-   * serveur renvoie pour la saisie en cours, et ne se tronque donc jamais en silence. C'est le même
-   * câblage que la modale « Modifier l'affectation » de la fiche.
+   * Server-side search instead of loading a large page: the field only shows what the server
+   * returns for the current input, so it is never silently truncated. Same wiring as the case
+   * page's "Edit assignment" modal.
    */
   const [rechercheAvocat, setRechercheAvocat] = useState("");
   const avocats = useIntervenants({ type: "AVOCAT", nom: rechercheAvocat || undefined });
-  // Les listes de sélection ne sont pas paginables : on charge une page large plutôt que d'imposer
-  // une pagination dans un `<select>`. Si le volume devenait un problème, il faudrait un champ de
-  // recherche côté serveur — pas un chargement plus gros.
+  // Selection lists are not paginated: a large page is loaded rather than paginating a `<select>`.
+  // If volume became an issue, a server-side search field would be needed, not a bigger load.
   const clients = useClients({ page: 0, size: 200 });
 
-  const schema = useMemo(
-    () =>
-      z
-        .object({
-          nature: z.string().min(1, tm("champObligatoire")),
-          juridictionSaisie: z.string().trim().min(1, tm("champObligatoire")).max(100),
-          clientId: z.coerce.number().int().positive(tm("champObligatoire")),
-          // Observations 1 et 3 (métier, 2026-10-03) : au moins un de chaque, plusieurs permis.
-          demandeurs: z
-            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
-            .min(1, tm("champObligatoire")),
-          defendeurs: z
-            .array(z.object({ nom: z.string().trim().min(1, tm("champObligatoire")).max(255) }))
-            .min(1, tm("champObligatoire")),
-          risqueEncouru: z.coerce.number().min(0, tm("champObligatoire")),
-          recoursExerces: z.string().optional(),
-          motifRenvoi: z.string().max(255).optional(),
-          // Obligatoire depuis le 2026-10-05 (observation 2) : le code vient du référentiel,
-          // il ne se saisit plus. Celle du contentieux reste facultative - un dossier n'est
-          // pas toujours transféré.
-          codeAgenceOrigine: z.string().min(1, tm("champObligatoire")).max(20),
-          codeAgenceContentieuse: z.string().max(20).optional(),
-          dossierCreditOrigine: z.string().max(50).optional(),
-          pvTransfert: z.string().max(255).optional(),
-          incidentCompteReference: z.string().max(50).optional(),
-          elementsJustificatifs: z.string().optional(),
-          estSensible: z.boolean().optional(),
-          seuilMontant: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
-          typeClientSensible: z.string().optional(),
-          juristesAffectes: z.array(z.coerce.number()).min(1, tm("champObligatoire")),
-          avocatsAffectes: z.array(z.coerce.number()).min(1, tm("champObligatoire")),
-        })
-        .superRefine((valeurs, contexte) => {
-          /*
-            Les références conditionnelles ne sont plus exigées (métier, 2026-09-29) : « ce sont les
-            pièces jointes qui sont obligatoires, pas leur texte associé ». L'obligation a changé
-            d'objet — elle est vérifiée sur les fichiers au moment d'enregistrer, hors de ce schéma :
-            les fichiers ne sont pas des champs du formulaire, ils vivent dans l'état des pièces.
-          */
-
-          // Un dossier sensible est une proposition : elle n'a de sens qu'accompagnée des deux
-          // éléments que le DJ devra arbitrer.
-          if (valeurs.estSensible) {
-            if (valeurs.seuilMontant === "" || valeurs.seuilMontant === undefined) {
-              contexte.addIssue({ code: "custom", path: ["seuilMontant"], message: tm("champObligatoire") });
-            }
-            if (!valeurs.typeClientSensible) {
-              contexte.addIssue({
-                code: "custom",
-                path: ["typeClientSensible"],
-                message: tm("champObligatoire"),
-              });
-            }
-          }
-        }),
-    // Le schéma ne dépend plus du référentiel des natures : les références conditionnelles
-    // ne sont plus exigées, et la catégorie ne conditionne plus aucune validation ici.
-    [tm],
-  );
+  // The schema does not depend on the nature reference data: conditional references are not
+  // required, and the category no longer drives any validation here.
+  const schema = useMemo(() => schemaDossier(tm("champObligatoire")), [tm]);
 
   const {
     register,
@@ -165,12 +226,12 @@ export function FormulaireDossier({
     defaultValues: {
       nature: "",
       juridictionSaisie: "",
-      // Une ligne vide de chaque côté : le formulaire s'ouvre sur ce qu'il attend, plutôt que sur
-      // un bloc vide où il faudrait deviner qu'un bouton « Ajouter » existe.
+      // One empty row on each side: the form opens on what it expects, rather than on an empty
+      // block where the user would have to guess an "Add" button exists.
       demandeurs: [{ nom: "" }],
       defendeurs: [{ nom: "" }],
-      // Vide, et non absent : le sélecteur reçoit une chaîne, et le résolveur zod signale
-      // « champ obligatoire » plutôt que « attendu string, reçu undefined ».
+      // Empty rather than absent: the picker receives a string, and the zod resolver reports
+      // "required field" instead of "expected string, received undefined".
       codeAgenceOrigine: "",
       codeAgenceContentieuse: "",
       estSensible: false,
@@ -180,18 +241,19 @@ export function FormulaireDossier({
   });
 
   /*
-   * Le juriste qui crée le dossier en est affecté d'office — décision du porteur du projet
-   * (2026-09-22) ; sa case reste décochable. Il est reconnu par son courriel : c'est le seul champ
-   * commun à la session Keycloak et à la liste des juristes, et il y concorde par construction,
-   * l'utilisateur étant créé depuis son jeton à sa première connexion (QF-16). Sans correspondance,
-   * rien n'est coché : l'utilisateur coche lui-même. Le formulaire n'est pas marqué modifié — quitter
-   * une page à peine ouverte ne doit pas déclencher la garde de saisie.
+   * The lawyer creating the case is assigned by default (the box can be unchecked). They are
+   * matched by email, the only field shared by the Keycloak session and the lawyer list, which
+   * match since the user is created from their token on first login. Without a match nothing is
+   * checked. The form is not marked dirty, so leaving a freshly opened page does not trigger the
+   * input guard.
    */
   const preselectionFaite = useRef(false);
   useEffect(() => {
     if (preselectionFaite.current || !courrielUtilisateur || !juristes.data) return;
     preselectionFaite.current = true;
-    const moi = juristes.data.find((u) => u.email?.toLowerCase() === courrielUtilisateur.toLowerCase());
+    const moi = juristes.data.find(
+      (u) => u.email?.toLowerCase() === courrielUtilisateur.toLowerCase(),
+    );
     if (moi && getValues("juristesAffectes").length === 0) setValue("juristesAffectes", [moi.id]);
   }, [courrielUtilisateur, juristes.data, getValues, setValue]);
 
@@ -201,10 +263,9 @@ export function FormulaireDossier({
 
   const soumettre = handleSubmit(async (valeurs) => {
     /*
-     * Les pièces d'abord : inutile de créer le dossier pour découvrir ensuite qu'il lui manque ce
-     * que le métier exige. Cette vérification ne peut pas vivre dans le schéma — les fichiers ne
-     * sont pas des champs du formulaire — ni sur le serveur, qui ne les reçoit qu'après la
-     * création. L'écran la tient donc seul, limite acceptée par le métier le 2026-09-29.
+     * Documents first: no point creating the case to find out it lacks required documents. This
+     * check cannot live in the schema (files are not form fields) nor on the server, which only
+     * receives them after creation, so the screen alone enforces it.
      */
     if (categorie) {
       const deposees = new Set(pieces.map((piece) => piece.type));
@@ -217,71 +278,36 @@ export function FormulaireDossier({
     }
 
     try {
-      const cree = await creer.mutateAsync({
-        nature: valeurs.nature,
-        juridictionSaisie: valeurs.juridictionSaisie,
-        clientId: Number(valeurs.clientId),
-        parties: {
-          demandeurs: valeurs.demandeurs.map((partie) => partie.nom.trim()),
-          defendeurs: valeurs.defendeurs.map((partie) => partie.nom.trim()),
-        },
-        risqueEncouru: Number(valeurs.risqueEncouru),
-        recoursExerces: valeurs.recoursExerces || undefined,
-        motifRenvoi: valeurs.motifRenvoi || undefined,
-        codeAgenceOrigine: valeurs.codeAgenceOrigine,
-        codeAgenceContentieuse: valeurs.codeAgenceContentieuse || undefined,
-        // N'envoyer que les pièces de la catégorie concernée : celles de l'autre n'ont pas de sens
-        // ici et seraient stockées pour rien.
-        dossierCreditOrigine:
-          categorie === "RECOUVREMENT" ? valeurs.dossierCreditOrigine || undefined : undefined,
-        pvTransfert: categorie === "RECOUVREMENT" ? valeurs.pvTransfert || undefined : undefined,
-        incidentCompteReference:
-          categorie === "EXPLOITATION_LITIGES" ? valeurs.incidentCompteReference || undefined : undefined,
-        elementsJustificatifs:
-          categorie === "EXPLOITATION_LITIGES" ? valeurs.elementsJustificatifs || undefined : undefined,
-        estSensible: valeurs.estSensible ?? false,
-        seuilMontant: valeurs.estSensible ? Number(valeurs.seuilMontant) : undefined,
-        typeClientSensible: valeurs.estSensible ? valeurs.typeClientSensible || undefined : undefined,
-        juristesAffectes: valeurs.juristesAffectes.map(Number),
-        avocatsAffectes: valeurs.avocatsAffectes.map(Number),
-      });
+      const cree = await creer.mutateAsync(corpsCreation(valeurs, categorie));
       /*
-       * Deuxième temps : les pièces, déposées en GED une fois le dossier créé — le dépôt exige son
-       * identifiant. À ce stade **le dossier existe** : un échec de dépôt ne doit ni l'annuler ni
-       * inviter à le recréer. On dépose tout ce qui peut l'être, puis on ouvre la fiche sur ses
-       * documents en nommant les pièces à redéposer.
+       * Second step: documents are uploaded to the DMS once the case exists (the upload needs its
+       * id). At this point the case exists: an upload failure must neither cancel it nor invite
+       * re-creating it.
+       * Upload everything possible, then open the case on its documents, naming those to upload
+       * again.
        */
-      const echecs: string[] = [];
-      if (pieces.length > 0) {
-        setEnvoiPieces(true);
-        for (const piece of pieces) {
-          try {
-            await gedService.deposer(cree.id, piece.type, piece.fichier);
-          } catch {
-            echecs.push(piece.fichier.name);
-          }
-        }
-        setEnvoiPieces(false);
-      }
+      setEnvoiPieces(pieces.length > 0);
+      const echecs = await deposerLesPieces(cree.id, pieces);
+      setEnvoiPieces(false);
 
       if (echecs.length > 0) {
-        // Sans expiration : l'utilisateur doit pouvoir lire la liste des pièces à redéposer.
+        // No expiry: the user must be able to read the list of documents to upload again.
         toast.warning(tdoc("depotEchec", { nombre: echecs.length, noms: echecs.join(", ") }), {
           duration: Infinity,
         });
         routeur.push(`/dossiers/${cree.id}?onglet=documents`);
         return;
       }
-      // La référence est attribuée par le serveur : l'annoncer est la seule façon pour l'auteur
-      // de savoir sous quel numéro son dossier a été ouvert.
+      // The reference is assigned by the server: announcing it is the only way for the author to
+      // know under which number the case was opened.
       toast.success(t("dossierCree", { reference: cree.reference }));
-      // Le dossier créé s'ouvre directement : c'est ce que l'utilisateur va consulter ensuite.
+      // The created case opens directly: it is what the user will look at next.
       routeur.push(`/dossiers/${cree.id}`);
-    } catch (erreur) {
-      // Le backend nomme lui-même le champ fautif depuis M16 (Q-70) : il se pose au bon endroit
-      // sans table de correspondance.
-      if (!appliquerErreurApi(erreur, setError, CHAMPS)) {
-        setError("root", { message: messageErreur(erreur) });
+    } catch (error_) {
+      // The backend names the faulty field itself, so the error lands in the right place without a
+      // mapping table.
+      if (!appliquerErreurApi(error_, setError, CHAMPS)) {
+        setError("root", { message: messageErreur(error_) });
       }
     }
   });
@@ -291,24 +317,22 @@ export function FormulaireDossier({
   }
 
   /*
-   * Sans cette branche, une requête en échec laissait afficher le formulaire avec des listes
-   * déroulantes vides : l'utilisateur aurait cru qu'aucun client n'existe, au lieu de savoir que le
-   * chargement a échoué. Ces quatre listes ne sont pas facultatives — sans elles, aucun dossier
-   * n'est créable.
+   * Without this branch, a failed request would show the form with empty dropdowns and the user
+   * would think no client exists. These four lists are mandatory: without them no case can be
+   * created.
    */
   const echec = natures.error ?? clients.error ?? juristes.error ?? avocats.error;
   if (echec) {
     return <EtatErreur message={messageErreur(echec)} />;
   }
 
-
   /**
-   * Le champ de référence d'une pièce attendue, rendu par le bloc des pièces en tête de sa ligne.
-   * Libellés, identifiants et validation sont ceux d'avant la fusion des deux blocs.
+   * Reference field of an expected document, rendered by the documents block at the start of its
+   * row.
    */
   /*
-   * Les références qui nomment chaque pièce. Sans astérisque depuis le 2026-09-29 : elles sont
-   * facultatives, et c'est le fichier voisin qui la porte.
+   * References naming each document. No asterisk: they are optional, the neighbouring file is
+   * required.
    */
   function champReference(type: TypeDocument) {
     switch (type) {
@@ -413,21 +437,14 @@ export function FormulaireDossier({
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             {/*
-              La référence n'est plus saisie : le serveur l'attribue (DOS-2026-0001) et la
-              confirmation la nomme à la création. Un champ pré-rempli en lecture seule aurait
-              occupé la place d'une information que l'utilisateur ne peut ni corriger ni connaître
-              avant d'enregistrer.
+              The reference is not entered: the server assigns it (DOS-2026-0001) and the
+              confirmation shows it on creation.
             */}
-            <Champ
-              id="nature"
-              label={t("champNature")}
-              obligatoire
-              erreur={errors.nature?.message}
-            >
+            <Champ id="nature" label={t("champNature")} obligatoire erreur={errors.nature?.message}>
               <Select id="nature" enErreur={!!errors.nature} {...register("nature")}>
                 <option value="">{t("choisirNature")}</option>
                 {(natures.data ?? []).map((nature) => (
-                  // La valeur est le **libellé** : c'est ce que le backend résout (RG-DOS-02).
+                  // The value is the **label**: that is what the backend resolves (RG-DOS-02).
                   <option key={nature.id} value={nature.libelle}>
                     {nature.libelle}
                   </option>
@@ -449,7 +466,12 @@ export function FormulaireDossier({
               />
             </Champ>
 
-            <Champ id="clientId" label={t("champClient")} obligatoire erreur={errors.clientId?.message}>
+            <Champ
+              id="clientId"
+              label={t("champClient")}
+              obligatoire
+              erreur={errors.clientId?.message}
+            >
               <Select id="clientId" enErreur={!!errors.clientId} {...register("clientId")}>
                 <option value="">{t("choisirClient")}</option>
                 {(clients.data?.content ?? []).map((client) => (
@@ -489,11 +511,8 @@ export function FormulaireDossier({
             ) : null}
 
             {/*
-              Le « champ d'alarme » a été retiré d'ici (2026-09-28). C'était un texte libre que
-              **rien ne lisait** : ni planificateur, ni alerte, ni recherche. Un juriste qui y
-              écrivait « relancer l'avocat avant le 15 mars » repartait convaincu d'avoir posé un
-              rappel, et rien ne se déclenchait. Les alarmes qui agissent vivent dans la table
-              `alarme` depuis M6 (Q-04), avec une échéance et un destinataire.
+              No free-text "alarm" field here: actual alarms live in the `alarme` table, with a due
+              date and a recipient.
             */}
             <p className="text-[length:var(--taille-xs)] text-texte-tertiaire sm:col-span-2">
               {t("renvoiAlarmes")}
@@ -541,10 +560,8 @@ export function FormulaireDossier({
               />
             </Champ>
             {/*
-              Les deux codes d'agence viennent du référentiel (observation 2). La liste affiche
-              « code · nom · ville » : le code pour qui le connaît, le nom pour qui le cherche, la
-              ville pour l'orienter - et l'adresse en seconde ligne, seule à séparer les deux
-              agences homonymes.
+              Both branch codes come from the branch reference list, shown as "code · name · city"
+              with the address as a second line to tell homonymous branches apart.
             */}
             <Controller
               control={control}
@@ -582,8 +599,8 @@ export function FormulaireDossier({
         </Card>
 
         {/*
-          Les pièces n'apparaissent qu'une fois la nature choisie : afficher les quatre champs en
-          permanence laisserait croire qu'ils sont tous exigés, alors que deux seulement le sont.
+          Documents only appear once the nature is chosen: always showing the four fields would
+          suggest they are all required, while only two are.
         */}
         {categorie ? (
           <Card>
@@ -592,14 +609,15 @@ export function FormulaireDossier({
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <p className="text-[length:var(--taille-sm)] text-texte-secondaire">
-                {categorie === "RECOUVREMENT" ? t("aidePiecesRecouvrement") : t("aidePiecesLitiges")}
+                {categorie === "RECOUVREMENT"
+                  ? t("aidePiecesRecouvrement")
+                  : t("aidePiecesLitiges")}
               </p>
 
               {/*
-                Un seul bloc (2026-09-22) : chaque pièce réunit sa référence, obligatoire, et son
-                fichier, facultatif. Les références restent des champs de ce formulaire — enregistrés,
-                validés et envoyés à la création comme avant ; le bloc des pièces ne fait que les
-                placer. Les fichiers partent toujours après la création, dans la GED.
+                A single block: each document combines its reference and its file. References remain
+                form fields, validated and sent at creation; the documents block only lays them out.
+                Files are uploaded to the DMS after creation.
               */}
               <PiecesAJoindre
                 categorie={categorie}
@@ -620,9 +638,8 @@ export function FormulaireDossier({
               {t("aideAffectation")}
             </p>
             {/*
-              Cases à cocher pour les juristes — une liste courte, qu'on veut voir d'un coup d'œil —,
-              recherche avec jetons pour les avocats — un référentiel qui grandit (2026-09-22).
-              Chacun se choisit et se retire d'un clic, sans touche à maintenir.
+              Checkboxes for lawyers (a short list to see at a glance), search with chips for
+              counsel (a growing reference list).
             */}
             <div className="grid gap-4 sm:grid-cols-2">
               <Controller
@@ -659,12 +676,17 @@ export function FormulaireDossier({
                       multiple
                       valeur={(field.value ?? []).map(Number)}
                       onChangement={(valeur) => field.onChange(valeur as number[])}
-                      options={(avocats.data?.content ?? []).map((avocat) => ({ id: avocat.id, libelle: avocat.nom }))}
+                      options={(avocats.data?.content ?? []).map((avocat) => ({
+                        id: avocat.id,
+                        libelle: avocat.nom,
+                      }))}
                       onRecherche={setRechercheAvocat}
                       chargement={avocats.isLoading}
                     />
                     {errors.avocatsAffectes?.message ? (
-                      <p className="text-[length:var(--taille-xs)] text-danger">{errors.avocatsAffectes.message}</p>
+                      <p className="text-[length:var(--taille-xs)] text-danger">
+                        {errors.avocatsAffectes.message}
+                      </p>
                     ) : null}
                   </div>
                 )}
@@ -719,8 +741,8 @@ export function FormulaireDossier({
                     >
                       <option value="">{t("choisirType")}</option>
                       {(typesSensibles.data ?? []).map((type) => (
-                        // Le backend attend le **code**, et le refuse désormais s'il est inconnu
-                        // du référentiel (Q-73).
+                        // The backend expects the **code** and rejects it if it is not in the
+                        // reference list.
                         <option key={type.id} value={type.code}>
                           {type.libelle}
                         </option>
@@ -747,7 +769,7 @@ export function FormulaireDossier({
         </div>
       </form>
 
-      {/* La saisie la plus longue de l'application : la perdre par un clic de menu coûte cher. */}
+      {/* The longest form of the application: losing it through a menu click is costly. */}
       <GardeSaisie actif={isDirty && !isSubmitting} />
     </div>
   );

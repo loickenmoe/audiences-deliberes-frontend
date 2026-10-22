@@ -6,33 +6,28 @@ import type { Langue } from "@/i18n/config";
 import { formaterDate, formaterDateHeure, formaterFcfa, formaterOctets } from "@/lib/utils";
 
 /**
- * Affichage des valeurs, localisé.
- *
- * Ces composants existent pour que **personne n'appelle `Intl` à la main dans un écran** : la
- * langue active doit être lue au même endroit, sinon un montant finit tôt ou tard formaté en
- * anglais dans une interface française.
- *
- * `data-nombres` déclenche l'alignement des chiffres (cf. `globals.css`) : indispensable dès qu'une
- * colonne de montants se compare verticalement.
+ * Localized value display. Screens must not call `Intl` directly: the active language is read in
+ * one place only. `data-nombres` enables tabular figures (see `globals.css`) for comparable amount
+ * columns.
  */
-export function MontantFcfa({ valeur }: { valeur: number | null | undefined }) {
+export function MontantFcfa({ valeur }: Readonly<{ valeur: number | null | undefined }>) {
   const langue = useLocale() as Langue;
   return <span data-nombres>{formaterFcfa(valeur, langue)}</span>;
 }
 
-export function DateValeur({ valeur }: { valeur: string | null | undefined }) {
+export function DateValeur({ valeur }: Readonly<{ valeur: string | null | undefined }>) {
   const langue = useLocale() as Langue;
-  // `dateTime` porte la valeur brute : lisible par une machine, indépendante de la langue.
+  // `dateTime` holds the raw value: machine-readable and language-independent.
   return <time dateTime={valeur ?? undefined}>{formaterDate(valeur, langue)}</time>;
 }
 
-export function DateHeureValeur({ valeur }: { valeur: string | null | undefined }) {
+export function DateHeureValeur({ valeur }: Readonly<{ valeur: string | null | undefined }>) {
   const langue = useLocale() as Langue;
   return <time dateTime={valeur ?? undefined}>{formaterDateHeure(valeur, langue)}</time>;
 }
 
-/** Proportion entre 0 et 1, affichée en pourcentage entier. */
-export function Pourcentage({ valeur }: { valeur: number | null | undefined }) {
+/** Ratio between 0 and 1, displayed as a whole percentage. */
+export function Pourcentage({ valeur }: Readonly<{ valeur: number | null | undefined }>) {
   const langue = useLocale() as Langue;
   return (
     <span data-nombres>
@@ -41,7 +36,7 @@ export function Pourcentage({ valeur }: { valeur: number | null | undefined }) {
   );
 }
 
-export function PoidsFichier({ valeur }: { valeur: number | null | undefined }) {
+export function PoidsFichier({ valeur }: Readonly<{ valeur: number | null | undefined }>) {
   const langue = useLocale() as Langue;
   return <span data-nombres>{formaterOctets(valeur, langue)}</span>;
 }

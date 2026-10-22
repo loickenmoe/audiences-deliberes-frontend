@@ -9,10 +9,10 @@ export async function generateMetadata() {
 }
 
 /**
- * Écran 06 — création d'un dossier.
+ * Screen 06 - case creation.
  *
- * `POST /dossiers` exige `ROLE_SAISIE` : la garde est posée ici, avant tout rendu, plutôt que de
- * laisser l'utilisateur remplir vingt champs pour se voir refuser à l'envoi.
+ * `POST /dossiers` requires `ROLE_SAISIE`: the guard is applied here, before rendering, rather than
+ * letting the user fill twenty fields only to be refused on submit.
  */
 export default async function PageNouveauDossier() {
   const session = await exigerCapacite("creerDossier");

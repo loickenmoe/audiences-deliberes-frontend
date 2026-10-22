@@ -14,23 +14,17 @@ import { useEcritureSignature, useMaSignature, useMonImageSignature } from "@/ho
 import { messageErreur } from "@/lib/api/errors";
 import { signatureService } from "@/services/signatureService";
 
-/** Ce que la lettre sait apposer, et rien d'autre. */
-const FORMATS = ["image/png", "image/jpeg"];
-/** Large pour une signature scannée, étroit pour une photographie : le serveur applique la même. */
+/** What the letter can display, and nothing else. */
+const FORMATS = new Set(["image/png", "image/jpeg"]);
+/** Wide for a scanned signature, narrow for a photo: the server applies the same limit. */
 const TAILLE_MAX = 200_000;
 
 /**
- * Ma signature enregistrée (N8, métier du 2026-10-03 puis du 2026-10-06).
- *
- * **Chacun dépose la sienne, et personne d'autre.** L'écran ne connaît aucun identifiant : il parle
- * de « ma » signature, et le serveur travaille sur la session. C'est la seule forme où une signature
- * garde un sens - celle qu'un tiers détient ne vaut déjà plus rien.
- *
- * **Ce qu'elle fait, et ce qu'elle ne fait pas.** Elle s'appose sur les lettres de constitution que
- * vous signez, à la place du nom à signer à la main. Elle **n'ajoute aucune valeur juridique** : ce
- * qui fait preuve, c'est la trace horodatée de votre signature dans l'application. L'écran le dit,
- * plutôt que de laisser croire le contraire - un utilisateur qui croirait tenir là une garantie
- * s'appuierait sur du vide.
+ * My saved signature.
+ * Each user uploads only their own: the screen knows no id and the server works on the session.
+ * It is placed on the representation letters the user signs, instead of a handwritten signature
+ * field. It adds no legal value: the proof is the timestamped signing record in the application,
+ * and the screen says so.
  */
 export function MaSignature() {
   const t = useTranslations("compte");
@@ -42,10 +36,9 @@ export function MaSignature() {
   const [apercuOuvert, setApercuOuvert] = useState(false);
 
   /*
-   * La vignette s'affiche depuis une adresse `blob:` locale : l'appel porte le jeton, et une
-   * balise `<img src>` pointant sur l'API ne l'emporterait pas. L'adresse retient le contenu en
-   * mémoire tant qu'elle n'est pas libérée, d'où la libération à chaque changement et au démontage
-   * - sans quoi chaque remplacement de signature en laisserait une derrière lui.
+   * The thumbnail is shown from a local `blob:` URL because the call carries the token, which an
+   * `<img src>` pointing at the API would not. The URL is revoked on each change and on unmount to
+   * avoid leaking memory.
    */
   const contenu = image.data;
   const [vignette, setVignette] = useState<string | null>(null);
@@ -62,14 +55,12 @@ export function MaSignature() {
   async function choisir(fichier: File | undefined) {
     if (!fichier) return;
     /*
-     * Les deux mêmes refus que le serveur, dits ici : attendre un aller-retour pour apprendre qu'un
-     * PDF n'est pas une image est une seconde perdue pour rien. Le serveur reste l'autorité.
-     *
-     * Le champ de téléversement parle le premier, et refuse sur l'**extension** - c'est la règle du
-     * backend (Q-46). Ces contrôles-ci portent sur le **type** du contenu, celui que le serveur
-     * vérifie pour la signature : ils rattrapent un fichier dont l'extension ment.
+     * Same two checks as the server, done here to save a round trip; the server remains the
+     * authority.
+     * The upload field already rejects by extension; these checks are on the content type, which
+     * the server verifies for signatures, and catch a file whose extension lies.
      */
-    if (!FORMATS.includes(fichier.type)) {
+    if (!FORMATS.has(fichier.type)) {
       toast.error(t("formatRefuse"));
       return;
     }
@@ -80,8 +71,8 @@ export function MaSignature() {
     try {
       await deposer.mutateAsync(fichier);
       toast.success(t("deposee"));
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 
@@ -90,8 +81,8 @@ export function MaSignature() {
       await retirer.mutateAsync();
       toast.success(t("retiree"));
       setRetraitOuvert(false);
-    } catch (erreur) {
-      toast.error(messageErreur(erreur));
+    } catch (error_) {
+      toast.error(messageErreur(error_));
     }
   }
 
@@ -109,10 +100,7 @@ export function MaSignature() {
         <p className="max-w-prose text-[length:var(--taille-sm)] text-texte-secondaire">
           {t("signatureDescription")}
         </p>
-        {/*
-          Dit à l'écran, pas seulement dans le code : un utilisateur qui croirait tenir là une
-          garantie juridique s'appuierait sur du vide.
-        */}
+        {/* Stated on screen so the user does not assume a legal guarantee. */}
         <p className="max-w-prose text-[length:var(--taille-xs)] text-texte-tertiaire">
           {t("signaturePortee")}
         </p>
@@ -130,9 +118,8 @@ export function MaSignature() {
               )}
             </div>
             {/*
-              L'oeil, comme partout ailleurs dans l'application : la vignette montre que quelque
-              chose est déposé, elle ne permet pas de vérifier le trait. Déposer une signature sans
-              pouvoir la relire en grand reviendrait à signer les yeux fermés.
+              Eye icon, as elsewhere in the application: the thumbnail is too small to check the
+              signature, so it can be viewed full size.
             */}
             <Button variante="secondaire" taille="sm" onClick={() => setApercuOuvert(true)}>
               <Eye size={14} aria-hidden />
@@ -149,9 +136,8 @@ export function MaSignature() {
         )}
 
         {/*
-          Le champ de téléversement maison : il porte son libellé, annonce ses formats et sa taille
-          limite, et a déjà passé l'audit d'accessibilité. En refaire un ici referait aussi ses
-          défauts.
+          Reuses the shared upload field: it carries its label, announces formats and size limit,
+          and is already accessibility-audited.
         */}
         <Televersement
           nom="signature"
